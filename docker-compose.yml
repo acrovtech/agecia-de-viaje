@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: incabound-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: incabound
+    ports:
+      - '5435:5432'
+    volumes:
+      - incabound-db-data:/var/lib/postgresql/data
+
+volumes:
+  incabound-db-data:

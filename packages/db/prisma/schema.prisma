@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tour {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  description     String   @db.Text
+  itinerary       Json     // [{ title: string, content: string }]
+  inclusions      Json     // Array of strings
+  exclusions      Json     // Array of strings
+  recommendations Json     // Array of strings
+  faqs            Json     // [{ question: string, answer: string }]
+  
+  // Megamenu / Grouping
+  region          String?  // e.g. "Cusco", "Lima"
+  menuGroup       String?  // e.g. "Full Day", "Aventura"
+  
+  // Images
+  bannerImage     String
+  cardImage       String
+  galleryImages   String[] // Up to 4 URLs
+  imageAltTags    Json     // SEO alt tags mapping to image URLs
+
+  // Details
+  duration        String
+  altitude        String?
+  transport       String?
+  groupSize       String?
+  difficulty      String?
+  mapImage        String?  @db.Text
+  // Pricing
+  hasSharedService  Boolean  @default(true)
+  sharedPrice       Float?
+  hasPrivateService Boolean  @default(false)
+  privatePricing    Json?    // e.g. [{ pax: 1, price: 300 }, { pax: 2, price: 200 }]
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?  @db.Text
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  categories      Category[]
+  reservations    Reservation[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  
+  tours     Tour[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Blog {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  bannerImage     String
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  
+  paragraphs      BlogParagraph[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BlogParagraph {
+  id       String  @id @default(cuid())
+  blogId   String
+  blog     Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  order    Int
+  content  String  @db.Text
+  image    String?
+}
+
+model Reservation {
+  id               String   @id @default(cuid())
+  tourId           String
+  tour             Tour     @relation(fields: [tourId], references: [id])
+  
+  customerFirstName String
+  customerLastName  String
+  customerEmail    String
+  customerPhone    String
+  
+  date             DateTime
+  pax              Int
+  totalPrice       Float
+  
+  pickupHotel      String?
+  specialRequirements String?
+  
+  status           ReservationStatus @default(PENDING)
+  paymentReference String? // Izipay transaction ID or token
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum ReservationStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
