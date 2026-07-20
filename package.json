@@ -4,6 +4,7 @@
   "scripts": {
     "postinstall": "pnpm --filter @repo/db generate",
     "build": "turbo run build",
+    "start": "pnpm --filter web start",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
