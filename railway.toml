@@ -5,5 +5,3 @@ buildCommand = "pnpm run build"
 [build.variables]
 CI = "true"
 
-[deploy]
-startCommand = "pnpm --filter @repo/db push && pnpm --filter web start"
