@@ -39,7 +39,7 @@ export async function createBlog(formData: FormData) {
   if (!parsed.success) {
     // Para simplificar, devolvemos el primer error, pero en una app real 
     // podrías devolver todo el objeto de errores o usar next-safe-action
-    throw new Error(`Validación fallida: ${parsed.error.errors[0].message}`);
+    throw new Error(`Validación fallida: ${parsed.error.issues[0]?.message}`);
   }
 
   const { title, slug, bannerImage, metaTitle, metaDescription, keywords, paragraphsJSON } = parsed.data;
