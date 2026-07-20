@@ -18,5 +18,13 @@
   "packageManager": "pnpm@11.10.0",
   "engines": {
     "node": ">=22.13.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "sharp"
+    ]
   }
 }
