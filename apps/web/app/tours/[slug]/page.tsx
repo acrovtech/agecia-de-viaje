@@ -10,6 +10,7 @@ import Image from 'next/image';
 // MOCK DATA: Este objeto simula lo que vendrá de la base de datos en el futuro
 const mockTour = {
   id: 'camino-inca-4-dias',
+  slug: 'camino-inca-a-machu-picchu',
   title: 'Camino Inca a Machu Picchu',
   subtitle: 'La caminata más famosa de Sudamérica',
   image: '/salkantay.webp',
