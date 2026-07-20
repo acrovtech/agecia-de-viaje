@@ -13,6 +13,43 @@ type MenuTour = {
   menuGroup: string | null;
 };
 
+function HoverSlideshow({ images }: { images: string[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isHovered) {
+      interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % images.length);
+      }, 1500);
+    } else {
+      setCurrentIndex(0);
+    }
+    return () => clearInterval(interval);
+  }, [isHovered, images.length]);
+
+  return (
+    <div 
+      className="absolute inset-0"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Fallback bg just in case */}
+      <div className="absolute inset-0 bg-gray-600" />
+      {images.map((src, index) => (
+        <Image 
+          key={src} 
+          src={src} 
+          alt="Nacional" 
+          fill 
+          className={`object-cover transition-all duration-1000 ${index === currentIndex ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`} 
+        />
+      ))}
+    </div>
+  );
+}
+
 export function Header() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [destinoView, setDestinoView] = useState<'main' | 'nacional' | 'cusco'>('main');
@@ -55,7 +92,7 @@ export function Header() {
             className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors h-full py-4"
             onMouseEnter={() => setActiveMenu('destinos')}
           >
-            Destinos <ChevronDown size={14} />
+            <span>Destinos</span> <ChevronDown size={14} />
           </div>
 
           {/* Caminatas */}
@@ -63,7 +100,7 @@ export function Header() {
             className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors h-full py-4"
             onMouseEnter={() => setActiveMenu('caminatas')}
           >
-            Caminatas <ChevronDown size={14} />
+            <span>Caminatas</span> <ChevronDown size={14} />
           </div>
 
           {/* Paquetes */}
@@ -71,7 +108,7 @@ export function Header() {
             className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors h-full py-4"
             onMouseEnter={() => setActiveMenu('paquetes')}
           >
-            Paquetes <ChevronDown size={14} />
+            <span>Paquetes</span> <ChevronDown size={14} />
           </div>
 
           <Link href="/transporte" className="hover:text-white transition-colors py-4">Transporte</Link>
@@ -94,9 +131,9 @@ export function Header() {
                           className="relative rounded-xl overflow-hidden cursor-pointer group"
                           onClick={() => setDestinoView('nacional')}
                         >
-                          <div className="absolute inset-0 bg-gray-600 transition-transform duration-500 group-hover:scale-105" />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                          <div className="absolute inset-0 flex items-center justify-center">
+                          <HoverSlideshow images={['/nacional-1.webp', '/nacional-2.webp', '/nacional-3.webp']} />
+                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors pointer-events-none" />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <h2 className="text-4xl font-bold text-white tracking-widest drop-shadow-lg">NACIONAL</h2>
                           </div>
                         </div>

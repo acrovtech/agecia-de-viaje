@@ -21,6 +21,20 @@ export function DynamicPageTitle() {
     title = 'Editar Tour';
     showBack = true;
     backUrl = '/tours';
+  } else if (pathname === '/blogs') {
+    title = 'Gestión de Blogs';
+  } else if (pathname === '/categories') {
+    title = 'Gestión de Categorías';
+  } else if (pathname === '/megamenus') {
+    title = 'Gestión de Megamenús';
+  } else if (pathname === '/blogs/new') {
+    title = 'Nuevo Artículo de Blog';
+    showBack = true;
+    backUrl = '/blogs';
+  } else if (pathname?.startsWith('/blogs/')) {
+    title = 'Editar Artículo de Blog';
+    showBack = true;
+    backUrl = '/blogs';
   }
   
   return (

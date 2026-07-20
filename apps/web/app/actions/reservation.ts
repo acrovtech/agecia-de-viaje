@@ -49,26 +49,57 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       }
     });
 
-    // 3. (SIMULACIÓN) Comunicarse con la API de Izipay para generar el formToken
-    // En producción, aquí harías un fetch a la REST API de Izipay con Basic Auth
-    // enviando: amount (totalPrice * 100), currency ("USD"), orderId (reservation.id), etc.
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Simulated token (e.g., from Izipay)
-    const simulatedIzipayToken = `DEMO-TOKEN-${reservation.id}-${Date.now()}`;
+    // 3. Comunicarse con la API de Izipay para generar el formToken
+    const shopId = process.env.IZIPAY_SHOP_ID;
+    const testPassword = process.env.IZIPAY_TEST_PASSWORD;
 
-    // Update reservation with the generated reference/token just in case
+    if (!shopId || !testPassword) {
+      throw new Error("Izipay credentials are not configured");
+    }
+
+    let formToken = "";
+    const authHeader = `Basic ${Buffer.from(`${shopId}:${testPassword}`).toString('base64')}`;
+
+      const izipayResponse = await fetch("https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment", {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          amount: Math.round(data.totalPrice * 100), // Izipay espera el monto en céntimos
+          currency: "USD",
+          orderId: reservation.id,
+          customer: {
+            email: data.customerEmail,
+            billingDetails: {
+              firstName: data.customerFirstName,
+              lastName: data.customerLastName,
+              phoneNumber: data.customerPhone,
+            }
+          }
+        })
+      });
+
+      const izipayData = await izipayResponse.json();
+
+      if (izipayData.status === "SUCCESS") {
+        formToken = izipayData.answer.formToken;
+      } else {
+        console.error("IziPay Error:", izipayData);
+        throw new Error("Error generating IziPay form token");
+      }
+
+    // Update reservation with the generated reference/token
     await prisma.reservation.update({
       where: { id: reservation.id },
-      data: { paymentReference: simulatedIzipayToken }
+      data: { paymentReference: formToken }
     });
 
     return { 
       success: true, 
       reservationId: reservation.id, 
-      formToken: simulatedIzipayToken 
+      formToken: formToken 
     };
 
   } catch (error) {

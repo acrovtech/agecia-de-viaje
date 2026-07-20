@@ -9,9 +9,10 @@ import { Button } from './button';
 interface ImageDropzoneProps {
   label?: string;
   name: string;
+  className?: string;
 }
 
-export function ImageDropzone({ label, name }: ImageDropzoneProps) {
+export function ImageDropzone({ label, name, className }: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   
@@ -62,12 +63,12 @@ export function ImageDropzone({ label, name }: ImageDropzoneProps) {
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full relative">
+    <div className={`flex flex-col gap-2 w-full relative ${className || ''}`}>
       {label && <label className="text-sm font-medium leading-none">{label}</label>}
       
       {!filePreview ? (
         <div 
-          className={`relative flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 ${
+          className={`relative flex flex-1 min-h-[160px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 ${
             dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 bg-muted/5 hover:border-primary/50 hover:bg-primary/5'
           }`}
           onDragEnter={handleDrag}
@@ -94,7 +95,7 @@ export function ImageDropzone({ label, name }: ImageDropzoneProps) {
           />
         </div>
       ) : (
-        <div className="relative flex h-48 w-full flex-col items-center justify-center rounded-lg border overflow-hidden group bg-muted/20">
+        <div className="relative flex flex-1 min-h-[160px] w-full flex-col items-center justify-center rounded-lg border overflow-hidden group bg-muted/20">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={filePreview} alt="Preview" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           

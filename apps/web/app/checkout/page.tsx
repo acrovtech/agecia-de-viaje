@@ -1,6 +1,7 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { CheckoutForm } from './checkout-form';
+import { Suspense } from 'react';
 
 export const metadata = {
   title: 'Checkout | Inca Bound',
@@ -18,9 +19,9 @@ export default function CheckoutPage() {
             <h1 className="text-3xl font-bold font-heading text-gray-900 mb-2">Completar Reserva</h1>
             <p className="text-gray-600">Estás a un paso de tu próxima gran aventura en los Andes.</p>
           </div>
-
-          <CheckoutForm />
-
+          <Suspense fallback={<div className="h-40 flex items-center justify-center">Cargando formulario...</div>}>
+            <CheckoutForm />
+          </Suspense>
         </div>
       </main>
 

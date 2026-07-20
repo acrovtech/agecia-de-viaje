@@ -1,6 +1,5 @@
 import { prisma } from '@repo/db';
 import { MegamenuManager } from './megamenu-manager';
-import { SetPageTitle } from '@/components/ui/set-page-title';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +17,6 @@ export default async function MegamenusPage() {
 
   return (
     <div className="w-full">
-      <SetPageTitle title="Gestión de Megamenús" />
       
       <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
         <h2 className="text-lg font-bold mb-2">Administrar los items de los Megamenús</h2>

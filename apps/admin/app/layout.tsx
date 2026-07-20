@@ -3,8 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { Compass, Menu, Bell, CircleUser } from 'lucide-react';
+import { Menu, Bell, CircleUser } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { DynamicPageTitle } from '@/components/ui/dynamic-page-title';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
@@ -40,8 +41,8 @@ export default function RootLayout({
           <div className="hidden border-r bg-muted/40 md:flex md:w-[176px] lg:w-[176px] xl:w-[280px] md:flex-col h-screen shrink-0">
             <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 shrink-0">
               <Link href="/" className="flex items-center gap-2 font-semibold">
-                <Compass className="h-6 w-6 text-primary" />
-                <span className="text-lg">Incabound</span>
+                <Image src="/logo.svg" alt="Logo" width={28} height={28} className="object-contain" />
+                <span className="text-lg text-[#062918] font-bold">Incabound</span>
               </Link>
             </div>
             <div className="flex-1 overflow-y-auto py-2">

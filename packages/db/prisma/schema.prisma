@@ -12,11 +12,6 @@ model Tour {
   title           String
   slug            String   @unique
   description     String   @db.Text
-  itinerary       Json     // [{ title: string, content: string }]
-  inclusions      Json     // Array of strings
-  exclusions      Json     // Array of strings
-  recommendations Json     // Array of strings
-  faqs            Json     // [{ question: string, answer: string }]
   
   // Megamenu / Grouping
   region          String?  // e.g. "Cusco", "Lima"
@@ -25,9 +20,7 @@ model Tour {
   // Images
   bannerImage     String
   cardImage       String
-  galleryImages   String[] // Up to 4 URLs
-  imageAltTags    Json     // SEO alt tags mapping to image URLs
-
+  
   // Details
   duration        String
   altitude        String?
@@ -35,11 +28,11 @@ model Tour {
   groupSize       String?
   difficulty      String?
   mapImage        String?  @db.Text
+  
   // Pricing
   hasSharedService  Boolean  @default(true)
   sharedPrice       Float?
   hasPrivateService Boolean  @default(false)
-  privatePricing    Json?    // e.g. [{ pax: 1, price: 300 }, { pax: 2, price: 200 }]
 
   // SEO
   metaTitle       String?
@@ -50,6 +43,74 @@ model Tour {
 
   categories      Category[]
   reservations    Reservation[]
+
+  // Relational Fields
+  images          TourImage[]
+  itineraries     TourItineraryDay[]
+  inclusions      TourInclusion[]
+  exclusions      TourExclusion[]
+  recommendations TourRecommendation[]
+  faqs            TourFaq[]
+  privatePricing  TourPrivatePricing[]
+}
+
+model TourImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourItineraryDay {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourInclusion {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourExclusion {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourRecommendation {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourFaq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourPrivatePricing {
+  id        String   @id @default(cuid())
+  pax       Int
+  price     Float
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
 }
 
 model Category {
@@ -70,6 +131,7 @@ model Blog {
   bannerImage     String
   metaTitle       String?
   metaDescription String?  @db.Text
+  keywords        String?  @db.Text
   
   paragraphs      BlogParagraph[]
   
@@ -82,6 +144,7 @@ model BlogParagraph {
   blogId   String
   blog     Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
   order    Int
+  subtitle String?
   content  String  @db.Text
   image    String?
 }

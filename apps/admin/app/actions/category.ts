@@ -2,23 +2,52 @@
 
 import { prisma } from '@repo/db';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
-export async function createCategory(formData: FormData) {
-  const name = formData.get('name') as string;
-  const slug = formData.get('slug') as string;
-
+export async function createCategory(name: string, slug: string) {
   if (!name || !slug) {
-    throw new Error('Name and slug are required');
+    return { error: 'Name and slug are required' };
   }
 
-  await prisma.category.create({
-    data: {
-      name,
-      slug,
-    },
-  });
+  try {
+    const category = await prisma.category.create({
+      data: { name, slug },
+    });
+    revalidatePath('/categories');
+    return { success: true, category };
+  } catch (error) {
+    return { error: 'Failed to create category or slug already exists' };
+  }
+}
 
-  revalidatePath('/categories');
-  redirect('/categories');
+export async function updateCategory(id: string, name: string, slug: string) {
+  if (!id || !name || !slug) {
+    return { error: 'All fields are required' };
+  }
+
+  try {
+    const category = await prisma.category.update({
+      where: { id },
+      data: { name, slug },
+    });
+    revalidatePath('/categories');
+    return { success: true, category };
+  } catch (error) {
+    return { error: 'Failed to update category' };
+  }
+}
+
+export async function deleteCategory(id: string) {
+  if (!id) {
+    return { error: 'ID is required' };
+  }
+
+  try {
+    await prisma.category.delete({
+      where: { id },
+    });
+    revalidatePath('/categories');
+    return { success: true };
+  } catch (error) {
+    return { error: 'Failed to delete category' };
+  }
 }

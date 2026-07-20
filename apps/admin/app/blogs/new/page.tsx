@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,20 @@ import { createBlog } from '../../actions/blog';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
 
 export default function NewBlogPage() {
+  const [isPending, startTransition] = useTransition();
   const [paragraphs, setParagraphs] = useState([{ id: Date.now() }]);
+  const [title, setTitle] = useState('');
+
+  // Auto-generar slug a partir del título
+  const slug = title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 
   const addParagraph = () => {
     setParagraphs([...paragraphs, { id: Date.now() }]);
@@ -20,17 +33,30 @@ export default function NewBlogPage() {
     setParagraphs(paragraphs.filter(p => p.id !== idToRemove));
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    const paragraphsData = paragraphs.map((p, index) => {
+      return {
+        order: index,
+        subtitle: (formData.get(`paragraph_subtitle_${index}`) as string) || null,
+        content: formData.get(`paragraph_content_${index}`) as string,
+        image: (formData.get(`paragraph_image_${index}`) as string) || null
+      };
+    });
+
+    formData.set('paragraphsJSON', JSON.stringify(paragraphsData));
+
+    startTransition(async () => {
+      await createBlog(formData);
+    });
+  };
+
   return (
     <main className="flex flex-1 flex-col gap-4">
-      <form action={createBlog} className="grid flex-1 auto-rows-max gap-4 w-full">
-        <div className="flex items-center gap-4">
-          <Link href="/blogs">
-            <Button type="button" variant="outline" size="sm">
-              Volver al Listado
-            </Button>
-          </Link>
-        </div>
-        
+      <form onSubmit={handleSubmit} className="grid flex-1 auto-rows-max gap-4 w-full">
         {/* Layout WP-Style: 2 Columnas */}
         <div className="grid gap-4 lg:grid-cols-3 lg:gap-8 items-start">
           
@@ -42,12 +68,23 @@ export default function NewBlogPage() {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="title" className="text-lg">Título del Artículo</Label>
-                  <Input id="title" name="title" required placeholder="Ej. Los mejores lugares de Cusco" className="text-lg py-6" />
+                  <Input 
+                    id="title" 
+                    name="title" 
+                    required 
+                    placeholder="Ej. Los mejores lugares de Cusco" 
+                    className="text-lg py-6"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="slug">URL (Slug)</Label>
-                  <Input id="slug" name="slug" required placeholder="mejores-lugares-cusco" />
-                </div>
+                {/* El slug ahora se genera y envía de forma oculta */}
+                <input type="hidden" name="slug" value={slug} />
+                {title && (
+                  <p className="text-sm text-muted-foreground">
+                    URL generada: <span className="text-primary font-mono bg-muted px-1 py-0.5 rounded">/blog/{slug}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -80,17 +117,25 @@ export default function NewBlogPage() {
                     
                     <div className="grid gap-4 mt-2">
                       <div className="grid gap-2">
-                        <Label>Texto del Párrafo</Label>
-                        <textarea 
-                          name={`paragraph_content_${index}`}
-                          required
-                          rows={6}
-                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          placeholder="Escribe el contenido aquí..."
+                        <Label>Subtítulo del Bloque (Opcional)</Label>
+                        <Input 
+                          name={`paragraph_subtitle_${index}`} 
+                          placeholder="Ej. Descubriendo la magia escondida" 
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <ImageDropzone name={`paragraph_image_${index}`} label="Imagen Adjunta (Opcional)" />
+                      <div className="grid grid-cols-10 gap-4">
+                        <div className="col-span-7 grid gap-2 h-full flex-col">
+                          <Label>Texto del Párrafo *</Label>
+                          <textarea 
+                            name={`paragraph_content_${index}`}
+                            required
+                            className="flex-1 w-full min-h-[160px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                            placeholder="Escribe el contenido aquí..."
+                          />
+                        </div>
+                        <div className="col-span-3 grid gap-2 h-full">
+                          <ImageDropzone name={`paragraph_image_${index}`} label="Imagen Adjunta (Opcional)" className="h-full" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -114,7 +159,9 @@ export default function NewBlogPage() {
                 <h3 className="font-semibold leading-none tracking-tight">Publicar</h3>
               </div>
               <div className="flex flex-col gap-2">
-                <Button type="submit" className="w-full font-bold">Publicar Artículo</Button>
+                <Button type="submit" disabled={isPending} className="w-full font-bold">
+                  {isPending ? 'Publicando...' : 'Publicar Artículo'}
+                </Button>
                 <Button type="button" variant="outline" className="w-full">Guardar Borrador</Button>
               </div>
             </div>
@@ -144,7 +191,13 @@ export default function NewBlogPage() {
                     name="metaDescription" 
                     rows={4}
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholder="Breve resumen para Google..."
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="keywords" className="text-xs">Palabras Clave (Keywords)</Label>
+                  <Input id="keywords" name="keywords" placeholder="cusco, viaje, blog, turismo" className="h-8 text-xs" />
+                  <p className="text-[10px] text-muted-foreground">Separadas por comas. Muy importante para el SEO.</p>
                 </div>
               </div>
             </div>
