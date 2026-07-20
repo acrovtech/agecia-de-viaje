@@ -24,10 +24,16 @@ export default function NewCategoryPage() {
     );
   };
 
+  const handleSubmit = async (formData: FormData) => {
+    const name = formData.get('name') as string;
+    const slug = formData.get('slug') as string;
+    await createCategory(name, slug);
+  };
+
   return (
     <main className="flex flex-1 flex-col gap-4">
       <div className="max-w-2xl w-full mx-auto">
-        <form action={createCategory} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
+        <form action={handleSubmit} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
           <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3">Crear Nueva Categoría</h3>
           
           <div className="grid gap-6">
@@ -50,9 +56,7 @@ export default function NewCategoryPage() {
           </div>
 
           <div className="mt-8 flex justify-end gap-4 border-t pt-6">
-            <Button type="button" variant="outline" asChild>
-              <Link href="/categories">Cancelar</Link>
-            </Button>
+            <Button type="button" variant="outline" render={<Link href="/categories">Cancelar</Link>} />
             <Button type="submit">Guardar Categoría</Button>
           </div>
         </form>

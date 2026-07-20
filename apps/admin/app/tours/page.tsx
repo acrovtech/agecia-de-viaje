@@ -58,10 +58,10 @@ export default async function ToursList() {
               {tours.map((tour) => (
                 <TableRow key={tour.id}>
                   <TableCell className="font-medium">{tour.title}</TableCell>
-                  <TableCell>{tour.location}</TableCell>
+                  <TableCell>{tour.region || '-'}</TableCell>
                   <TableCell>{tour.duration}</TableCell>
-                  <TableCell>{tour.difficulty}</TableCell>
-                  <TableCell>{tour.serviceType}</TableCell>
+                  <TableCell>{tour.difficulty || '-'}</TableCell>
+                  <TableCell>{tour.hasSharedService ? (tour.hasPrivateService ? 'Compartido / Privado' : 'Compartido') : 'Privado'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

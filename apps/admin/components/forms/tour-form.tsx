@@ -43,10 +43,10 @@ export function TourForm({ categories }: { categories: Category[] }) {
 
     const primaryKeyword = keywords[0];
 
-    if (title.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en el Título', type: 'good' }); score++; }
+    if (primaryKeyword && title.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en el Título', type: 'good' }); score++; }
     else { results.push({ text: 'Falta la palabra clave principal en el Título del tour', type: 'bad' }); }
 
-    if (metaDescription.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en la Meta Descripción', type: 'good' }); score++; }
+    if (primaryKeyword && metaDescription.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en la Meta Descripción', type: 'good' }); score++; }
     else { results.push({ text: 'Falta la palabra clave principal en la Meta Descripción', type: 'bad' }); }
 
     if (keywords.length > 1) { results.push({ text: `Optimizando para ${keywords.length} palabras clave diferentes`, type: 'good' }); score++; }
@@ -556,8 +556,9 @@ export function TourForm({ categories }: { categories: Category[] }) {
         ) : (
           <Button type="button" variant="outline" className="flex-1 font-bold shadow-sm" onClick={() => {
             const idx = tabOrder.indexOf(activeTab);
-            if (idx > 0) {
-              setActiveTab(tabOrder[idx - 1]);
+            const prev = tabOrder[idx - 1];
+            if (idx > 0 && prev) {
+              setActiveTab(prev);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}>Atrás</Button>
@@ -566,8 +567,9 @@ export function TourForm({ categories }: { categories: Category[] }) {
         {activeTab !== 'publish' ? (
           <Button type="button" className="flex-1 font-bold shadow-sm" onClick={() => {
             const idx = tabOrder.indexOf(activeTab);
-            if (idx < tabOrder.length - 1) {
-              setActiveTab(tabOrder[idx + 1]);
+            const next = tabOrder[idx + 1];
+            if (idx < tabOrder.length - 1 && next) {
+              setActiveTab(next);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}>Siguiente</Button>

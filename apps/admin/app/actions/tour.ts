@@ -87,31 +87,44 @@ export async function createTour(formData: FormData) {
       title,
       slug,
       description: description || '',
-      itinerary: itinerary.length > 0 ? JSON.stringify(itinerary) : JSON.stringify([]),
-      inclusions: inclusions ? JSON.stringify(inclusions.split('\n')) : JSON.stringify([]),
-      exclusions: exclusions ? JSON.stringify(exclusions.split('\n')) : JSON.stringify([]),
-      recommendations: recommendations ? JSON.stringify(recommendations.split('\n')) : JSON.stringify([]),
-      faqs: faqs.length > 0 ? JSON.stringify(faqs) : JSON.stringify([]),
       duration: duration || '',
       altitude: altitude || '',
       groupSize: groupSizeStr || '',
       difficulty: difficulty || 'Fácil',
-      mapImage: formData.get('mapImage') as string || '',
+      mapImage: (formData.get('mapImage') as string) || '',
       region: region || null,
       menuGroup: menuGroup || null,
       hasSharedService,
       sharedPrice,
       hasPrivateService,
-      privatePricing: privatePricing.length > 0 ? privatePricing : null,
       bannerImage: bannerImage || '',
       cardImage: cardImage || '',
-      galleryImages,
-      imageAltTags: JSON.stringify({}),
       metaTitle: metaTitle || '',
       metaDescription: metaDescription || '',
-      categories: {
+      itineraries: itinerary.length > 0 ? {
+        create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index }))
+      } : undefined,
+      inclusions: inclusions ? {
+        create: inclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
+      } : undefined,
+      exclusions: exclusions ? {
+        create: exclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
+      } : undefined,
+      recommendations: recommendations ? {
+        create: recommendations.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
+      } : undefined,
+      faqs: faqs.length > 0 ? {
+        create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index }))
+      } : undefined,
+      privatePricing: privatePricing.length > 0 ? {
+        create: privatePricing.map(p => ({ pax: p.pax, price: p.price }))
+      } : undefined,
+      images: galleryImages.length > 0 ? {
+        create: galleryImages.map((url, order) => ({ url, order }))
+      } : undefined,
+      categories: categoryIds.length > 0 ? {
         connect: categoryIds.map(id => ({ id }))
-      }
+      } : undefined
     },
   });
 

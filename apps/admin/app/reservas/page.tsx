@@ -1,10 +1,19 @@
-import { prisma } from '@repo/db';
+import { prisma, Reservation, Tour } from '@repo/db';
+
+type ReservationWithTour = Reservation & { tour: Tour | null };
+
+export const dynamic = 'force-dynamic';
 
 export default async function ReservasPage() {
-  const reservas = await prisma.reservation.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { tour: true }
-  });
+  let reservas: ReservationWithTour[] = [];
+  try {
+    reservas = await prisma.reservation.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { tour: true }
+    });
+  } catch (error) {
+    console.error("Error fetching reservas:", error);
+  }
 
   return (
     <div className="p-8">

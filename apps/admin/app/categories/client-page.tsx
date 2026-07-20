@@ -201,9 +201,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
             </div>
             
             <DialogFooter className="mt-4">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancelar</Button>
-              </DialogClose>
+              <DialogClose render={<Button type="button" variant="outline">Cancelar</Button>} />
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
