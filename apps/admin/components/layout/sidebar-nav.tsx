@@ -18,8 +18,8 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname === "/" 
-            ? "bg-slate-900 text-white shadow-sm" 
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
+            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
         )}
       >
         <Compass className="h-4 w-4 opacity-70" />
@@ -34,8 +34,8 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/tours") 
-            ? "bg-slate-900 text-white shadow-sm" 
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
+            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
         )}
       >
         <Map className="h-4 w-4 opacity-70" />
@@ -46,8 +46,8 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/blogs") 
-            ? "bg-slate-900 text-white shadow-sm" 
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
+            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
         )}
       >
         <PenTool className="h-4 w-4 opacity-70" />
@@ -58,8 +58,8 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/categories") 
-            ? "bg-slate-900 text-white shadow-sm" 
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
+            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
         )}
       >
         <Tags className="h-4 w-4 opacity-70" />
@@ -74,8 +74,8 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/reservas") 
-            ? "bg-slate-900 text-white shadow-sm" 
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
+            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
         )}
       >
         <Calendar className="h-4 w-4 opacity-70" />

@@ -28,10 +28,12 @@ export default async function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Ingresos Totales</h3>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-emerald-200 transition-all duration-300">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <h3 className="tracking-tight text-sm font-semibold text-slate-600">Ingresos Totales</h3>
+            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-emerald-200/50">
+              <DollarSign className="h-5 w-5" />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
@@ -41,10 +43,12 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Tours Activos</h3>
-            <Map className="h-4 w-4 text-muted-foreground" />
+        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-blue-200 transition-all duration-300">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <h3 className="tracking-tight text-sm font-semibold text-slate-600">Tours Activos</h3>
+            <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-blue-200/50">
+              <Map className="h-5 w-5" />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <div className="text-2xl font-bold">{toursCount}</div>
@@ -54,10 +58,12 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Reservas Nuevas</h3>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-purple-200 transition-all duration-300">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <h3 className="tracking-tight text-sm font-semibold text-slate-600">Reservas Nuevas</h3>
+            <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-purple-200/50">
+              <Calendar className="h-5 w-5" />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <div className="text-2xl font-bold">{reservationsCount}</div>
@@ -67,10 +73,12 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Blogs Activos</h3>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-orange-200 transition-all duration-300">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <h3 className="tracking-tight text-sm font-semibold text-slate-600">Blogs Activos</h3>
+            <div className="p-2.5 rounded-xl bg-orange-100 text-orange-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-orange-200/50">
+              <Activity className="h-5 w-5" />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <div className="text-2xl font-bold">{blogsCount}</div>

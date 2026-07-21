@@ -17,9 +17,7 @@ export default function DashboardLayout({
       <div className="hidden border-r border-slate-200 bg-white md:flex md:w-[200px] lg:w-[220px] xl:w-[260px] md:flex-col h-screen shrink-0 text-slate-900 shadow-sm">
         <div className="flex h-16 items-center border-b border-slate-200 px-5 shrink-0 bg-white">
           <Link href="/" className="flex items-center gap-3 font-semibold group">
-            <div className="bg-slate-50 border border-slate-100 p-1.5 rounded-xl group-hover:bg-slate-100 transition-colors">
-              <Image src="/icon.svg" alt="Inca Bound Logo" width={26} height={26} className="object-contain" />
-            </div>
+            <Image src="/icon.svg" alt="Inca Bound Logo" width={32} height={32} className="object-contain transition-transform group-hover:scale-105" />
             <div className="flex flex-col">
               <span className="text-base text-slate-900 font-bold tracking-wide leading-none">Inca Bound</span>
               <span className="text-[10px] text-emerald-600 font-medium tracking-wider uppercase mt-0.5">Admin Panel</span>
