@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Reservation, Tour } from '@repo/db';
-import { updateReservationStatus } from '../actions/reservation';
+import { updateReservationStatus } from '../../actions/reservation';
 import { 
   Search, Filter, Calendar, Users, DollarSign, MapPin, 
   Mail, Phone, MessageSquare, CreditCard, X, CheckCircle2, 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { updateTourMenuGroup } from '../actions/megamenu';
+import { updateTourMenuGroup } from '../../actions/megamenu';
 import { Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
-import { createBlog } from '../../actions/blog';
+import { createBlog } from '../../../actions/blog';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
 
 export default function NewBlogPage() {

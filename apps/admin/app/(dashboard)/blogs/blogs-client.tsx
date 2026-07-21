@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Blog } from '@repo/db';
-import { deleteBlog } from '../actions/blog';
+import { deleteBlog } from '../../actions/blog';
 import { Plus, Trash2, Calendar, FileText } from 'lucide-react';
 
 export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {

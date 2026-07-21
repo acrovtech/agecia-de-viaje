@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Tour } from '@repo/db';
-import { deleteTour } from '../actions/tour';
+import { deleteTour } from '../../actions/tour';
 import { Plus, Trash2, MapPin, Clock, Users } from 'lucide-react';
 
 export function ToursClient({ initialTours }: { initialTours: Tour[] }) {

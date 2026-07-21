@@ -9,16 +9,12 @@ export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#062918] via-[#0B4354] to-[#041A10] p-4 sm:p-6 relative overflow-hidden">
-      {/* Decorative subtle ambient lights */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8 relative z-10">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#062918] p-4 sm:p-6 relative">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 relative z-10 border border-slate-100">
         
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#062918] p-3 shadow-lg shadow-emerald-950/40 mb-4 ring-2 ring-emerald-500/30">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-50 p-3 shadow-sm border border-slate-100 mb-4">
             <Image 
               src="/icon.svg" 
               alt="Inca Bound Logo" 
@@ -27,7 +23,7 @@ export default function LoginPage() {
               className="object-contain" 
             />
           </div>
-          <h1 className="text-2xl font-bold text-[#0B4354] tracking-tight">
+          <h1 className="text-2xl font-bold text-[#062918] tracking-tight">
             Panel de Administración
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -57,7 +53,7 @@ export default function LoginPage() {
                 required
                 defaultValue="admin@incabound.com"
                 placeholder="correo@incabound.com"
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0B4354] focus:bg-white transition-all"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#062918] focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -73,7 +69,7 @@ export default function LoginPage() {
                 name="password"
                 required
                 placeholder="••••••••••••"
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0B4354] focus:bg-white transition-all"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#062918] focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -81,7 +77,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-3.5 px-6 bg-[#0B4354] hover:bg-[#083340] active:bg-[#05232c] text-white font-semibold text-sm rounded-xl shadow-lg shadow-[#0B4354]/30 hover:shadow-xl hover:shadow-[#0B4354]/40 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="w-full py-3.5 px-6 bg-[#062918] hover:bg-[#041d11] text-white font-semibold text-sm rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed mt-2"
           >
             {isPending ? (
               <span>Iniciando sesión...</span>

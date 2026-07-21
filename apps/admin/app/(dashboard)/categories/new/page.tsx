@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createCategory } from '../../actions/category';
+import { createCategory } from '../../../actions/category';
 
 export default function NewCategoryPage() {
   const [name, setName] = useState('');
