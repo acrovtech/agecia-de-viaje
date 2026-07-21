@@ -123,10 +123,10 @@ export function Header() {
                 
                 {/* Content for Destinos */}
                 {activeMenu === 'destinos' && (
-                  <div className="w-full">
+                  <div className="w-full h-[470px] flex flex-col">
                     {/* View 1: Main Categories */}
                     {destinoView === 'main' && (
-                      <div className="grid grid-cols-2 gap-3 w-full h-[350px]">
+                      <div className="grid grid-cols-2 gap-3 w-full h-full pb-2">
                         <div 
                           className="relative rounded-xl overflow-hidden cursor-pointer group"
                           onClick={() => setDestinoView('nacional')}
@@ -149,9 +149,9 @@ export function Header() {
 
                     {/* View 2: Nacional Grid */}
                     {destinoView === 'nacional' && (
-                      <div className="flex flex-col w-full animate-in fade-in zoom-in-95 duration-300">
+                      <div className="flex flex-col w-full h-full animate-in fade-in zoom-in-95 duration-300">
                         <h2 className="text-center text-xl font-bold tracking-widest mb-6 mt-4">NACIONAL</h2>
-                        <div className="grid grid-cols-3 gap-3 h-[300px]">
+                        <div className="grid grid-cols-3 gap-3 flex-1 pb-2">
                           {[
                             { name: 'CUSCO', image: '/destino-cusco.webp' },
                             { name: 'PUNO', image: '/destino-puno.webp' },
@@ -182,12 +182,12 @@ export function Header() {
 
                     {/* View 3: Cusco Lists */}
                     {destinoView === 'cusco' && (
-                      <div className="flex flex-col w-full animate-in fade-in slide-in-from-right-8 duration-300 px-6 pb-4">
+                      <div className="flex flex-col w-full h-full animate-in fade-in slide-in-from-right-8 duration-300 px-6 pb-4">
                         <h2 className="text-center text-xl font-bold tracking-widest mb-6 mt-4">CUSCO</h2>
-                        <div className="grid grid-cols-4 gap-8">
+                        <div className="grid grid-cols-4 gap-8 flex-1">
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Full Day</h3>
-                            <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'FULL DAY').map(t => (
                                 <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
                               ))}
@@ -196,7 +196,7 @@ export function Header() {
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Paquetes</h3>
-                            <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'PAQUETES').map(t => (
                                 <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
                               ))}
@@ -205,7 +205,7 @@ export function Header() {
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Medio Día</h3>
-                            <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'MEDIO DÃA').map(t => (
                                 <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
                               ))}
@@ -214,7 +214,7 @@ export function Header() {
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Aventura</h3>
-                            <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'AVENTURA').map(t => (
                                 <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
                               ))}
