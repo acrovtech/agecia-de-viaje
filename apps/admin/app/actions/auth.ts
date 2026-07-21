@@ -7,16 +7,26 @@ export async function loginAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  const validEmail = process.env.ADMIN_EMAIL || 'admin@incabound.com';
-  const validPassword = process.env.ADMIN_PASSWORD || 'IncaBound2026!';
+  // Master Admin (Tú)
+  const masterEmail = process.env.MASTER_EMAIL || 'admin@incabound.com';
+  const masterPassword = process.env.MASTER_PASSWORD || 'IncaBound2026!';
+  
+  // Client Admin (El cliente)
+  const clientEmail = process.env.CLIENT_EMAIL || 'cliente@incabound.com';
+  const clientPassword = process.env.CLIENT_PASSWORD || 'IncaBoundClient!';
 
   if (!email || !password) {
     return { error: 'Por favor complete todos los campos' };
   }
 
-  if (email.trim().toLowerCase() === validEmail.trim().toLowerCase() && password === validPassword) {
+  const isMaster = email.trim().toLowerCase() === masterEmail.trim().toLowerCase() && password === masterPassword;
+  const isClient = email.trim().toLowerCase() === clientEmail.trim().toLowerCase() && password === clientPassword;
+
+  if (isMaster || isClient) {
+    const role = isMaster ? 'master' : 'client';
+    
     const cookieStore = await cookies();
-    cookieStore.set('admin_session', 'authenticated', {
+    cookieStore.set('admin_session', role, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
