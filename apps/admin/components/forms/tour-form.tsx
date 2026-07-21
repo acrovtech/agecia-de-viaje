@@ -189,39 +189,7 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="region" className="text-sm font-semibold">Región (Destino)</Label>
-                    <Select name="region" defaultValue={initialData?.region}>
-                      <SelectTrigger className="w-full h-9 bg-muted/30">
-                        <SelectValue placeholder="Seleccionar..." />
-                      </SelectTrigger>
-                      <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full">
-                        <SelectItem value="CUSCO">Cusco</SelectItem>
-                        <SelectItem value="AREQUIPA">Arequipa</SelectItem>
-                        <SelectItem value="LIMA">Lima</SelectItem>
-                        <SelectItem value="ICA">Ica</SelectItem>
-                        <SelectItem value="PUNO">Puno</SelectItem>
-                        <SelectItem value="MADRE DE DIOS">Madre de Dios</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="menuGroup" className="text-sm font-semibold">Grupo de Menú</Label>
-                    <Select name="menuGroup" defaultValue={initialData?.menuGroup}>
-                      <SelectTrigger className="w-full h-9 bg-muted/30">
-                        <SelectValue placeholder="Opcional..." />
-                      </SelectTrigger>
-                      <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full">
-                        <SelectItem value="none">No mostrar en Menú</SelectItem>
-                        <SelectItem value="FULL DAY">Full Day</SelectItem>
-                        <SelectItem value="MEDIO DÍA">Medio Día</SelectItem>
-                        <SelectItem value="PAQUETES">Paquetes</SelectItem>
-                        <SelectItem value="AVENTURA">Aventura</SelectItem>
-                        <SelectItem value="CAMINATAS">Caminatas</SelectItem>
-                        <SelectItem value="LIMA-CUSCO">Lima-Cusco</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+
                   <div className="grid gap-2">
                     <Label htmlFor="altitude" className="text-sm font-semibold">Altitud</Label>
                     <Input id="altitude" name="altitude" defaultValue={initialData?.altitude} placeholder="3800 msnm" className="bg-muted/30" />
