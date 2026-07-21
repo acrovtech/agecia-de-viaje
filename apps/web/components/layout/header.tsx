@@ -184,41 +184,62 @@ export function Header() {
                     {destinoView === 'cusco' && (
                       <div className="flex flex-col w-full h-full animate-in fade-in slide-in-from-right-8 duration-300 px-6 pb-4">
                         <h2 className="text-center text-xl font-bold tracking-widest mb-6 mt-4">CUSCO</h2>
-                        <div className="grid grid-cols-4 gap-8 flex-1">
-                          <div>
+                        <div className="grid grid-cols-4 gap-8 flex-1">                          <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Full Day</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'FULL DAY').map(t => (
-                                <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
+                              {[
+                                "Machu Picchu (N)", "Valle Sagrado VIP", "Quelcaya (N)", 
+                                "Laguna de Humantay", "Montaña de Colores Vinicunca", 
+                                "Palcoyo (N)", "Queshuachaca (N)", "Waqrapukara (N)"
+                              ].map(title => (
+                                <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                    {title}
+                                  </Link>
+                                </li>
                               ))}
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'FULL DAY').length === 0 && <li className="text-white/40 text-sm italic">No hay tours</li>}
                             </ul>
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Paquetes</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'PAQUETES').map(t => (
-                                <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
+                              {[
+                                "Cusco 3 Días", "Cusco 4 Días", "Cusco 5 Días", "Cusco 6 Días (N)", "Cusco 7 Días"
+                              ].map(title => (
+                                <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                    {title}
+                                  </Link>
+                                </li>
                               ))}
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'PAQUETES').length === 0 && <li className="text-white/40 text-sm italic">No hay tours</li>}
                             </ul>
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Medio Día</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'MEDIO DÃA').map(t => (
-                                <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
+                              {[
+                                "City Tour Cusco", "Circuito Valle Sur", "Maras - Moray - Salineras", "Morada de los Dioses (N)"
+                              ].map(title => (
+                                <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                    {title}
+                                  </Link>
+                                </li>
                               ))}
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'MEDIO DÃA').length === 0 && <li className="text-white/40 text-sm italic">No hay tours</li>}
                             </ul>
                           </div>
                           <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Aventura</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'AVENTURA').map(t => (
-                                <li key={t.id} className="my-2 transition-all duration-300 hover:translate-x-2"><Link href={`/tours/${t.slug}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">{t.title}</Link></li>
+                              {[
+                                "Rafting (N)", "Cabalgata (N)", "Cuatrimotos (N)"
+                              ].map(title => (
+                                <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                    {title}
+                                  </Link>
+                                </li>
                               ))}
-                              {tours.filter(t => t.region === 'CUSCO' && t.menuGroup === 'AVENTURA').length === 0 && <li className="text-white/40 text-sm italic">No hay tours</li>}
                             </ul>
                           </div>
                         </div>
