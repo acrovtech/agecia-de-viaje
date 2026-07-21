@@ -262,15 +262,22 @@ function ToursCatalogContent() {
             </div>
           )}
 
-          {/* Paginación simple */}
-          <div className="mt-12 flex items-center justify-between border-t border-gray-200 pt-6">
-            <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium" disabled>Anterior</button>
-            <div className="flex items-center gap-2">
-              <button className="w-10 h-10 flex items-center justify-center border border-[#062918] bg-[#062918] text-white rounded-lg font-bold shadow-sm">1</button>
-              <button className="w-10 h-10 flex items-center justify-center border border-gray-200 bg-white text-gray-700 rounded-lg hover:border-[#062918] transition-colors font-medium">2</button>
+          {/* Paginación dinámica (Solo se muestra si hay más de 9 tours) */}
+          {filteredTours.length > 9 && (
+            <div className="mt-12 flex items-center justify-between border-t border-gray-200 pt-6">
+              <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium" disabled>
+                Anterior
+              </button>
+              <div className="flex items-center gap-2">
+                <button className="w-10 h-10 flex items-center justify-center border border-[#062918] bg-[#062918] text-white rounded-lg font-bold shadow-sm">
+                  1
+                </button>
+              </div>
+              <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-[#062918] transition-colors font-medium">
+                Siguiente
+              </button>
             </div>
-            <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-[#062918] transition-colors font-medium">Siguiente</button>
-          </div>
+          )}
 
         </section>
       </main>

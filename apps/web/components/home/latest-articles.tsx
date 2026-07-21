@@ -1,47 +1,23 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { prisma } from '@repo/db';
 
-const articles = [
-  {
-    id: 1,
-    title: 'Los Secretos Ocultos de la Ciudadela de Machu Picchu',
-    image: '/fallback.svg',
-    slug: 'secretos-machu-picchu'
-  },
-  {
-    id: 2,
-    title: 'Guía Definitiva para el Camino Inca',
-    image: '/fallback.svg',
-    slug: 'guia-camino-inca'
-  },
-  {
-    id: 3,
-    title: '5 Cosas que debes saber antes de ir a Cusco',
-    image: '/fallback.svg',
-    slug: 'tips-cusco'
-  },
-  {
-    id: 4,
-    title: 'La Gastronomía Andina que debes probar',
-    image: '/fallback.svg',
-    slug: 'gastronomia-andina'
-  },
-  {
-    id: 5,
-    title: '¿Por qué elegir el Salkantay Trek?',
-    image: '/fallback.svg',
-    slug: 'por-que-salkantay'
-  },
-  {
-    id: 6,
-    title: 'Aclimatación y Soroche: Guía de Supervivencia',
-    image: '/fallback.svg',
-    slug: 'aclimatacion-soroche'
+export async function LatestArticles() {
+  let articles: any[] = [];
+  try {
+    articles = await prisma.blog.findMany({
+      take: 6,
+      orderBy: { createdAt: 'desc' }
+    });
+  } catch (error) {
+    console.error("Error cargando artículos del blog:", error);
   }
-];
 
-export function LatestArticles() {
+  if (articles.length === 0) {
+    return null; // Ocultar si no hay blogs creados en la base de datos
+  }
+
   return (
     <section className="py-24 bg-white">
       <div className="container mx-auto px-4">
@@ -60,7 +36,7 @@ export function LatestArticles() {
             >
               {/* Background Image */}
               <Image 
-                src={article.image} 
+                src={article.bannerImage || '/fallback.svg'} 
                 alt={article.title} 
                 fill 
                 className="object-cover opacity-70 group-hover:opacity-40 transition-all duration-700 group-hover:scale-105 z-0"
@@ -76,12 +52,8 @@ export function LatestArticles() {
                 </h3>
               </div>
               
-              {/* "Street Fighter" Selection Border Effect (Modified) */}
-              
-              {/* Inner White L-Brackets on Hover */}
               <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none rounded-tl-lg" />
               <div className="absolute bottom-4 right-4 w-8 h-8 border-b-[3px] border-r-[3px] border-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none rounded-br-lg" />
-
             </Link>
           ))}
         </div>
@@ -89,4 +61,3 @@ export function LatestArticles() {
     </section>
   );
 }
-
