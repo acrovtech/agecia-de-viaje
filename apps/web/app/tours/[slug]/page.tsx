@@ -89,7 +89,7 @@ const mockTour = {
   ]
 };
 
-export default function TourPage() {
+export default function TourPage({ params }: { params: { slug: string } }) {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />

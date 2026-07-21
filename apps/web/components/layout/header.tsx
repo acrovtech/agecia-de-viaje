@@ -138,9 +138,9 @@ export function Header() {
                           </div>
                         </div>
                         <div className="relative rounded-xl overflow-hidden cursor-pointer group">
-                          <div className="absolute inset-0 bg-gray-500 transition-transform duration-500 group-hover:scale-105" />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                          <div className="absolute inset-0 flex items-center justify-center">
+                          <HoverSlideshow images={['/Alaska-Destino-Menu.webp', '/Arequipa-Destino-Menu.webp', '/Cristo-Redentor-Destino-Menu.webp']} />
+                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors pointer-events-none" />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <h2 className="text-4xl font-bold text-white tracking-widest drop-shadow-lg">INTERNACIONAL</h2>
                           </div>
                         </div>
