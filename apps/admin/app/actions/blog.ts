@@ -71,3 +71,18 @@ export async function createBlog(formData: FormData) {
   revalidatePath('/blogs');
   redirect('/blogs');
 }
+
+export async function deleteBlog(id: string) {
+  try {
+    await prisma.blog.delete({
+      where: { id }
+    });
+    revalidatePath('/blogs');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting blog:", error);
+    return { success: false, error: "No se pudo eliminar la publicación." };
+  }
+}
+

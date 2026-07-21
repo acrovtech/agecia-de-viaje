@@ -131,3 +131,18 @@ export async function createTour(formData: FormData) {
   revalidatePath('/tours');
   redirect('/tours');
 }
+
+export async function deleteTour(id: string) {
+  try {
+    await prisma.tour.delete({
+      where: { id }
+    });
+    revalidatePath('/tours');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting tour:", error);
+    return { success: false, error: "No se pudo eliminar el tour." };
+  }
+}
+

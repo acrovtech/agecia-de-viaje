@@ -19,18 +19,15 @@ type CheckoutData = {
 export async function createReservationAndPaymentToken(data: CheckoutData) {
   try {
     // 1. Buscar el ID real del Tour en la BD usando el slug
-    let tourId = "fallback-id";
     const tour = await prisma.tour.findUnique({
       where: { slug: data.tourSlug }
     });
 
-    if (tour) {
-      tourId = tour.id;
-    } else {
-      // Si el tour no existe (ej. mock data), buscamos cualquier tour para asociarlo en dev
-      const anyTour = await prisma.tour.findFirst();
-      if (anyTour) tourId = anyTour.id;
+    if (!tour) {
+      throw new Error(`El tour con identificador "${data.tourSlug}" no fue encontrado en el catálogo.`);
     }
+
+    const tourId = tour.id;
 
     // 2. Crear la reserva en la Base de Datos con estado PENDING
     const reservation = await prisma.reservation.create({
