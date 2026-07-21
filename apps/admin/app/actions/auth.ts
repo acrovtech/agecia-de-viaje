@@ -2,42 +2,44 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { prisma } from '@repo/db';
+import bcrypt from 'bcryptjs';
 
 export async function loginAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  // Master Admin (Tú)
-  const masterEmail = process.env.MASTER_EMAIL || 'admin@incabound.com';
-  const masterPassword = process.env.MASTER_PASSWORD || 'IncaBound2026!';
-  
-  // Client Admin (El cliente)
-  const clientEmail = process.env.CLIENT_EMAIL || 'cliente@incabound.com';
-  const clientPassword = process.env.CLIENT_PASSWORD || 'IncaBoundClient!';
-
   if (!email || !password) {
     return { error: 'Por favor complete todos los campos' };
   }
 
-  const isMaster = email.trim().toLowerCase() === masterEmail.trim().toLowerCase() && password === masterPassword;
-  const isClient = email.trim().toLowerCase() === clientEmail.trim().toLowerCase() && password === clientPassword;
+  // 1. Check if user exists in DB
+  const user = await prisma.user.findUnique({
+    where: { email: email.trim().toLowerCase() }
+  });
 
-  if (isMaster || isClient) {
-    const role = isMaster ? 'master' : 'client';
-    
-    const cookieStore = await cookies();
-    cookieStore.set('admin_session', role, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    });
-
-    redirect('/');
+  if (!user) {
+    return { error: 'Credenciales incorrectas. Verifique su correo y contraseña.' };
   }
 
-  return { error: 'Credenciales incorrectas. Verifique su correo y contraseña.' };
+  // 2. Verify password with bcrypt
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    return { error: 'Credenciales incorrectas. Verifique su correo y contraseña.' };
+  }
+
+  // 3. Set Session Cookie with Role
+  const cookieStore = await cookies();
+  cookieStore.set('admin_session', user.role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: '/',
+  });
+
+  redirect('/');
 }
 
 export async function logoutAction() {

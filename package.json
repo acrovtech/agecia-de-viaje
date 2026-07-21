@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "postinstall": "pnpm --filter @repo/db generate",
-    "build": "turbo run build",
+    "build": "pnpm --filter @repo/db db:push:ci && turbo run build",
     "start": "pnpm --filter web start",
     "dev": "turbo run dev",
     "lint": "turbo run lint",

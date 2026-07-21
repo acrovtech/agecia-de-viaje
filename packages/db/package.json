@@ -7,6 +7,7 @@
   "scripts": {
     "generate": "prisma generate",
     "push": "prisma db push",
+    "db:push:ci": "prisma db push --accept-data-loss",
     "migrate": "prisma migrate dev"
   },
   "dependencies": {
