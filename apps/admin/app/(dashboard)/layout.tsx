@@ -20,7 +20,7 @@ export default function DashboardLayout({
             <Image src="/icon.svg" alt="Inca Bound Logo" width={32} height={32} className="object-contain transition-transform group-hover:scale-105" />
             <div className="flex flex-col">
               <span className="text-base text-slate-900 font-bold tracking-wide leading-none">Inca Bound</span>
-              <span className="text-[10px] text-emerald-600 font-medium tracking-wider uppercase mt-0.5">Admin Panel</span>
+              <span className="text-[10px] text-[#04321c] font-medium tracking-wider uppercase mt-0.5">Admin Panel</span>
             </div>
           </Link>
         </div>
@@ -61,7 +61,7 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-[#04321c] animate-pulse" />
               <span className="text-xs font-semibold text-slate-700">Sistema Conectado</span>
             </div>
           </div>

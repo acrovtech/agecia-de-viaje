@@ -28,10 +28,10 @@ export default async function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         
-        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-emerald-200 transition-all duration-300">
+        <div className="group rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-sm p-6 hover:shadow-md hover:border-[#04321c]/30 transition-all duration-300">
           <div className="flex flex-row items-center justify-between space-y-0 pb-3">
             <h3 className="tracking-tight text-sm font-semibold text-slate-600">Ingresos Totales</h3>
-            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-emerald-200/50">
+            <div className="p-2.5 rounded-xl bg-[#04321c]/10 text-[#04321c] group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm ring-1 ring-[#04321c]/30">
               <DollarSign className="h-5 w-5" />
             </div>
           </div>
@@ -120,8 +120,8 @@ export default async function DashboardPage() {
                     <p className="text-xs text-muted-foreground line-clamp-1">{res.tour.title}</p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <span className="font-medium text-emerald-600">+${res.totalPrice.toFixed(2)}</span>
-                    {res.status === 'PAID' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                    <span className="font-medium text-[#04321c]">+${res.totalPrice.toFixed(2)}</span>
+                    {res.status === 'PAID' && <CheckCircle2 className="w-4 h-4 text-[#04321c]" />}
                   </div>
                 </div>
               ))
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
             )}
             
             <div className="pt-2">
-              <Link href="/reservas" className="text-sm text-emerald-600 hover:underline font-medium">Ver todas las reservas &rarr;</Link>
+              <Link href="/reservas" className="text-sm text-[#04321c] hover:underline font-medium">Ver todas las reservas &rarr;</Link>
             </div>
           </div>
         </div>
