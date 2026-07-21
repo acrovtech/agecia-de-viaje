@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
 
   const sessionCookie = request.cookies.get('admin_session');
 
-  if (!sessionCookie || sessionCookie.value !== 'authenticated') {
+  if (!sessionCookie || (sessionCookie.value !== 'MASTER' && sessionCookie.value !== 'CLIENT')) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
