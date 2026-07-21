@@ -1,10 +1,27 @@
-import { Map, Calendar, Users, DollarSign, Activity, ArrowUpRight } from 'lucide-react';
+import { prisma } from '@repo/db';
+import { Map, Calendar, Users, DollarSign, Activity, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  // Aquí puedes cargar métricas reales desde Prisma. Por ahora usamos datos estáticos para diseño.
+  // Cargar métricas reales desde Prisma
+  const toursCount = await prisma.tour.count();
+  const reservationsCount = await prisma.reservation.count();
+  const blogsCount = await prisma.blog.count();
+  
+  const recentReservations = await prisma.reservation.findMany({
+    take: 4,
+    orderBy: { createdAt: 'desc' },
+    include: { tour: true }
+  });
+
+  const paidReservations = await prisma.reservation.findMany({
+    where: { status: 'PAID' }
+  });
+  
+  const totalRevenue = paidReservations.reduce((sum, res) => sum + res.totalPrice, 0);
+
   return (
     <main className="flex flex-1 flex-col gap-6">
       
@@ -17,10 +34,9 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-2xl font-bold">$14,231.00</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 text-emerald-500">
-              <ArrowUpRight className="h-3 w-3" />
-              +20.1% respecto al mes pasado
+            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              De reservas pagadas
             </p>
           </div>
         </div>
@@ -31,9 +47,9 @@ export default async function DashboardPage() {
             <Map className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-2xl font-bold">+12</div>
+            <div className="text-2xl font-bold">{toursCount}</div>
             <p className="text-xs text-muted-foreground">
-              4 nuevos publicados este mes
+              Tours registrados en la BD
             </p>
           </div>
         </div>
@@ -44,23 +60,22 @@ export default async function DashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-2xl font-bold">+48</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 text-emerald-500">
-              <ArrowUpRight className="h-3 w-3" />
-              +12% esta semana
+            <div className="text-2xl font-bold">{reservationsCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Reservas totales
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Clientes Activos</h3>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <h3 className="tracking-tight text-sm font-medium">Blogs Activos</h3>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">{blogsCount}</div>
             <p className="text-xs text-muted-foreground">
-              +201 usuarios únicos desde enero
+              Artículos publicados
             </p>
           </div>
         </div>
@@ -88,32 +103,26 @@ export default async function DashboardPage() {
             <h3 className="font-semibold leading-none tracking-tight">Actividad Reciente</h3>
             <p className="text-sm text-muted-foreground">Últimas reservas recibidas.</p>
           </div>
-          <div className="space-y-8 mt-4">
-            {/* Lista mock */}
-            <div className="flex items-center">
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">María González</p>
-                <p className="text-sm text-muted-foreground">maria.g@email.com</p>
-              </div>
-              <div className="ml-auto font-medium text-emerald-500">+$299.00</div>
-            </div>
-            <div className="flex items-center">
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">Carlos Silva</p>
-                <p className="text-sm text-muted-foreground">csilva@email.com</p>
-              </div>
-              <div className="ml-auto font-medium text-emerald-500">+$150.00</div>
-            </div>
-            <div className="flex items-center">
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">Elena Torres</p>
-                <p className="text-sm text-muted-foreground">etorres@email.com</p>
-              </div>
-              <div className="ml-auto font-medium text-emerald-500">+$450.00</div>
-            </div>
+          <div className="space-y-6 mt-4">
+            {recentReservations.length > 0 ? (
+              recentReservations.map((res) => (
+                <div key={res.id} className="flex items-center">
+                  <div className="ml-4 space-y-1">
+                    <p className="text-sm font-medium leading-none">{res.customerFirstName} {res.customerLastName}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{res.tour.title}</p>
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="font-medium text-emerald-600">+${res.totalPrice.toFixed(2)}</span>
+                    {res.status === 'PAID' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 py-4 text-center">No hay reservas recientes.</p>
+            )}
             
-            <div className="pt-4">
-              <Link href="#" className="text-sm text-primary hover:underline">Ver todas las reservas &rarr;</Link>
+            <div className="pt-2">
+              <Link href="/reservas" className="text-sm text-emerald-600 hover:underline font-medium">Ver todas las reservas &rarr;</Link>
             </div>
           </div>
         </div>

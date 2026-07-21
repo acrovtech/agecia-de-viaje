@@ -10,7 +10,7 @@ export function SidebarNav() {
   
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4 gap-1.5">
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300/70 mb-0.5">
+      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-0.5 mt-5 first:mt-0">
         Principal
       </div>
       <Link
@@ -18,15 +18,15 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname === "/" 
-            ? "bg-[#0B4354] text-white shadow-sm ring-1 ring-white/10" 
-            : "text-slate-300 hover:text-white hover:bg-emerald-900/40"
+            ? "bg-slate-900 text-white shadow-sm" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         )}
       >
-        <Compass className="h-4 w-4 text-emerald-400" />
+        <Compass className="h-4 w-4 opacity-70" />
         Dashboard
       </Link>
       
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300/70 mt-5 mb-0.5">
+      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-5 mb-0.5">
         Gestión de Contenido
       </div>
       <Link
@@ -34,11 +34,11 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/tours") 
-            ? "bg-[#0B4354] text-white shadow-sm ring-1 ring-white/10" 
-            : "text-slate-300 hover:text-white hover:bg-emerald-900/40"
+            ? "bg-slate-900 text-white shadow-sm" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         )}
       >
-        <Map className="h-4 w-4 text-emerald-400" />
+        <Map className="h-4 w-4 opacity-70" />
         Tours
       </Link>
       <Link
@@ -46,11 +46,11 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/blogs") 
-            ? "bg-[#0B4354] text-white shadow-sm ring-1 ring-white/10" 
-            : "text-slate-300 hover:text-white hover:bg-emerald-900/40"
+            ? "bg-slate-900 text-white shadow-sm" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         )}
       >
-        <PenTool className="h-4 w-4 text-emerald-400" />
+        <PenTool className="h-4 w-4 opacity-70" />
         Blogs
       </Link>
       <Link
@@ -58,15 +58,15 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/categories") 
-            ? "bg-[#0B4354] text-white shadow-sm ring-1 ring-white/10" 
-            : "text-slate-300 hover:text-white hover:bg-emerald-900/40"
+            ? "bg-slate-900 text-white shadow-sm" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         )}
       >
-        <Tags className="h-4 w-4 text-emerald-400" />
+        <Tags className="h-4 w-4 opacity-70" />
         Categorías
       </Link>
       
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300/70 mt-5 mb-0.5">
+      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-5 mb-0.5">
         Ventas & Operaciones
       </div>
       <Link
@@ -74,11 +74,11 @@ export function SidebarNav() {
         className={cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
           pathname?.startsWith("/reservas") 
-            ? "bg-[#0B4354] text-white shadow-sm ring-1 ring-white/10" 
-            : "text-slate-300 hover:text-white hover:bg-emerald-900/40"
+            ? "bg-slate-900 text-white shadow-sm" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         )}
       >
-        <Calendar className="h-4 w-4 text-emerald-400" />
+        <Calendar className="h-4 w-4 opacity-70" />
         Reservas
       </Link>
     </nav>
