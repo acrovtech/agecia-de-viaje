@@ -9,20 +9,18 @@ export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#062918] p-4 sm:p-6 relative">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 relative z-10 border border-slate-100">
+    <div className="min-h-screen w-full flex items-center justify-center bg-white p-4 sm:p-6 relative">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 relative z-10 border border-slate-200">
         
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-50 p-3 shadow-sm border border-slate-100 mb-4">
-            <Image 
-              src="/icon.svg" 
-              alt="Inca Bound Logo" 
-              width={40} 
-              height={40} 
-              className="object-contain" 
-            />
-          </div>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Image 
+            src="/icon.svg" 
+            alt="Inca Bound Logo" 
+            width={80} 
+            height={80} 
+            className="object-contain mb-6" 
+          />
           <h1 className="text-2xl font-bold text-[#062918] tracking-tight">
             Panel de Administración
           </h1>
@@ -51,7 +49,6 @@ export default function LoginPage() {
                 type="email"
                 name="email"
                 required
-                defaultValue="admin@incabound.com"
                 placeholder="correo@incabound.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#062918] focus:bg-white transition-all"
               />
