@@ -17,15 +17,15 @@ type Category = {
   name: string;
 };
 
-export function TourForm({ categories }: { categories: Category[] }) {
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [groupSize, setGroupSize] = useState(12);
-  const [itinerary, setItinerary] = useState([{ id: Date.now(), title: '', content: '' }]);
-  const [faqs, setFaqs] = useState([{ id: Date.now(), question: '', answer: '' }]);
-  const [description, setDescription] = useState('');
-  const [focusKeyphrase, setFocusKeyphrase] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
+export function TourForm({ categories, initialData }: { categories: Category[], initialData?: any }) {
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [slug, setSlug] = useState(initialData?.slug || '');
+  const [groupSize, setGroupSize] = useState(parseInt(initialData?.groupSize) || 12);
+  const [itinerary, setItinerary] = useState(initialData?.itineraries?.length ? initialData.itineraries.map((i: any) => ({ id: i.id || Date.now() + Math.random(), title: i.title, content: i.content })) : [{ id: Date.now(), title: '', content: '' }]);
+  const [faqs, setFaqs] = useState(initialData?.faqs?.length ? initialData.faqs.map((f: any) => ({ id: f.id || Date.now() + Math.random(), question: f.question, answer: f.answer })) : [{ id: Date.now(), question: '', answer: '' }]);
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [focusKeyphrase, setFocusKeyphrase] = useState(''); // not in schema natively
+  const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || '');
   const [activeTab, setActiveTab] = useState('info');
   const tabOrder = ['info', 'details', 'itinerary', 'media', 'publish'];
 
@@ -145,6 +145,7 @@ export function TourForm({ categories }: { categories: Category[] }) {
             TAB 1: INFO GENERAL (2 Columnas 70/30)
         ======================== */}
         <div hidden={activeTab !== 'info'} className="focus-visible:outline-none focus-visible:ring-0">
+          {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
           <div className="grid gap-4 lg:grid-cols-3 lg:gap-8 items-start">
             
             {/* Columna Izquierda (70%) */}
@@ -173,11 +174,11 @@ export function TourForm({ categories }: { categories: Category[] }) {
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
                   <div className="grid gap-2">
                     <Label htmlFor="duration" className="text-sm font-semibold">Duración</Label>
-                    <Input id="duration" name="duration" placeholder="Ej. 1 Día" className="bg-muted/30" />
+                    <Input id="duration" name="duration" defaultValue={initialData?.duration} placeholder="Ej. 1 Día" className="bg-muted/30" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="difficulty" className="text-sm font-semibold">Dificultad</Label>
-                    <Select name="difficulty">
+                    <Select name="difficulty" defaultValue={initialData?.difficulty}>
                       <SelectTrigger className="w-full h-9 bg-muted/30">
                         <SelectValue placeholder="Seleccionar..." />
                       </SelectTrigger>
@@ -190,7 +191,7 @@ export function TourForm({ categories }: { categories: Category[] }) {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="region" className="text-sm font-semibold">Región (Destino)</Label>
-                    <Select name="region">
+                    <Select name="region" defaultValue={initialData?.region}>
                       <SelectTrigger className="w-full h-9 bg-muted/30">
                         <SelectValue placeholder="Seleccionar..." />
                       </SelectTrigger>
@@ -206,7 +207,7 @@ export function TourForm({ categories }: { categories: Category[] }) {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="menuGroup" className="text-sm font-semibold">Grupo de Menú</Label>
-                    <Select name="menuGroup">
+                    <Select name="menuGroup" defaultValue={initialData?.menuGroup}>
                       <SelectTrigger className="w-full h-9 bg-muted/30">
                         <SelectValue placeholder="Opcional..." />
                       </SelectTrigger>
@@ -223,7 +224,7 @@ export function TourForm({ categories }: { categories: Category[] }) {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="altitude" className="text-sm font-semibold">Altitud</Label>
-                    <Input id="altitude" name="altitude" placeholder="3800 msnm" className="bg-muted/30" />
+                    <Input id="altitude" name="altitude" defaultValue={initialData?.altitude} placeholder="3800 msnm" className="bg-muted/30" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="groupSize" className="text-sm font-semibold">Grupo (Pax)</Label>
@@ -262,7 +263,7 @@ export function TourForm({ categories }: { categories: Category[] }) {
                     <Label className="font-semibold text-sm">Servicio Compartido</Label>
                   </div>
                   <div className="grid gap-2">
-                    <Input id="sharedPrice" name="sharedPrice" type="number" step="0.01" placeholder="Precio (USD)" className="bg-muted/30 h-9" />
+                    <Input id="sharedPrice" name="sharedPrice" type="number" step="0.01" defaultValue={initialData?.sharedPrice} placeholder="Precio (USD)" className="bg-muted/30 h-9" />
                   </div>
                 </div>
 
@@ -297,18 +298,18 @@ export function TourForm({ categories }: { categories: Category[] }) {
             <div className="grid gap-8 md:grid-cols-2">
               <div className="grid gap-3">
                 <Label htmlFor="inclusions" className="text-base font-semibold text-green-700">Incluye</Label>
-                <textarea id="inclusions" name="inclusions" rows={6} className="flex w-full rounded-md border border-green-200 bg-green-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2" placeholder="- Transporte turístico&#10;- Guía profesional..."></textarea>
+                <textarea id="inclusions" name="inclusions" defaultValue={initialData?.inclusions?.map((i:any) => i.content).join('\n')} rows={6} className="flex w-full rounded-md border border-green-200 bg-green-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2" placeholder="- Transporte turístico&#10;- Guía profesional..."></textarea>
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="exclusions" className="text-base font-semibold text-red-700">No Incluye</Label>
-                <textarea id="exclusions" name="exclusions" rows={6} className="flex w-full rounded-md border border-red-200 bg-red-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2" placeholder="- Propinas&#10;- Alimentación no mencionada..."></textarea>
+                <textarea id="exclusions" name="exclusions" defaultValue={initialData?.exclusions?.map((e:any) => e.content).join('\n')} rows={6} className="flex w-full rounded-md border border-red-200 bg-red-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2" placeholder="- Propinas&#10;- Alimentación no mencionada..."></textarea>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
             <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Recomendaciones</h3>
-            <textarea id="recommendations" name="recommendations" rows={4} className="flex w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="- Llevar bloqueador&#10;- Dinero extra..."></textarea>
+            <textarea id="recommendations" name="recommendations" defaultValue={initialData?.recommendations?.map((r:any) => r.content).join('\n')} rows={4} className="flex w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="- Llevar bloqueador&#10;- Dinero extra..."></textarea>
           </div>
 
         </div>
@@ -335,11 +336,11 @@ export function TourForm({ categories }: { categories: Category[] }) {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Input name={`itinerary_title_${index}`} placeholder="Ej. Llegada a Cusco y City Tour" required className="bg-background" />
+                        <Input name={`itinerary_title_${index}`} defaultValue={day.title} placeholder="Ej. Llegada a Cusco y City Tour" required className="bg-background" />
                       </div>
                       <div className="grid gap-2">
                         <Label>Actividades</Label>
-                        <textarea name={`itinerary_content_${index}`} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Describa las actividades de este día..."/>
+                        <textarea name={`itinerary_content_${index}`} defaultValue={day.content} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Describa las actividades de este día..."/>
                       </div>
                     </div>
                   </div>
@@ -367,11 +368,11 @@ export function TourForm({ categories }: { categories: Category[] }) {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Input name={`faq_question_${index}`} placeholder="Ej. ¿Hay oxígeno en el bus?" required className="bg-background" />
+                        <Input name={`faq_question_${index}`} defaultValue={faq.question} placeholder="Ej. ¿Hay oxígeno en el bus?" required className="bg-background" />
                       </div>
                       <div className="grid gap-2">
                         <Label>Respuesta</Label>
-                        <textarea name={`faq_answer_${index}`} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Sí, contamos con un balón de oxígeno..."/>
+                        <textarea name={`faq_answer_${index}`} defaultValue={faq.answer} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Sí, contamos con un balón de oxígeno..."/>
                       </div>
                     </div>
                   </div>

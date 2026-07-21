@@ -78,55 +78,64 @@ export async function createTour(formData: FormData) {
   const metaTitle = formData.get('metaTitle') as string;
   const metaDescription = formData.get('metaDescription') as string;
 
+  const id = formData.get('id') as string;
+
   if (!title || !slug) {
     throw new Error('Title and slug are required');
   }
 
-  await prisma.tour.create({
-    data: {
-      title,
-      slug,
-      description: description || '',
-      duration: duration || '',
-      altitude: altitude || '',
-      groupSize: groupSizeStr || '',
-      difficulty: difficulty || 'Fácil',
-      mapImage: (formData.get('mapImage') as string) || '',
-      region: region || null,
-      menuGroup: menuGroup || null,
-      hasSharedService,
-      sharedPrice,
-      hasPrivateService,
-      bannerImage: bannerImage || '',
-      cardImage: cardImage || '',
-      metaTitle: metaTitle || '',
-      metaDescription: metaDescription || '',
-      itineraries: itinerary.length > 0 ? {
-        create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index }))
-      } : undefined,
-      inclusions: inclusions ? {
-        create: inclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
-      } : undefined,
-      exclusions: exclusions ? {
-        create: exclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
-      } : undefined,
-      recommendations: recommendations ? {
-        create: recommendations.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index }))
-      } : undefined,
-      faqs: faqs.length > 0 ? {
-        create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index }))
-      } : undefined,
-      privatePricing: privatePricing.length > 0 ? {
-        create: privatePricing.map(p => ({ pax: p.pax, price: p.price }))
-      } : undefined,
-      images: galleryImages.length > 0 ? {
-        create: galleryImages.map((url, order) => ({ url, order }))
-      } : undefined,
-      categories: categoryIds.length > 0 ? {
-        connect: categoryIds.map(id => ({ id }))
-      } : undefined
-    },
-  });
+  const tourData = {
+    title,
+    slug,
+    description: description || '',
+    duration: duration || '',
+    altitude: altitude || '',
+    groupSize: groupSizeStr || '',
+    difficulty: difficulty || 'Fácil',
+    mapImage: (formData.get('mapImage') as string) || '',
+    region: region || null,
+    menuGroup: menuGroup || null,
+    hasSharedService,
+    sharedPrice,
+    hasPrivateService,
+    bannerImage: bannerImage || '',
+    cardImage: cardImage || '',
+    metaTitle: metaTitle || '',
+    metaDescription: metaDescription || '',
+  };
+
+  if (id) {
+    // Update existing
+    await prisma.tour.update({
+      where: { id },
+      data: {
+        ...tourData,
+        itineraries: { deleteMany: {}, create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) },
+        inclusions: { deleteMany: {}, create: inclusions ? inclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) : [] },
+        exclusions: { deleteMany: {}, create: exclusions ? exclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) : [] },
+        recommendations: { deleteMany: {}, create: recommendations ? recommendations.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) : [] },
+        faqs: { deleteMany: {}, create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) },
+        privatePricing: { deleteMany: {}, create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) },
+        images: { deleteMany: {}, create: galleryImages.map((url, order) => ({ url, order })) },
+        categories: { set: categoryIds.map(catId => ({ id: catId })) }
+      }
+    });
+  } else {
+    // Create new
+    await prisma.tour.create({
+      data: {
+        ...tourData,
+        itineraries: itinerary.length > 0 ? { create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) } : undefined,
+        inclusions: inclusions ? { create: inclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) } : undefined,
+        exclusions: exclusions ? { create: exclusions.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) } : undefined,
+        recommendations: recommendations ? { create: recommendations.split('\n').filter(Boolean).map((item, index) => ({ content: item.trim(), order: index })) } : undefined,
+        faqs: faqs.length > 0 ? { create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) } : undefined,
+        privatePricing: privatePricing.length > 0 ? { create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) } : undefined,
+        images: galleryImages.length > 0 ? { create: galleryImages.map((url, order) => ({ url, order })) } : undefined,
+        categories: categoryIds.length > 0 ? { connect: categoryIds.map(catId => ({ id: catId })) } : undefined
+      },
+    });
+  }
 
   revalidatePath('/tours');
   redirect('/tours');
