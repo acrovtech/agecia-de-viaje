@@ -77,12 +77,12 @@ export function Header() {
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-14">
         {/* Logo */}
         <Link href="/" className="flex items-center z-50">
-          <Image src="/logo.svg" alt="Inca Bound Logo" width={80} height={80} className="w-[54px] h-[54px] md:w-[70px] md:h-[70px] object-contain transition-all duration-300" priority />
+          <Image src="/logo.svg" alt="Inca Bound Logo" width={90} height={90} className="w-[60px] h-[60px] md:w-[78px] md:h-[78px] object-contain transition-all duration-300" priority />
         </Link>
 
         {/* Desktop Nav */}
         <nav 
-          className="hidden lg:flex items-center gap-20 text-white/70 font-medium text-base h-full relative"
+          className="hidden lg:flex items-center gap-20 text-white/70 font-medium text-[17px] h-full relative"
           onMouseLeave={() => setActiveMenu(null)}
         >
           <Link href="/" className="hover:text-white transition-colors py-4">Inicio</Link>
@@ -111,7 +111,7 @@ export function Header() {
             <span>Paquetes</span> <ChevronDown size={14} />
           </div>
 
-          <Link href="/transporte" className="hover:text-white transition-colors py-4">Transporte</Link>
+          <Link href="/transporte" className="hover:text-white transition-colors py-4">Solo Transporte</Link>
           <Link href="/blog" className="hover:text-white transition-colors py-4">Blogs</Link>
           <Link href="/nosotros" className="hover:text-white transition-colors py-4">Nosotros</Link>
           <Link href="/contacto" className="hover:text-white transition-colors py-4">Contáctanos</Link>
@@ -303,8 +303,8 @@ export function Header() {
         <div className={`flex items-center gap-6 text-sm z-50 transition-colors duration-300 ${isMobileMenuOpen ? 'text-gray-900' : 'text-white'}`}>
           {/* Cart Icon */}
           <Link href="/carrito" className="relative hover:text-[#2dd4bf] transition-colors">
-            <ShoppingCart size={20} />
-            <span className="absolute -top-2 -right-2 bg-[#2dd4bf] text-black text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            <ShoppingCart size={24} />
+            <span className="absolute -top-2 -right-2 bg-[#2dd4bf] text-black text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
           </Link>
 
           {/* Mobile Menu Toggle */}
@@ -339,7 +339,7 @@ export function Header() {
             <Link href="/tours" className="py-5 w-full text-center" onClick={() => setIsMobileMenuOpen(false)}>Destinos</Link>
             <ChevronDown size={18} className="absolute right-6 text-gray-400 pointer-events-none" />
           </div>
-          <Link href="/transporte" className="relative py-5 border-b border-gray-100" onClick={() => setIsMobileMenuOpen(false)}>Transporte</Link>
+          <Link href="/transporte" className="relative py-5 border-b border-gray-100" onClick={() => setIsMobileMenuOpen(false)}>Solo Transporte</Link>
           <Link href="/blog" className="relative py-5 border-b border-gray-100" onClick={() => setIsMobileMenuOpen(false)}>Blogs</Link>
           <Link href="/nosotros" className="relative py-5 border-b border-gray-100" onClick={() => setIsMobileMenuOpen(false)}>Nosotros</Link>
           <Link href="/contacto" className="relative py-5 border-b border-gray-100" onClick={() => setIsMobileMenuOpen(false)}>Contacto</Link>

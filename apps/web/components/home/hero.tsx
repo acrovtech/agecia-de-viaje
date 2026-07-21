@@ -54,9 +54,9 @@ export function Hero() {
       </div>
 
       {/* Bottom Badges */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:-translate-x-0 lg:right-8 z-30 flex items-center justify-center gap-2 md:gap-4 scale-[0.75] sm:scale-[0.85] md:scale-100 lg:scale-110 lg:origin-bottom-right w-full lg:w-auto">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:-translate-x-0 lg:right-8 z-30 flex items-center justify-center gap-3 md:gap-5 scale-[0.9] sm:scale-100 md:scale-110 lg:scale-[1.35] lg:origin-bottom-right w-full lg:w-auto">
         <Image src="/wta-2024.png" alt="Travel Awards" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" unoptimized={true} />
-        <a href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 md:gap-4">
+        <a href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 md:gap-5">
           <Image src="/ta-2022.svg" alt="Tripadvisor 2022" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
           <Image src="/ta-2023.svg" alt="Tripadvisor 2023" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
           <Image src="/ta-2024.svg" alt="Tripadvisor 2024" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
