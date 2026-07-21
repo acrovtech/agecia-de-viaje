@@ -402,10 +402,10 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
             </div>
             
             {/* Columna Derecha (Ocupa 1 espacio): Mapa */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8 xl:col-span-1">
+            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8 xl:col-span-1 flex flex-col">
               <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Mapa</h3>
-              <div className="grid gap-6 h-full">
-                <ImageDropzone name="mapImage" label="Subir imagen del mapa" />
+              <div className="flex-1 flex flex-col gap-6">
+                <ImageDropzone name="mapImage" label="Subir imagen del mapa" className="flex-1" />
               </div>
             </div>
           </div>
