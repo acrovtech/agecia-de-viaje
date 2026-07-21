@@ -73,7 +73,7 @@ export function Header() {
   }, [activeMenu]);
 
   return (
-    <header className={`left-0 w-full z-50 py-4 transition-colors duration-300 ${isMobileMenuOpen ? 'fixed top-0 bg-white shadow-md' : 'absolute top-0'}`}>
+    <header className={`left-0 w-full z-50 py-4 mt-[10px] transition-colors duration-300 ${isMobileMenuOpen ? 'fixed top-0 bg-white shadow-md' : 'absolute top-0'}`}>
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-14">
         {/* Logo */}
         <Link href="/" className="flex items-center z-50">
