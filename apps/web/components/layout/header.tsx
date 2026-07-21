@@ -82,7 +82,7 @@ export function Header() {
 
         {/* Desktop Nav */}
         <nav 
-          className="hidden lg:flex items-center gap-20 text-white/70 font-medium text-[17px] h-full relative"
+          className="hidden lg:flex items-center gap-16 text-white/70 font-medium text-[17px] h-full relative"
           onMouseLeave={() => setActiveMenu(null)}
         >
           <Link href="/" className="hover:text-white transition-colors py-4">Inicio</Link>
