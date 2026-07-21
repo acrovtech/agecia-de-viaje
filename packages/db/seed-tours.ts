@@ -83,11 +83,14 @@ async function main() {
     let groupSize = 'Compartido: 19 pasajeros';
 
     if (infoText) {
-      if (infoText.match(/Duración[\s:]+(.*?)(?:Altitud|Tamaño|Dificultad)/i)) {
-        duration = infoText.match(/Duración[\s:]+(.*?)(?:Altitud|Tamaño|Dificultad)/i)[1].trim();
+      if (infoText.match(/Duración[\s:]+(.*?)(?:Altitud|Tamaño|Dificultad|Tipo)/i)) {
+        duration = infoText.match(/Duración[\s:]+(.*?)(?:Altitud|Tamaño|Dificultad|Tipo)/i)[1].trim();
       }
-      if (infoText.match(/Dificultad[\s:]+(.*?)(?:$)/i)) {
-        difficulty = infoText.match(/Dificultad[\s:]+(.*?)(?:$)/i)[1].trim();
+      if (infoText.match(/Tamaño del grupo[\s:]+(.*?)(?:Dificultad|Tipo|$)/i)) {
+        groupSize = infoText.match(/Tamaño del grupo[\s:]+(.*?)(?:Dificultad|Tipo|$)/i)[1].trim();
+      }
+      if (infoText.match(/Dificultad[\s:]+(.*?)(?:Tipo de servicio|Tipo|$)/i)) {
+        difficulty = infoText.match(/Dificultad[\s:]+(.*?)(?:Tipo de servicio|Tipo|$)/i)[1].trim();
       }
     }
 
