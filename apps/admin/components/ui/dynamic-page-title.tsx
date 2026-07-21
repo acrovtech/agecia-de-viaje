@@ -1,15 +1,26 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { usePageTitle } from './title-context';
 
 export function DynamicPageTitle() {
   const pathname = usePathname();
+  const { title: customTitle } = usePageTitle();
   
   let title = 'Panel de Control';
   let showBack = false;
   let backUrl = '/';
 
-  if (pathname === '/') {
+  if (customTitle) {
+    title = customTitle;
+    if (pathname?.startsWith('/tours/')) {
+      showBack = true;
+      backUrl = '/tours';
+    } else if (pathname?.startsWith('/blogs/')) {
+      showBack = true;
+      backUrl = '/blogs';
+    }
+  } else if (pathname === '/') {
     title = 'Dashboard';
   } else if (pathname === '/tours') {
     title = 'Listado de Tours';
