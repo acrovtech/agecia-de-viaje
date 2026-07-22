@@ -184,7 +184,7 @@ export function Header() {
                     {destinoView === 'cusco' && (
                       <div className="flex flex-col w-full h-full animate-in fade-in slide-in-from-right-8 duration-300 px-6 pb-4">
                         <h2 className="text-center text-xl font-bold tracking-widest mb-6 mt-4">CUSCO</h2>
-                        <div className="grid grid-cols-4 gap-8 flex-1">                          <div>
+                        <div className="grid grid-cols-4 gap-5 flex-1">                          <div>
                             <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Full Day</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {[
