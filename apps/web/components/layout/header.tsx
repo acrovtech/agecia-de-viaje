@@ -118,7 +118,7 @@ export function Header() {
 
           {activeMenu && (
             <div className="absolute top-full left-0 w-full pt-2 z-50">
-              <div className="bg-black/80 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-2xl text-white">
+              <div className="bg-black/50 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-2xl text-white">
                 
                 {/* Content for Destinos */}
                 {activeMenu === 'destinos' && (
@@ -192,7 +192,7 @@ export function Header() {
                                 "Palcoyo (N)", "Queshuachaca (N)", "Waqrapukara (N)"
                               ].map(title => (
                                 <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
-                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 border-b border-white/20 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
                                     {title}
                                   </Link>
                                 </li>
@@ -206,7 +206,7 @@ export function Header() {
                                 "Cusco 3 Días", "Cusco 4 Días", "Cusco 5 Días", "Cusco 6 Días (N)", "Cusco 7 Días"
                               ].map(title => (
                                 <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
-                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 border-b border-white/20 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
                                     {title}
                                   </Link>
                                 </li>
@@ -220,7 +220,7 @@ export function Header() {
                                 "City Tour Cusco", "Circuito Valle Sur", "Maras - Moray - Salineras", "Morada de los Dioses (N)"
                               ].map(title => (
                                 <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
-                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 border-b border-white/20 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
                                     {title}
                                   </Link>
                                 </li>
@@ -234,7 +234,7 @@ export function Header() {
                                 "Rafting (N)", "Cabalgata (N)", "Cuatrimotos (N)"
                               ].map(title => (
                                 <li key={title} className="my-2 transition-all duration-300 hover:translate-x-2">
-                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
+                                  <Link href={`/tours/${title.toLowerCase().replace(/ \(n\)$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="block py-2 pl-4 border-l-4 border-white/70 border-b border-white/20 rounded-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white/80 hover:text-white text-sm">
                                     {title}
                                   </Link>
                                 </li>
