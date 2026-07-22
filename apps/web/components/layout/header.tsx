@@ -116,10 +116,9 @@ export function Header() {
           <Link href="/nosotros" className="hover:text-white transition-colors py-4">Nosotros</Link>
           <Link href="/contacto" className="hover:text-white transition-colors py-4">Contáctanos</Link>
 
-          {/* Global Megamenu Container */}
           {activeMenu && (
             <div className="absolute top-full left-0 w-full pt-2 z-50">
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-2xl text-white">
+              <div className="bg-black/80 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-2xl text-white">
                 
                 {/* Content for Destinos */}
                 {activeMenu === 'destinos' && (
@@ -185,7 +184,7 @@ export function Header() {
                       <div className="flex flex-col w-full h-full animate-in fade-in slide-in-from-right-8 duration-300 px-6 pb-4">
                         <h2 className="text-center text-xl font-bold tracking-widest mb-6 mt-4">CUSCO</h2>
                         <div className="grid grid-cols-4 gap-5 flex-1">                          <div>
-                            <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Full Day</h3>
+                            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Full Day</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {[
                                 "Machu Picchu (N)", "Valle Sagrado VIP", "Quelcaya (N)", 
@@ -201,7 +200,7 @@ export function Header() {
                             </ul>
                           </div>
                           <div>
-                            <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Paquetes</h3>
+                            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Paquetes</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {[
                                 "Cusco 3 Días", "Cusco 4 Días", "Cusco 5 Días", "Cusco 6 Días (N)", "Cusco 7 Días"
@@ -215,7 +214,7 @@ export function Header() {
                             </ul>
                           </div>
                           <div>
-                            <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Medio Día</h3>
+                            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Medio Día</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {[
                                 "City Tour Cusco", "Circuito Valle Sur", "Maras - Moray - Salineras", "Morada de los Dioses (N)"
@@ -229,7 +228,7 @@ export function Header() {
                             </ul>
                           </div>
                           <div>
-                            <h3 className="font-bold text-sm uppercase tracking-wider mb-6">Aventura</h3>
+                            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Aventura</h3>
                             <ul className="flex flex-col max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                               {[
                                 "Rafting (N)", "Cabalgata (N)", "Cuatrimotos (N)"
