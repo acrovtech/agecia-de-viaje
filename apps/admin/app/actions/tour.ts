@@ -44,11 +44,11 @@ export async function createTour(formData: FormData) {
   const difficulty = formData.get('difficulty') as string;
   const mapEmbedUrl = formData.get('mapEmbedUrl') as string;
   
-  // Grouping
+  // Grouping & Featured
   const region = formData.get('region') as string;
   let menuGroup = formData.get('menuGroup') as string;
   if (menuGroup === 'none') menuGroup = '';
-  
+  const isFeatured = formData.get('isFeatured') === 'true';
   
   // Categories
   const categoryIds = formData.getAll('categories') as string[];
@@ -66,17 +66,31 @@ export async function createTour(formData: FormData) {
     }
   }
 
+  // Helper to strictly extract string values for media fields
+  const parseStringValue = (fieldName: string, fallback: string = ''): string => {
+    const urlInput = formData.get(`${fieldName}_url`);
+    if (typeof urlInput === 'string' && urlInput.trim()) {
+      return urlInput.trim();
+    }
+    const val = formData.get(fieldName);
+    if (typeof val === 'string' && val.trim()) {
+      return val.trim();
+    }
+    return fallback;
+  };
+
   // Media & SEO
-  const bannerImage = formData.get('bannerImage') as string;
-  const cardImage = formData.get('cardImage') as string;
-  const galleryImage1 = formData.get('galleryImage_1') as string;
-  const galleryImage2 = formData.get('galleryImage_2') as string;
-  const galleryImage3 = formData.get('galleryImage_3') as string;
-  const galleryImage4 = formData.get('galleryImage_4') as string;
+  const bannerImage = parseStringValue('bannerImage', '');
+  const cardImage = parseStringValue('cardImage', '');
+  const mapImage = parseStringValue('mapImage', '');
+  const galleryImage1 = parseStringValue('galleryImage_1', '');
+  const galleryImage2 = parseStringValue('galleryImage_2', '');
+  const galleryImage3 = parseStringValue('galleryImage_3', '');
+  const galleryImage4 = parseStringValue('galleryImage_4', '');
   const galleryImages = [galleryImage1, galleryImage2, galleryImage3, galleryImage4].filter(Boolean);
   
-  const metaTitle = formData.get('metaTitle') as string;
-  const metaDescription = formData.get('metaDescription') as string;
+  const metaTitle = (formData.get('metaTitle') as string) || '';
+  const metaDescription = (formData.get('metaDescription') as string) || '';
 
   const id = formData.get('id') as string;
 
@@ -92,16 +106,17 @@ export async function createTour(formData: FormData) {
     altitude: altitude || '',
     groupSize: groupSizeStr || '',
     difficulty: difficulty || 'Fácil',
-    mapImage: (formData.get('mapImage') as string) || '',
+    mapImage,
     region: region || null,
     menuGroup: menuGroup || null,
+    isFeatured,
     hasSharedService,
     sharedPrice,
     hasPrivateService,
-    bannerImage: bannerImage || '',
-    cardImage: cardImage || '',
-    metaTitle: metaTitle || '',
-    metaDescription: metaDescription || '',
+    bannerImage,
+    cardImage,
+    metaTitle,
+    metaDescription,
   };
 
   if (id) {
@@ -138,6 +153,7 @@ export async function createTour(formData: FormData) {
   }
 
   revalidatePath('/tours');
+  revalidatePath(`/tours/${slug}`);
   redirect('/tours');
 }
 

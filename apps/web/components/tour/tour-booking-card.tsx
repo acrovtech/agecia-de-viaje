@@ -1,30 +1,16 @@
 'use client';
 
-import { CalendarDays, Users, ChevronRight, ShieldCheck } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { Calendar } from '../ui/calendar';
 import { useRouter } from 'next/navigation';
 
-export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tourTitle: string, slug: string, price: number, privatePrice?: number }) {
-  const [pax, setPax] = useState(2);
+export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tourTitle: string, slug: string, price: number, privatePrice?: number | null }) {
+  const [pax, setPax] = useState(1);
   const [serviceType, setServiceType] = useState<'shared' | 'private'>('shared');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const calendarRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setShowCalendar(false);
-      }
-    }
-    if (showCalendar) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showCalendar]);
 
   const currentPrice = serviceType === 'private' && privatePrice ? privatePrice : price;
 
@@ -77,34 +63,27 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tour
         <span className="text-sm text-gray-500 ml-1">por persona</span>
       </div>
 
-      <div className="space-y-4 mb-8">
-        {/* Date Selector */}
-        <div className="relative" ref={calendarRef}>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Fecha de Viaje</label>
-          <button 
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-white hover:border-[#062918] transition-colors"
-          >
-            <span className={`font-medium ${selectedDate ? 'text-gray-900' : 'text-gray-400'}`}>
-              {selectedDate 
-                ? selectedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-                : 'Seleccionar Fecha'}
-            </span>
-            <CalendarDays size={18} className={selectedDate ? 'text-[#062918]' : 'text-gray-400'} />
-          </button>
+      <div className="space-y-6 mb-8">
+        {/* Inline Embedded Calendar */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha de Viaje</label>
+            {selectedDate && (
+              <span className="text-xs font-semibold text-[#062918] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                {selectedDate.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            )}
+          </div>
           
-          {showCalendar && (
-            <div className="absolute top-full left-0 mt-2 w-full z-50">
-              <Calendar 
-                selectedDate={selectedDate} 
-                onSelect={(date) => {
-                  setSelectedDate(date);
-                  setShowCalendar(false);
-                  setError(null);
-                }} 
-              />
-            </div>
-          )}
+          <div className="border border-gray-100 rounded-xl overflow-hidden shadow-2xs">
+            <Calendar 
+              selectedDate={selectedDate} 
+              onSelect={(date) => {
+                setSelectedDate(date);
+                setError(null);
+              }} 
+            />
+          </div>
           {error && <p className="text-red-500 text-xs font-medium mt-2">{error}</p>}
         </div>
 

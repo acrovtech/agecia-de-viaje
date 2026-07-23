@@ -34,6 +34,7 @@ export function CheckoutForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [formToken, setFormToken] = useState<string | null>(null);
+  const [reservationId, setReservationId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +57,7 @@ export function CheckoutForm() {
 
       if (result.success && result.formToken) {
         setFormToken(result.formToken);
+        setReservationId(result.reservationId);
       } else {
         alert("Ocurrió un error al procesar tu reserva.");
       }
@@ -229,8 +231,17 @@ export function CheckoutForm() {
                       Cuando configures <code>IZIPAY_PUBLIC_KEY</code>, aquí aparecerá el formulario real.
                     </p>
                     <button 
-                      onClick={() => window.location.href = `/tours?pago=simulado`}
-                      className="mt-6 px-6 py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors"
+                      onClick={async () => {
+                        if (reservationId) {
+                          await fetch('/api/payments/simulate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reservationId })
+                          });
+                        }
+                        window.location.href = `/tours?pago=simulado&reserva=${reservationId || ''}`;
+                      }}
+                      className="mt-6 px-6 py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors cursor-pointer"
                     >
                       Simular Pago Exitoso
                     </button>

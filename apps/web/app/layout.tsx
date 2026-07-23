@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={cn(inter.variable, poppins.variable)}>
-      <body className="min-h-screen bg-background font-sans antialiased">
+    <html lang="es" className={cn(inter.variable, poppins.variable)} suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
         {children}
         <WhatsappButton />
       </body>

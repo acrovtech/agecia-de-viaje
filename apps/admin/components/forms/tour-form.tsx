@@ -1,91 +1,239 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Map, Tag, Save, AlertCircle, X, Loader2, ExternalLink } from 'lucide-react';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { createTour } from '../../app/actions/tour';
+import { createTour, deleteTour } from '../../app/actions/tour';
 
 type Category = {
   id: string;
   name: string;
 };
 
+interface ItineraryItem {
+  id: number;
+  title: string;
+  content: string;
+}
+
+interface FaqItem {
+  id: number;
+  question: string;
+  answer: string;
+}
+
+function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    target.style.height = 'auto';
+    target.style.height = `${target.scrollHeight}px`;
+    if (props.onInput) props.onInput(e);
+  };
+
+  return (
+    <textarea
+      {...props}
+      ref={(el) => {
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = `${el.scrollHeight}px`;
+        }
+      }}
+      onInput={handleInput}
+      className={`flex w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs focus:border-slate-900 focus:outline-none placeholder:text-slate-400 text-slate-800 transition-all resize-none overflow-hidden ${props.className || ''}`}
+    />
+  );
+}
+
+function SubmitSaveButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button 
+      type="submit" 
+      disabled={pending}
+      className="px-3.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-[#1a1a1a] font-[550] text-[12px] leading-[16px] shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-75 cursor-pointer select-none"
+    >
+      {pending && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-800" />}
+      <span>{pending ? 'Guardando...' : 'Guardar'}</span>
+    </button>
+  );
+}
+
 export function TourForm({ categories, initialData }: { categories: Category[], initialData?: any }) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
   const [groupSize, setGroupSize] = useState(parseInt(initialData?.groupSize) || 12);
-  const [itinerary, setItinerary] = useState(initialData?.itineraries?.length ? initialData.itineraries.map((i: any) => ({ id: i.id || Date.now() + Math.random(), title: i.title, content: i.content })) : [{ id: Date.now(), title: '', content: '' }]);
-  const [faqs, setFaqs] = useState(initialData?.faqs?.length ? initialData.faqs.map((f: any) => ({ id: f.id || Date.now() + Math.random(), question: f.question, answer: f.answer })) : [{ id: Date.now(), question: '', answer: '' }]);
+  const [status, setStatus] = useState<'Active' | 'Draft'>('Active');
+  const [isFeatured, setIsFeatured] = useState<'Active' | 'Draft'>(
+    initialData?.isFeatured ? 'Active' : 'Draft'
+  );
+  const [itinerary, setItinerary] = useState<ItineraryItem[]>(
+    initialData?.itineraries?.length
+      ? initialData.itineraries.map((i: any) => ({ id: i.id || Date.now() + Math.random(), title: i.title, content: i.content }))
+      : [{ id: Date.now(), title: '', content: '' }]
+  );
+  const [faqs, setFaqs] = useState<FaqItem[]>(
+    initialData?.faqs?.length
+      ? initialData.faqs.map((f: any) => ({ id: f.id || Date.now() + Math.random(), question: f.question, answer: f.answer }))
+      : [{ id: Date.now(), question: '', answer: '' }]
+  );
   const [description, setDescription] = useState(initialData?.description || '');
-  const [focusKeyphrase, setFocusKeyphrase] = useState(''); // not in schema natively
+  const [focusKeyphrase, setFocusKeyphrase] = useState(initialData?.title ? `Tour ${initialData.title}` : '');
   const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || '');
-  const [activeTab, setActiveTab] = useState('info');
-  const tabOrder = ['info', 'details', 'itinerary', 'media', 'publish'];
+  const [hasPrivateService, setHasPrivateService] = useState<boolean>(
+    Boolean(initialData?.hasPrivateService || initialData?.privatePricing?.length > 0)
+  );
 
-  // TODO: Recibir de los props si el tour ya está publicado o es edición
-  const isPublished = false;
+  // Estado para el modal de confirmación de eliminación estilo Shopify
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isModalAnimating, setIsModalAnimating] = useState(false);
 
-  // Analítica estilo RankMath (múltiples keywords)
-  const getSeoAnalysis = () => {
-    if (!focusKeyphrase) return { status: 'Sin frase clave', color: 'text-muted-foreground', results: [] };
-    const results = [];
-    let score = 0;
-    
-    const keywords = focusKeyphrase.split(',').map(k => k.toLowerCase().trim()).filter(k => k.length > 0);
-    if (keywords.length === 0) return { status: 'Sin frase clave', color: 'text-muted-foreground', results: [] };
-
-    const primaryKeyword = keywords[0];
-
-    if (primaryKeyword && title.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en el Título', type: 'good' }); score++; }
-    else { results.push({ text: 'Falta la palabra clave principal en el Título del tour', type: 'bad' }); }
-
-    if (primaryKeyword && metaDescription.toLowerCase().includes(primaryKeyword)) { results.push({ text: 'Palabra clave principal en la Meta Descripción', type: 'good' }); score++; }
-    else { results.push({ text: 'Falta la palabra clave principal en la Meta Descripción', type: 'bad' }); }
-
-    if (keywords.length > 1) { results.push({ text: `Optimizando para ${keywords.length} palabras clave diferentes`, type: 'good' }); score++; }
-
-    if (metaDescription.length >= 120 && metaDescription.length <= 160) { results.push({ text: 'Longitud de la Meta Descripción: ¡Excelente!', type: 'good' }); score++; }
-    else { results.push({ text: 'Longitud de la descripción: Trata de mantenerla entre 120 y 160 caracteres', type: 'bad' }); }
-
-    let status = score >= 3 ? 'Bueno' : score >= 2 ? 'Aceptable' : 'Por mejorar';
-    let color = score >= 3 ? 'text-green-600' : score >= 2 ? 'text-yellow-600' : 'text-destructive';
-    return { status, color, results };
+  const openDeleteModal = () => {
+    setShowDeleteModal(true);
+    setTimeout(() => setIsModalAnimating(true), 10);
   };
 
-  const getReadabilityAnalysis = () => {
-    const allText = description;
-    if (allText.trim().length === 0) return { status: 'Sin contenido', color: 'text-muted-foreground', results: [] };
-    
-    const results = [];
+  const closeDeleteModal = () => {
+    setIsModalAnimating(false);
+    setTimeout(() => setShowDeleteModal(false), 200);
+  };
+
+  // Estado para detectar si hubo cambios en el formulario
+  const [isDirty, setIsDirty] = useState(false);
+
+  const [isDeleting, startDeleteTransition] = useTransition();
+
+  // Estado para acordeones en el Admin
+  const [openItineraryDays, setOpenItineraryDays] = useState<Record<number, boolean>>({ 0: true });
+  const [openFaqs, setOpenFaqs] = useState<Record<number, boolean>>({ 0: true });
+
+  const toggleItineraryDay = (index: number) => {
+    setOpenItineraryDays(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const toggleFaqItem = (index: number) => {
+    setOpenFaqs(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const handleDeleteTour = () => {
+    if (!initialData?.id) return;
+    startDeleteTransition(async () => {
+      const res = await deleteTour(initialData.id);
+      if (res.success) {
+        window.location.href = '/tours';
+      } else {
+        alert('Error al eliminar el tour.');
+        setShowDeleteModal(false);
+      }
+    });
+  };
+
+  // Algoritmo de Inteligencia SEO estilo Yoast / RankMath (Google NLP Tokenization)
+  const getSeoAnalysis = () => {
     let score = 0;
-    const sentences = allText.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = allText.split(/\s+/).filter(w => w.trim().length > 0);
+    const results: { text: string; type: 'good' | 'bad' }[] = [];
+    
+    if (!focusKeyphrase.trim()) {
+      return {
+        level: 'Pendiente',
+        status: 'Sin clave',
+        color: 'text-slate-400',
+        badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200',
+        results: [{ text: 'Ingresa una palabra clave para activar el análisis SEO', type: 'bad' as const }]
+      };
+    }
 
-    const longSentences = sentences.filter(s => s.split(/\s+/).length > 20).length;
-    if ((longSentences / Math.max(sentences.length, 1)) < 0.25) { results.push({ text: 'Longitud de las oraciones: ¡Genial!', type: 'good' }); score++; }
-    else { results.push({ text: 'Demasiadas oraciones largas. Intenta acortarlas.', type: 'bad' }); }
+    const STOP_WORDS = new Set(['tour', 'tours', 'de', 'del', 'el', 'la', 'los', 'las', 'en', 'para', 'por', 'un', 'una', 'y', 'a', 'con', 'dia', 'dias', 'full', 'day']);
 
-    const longWords = words.filter(w => w.length > 10).length;
-    if (longWords < words.length * 0.2) { results.push({ text: 'Complejidad: Vocabulario adecuado para audiencia general', type: 'good' }); score++; }
-    else { results.push({ text: 'Vocabulario complejo. Usa palabras más sencillas.', type: 'bad' }); }
+    const normalizeText = (text: string) => 
+      text.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '');
 
-    if (words.length > 50) { results.push({ text: 'Cantidad de texto en la descripción: Suficiente', type: 'good' }); score++; }
-    else { results.push({ text: 'Poco texto. Añade más detalles a la descripción.', type: 'bad' }); }
+    const keyphraseNormalized = normalizeText(focusKeyphrase);
+    const keyphraseTokens = keyphraseNormalized.split(/\s+/).filter(t => t.length > 0);
+    const coreKeyTokens = keyphraseTokens.filter(t => !STOP_WORDS.has(t) && t.length > 1);
+    const targetTokens = coreKeyTokens.length > 0 ? coreKeyTokens : keyphraseTokens;
 
-    let status = score >= 3 ? 'Óptimo' : score >= 2 ? 'Aceptable' : 'Por mejorar';
-    let color = score >= 3 ? 'text-green-600' : score >= 2 ? 'text-yellow-600' : 'text-destructive';
-    return { status, color, results };
+    const titleNormalized = normalizeText(title);
+    const descNormalized = normalizeText(metaDescription);
+    const slugNormalized = normalizeText(slug);
+
+    // 1. Análisis en el Título (Flexible Word Overlap estilo Yoast)
+    const titleMatchCount = targetTokens.filter(t => titleNormalized.includes(t)).length;
+    const isTitleMatched = targetTokens.length > 0 && titleMatchCount >= Math.ceil(targetTokens.length * 0.7);
+
+    if (isTitleMatched) {
+      results.push({ text: 'Palabra clave presente en el Título del tour', type: 'good' });
+      score += 2;
+    } else {
+      results.push({ text: 'Falta la palabra clave o sus términos principales en el Título', type: 'bad' });
+    }
+
+    // 2. Análisis en la Meta Descripción
+    const descMatchCount = targetTokens.filter(t => descNormalized.includes(t)).length;
+    const isDescMatched = targetTokens.length > 0 && descMatchCount >= Math.ceil(targetTokens.length * 0.7);
+
+    if (isDescMatched) {
+      results.push({ text: 'Palabra clave presente en la Meta Descripción', type: 'good' });
+      score += 2;
+    } else {
+      results.push({ text: 'Falta la palabra clave o sus términos principales en la Meta Descripción', type: 'bad' });
+    }
+
+    // 3. Análisis en la URL / Slug
+    const isSlugMatched = targetTokens.length > 0 && targetTokens.some(t => slugNormalized.includes(t));
+    if (isSlugMatched) {
+      results.push({ text: 'Términos clave presentes en la URL (Slug)', type: 'good' });
+      score += 1;
+    }
+
+    // 4. Longitud de la Meta Descripción (Yoast Standard: 110 - 160 caracteres)
+    if (metaDescription.length >= 110 && metaDescription.length <= 160) {
+      results.push({ text: `Longitud de Meta Descripción óptima (${metaDescription.length}/160)`, type: 'good' });
+      score += 2;
+    } else if (metaDescription.length > 160) {
+      results.push({ text: `Meta Descripción muy larga (${metaDescription.length}/160). Google la recortará`, type: 'bad' });
+    } else if (metaDescription.length > 0) {
+      results.push({ text: `Meta Descripción corta (${metaDescription.length}/160). Ideal: 110-160`, type: 'bad' });
+    } else {
+      results.push({ text: 'Falta ingresar la Meta Descripción', type: 'bad' });
+    }
+
+    // 5. Longitud del Título (Yoast Standard: 25 - 60 caracteres)
+    if (title.length >= 25 && title.length <= 60) {
+      results.push({ text: 'Longitud del Título ideal para resultados de Google', type: 'good' });
+      score += 1;
+    }
+
+    const badCount = results.filter(r => r.type === 'bad').length;
+
+    // Evaluación Final Estilo Yoast / RankMath (Requiere 0 observaciones rojas para ser Excelente)
+    let level: 'Bajo' | 'Aceptable' | 'Excelente' = 'Bajo';
+    let badgeClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+    let color = 'text-rose-600';
+
+    if (score >= 5 && badCount === 0) {
+      level = 'Excelente';
+      badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      color = 'text-emerald-600';
+    } else if (score >= 3 || (score >= 2 && badCount <= 1)) {
+      level = 'Aceptable';
+      badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
+      color = 'text-amber-600';
+    }
+
+    return { level, status: level, color, badgeClass, results };
   };
 
   const seoAnalysis = getSeoAnalysis();
-  const readabilityAnalysis = getReadabilityAnalysis();
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
@@ -105,448 +253,664 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
     setGroupSize(isNaN(val) || val < 1 ? 1 : val);
   };
 
-  const addItineraryDay = () => setItinerary([...itinerary, { id: Date.now(), title: '', content: '' }]);
-  const removeItineraryDay = (idToRemove: number) => setItinerary(itinerary.filter((d) => d.id !== idToRemove));
+  const addItineraryDay = () => {
+    const newIndex = itinerary.length;
+    setItinerary([...itinerary, { id: Date.now(), title: '', content: '' }]);
+    setOpenItineraryDays(prev => ({ ...prev, [newIndex]: true }));
+    setIsDirty(true);
+  };
 
-  const addFaq = () => setFaqs([...faqs, { id: Date.now(), question: '', answer: '' }]);
-  const removeFaq = (idToRemove: number) => setFaqs(faqs.filter((d) => d.id !== idToRemove));
+  const removeItineraryDay = (idToRemove: number) => {
+    setItinerary(itinerary.filter((d: ItineraryItem) => d.id !== idToRemove));
+    setIsDirty(true);
+  };
+
+  const addFaq = () => {
+    const newIndex = faqs.length;
+    setFaqs([...faqs, { id: Date.now(), question: '', answer: '' }]);
+    setOpenFaqs(prev => ({ ...prev, [newIndex]: true }));
+    setIsDirty(true);
+  };
+
+  const removeFaq = (idToRemove: number) => {
+    setFaqs(faqs.filter((d: FaqItem) => d.id !== idToRemove));
+    setIsDirty(true);
+  };
 
   return (
-    <form action={createTour} className="flex-1 w-full pb-20 lg:pb-0">
+    <form 
+      action={createTour} 
+      onChange={() => setIsDirty(true)}
+      onInput={() => setIsDirty(true)}
+      className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none"
+    >
+      {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        {/* Navegación de Tabs */}
-        <div className="mb-8">
-          <TabsList className="flex w-full justify-start h-auto bg-transparent p-0 gap-2 md:gap-4 rounded-none border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <TabsTrigger value="info" className="py-3 px-2 -mb-[1px] text-sm md:text-base rounded-none border-x-0 border-t-0 border-b-2 border-b-transparent aria-selected:border-b-primary aria-selected:text-primary bg-transparent aria-selected:bg-transparent shadow-none aria-selected:shadow-none whitespace-nowrap">
-              <span className="lg:hidden">{activeTab === 'info' ? '1. Info General' : '1'}</span>
-              <span className="hidden lg:inline">1. Info General</span>
-            </TabsTrigger>
-            <TabsTrigger value="details" className="py-3 px-2 -mb-[1px] text-sm md:text-base rounded-none border-x-0 border-t-0 border-b-2 border-b-transparent aria-selected:border-b-primary aria-selected:text-primary bg-transparent aria-selected:bg-transparent shadow-none aria-selected:shadow-none whitespace-nowrap">
-              <span className="lg:hidden">{activeTab === 'details' ? '2. Detalles' : '2'}</span>
-              <span className="hidden lg:inline">2. Detalles</span>
-            </TabsTrigger>
-            <TabsTrigger value="itinerary" className="py-3 px-2 -mb-[1px] text-sm md:text-base rounded-none border-x-0 border-t-0 border-b-2 border-b-transparent aria-selected:border-b-primary aria-selected:text-primary bg-transparent aria-selected:bg-transparent shadow-none aria-selected:shadow-none whitespace-nowrap">
-              <span className="lg:hidden">{activeTab === 'itinerary' ? '3. Itin. y FAQs' : '3'}</span>
-              <span className="hidden lg:inline">3. Itin. y FAQs</span>
-            </TabsTrigger>
-            <TabsTrigger value="media" className="py-3 px-2 -mb-[1px] text-sm md:text-base rounded-none border-x-0 border-t-0 border-b-2 border-b-transparent aria-selected:border-b-primary aria-selected:text-primary bg-transparent aria-selected:bg-transparent shadow-none aria-selected:shadow-none whitespace-nowrap">
-              <span className="lg:hidden">{activeTab === 'media' ? '4. Medios' : '4'}</span>
-              <span className="hidden lg:inline">4. Medios</span>
-            </TabsTrigger>
-            <TabsTrigger value="publish" className="py-3 px-2 -mb-[1px] text-sm md:text-base rounded-none border-x-0 border-t-0 border-b-2 border-b-transparent aria-selected:border-b-primary aria-selected:text-primary bg-transparent aria-selected:bg-transparent shadow-none aria-selected:shadow-none whitespace-nowrap">
-              <span className="lg:hidden">{activeTab === 'publish' ? '5. Publicación' : '5'}</span>
-              <span className="hidden lg:inline">5. Publicación</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Adaptada a mobile e integrada al header) */}
+      {(isDirty || !initialData?.id) && (
+        <div className="fixed top-2 left-2 right-2 md:left-1/2 md:-translate-x-1/2 md:right-auto z-[60] flex items-center justify-between gap-2 md:gap-8 md:min-w-[620px] bg-[#222222] text-white py-1.5 px-3 md:py-1 md:pr-1 md:pb-1 md:pl-3.5 rounded-xl shadow-2xl border border-white/15 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 fill-[#EEEEEE] shrink-0">
+              <path d="M8 4a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75"></path>
+              <path d="M8 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2"></path>
+              <path fillRule="evenodd" d="M1.5 6.25a4.75 4.75 0 0 1 4.75-4.75h3.5a4.75 4.75 0 0 1 4.75 4.75v2.5a4.75 4.75 0 0 1-4.573 4.747l-1.335 1.714a.75.75 0 0 1-1.189-.007l-1.3-1.706a4.75 4.75 0 0 1-4.603-4.748zm4.75-3.25a3.25 3.25 0 0 0-3.25 3.25v2.5a3.25 3.25 0 0 0 3.25 3.25h.226c.234 0 .455.11.597.296l.934 1.225.96-1.232a.75.75 0 0 1 .591-.289h.192a3.25 3.25 0 0 0 3.25-3.25v-2.5a3.25 3.25 0 0 0-3.25-3.25z"></path>
+            </svg>
+            <h2 className="text-[11px] md:text-[12px] leading-[16px] font-[450] text-[#EEEEEE] tracking-tight truncate">
+              {initialData?.id ? 'Cambios no guardados' : 'Tour no guardado'}
+            </h2>
+          </div>
 
-        {/* =======================
-            TAB 1: INFO GENERAL (2 Columnas 70/30)
-        ======================== */}
-        <div hidden={activeTab !== 'info'} className="focus-visible:outline-none focus-visible:ring-0">
-          {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
-          <div className="grid gap-4 lg:grid-cols-3 lg:gap-8 items-start">
-            
-            {/* Columna Izquierda (70%) */}
-            <div className="grid auto-rows-max gap-6 lg:col-span-2">
-              <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-                <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Información Básica</h3>
-                <div className="grid gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title" className="text-sm font-semibold">Título del Tour</Label>
-                    <Input 
-                      id="title" name="title" required placeholder="Ej. Tour Valle Sagrado Vip" 
-                      className="text-base bg-muted/30"
-                      value={title} onChange={handleTitleChange}
-                    />
-                  </div>
-                  <div className="grid gap-3 pt-2">
-                    <Label htmlFor="description" className="text-sm font-semibold">Descripción General</Label>
-                    <textarea id="description" name="description" rows={6} className="flex w-full rounded-md border border-input bg-muted/30 px-3 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Escribe la descripción atractiva del tour..." value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ficha Técnica */}
-              <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-                <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Ficha Técnica</h3>
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="duration" className="text-sm font-semibold">Duración</Label>
-                    <Input id="duration" name="duration" defaultValue={initialData?.duration} placeholder="Ej. 1 Día" className="bg-muted/30" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="difficulty" className="text-sm font-semibold">Dificultad</Label>
-                    <Select name="difficulty" defaultValue={initialData?.difficulty}>
-                      <SelectTrigger className="w-full h-9 bg-muted/30">
-                        <SelectValue placeholder="Seleccionar..." />
-                      </SelectTrigger>
-                      <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full">
-                        <SelectItem value="Fácil">Fácil</SelectItem>
-                        <SelectItem value="Moderado">Moderado</SelectItem>
-                        <SelectItem value="Desafiante">Desafiante</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="altitude" className="text-sm font-semibold">Altitud</Label>
-                    <Input id="altitude" name="altitude" defaultValue={initialData?.altitude} placeholder="3800 msnm" className="bg-muted/30" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="groupSize" className="text-sm font-semibold">Grupo (Pax)</Label>
-                    <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="12" className="bg-muted/30" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Columna Derecha (30%) */}
-            <div className="grid auto-rows-max gap-6">
-              {/* Categorías */}
-              <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 md:p-6">
-                <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Categorías</h3>
-                <div className="flex flex-col gap-3 max-h-60 overflow-y-auto pr-2">
-                  {categories.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No hay categorías en la BD.</p>
-                  ) : (
-                    categories.map(cat => (
-                      <div key={cat.id} className="flex items-center gap-3 hover:bg-muted/50 p-2 rounded-md transition-colors">
-                        <input type="checkbox" id={`cat_${cat.id}`} name="categories" value={cat.id} className="h-4 w-4 rounded border-gray-300 text-primary" />
-                        <Label htmlFor={`cat_${cat.id}`} className="font-medium cursor-pointer flex-1">{cat.name}</Label>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Gestión de Precios */}
-              <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 md:p-6">
-                <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Gestión de Precios</h3>
-                
-                {/* Servicio Compartido */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Label className="font-semibold text-sm">Servicio Compartido</Label>
-                  </div>
-                  <div className="grid gap-2">
-                    <Input id="sharedPrice" name="sharedPrice" type="number" step="0.01" defaultValue={initialData?.sharedPrice} placeholder="Precio (USD)" className="bg-muted/30 h-9" />
-                  </div>
-                </div>
-
-                <hr className="border-dashed my-6 border-muted-foreground/30" />
-
-                {/* Servicio Privado */}
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Label className="font-semibold text-sm">Servicio Privado</Label>
-                  </div>
-                  <div className="grid gap-3">
-                    <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
-                      {Array.from({ length: groupSize }).map((_, i) => (
-                        <Input key={i} name={`privatePrice_${i + 1}`} type="number" step="0.01" placeholder={`${i + 1} Pax $`} className="text-center bg-muted/30 text-xs px-1 h-8" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button 
+              type="button"
+              onClick={() => {
+                if (initialData?.id) {
+                  setIsDirty(false);
+                } else {
+                  window.location.href = '/tours';
+                }
+              }}
+              className="px-2.5 md:px-3 py-1 rounded-lg bg-[#383838] hover:bg-[#444444] text-[#EEEEEE] font-[550] text-[11px] md:text-[12px] leading-[16px] transition-colors"
+            >
+              Descartar
+            </button>
+            <SubmitSaveButton />
           </div>
         </div>
+      )}
 
-        {/* =======================
-            TAB 2: DETALLES
-        ======================== */}
-        <div hidden={activeTab !== 'details'} className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-            <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Inclusiones y Exclusiones</h3>
-            <div className="grid gap-8 md:grid-cols-2">
-              <div className="grid gap-3">
-                <Label htmlFor="inclusions" className="text-base font-semibold text-green-700">Incluye</Label>
-                <textarea id="inclusions" name="inclusions" defaultValue={initialData?.inclusions?.map((i:any) => i.content).join('\n')} rows={6} className="flex w-full rounded-md border border-green-200 bg-green-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2" placeholder="- Transporte turístico&#10;- Guía profesional..."></textarea>
-              </div>
-              <div className="grid gap-3">
-                <Label htmlFor="exclusions" className="text-base font-semibold text-red-700">No Incluye</Label>
-                <textarea id="exclusions" name="exclusions" defaultValue={initialData?.exclusions?.map((e:any) => e.content).join('\n')} rows={6} className="flex w-full rounded-md border border-red-200 bg-red-50/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2" placeholder="- Propinas&#10;- Alimentación no mencionada..."></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-            <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Recomendaciones</h3>
-            <textarea id="recommendations" name="recommendations" defaultValue={initialData?.recommendations?.map((r:any) => r.content).join('\n')} rows={4} className="flex w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="- Llevar bloqueador&#10;- Dinero extra..."></textarea>
-          </div>
-
+      {/* Header Titulo de la página */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Link href="/tours" className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" title="Volver a Tours">
+            <Map className="w-4 h-4 text-slate-700 shrink-0" />
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <h1 className="text-[1rem] font-semibold text-[#303030] tracking-tight truncate">
+            {initialData?.id ? initialData.title : 'Agregar tour'}
+          </h1>
         </div>
 
-        {/* =======================
-            TAB 3: ITINERARIO
-        ======================== */}
-        <div hidden={activeTab !== 'itinerary'} className="focus-visible:outline-none focus-visible:ring-0">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            
-            {/* Columna Izquierda: Itinerario */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-              <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Itinerario Detallado</h3>
-              <div className="grid gap-6">
-                <input type="hidden" name="itineraryCount" value={itinerary.length} />
-                
-                {itinerary.map((day, index) => (
-                  <div key={day.id} className="rounded-lg border p-5 bg-muted/10">
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="font-semibold text-primary">Día {index + 1}: Título</Label>
-                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive -mr-2 -mt-2" onClick={() => removeItineraryDay(day.id)} disabled={itinerary.length === 1}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Input name={`itinerary_title_${index}`} defaultValue={day.title} placeholder="Ej. Llegada a Cusco y City Tour" required className="bg-background" />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Actividades</Label>
-                        <textarea name={`itinerary_content_${index}`} defaultValue={day.content} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Describa las actividades de este día..."/>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+        {/* Acciones de Tour en Modo Edición (Ver tour + Eliminar tour) */}
+        {initialData?.id && (
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <a 
+              href={`http://localhost:3000/tours/${slug || initialData.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all select-none"
+              title="Ver tour en la web"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              <span>Ver tour</span>
+            </a>
 
-                <Button type="button" variant="outline" onClick={addItineraryDay} className="w-full border-dashed border-2 py-4 mt-2">
-                  <Plus className="mr-2 h-5 w-5" /> Añadir Día
-                </Button>
-              </div>
-            </div>
-
-            {/* Columna Derecha: FAQs */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-              <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Preguntas Frecuentes (FAQs)</h3>
-              <div className="grid gap-6">
-                <input type="hidden" name="faqsCount" value={faqs.length} />
-                
-                {faqs.map((faq, index) => (
-                  <div key={faq.id} className="rounded-lg border p-5 bg-muted/10">
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="font-semibold text-primary">Pregunta {index + 1}</Label>
-                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive -mr-2 -mt-2" onClick={() => removeFaq(faq.id)} disabled={faqs.length === 1}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Input name={`faq_question_${index}`} defaultValue={faq.question} placeholder="Ej. ¿Hay oxígeno en el bus?" required className="bg-background" />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Respuesta</Label>
-                        <textarea name={`faq_answer_${index}`} defaultValue={faq.answer} required rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Sí, contamos con un balón de oxígeno..."/>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" onClick={addFaq} className="w-full border-dashed border-2 py-4 mt-2">
-                  <Plus className="mr-2 h-5 w-5" /> Añadir FAQ
-                </Button>
-              </div>
-            </div>
-
+            <Button 
+              type="button" 
+              disabled={isDeleting}
+              onClick={openDeleteModal}
+              className="flex-1 sm:flex-initial bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-slate-500" />
+              <span>Eliminar tour</span>
+            </Button>
           </div>
-        </div>
-
-        {/* =======================
-            TAB 4: MEDIOS
-        ======================== */}
-        <div hidden={activeTab !== 'media'} className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Columna Izquierda (Ocupa 2 espacios): Imágenes Clave */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8 xl:col-span-2">
-              <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Imágenes Clave</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <ImageDropzone name="bannerImage" label="Banner Principal (Horizontal)" />
-                <ImageDropzone name="cardImage" label="Miniatura / Card (Cuadrada)" />
-              </div>
-            </div>
-            
-            {/* Columna Derecha (Ocupa 1 espacio): Mapa */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8 xl:col-span-1 flex flex-col">
-              <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Mapa</h3>
-              <div className="flex-1 flex flex-col gap-6">
-                <ImageDropzone name="mapImage" label="Subir imagen del mapa" className="flex-1" />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8">
-            <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">Galería del Tour</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-              <ImageDropzone name="galleryImage_1" label="Foto 1" />
-              <ImageDropzone name="galleryImage_2" label="Foto 2" />
-              <ImageDropzone name="galleryImage_3" label="Foto 3" />
-              <ImageDropzone name="galleryImage_4" label="Foto 4" />
-            </div>
-          </div>
-
-        </div>
-
-        {/* =======================
-            TAB 5: PUBLICACIÓN
-        ======================== */}
-        <div hidden={activeTab !== 'publish'} className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* SEO & Meta (70%) */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 md:p-8 lg:col-span-2 flex flex-col h-full">
-              <h3 className="font-bold text-lg tracking-tight mb-6 border-b pb-3 text-foreground">SEO (Search Engine Optimization)</h3>
-              
-              {/* Campos Ocultos Generados Automáticamente */}
-              <input type="hidden" name="slug" value={slug} />
-              <input type="hidden" name="metaTitle" value={`${title} - Incabound`} />
-
-              <div className="grid gap-6">
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="focusKeyphrase" className="font-semibold text-primary">Palabras clave objetivo (separa con comas)</Label>
-                  <Input id="focusKeyphrase" placeholder="Ej. Tour Termales de Arequipa, Baños termales Yura" className="bg-muted/30 border-primary/30" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
-                  <span className="text-xs text-muted-foreground">Escribe una o varias palabras clave por las que quieres posicionar este tour (estilo RankMath).</span>
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="metaDescription" className="font-semibold">Meta Descripción</Label>
-                    <span className="text-xs text-muted-foreground">{metaDescription.length}/160</span>
-                  </div>
-                  <textarea id="metaDescription" name="metaDescription" rows={4} className="flex w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Descripción corta para los buscadores..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
-                </div>
-
-                {/* Resultados del Análisis SEO */}
-                {focusKeyphrase && (
-                  <div className="mt-4 border rounded-lg overflow-hidden bg-muted/5">
-                    <div className="px-4 py-3 border-b bg-muted/10 font-semibold text-sm flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${seoAnalysis.color.replace('text-', 'bg-')}`}></span>
-                      Análisis SEO: {focusKeyphrase}
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {seoAnalysis.results.map((res, i) => (
-                        <div key={i} className="flex items-start gap-2 text-sm">
-                          <span className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${res.type === 'good' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                          <span className="text-muted-foreground">{res.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Resultados de Legibilidad */}
-                <div className="mt-2 border rounded-lg overflow-hidden bg-muted/5">
-                  <div className="px-4 py-3 border-b bg-muted/10 font-semibold text-sm flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${readabilityAnalysis.color.replace('text-', 'bg-')}`}></span>
-                    Análisis de Legibilidad (Descripción General)
-                  </div>
-                  <div className="p-4 space-y-3">
-                    {readabilityAnalysis.results.map((res, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm">
-                        <span className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${res.type === 'good' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <span className="text-muted-foreground">{res.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Gestión de Publicado (30%) */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm lg:col-span-1 overflow-hidden flex flex-col h-full">
-              <div className="p-6 border-b bg-muted/10">
-                <h3 className="font-bold text-lg tracking-tight text-foreground">Gestión de Publicado</h3>
-              </div>
-              
-              <div className="p-6 space-y-4 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Estatus:</span>
-                  <span className="font-semibold flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${isPublished ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                    {isPublished ? 'Publicado' : 'Borrador'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Fecha de pub.:</span>
-                  <span className="font-semibold">{isPublished ? '12 Oct 2026' : 'Inmediatamente'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Analítica SEO:</span>
-                  <span className={`font-semibold ${seoAnalysis.color}`}>{seoAnalysis.status}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Legibilidad:</span>
-                  <span className={`font-semibold ${readabilityAnalysis.color}`}>{readabilityAnalysis.status}</span>
-                </div>
-              </div>
-              
-              <div className="p-6 border-t bg-muted/5 grid gap-3 mt-auto">
-                {isPublished ? (
-                  <>
-                    <Button type="submit" className="w-full font-bold shadow-sm">
-                      Actualizar
-                    </Button>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      <Button type="button" variant="outline" className="w-full">
-                        Ver página
-                      </Button>
-                      <Button type="button" variant="ghost" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        Eliminar
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button type="submit" className="w-full font-bold shadow-sm">
-                      Publicar
-                    </Button>
-                    <Button type="button" variant="outline" className="w-full bg-background">
-                      Borrador
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </Tabs>
-
-      {/* Navegación Móvil (Wizard) */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)] lg:hidden flex justify-between gap-4 z-40">
-        {activeTab === 'info' ? (
-          <Button type="button" variant="outline" className="flex-1 font-bold shadow-sm" onClick={() => window.history.back()}>Cancelar</Button>
-        ) : (
-          <Button type="button" variant="outline" className="flex-1 font-bold shadow-sm" onClick={() => {
-            const idx = tabOrder.indexOf(activeTab);
-            const prev = tabOrder[idx - 1];
-            if (idx > 0 && prev) {
-              setActiveTab(prev);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}>Atrás</Button>
-        )}
-
-        {activeTab !== 'publish' ? (
-          <Button type="button" className="flex-1 font-bold shadow-sm" onClick={() => {
-            const idx = tabOrder.indexOf(activeTab);
-            const next = tabOrder[idx + 1];
-            if (idx < tabOrder.length - 1 && next) {
-              setActiveTab(next);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}>Siguiente</Button>
-        ) : (
-          <Button type="submit" className="flex-1 font-bold shadow-sm">Publicar</Button>
         )}
       </div>
 
+      {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        {/* ==========================================
+            COLUMNA PRINCIPAL (70%): Contenido del Tour
+        ========================================== */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Card 1: Título y Descripción (Exacto a Shopify Admin) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs font-semibold text-slate-700">Título</Label>
+              <Input 
+                id="title" name="title" required placeholder="Ej. Camiseta de manga corta / Tour Valle Sagrado" 
+                className="text-sm bg-white border-slate-300 focus:border-slate-900 font-medium text-slate-900 rounded-lg"
+                value={title} onChange={handleTitleChange}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-xs font-semibold text-slate-700">Descripción</Label>
+              <AutoResizeTextarea 
+                id="description" 
+                name="description" 
+                rows={5} 
+                className="text-sm"
+                placeholder="Escribe la descripción completa del tour..." 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Card 2: Multimedia */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Multimedia</h3>
+            
+            <div className="space-y-6">
+              {/* Row 1: Banner, Miniatura y Mapa */}
+              <div>
+                <Label className="text-xs font-semibold text-slate-700 mb-3 block">Imágenes Clave (Banner, Miniatura y Mapa)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <ImageDropzone name="bannerImage" label="Banner Principal (Horizontal)" initialUrl={initialData?.bannerImage} folder={`tours/${slug || 'nuevo'}`} />
+                  <ImageDropzone name="cardImage" label="Miniatura / Card (Cuadrada)" initialUrl={initialData?.cardImage} folder={`tours/${slug || 'nuevo'}`} />
+                  <ImageDropzone name="mapImage" label="Mapa del Tour" initialUrl={initialData?.mapImage} folder={`tours/${slug || 'nuevo'}`} />
+                </div>
+              </div>
+
+              {/* Row 2: Galería de 4 Fotos */}
+              <div className="pt-4 border-t border-slate-100">
+                <Label className="text-xs font-semibold text-slate-700 mb-3 block">Galería (4 Fotos)</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <ImageDropzone name="galleryImage_1" label="Foto Galería 1" labelPosition="bottom" initialUrl={initialData?.images?.[0]?.url} folder={`tours/${slug || 'nuevo'}`} />
+                  <ImageDropzone name="galleryImage_2" label="Foto Galería 2" labelPosition="bottom" initialUrl={initialData?.images?.[1]?.url} folder={`tours/${slug || 'nuevo'}`} />
+                  <ImageDropzone name="galleryImage_3" label="Foto Galería 3" labelPosition="bottom" initialUrl={initialData?.images?.[2]?.url} folder={`tours/${slug || 'nuevo'}`} />
+                  <ImageDropzone name="galleryImage_4" label="Foto Galería 4" labelPosition="bottom" initialUrl={initialData?.images?.[3]?.url} folder={`tours/${slug || 'nuevo'}`} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Itinerario por Días (Acordeón con Animación) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-semibold text-sm text-slate-800">Itinerario por Días</h3>
+              <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{itinerary.length} días</span>
+            </div>
+            
+            <div className="space-y-3">
+              <input type="hidden" name="itineraryCount" value={itinerary.length} />
+              
+              {itinerary.map((day: ItineraryItem, index: number) => {
+                const isOpen = openItineraryDays[index] ?? (index === 0);
+                return (
+                  <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden transition-all">
+                    
+                    <div 
+                      onClick={() => toggleItineraryDay(index)}
+                      className="flex items-center justify-between px-4 py-3 bg-slate-100/80 hover:bg-slate-100 cursor-pointer select-none transition-colors border-b border-slate-200/80"
+                    >
+                      <div className="flex items-center gap-3 font-semibold text-xs text-slate-900">
+                        <span className="w-5 h-5 rounded-full bg-[#0B4354] text-white flex items-center justify-center text-[10px]">
+                          {index + 1}
+                        </span>
+                        <span>{day.title || `Día ${index + 1}`}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {itinerary.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeItineraryDay(day.id); }}
+                            className="p-1 text-rose-500 hover:bg-rose-100 rounded transition-colors"
+                            title="Eliminar este día"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
+
+                    {/* Animación Suave Open / Close */}
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="p-4 space-y-3 bg-white border-t border-slate-100">
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-semibold text-slate-600">Título del Día</Label>
+                            <Input 
+                              name={`itinerary_title_${index}`} 
+                              placeholder="Ej. Recepción en Cusco e Inka Jungle Tour" 
+                              defaultValue={day.title}
+                              className="bg-white border-slate-300 h-8 text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-semibold text-slate-600">Descripción de las actividades</Label>
+                            <AutoResizeTextarea 
+                              name={`itinerary_content_${index}`} 
+                              rows={3} 
+                              placeholder="Detalla lo que incluye este día..."
+                              defaultValue={day.content}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addItineraryDay}
+                className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-9 rounded-xl font-medium"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> Agregar otro día al itinerario
+              </Button>
+            </div>
+          </div>
+
+          {/* Card 4: Inclusiones, Exclusiones y Recomendaciones (Cada uno en su propia Fila) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Detalles y Especificaciones</h3>
+
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="inclusions" className="text-xs font-semibold text-slate-700">Incluye (un ítem por línea)</Label>
+                <AutoResizeTextarea 
+                  id="inclusions" name="inclusions" rows={3} 
+                  placeholder="✓ Guía profesional en español&#10;✓ Transporte privado turístico" 
+                  defaultValue={initialData?.inclusions?.map((i: any) => i.content).join('\n')} 
+                />
+              </div>
+
+              <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                <Label htmlFor="exclusions" className="text-xs font-semibold text-slate-700">No Incluye (un ítem por línea)</Label>
+                <AutoResizeTextarea 
+                  id="exclusions" name="exclusions" rows={3} 
+                  placeholder="✗ Propinas voluntarias&#10;✗ Vuelos internacionales" 
+                  defaultValue={initialData?.exclusions?.map((e: any) => e.content).join('\n')} 
+                />
+              </div>
+
+              <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                <Label htmlFor="recommendations" className="text-xs font-semibold text-slate-700">Recomendaciones para el Viajero (un ítem por línea)</Label>
+                <AutoResizeTextarea 
+                  id="recommendations" name="recommendations" rows={3} 
+                  placeholder="• Llevar bloqueador solar y repelente&#10;• Zapatillas cómodas de caminata" 
+                  defaultValue={initialData?.recommendations?.map((r: any) => r.content).join('\n')} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Preguntas Frecuentes (FAQs Acordeón con Animación) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-semibold text-sm text-slate-800">Preguntas Frecuentes (FAQs)</h3>
+              <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{faqs.length} preguntas</span>
+            </div>
+
+            <div className="space-y-3">
+              <input type="hidden" name="faqsCount" value={faqs.length} />
+
+              {faqs.map((faq: FaqItem, index: number) => {
+                const isOpen = openFaqs[index] ?? (index === 0);
+                return (
+                  <div key={faq.id} className="rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden transition-all">
+                    
+                    <div 
+                      onClick={() => toggleFaqItem(index)}
+                      className="flex items-center justify-between px-4 py-3 bg-slate-100/80 hover:bg-slate-100 cursor-pointer select-none transition-colors border-b border-slate-200/80"
+                    >
+                      <span className="font-semibold text-xs text-slate-900">
+                        {faq.question || `Pregunta ${index + 1}`}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        {faqs.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeFaq(faq.id); }}
+                            className="p-1 text-rose-500 hover:bg-rose-100 rounded transition-colors"
+                            title="Eliminar esta pregunta"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
+
+                    {/* Animación Suave Open / Close */}
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="p-4 space-y-3 bg-white border-t border-slate-100">
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-semibold text-slate-600">Pregunta</Label>
+                            <Input 
+                              name={`faq_question_${index}`} 
+                              placeholder="Ej. ¿A qué hora empieza el tour?" 
+                              defaultValue={faq.question}
+                              className="bg-white border-slate-300 h-8 text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-semibold text-slate-600">Respuesta</Label>
+                            <AutoResizeTextarea 
+                              name={`faq_answer_${index}`} 
+                              rows={2} 
+                              placeholder="Respuesta detallada..."
+                              defaultValue={faq.answer}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addFaq}
+                className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-9 rounded-xl font-medium"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> Agregar otra pregunta frecuente
+              </Button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ==========================================
+            SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
+        ========================================== */}
+        <div className="lg:col-span-1 space-y-5">
+          
+          {/* Card 1: Estado del Producto */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+            <Label className="text-xs font-semibold text-slate-700">Estado</Label>
+            <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
+              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                <SelectValue placeholder="Activo" />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                <SelectItem value="Active">Activo</SelectItem>
+                <SelectItem value="Draft">Desactivado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Card 2: Sección recomendados (Home) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+            <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
+            <Label className="text-xs font-semibold text-slate-700">Sección recomendados (Home)</Label>
+            <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
+              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                <SelectValue placeholder="Desactivado" />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                <SelectItem value="Active">Activo</SelectItem>
+                <SelectItem value="Draft">Desactivado</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-slate-400">Desactivado por defecto. Máximo 6 tours destacados en el Home.</p>
+          </div>
+
+          {/* Card 3: Destino (Filtro Catálogo) */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+            <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+            <Select name="region" defaultValue={initialData?.region || undefined} onValueChange={() => setIsDirty(true)}>
+              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                <SelectValue placeholder="Seleccionar..." />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                <SelectItem value="Cusco">Cusco</SelectItem>
+                <SelectItem value="Lima">Lima</SelectItem>
+                <SelectItem value="Ica">Ica</SelectItem>
+                <SelectItem value="Arequipa">Arequipa</SelectItem>
+                <SelectItem value="Puno">Puno</SelectItem>
+                <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Card 3: Datos técnicos */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
+            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Datos técnicos</h3>
+            
+            <div className="space-y-1">
+              <Label htmlFor="duration" className="text-xs font-semibold text-slate-600">Duración</Label>
+              <Input id="duration" name="duration" defaultValue={initialData?.duration} placeholder="Ej. 1 Día / Full Day" className="bg-white border-slate-300 h-8 text-xs" />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="difficulty" className="text-xs font-semibold text-slate-600">Dificultad</Label>
+              <Select name="difficulty" defaultValue={initialData?.difficulty || 'Moderada'} onValueChange={() => setIsDirty(true)}>
+                <SelectTrigger className="w-full h-8 bg-white border-slate-300 text-xs font-semibold">
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                  <SelectItem value="Fácil">Fácil</SelectItem>
+                  <SelectItem value="Fácil – Moderada">Fácil – Moderada</SelectItem>
+                  <SelectItem value="Moderada">Moderada</SelectItem>
+                  <SelectItem value="Moderada – Difícil">Moderada – Difícil</SelectItem>
+                  <SelectItem value="Difícil">Difícil</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="altitude" className="text-xs font-semibold text-slate-600">Altitud Máxima (m s. n. m.)</Label>
+              <Input 
+                id="altitude" 
+                name="altitude" 
+                defaultValue={initialData?.altitude?.replace(/\s*m\s*s\.\s*n\.\s*m\.\s*/gi, '').trim()} 
+                placeholder="Ej. 4200 o 3900 - 4200" 
+                className="bg-white border-slate-300 h-8 text-xs font-medium" 
+              />
+              <p className="text-[10px] text-slate-400">Ingresa la cifra o rango. La unidad 'm s. n. m.' se formatea automáticamente en la web.</p>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="groupSize" className="text-xs font-semibold text-slate-600">Tamaño de Grupo (Pax)</Label>
+              <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="12" className="bg-white border-slate-300 h-8 text-xs" />
+            </div>
+          </div>
+
+          {/* Card 4: Categorización */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
+            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Categorización</h3>
+            <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+              {categories.length === 0 ? (
+                <p className="text-[11px] text-slate-400">Sin categorías.</p>
+              ) : (
+                categories.map(cat => (
+                  <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                    <input 
+                      type="checkbox" 
+                      id={`cat_${cat.id}`} 
+                      name="categories" 
+                      value={cat.id} 
+                      defaultChecked={initialData?.categories?.some((c: any) => c.id === cat.id)}
+                      onChange={() => setIsDirty(true)}
+                      className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                    />
+                    <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Card 4: Precios */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs px-4 py-3.5 space-y-3">
+            {/* Servicio Compartido / Grupal (Siempre activo) */}
+            <input type="hidden" name="hasSharedService" value="on" />
+            <div className="space-y-1">
+              <Label htmlFor="sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD)</Label>
+              <Input 
+                id="sharedPrice" 
+                name="sharedPrice" 
+                type="number" 
+                step="0.01" 
+                defaultValue={initialData?.sharedPrice} 
+                placeholder="Ej. 45.00" 
+                className="bg-white border-slate-300 h-8 text-xs font-medium" 
+              />
+            </div>
+
+            {/* Servicio Privado (Opcional por botón) */}
+            {hasPrivateService ? (
+              <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
+                <input type="hidden" name="hasPrivateService" value="on" />
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-700">Precios Servicio Privado ($ por Pax)</Label>
+                  <button 
+                    type="button" 
+                    onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
+                    className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors"
+                  >
+                    Quitar privado
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {Array.from({ length: groupSize }).map((_, i) => (
+                    <Input 
+                      key={i} 
+                      name={`privatePrice_${i + 1}`} 
+                      type="number" 
+                      step="0.01" 
+                      defaultValue={initialData?.privatePricing?.find((p: any) => p.pax === i + 1)?.price}
+                      placeholder={`${i + 1} Pax $`} 
+                      className="text-center bg-slate-50 border-slate-200 text-xs h-8" 
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setHasPrivateService(true); setIsDirty(true); }}
+                  className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Añadir precio privado
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Card 5: Optimización SEO */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="font-semibold text-xs text-slate-800">Optimización SEO</h3>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${seoAnalysis.badgeClass}`}>
+                SEO: {seoAnalysis.level}
+              </span>
+            </div>
+            
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="metaTitle" value={`${title} - Incabound`} />
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="focusKeyphrase" className="text-xs font-semibold text-slate-700">Palabra clave principal</Label>
+                <Input id="focusKeyphrase" placeholder="Ej. Tour Valle Sagrado Cusco" className="bg-white border-slate-300 text-xs h-8" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="metaDescription" className="text-xs font-semibold text-slate-700">Meta Descripción</Label>
+                  <span className="text-[10px] text-slate-400">{metaDescription.length}/160</span>
+                </div>
+                <AutoResizeTextarea id="metaDescription" name="metaDescription" rows={3} placeholder="Descripción corta para aparecer en Google..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+              </div>
+
+              {/* Panel de Análisis SEO */}
+              {focusKeyphrase && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">Diagnóstico SEO:</span>
+                    <span className={`font-bold ${seoAnalysis.color}`}>{seoAnalysis.status}</span>
+                  </div>
+                  <ul className="space-y-1 text-[11px]">
+                    {seoAnalysis.results.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-1.5">
+                        <span className={r.type === 'good' ? 'text-emerald-600 font-bold' : 'text-rose-500 font-bold'}>
+                          {r.type === 'good' ? '✓' : '✗'}
+                        </span>
+                        <span className="text-slate-600">{r.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* MODAL CONFIRMACION DE ELIMINACION EXACTO A SHOPIFY ADMIN CON ANIMACIÓN FLUIDA */}
+      {showDeleteModal && (
+        <div 
+          className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ease-out select-none ${
+            isModalAnimating ? 'bg-black/60 backdrop-blur-[3px] opacity-100' : 'bg-black/0 backdrop-blur-none opacity-0 pointer-events-none'
+          }`}
+          onClick={closeDeleteModal}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-white w-full max-w-[480px] rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-200 ease-out transform ${
+              isModalAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-3'
+            }`}
+          >
+            
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="font-semibold text-sm text-slate-900">
+                ¿Eliminar {initialData?.title || title || 'este tour'}?
+              </h3>
+              <button 
+                type="button" 
+                onClick={closeDeleteModal}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="p-5">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Si eliminas <strong className="font-semibold text-slate-900">{initialData?.title || title}</strong>, esto no se puede deshacer. Cualquier archivo multimedia que solo use este producto también se eliminará.
+              </p>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 bg-slate-50/60 border-t border-slate-100">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs h-8 px-3.5 rounded-lg shadow-2xs"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteTour}
+                className="bg-[#D82C0D] hover:bg-[#BC250B] text-white font-medium text-xs h-8 px-3.5 rounded-lg shadow-xs transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />}
+                <span>{isDeleting ? 'Eliminando...' : 'Eliminar producto'}</span>
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </form>
   );
 }

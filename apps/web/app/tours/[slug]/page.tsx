@@ -1,101 +1,133 @@
+import { prisma } from '@repo/db';
+import { notFound } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { TourHero } from '@/components/tour/tour-hero';
 import { TourTabs } from '@/components/tour/tour-nav';
-import { TourItinerary } from '@/components/tour/tour-itinerary';
 import { TourBookingCard } from '@/components/tour/tour-booking-card';
-import { Check, X, MapPin, Clock, Mountain, Users, BarChart } from 'lucide-react';
+import { MapPin, Clock, Mountain, Users, BarChart } from 'lucide-react';
 import Image from 'next/image';
 
-// MOCK DATA: Este objeto simula lo que vendrá de la base de datos en el futuro
-const mockTour = {
-  id: 'camino-inca-4-dias',
-  slug: 'camino-inca-a-machu-picchu',
-  title: 'Camino Inca a Machu Picchu',
-  subtitle: 'La caminata más famosa de Sudamérica',
-  image: '/salkantay.webp',
-  price: 550,
-  privatePrice: 750,
-  duration: '4 Días / 3 Noches',
-  difficulty: 'Moderada - Desafiante',
-  groupSize: 'Máximo 8 personas',
-  maxAltitude: '4,215 m.s.n.m',
-  overview: 'El Camino Inca a Machu Picchu es considerado una de las mejores caminatas del mundo. Combina diversos ecologismos, desde la puna andina hasta el bosque nuboso, impresionantes sitios arqueológicos y paisajes majestuosos.',
-  itinerary: [
-    {
-      day: 1,
-      title: 'Cusco – Km 82 – Wayllabamba',
-      description: 'Partimos temprano desde Cusco hacia el Km 82, donde iniciaremos nuestra caminata oficial. El primer día es relativamente fácil y nos sirve como calentamiento.',
-      details: [
-        { label: 'Distancia', value: '12 km' },
-        { label: 'Tiempo estimado', value: '5 - 6 horas' },
-        { label: 'Altitud máxima', value: '3,000 m' },
-        { label: 'Comidas', value: 'Almuerzo, Cena' }
-      ]
-    },
-    {
-      day: 2,
-      title: 'Wayllabamba – Warmiwañusca – Pacaymayo',
-      description: 'El día más desafiante. Subiremos al Paso de la Mujer Muerta (Warmiwañusca) a 4,215m, el punto más alto de todo el camino.',
-      details: [
-        { label: 'Distancia', value: '11 km' },
-        { label: 'Tiempo estimado', value: '7 - 8 horas' },
-        { label: 'Altitud máxima', value: '4,215 m' },
-        { label: 'Comidas', value: 'Desayuno, Almuerzo, Cena' }
-      ]
-    },
-    {
-      day: 3,
-      title: 'Pacaymayo – Wiñay Wayna',
-      description: 'Considerado por muchos el día más hermoso del trek. Atravesaremos diferentes ecosistemas y visitaremos asombrosos sitios arqueológicos.',
-      details: [
-        { label: 'Distancia', value: '16 km' },
-        { label: 'Tiempo estimado', value: '8 - 9 horas' },
-        { label: 'Altitud máxima', value: '3,950 m' },
-        { label: 'Comidas', value: 'Desayuno, Almuerzo, Cena' }
-      ]
-    },
-    {
-      day: 4,
-      title: 'Wiñay Wayna – Machu Picchu – Cusco',
-      description: 'Nos levantaremos de madrugada para llegar a la Puerta del Sol (Inti Punku) y ver los primeros rayos de sol sobre Machu Picchu.',
-      details: [
-        { label: 'Distancia', value: '6 km' },
-        { label: 'Tiempo estimado', value: '2 - 3 horas' },
-        { label: 'Altitud máxima', value: '2,720 m' },
-        { label: 'Comidas', value: 'Desayuno' }
+interface TourPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+
+export async function generateMetadata({ params }: TourPageProps) {
+  const resolvedParams = await params;
+  const slug = resolvedParams?.slug || '';
+  if (!slug) {
+    return { title: 'Tour no encontrado - Inca Bound' };
+  }
+
+  const tour = await prisma.tour.findFirst({
+    where: {
+      OR: [
+        { slug },
+        { slug: slug.toLowerCase() }
       ]
     }
-  ],
-  inclusions: [
-    'Transporte Cusco - Km 82.',
-    'Boleto de ingreso al Camino Inca y Machu Picchu.',
-    'Guía profesional bilingüe (Español/Inglés).',
-    'Equipo de campamento (carpas, colchonetas).',
-    'Alimentación durante la caminata (3D, 3A, 3C).',
-    'Tren de retorno (Aguas Calientes - Ollantaytambo).'
-  ],
-  exclusions: [
-    'Bolsa de dormir (Sleeping bag).',
-    'Almuerzo del cuarto día.',
-    'Ingreso a la montaña Huayna Picchu.',
-    'Propinas para el equipo de ruta.'
-  ],
-  faqs: [
-    { question: '¿Cuál es la mejor época para hacer el Camino Inca?', answer: 'La temporada seca (de mayo a octubre) es la mejor época, ya que hay menos probabilidades de lluvia y los días suelen ser soleados.' },
-    { question: '¿Necesito prepararme físicamente?', answer: 'Sí, recomendamos hacer caminatas de preparación y pasar al menos 2 días en Cusco (o en una ciudad de altura) para aclimatarse antes de iniciar el tour.' },
-    { question: '¿Cómo funciona la reserva de espacios?', answer: 'El Camino Inca tiene un límite estricto de 500 personas por día (incluyendo guías y porteadores). Te sugerimos reservar con al menos 4 a 6 meses de anticipación.' },
-    { question: '¿Hay baños y duchas durante el trayecto?', answer: 'Existen baños básicos tipo letrina en los campamentos. Las duchas (frías) solo están disponibles en el tercer campamento (Wiñay Wayna).' }
-  ]
-};
+  });
 
-export default function TourPage({ params }: { params: { slug: string } }) {
+  if (!tour) {
+    return {
+      title: 'Tour no encontrado - Inca Bound',
+    };
+  }
+
+  const imageUrl = tour.bannerImage || tour.cardImage || '/salkantay.webp';
+
+  return {
+    title: tour.metaTitle || `${tour.title} - Inca Bound`,
+    description: tour.metaDescription || tour.description.slice(0, 160),
+    openGraph: {
+      title: tour.title,
+      description: tour.description.slice(0, 160),
+      images: [
+        {
+          url: imageUrl,
+          alt: tour.title,
+        },
+      ],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: tour.title,
+      description: tour.description.slice(0, 160),
+      images: [imageUrl],
+    },
+  };
+}
+
+export default async function TourPage({ params }: TourPageProps) {
+  const resolvedParams = await params;
+  const slug = resolvedParams?.slug || '';
+  if (!slug) {
+    notFound();
+  }
+
+  // Buscar el tour en la base de datos de Prisma
+  const tour = await prisma.tour.findFirst({
+    where: {
+      OR: [
+        { slug },
+        { slug: slug.toLowerCase() }
+      ]
+    },
+    include: {
+      itineraries: { orderBy: { order: 'asc' } },
+      inclusions: { orderBy: { order: 'asc' } },
+      exclusions: { orderBy: { order: 'asc' } },
+      recommendations: { orderBy: { order: 'asc' } },
+      faqs: { orderBy: { order: 'asc' } },
+      images: { orderBy: { order: 'asc' } },
+      privatePricing: { orderBy: { pax: 'asc' } }
+    }
+  });
+
+  if (!tour) {
+    notFound();
+  }
+
+  const rawImage = tour.bannerImage || tour.cardImage || '';
+  const isValidImage = rawImage && !rawImage.includes('/tours/default-') && (rawImage.startsWith('http') || rawImage.startsWith('/uploads') || rawImage.startsWith('/salkantay') || rawImage.startsWith('data:image'));
+  const heroImage = isValidImage ? rawImage : null;
+
+  // Mapear los datos de la BD para los componentes de la vista
+  const formattedTour = {
+    id: tour.id,
+    slug: tour.slug,
+    title: tour.title,
+    image: heroImage,
+    price: tour.sharedPrice || 0,
+    privatePrice: tour.privatePricing?.[0]?.price || null,
+    duration: tour.duration || 'Por consultar',
+    difficulty: tour.difficulty || 'Moderada',
+    groupSize: tour.groupSize ? `Máximo ${tour.groupSize} personas` : 'Grupo reducido',
+    maxAltitude: tour.altitude || 'N/A',
+    overview: tour.description,
+    mapImage: tour.mapImage,
+    itinerary: tour.itineraries.map((it, idx) => ({
+      day: idx + 1,
+      title: it.title,
+      description: it.content,
+      details: []
+    })),
+    inclusions: tour.inclusions.map(i => i.content),
+    exclusions: tour.exclusions.map(e => e.content),
+    recommendations: tour.recommendations.map(r => r.content),
+    faqs: tour.faqs.map(f => ({ question: f.question, answer: f.answer })),
+    images: tour.images.map(img => img.url)
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       
       <main className="flex-1">
-        <TourHero tour={mockTour} />
+        <TourHero tour={formattedTour} />
 
         <div className="container mx-auto px-4 lg:px-8 py-12">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative items-start">
@@ -113,7 +145,7 @@ export default function TourPage({ params }: { params: { slug: string } }) {
                       </div>
                       <div className="flex flex-col">
                         <p className="text-sm text-[#062918] font-bold tracking-tight mb-0.5">Duración</p>
-                        <p className="text-sm text-gray-500">{mockTour.duration}</p>
+                        <p className="text-sm text-gray-500">{formattedTour.duration}</p>
                       </div>
                     </div>
                     
@@ -123,7 +155,7 @@ export default function TourPage({ params }: { params: { slug: string } }) {
                       </div>
                       <div className="flex flex-col">
                         <p className="text-sm text-[#062918] font-bold tracking-tight mb-0.5">Dificultad</p>
-                        <p className="text-sm text-gray-500">{mockTour.difficulty}</p>
+                        <p className="text-sm text-gray-500">{formattedTour.difficulty}</p>
                       </div>
                     </div>
 
@@ -133,7 +165,7 @@ export default function TourPage({ params }: { params: { slug: string } }) {
                       </div>
                       <div className="flex flex-col">
                         <p className="text-sm text-[#062918] font-bold tracking-tight mb-0.5">Tamaño de Grupo</p>
-                        <p className="text-sm text-gray-500">{mockTour.groupSize}</p>
+                        <p className="text-sm text-gray-500">{formattedTour.groupSize}</p>
                       </div>
                     </div>
 
@@ -142,8 +174,8 @@ export default function TourPage({ params }: { params: { slug: string } }) {
                         <Mountain size={28} strokeWidth={1.5} />
                       </div>
                       <div className="flex flex-col">
-                        <p className="text-sm text-[#062918] font-bold tracking-tight mb-0.5">Altitud</p>
-                        <p className="text-sm text-gray-500">{mockTour.maxAltitude}</p>
+                        <p className="text-sm text-[#062918] font-bold tracking-tight mb-0.5">Altitud Max</p>
+                        <p className="text-sm text-gray-500">{formattedTour.maxAltitude}</p>
                       </div>
                     </div>
                   </div>
@@ -151,28 +183,36 @@ export default function TourPage({ params }: { params: { slug: string } }) {
 
                 {/* Descripción del Tour */}
                 <div className="mb-10">
-                  <p className="text-gray-600 text-[17px] leading-relaxed">
-                    {mockTour.overview}
+                  <p className="text-gray-600 text-[17px] leading-relaxed whitespace-pre-line">
+                    {formattedTour.overview}
                   </p>
                 </div>
-                {/* Tabs Component taking over the rest of the sections */}
-                <TourTabs tour={mockTour} />
+
+                {/* Componente de Tabs (Itinerario, Inclusiones, Recomendaciones, FAQs, Galería) */}
+                <TourTabs tour={formattedTour} />
               </section>
 
             </div>
 
             {/* Columna Derecha: Sticky Booking Box (30%) */}
             <div className="w-full lg:w-1/3 sticky top-32 flex flex-col gap-8">
-              {/* Mapa de la Ruta */}
-              <div className="w-full h-[250px] bg-gray-100 rounded-2xl flex flex-col items-center justify-center text-gray-400 border border-gray-200 relative overflow-hidden">
-                <MapPin size={48} className="mb-4 text-gray-300" />
-                <span className="font-medium">Espacio para Mapa Interactivo</span>
-              </div>
+              {/* Mapa de la Ruta si existe */}
+              {formattedTour.mapImage ? (
+                <div className="w-full h-[250px] rounded-2xl overflow-hidden shadow-md relative border border-gray-200">
+                  <Image src={formattedTour.mapImage} alt={`Mapa de ${formattedTour.title}`} fill className="object-cover" />
+                </div>
+              ) : (
+                <div className="w-full h-[250px] bg-gray-100 rounded-2xl flex flex-col items-center justify-center text-gray-400 border border-gray-200 relative overflow-hidden">
+                  <MapPin size={48} className="mb-4 text-gray-300" />
+                  <span className="font-medium">Mapa de ruta disponible al reservar</span>
+                </div>
+              )}
+              
               <TourBookingCard 
-                tourTitle={mockTour.title}
-                slug={mockTour.slug}
-                price={mockTour.price} 
-                privatePrice={mockTour.privatePrice} 
+                tourTitle={formattedTour.title}
+                slug={formattedTour.slug}
+                price={formattedTour.price} 
+                privatePrice={formattedTour.privatePrice} 
               />
             </div>
 

@@ -51,28 +51,28 @@ export function Calendar({ selectedDate, onSelect }: CalendarProps) {
   };
 
   return (
-    <div className="p-4 bg-white border border-gray-200 rounded-xl w-full">
-      <div className="flex justify-between items-center mb-4">
-        <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-          <ChevronLeft size={20} className="text-gray-600" />
+    <div className="p-3 sm:p-4 bg-white border border-gray-200 rounded-xl w-full select-none">
+      <div className="flex justify-between items-center mb-3">
+        <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-600">
+          <ChevronLeft size={18} />
         </button>
-        <h2 className="font-bold text-gray-900 capitalize">
+        <h2 className="font-bold text-xs sm:text-sm text-gray-900 capitalize">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h2>
-        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-          <ChevronRight size={20} className="text-gray-600" />
+        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-600">
+          <ChevronRight size={18} />
         </button>
       </div>
       
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
         {days.map(day => (
-          <div key={day} className="text-center text-xs font-bold text-gray-400 py-1">
+          <div key={day} className="text-center text-[10px] sm:text-xs font-bold text-gray-400 py-0.5">
             {day}
           </div>
         ))}
       </div>
       
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {Array.from({ length: firstDayOfMonth }).map((_, i) => (
           <div key={`empty-${i}`} />
         ))}
@@ -88,11 +88,11 @@ export function Calendar({ selectedDate, onSelect }: CalendarProps) {
               key={day}
               disabled={isPast}
               onClick={(e) => handleDateClick(day, e)}
-              className={`h-10 w-full rounded-md flex items-center justify-center text-sm transition-colors ${
+              className={`h-8 sm:h-9 w-full rounded-md flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
                 isPast
                   ? 'text-gray-300 cursor-not-allowed'
                   : selected 
-                    ? 'bg-[#062918] text-white font-bold shadow-sm' 
+                    ? 'bg-[#062918] text-white font-bold shadow-xs' 
                     : today
                       ? 'bg-gray-50 border border-gray-200 text-[#062918] font-bold hover:bg-gray-100'
                       : 'text-gray-700 hover:bg-gray-100'

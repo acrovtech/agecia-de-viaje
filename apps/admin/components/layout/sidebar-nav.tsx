@@ -2,86 +2,138 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, Map, Calendar, PenTool, Tags } from 'lucide-react';
+import { 
+  Home, 
+  Map, 
+  Tags,
+  PenTool, 
+  Calendar, 
+  Store, 
+  Settings, 
+  ExternalLink
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function SidebarNav() {
   const pathname = usePathname();
-  
+
   return (
-    <nav className="grid items-start px-2 text-sm font-medium lg:px-4 gap-1.5">
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-0.5 mt-5 first:mt-0">
-        Principal
-      </div>
-      <Link
-        href="/"
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
-          pathname === "/" 
-            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
-            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
-        )}
-      >
-        <Compass className="h-4 w-4 opacity-70" />
-        Dashboard
-      </Link>
+    <div className="flex flex-col h-full bg-[#EBEBEB] text-[#303030] border-none select-none text-[13px]">
       
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-5 mb-0.5">
-        Gestión de Contenido
+      {/* NAVEGACIÓN PRINCIPAL LIMPIA SIN SUBTABS */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        
+        <ul className="space-y-1 font-medium">
+          
+          {/* 1. Inicio / Dashboard */}
+          <li>
+            <Link
+              href="/"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                pathname === "/"
+                  ? "bg-white text-[#303030] shadow-xs font-semibold"
+                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+              )}
+            >
+              <Home className="w-4 h-4 text-[#303030] shrink-0" />
+              <span>Inicio</span>
+            </Link>
+          </li>
+
+          {/* 2. Tours & Experiencias (Directo a /tours sin subtabs) */}
+          <li>
+            <Link
+              href="/tours"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                pathname?.startsWith("/tours")
+                  ? "bg-white text-[#303030] shadow-xs font-semibold"
+                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+              )}
+            >
+              <Map className="w-4 h-4 text-[#303030] shrink-0" />
+              <span>Tours</span>
+            </Link>
+          </li>
+
+          {/* 3. Categorías (Tab independiente en el sidebar) */}
+          <li>
+            <Link
+              href="/categories"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                pathname === "/categories"
+                  ? "bg-white text-[#303030] shadow-xs font-semibold"
+                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+              )}
+            >
+              <Tags className="w-4 h-4 text-[#303030] shrink-0" />
+              <span>Categorías</span>
+            </Link>
+          </li>
+
+          {/* 4. Blogs */}
+          <li>
+            <Link
+              href="/blogs"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                pathname?.startsWith("/blogs")
+                  ? "bg-white text-[#303030] shadow-xs font-semibold"
+                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+              )}
+            >
+              <PenTool className="w-4 h-4 text-[#303030] shrink-0" />
+              <span>Blogs</span>
+            </Link>
+          </li>
+
+          {/* 5. Reservas */}
+          <li>
+            <Link
+              href="/reservas"
+              className={cn(
+                "flex items-center justify-between px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                pathname?.startsWith("/reservas")
+                  ? "bg-white text-[#303030] shadow-xs font-semibold"
+                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                <Calendar className="w-4 h-4 text-[#303030] shrink-0" />
+                <span>Reservas</span>
+              </div>
+            </Link>
+          </li>
+        </ul>
+
+        {/* Sección: Canales de ventas */}
+        <div className="pt-3 border-t border-slate-300/50">
+          <div className="px-3 mb-1.5 flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span>Canal de ventas</span>
+          </div>
+
+          <ul className="space-y-1 font-medium">
+            <li>
+              <a 
+                href="http://localhost:3000" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-[#303030] hover:bg-slate-200/70 hover:text-black transition-colors text-[13px]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Store className="w-4 h-4 text-[#303030] shrink-0" />
+                  <span>Tienda Online Pública</span>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            </li>
+          </ul>
+        </div>
+
       </div>
-      <Link
-        href="/tours"
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
-          pathname?.startsWith("/tours") 
-            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
-            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
-        )}
-      >
-        <Map className="h-4 w-4 opacity-70" />
-        Tours
-      </Link>
-      <Link
-        href="/blogs"
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
-          pathname?.startsWith("/blogs") 
-            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
-            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
-        )}
-      >
-        <PenTool className="h-4 w-4 opacity-70" />
-        Blogs
-      </Link>
-      <Link
-        href="/categories"
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
-          pathname?.startsWith("/categories") 
-            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
-            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
-        )}
-      >
-        <Tags className="h-4 w-4 opacity-70" />
-        Categorías
-      </Link>
-      
-      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-5 mb-0.5">
-        Ventas & Operaciones
-      </div>
-      <Link
-        href="/reservas"
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 font-medium",
-          pathname?.startsWith("/reservas") 
-            ? "bg-[#0B4354]/10 text-[#0B4354] shadow-sm font-semibold" 
-            : "text-slate-600 hover:text-[#0B4354] hover:bg-slate-100"
-        )}
-      >
-        <Calendar className="h-4 w-4 opacity-70" />
-        Reservas
-      </Link>
-    </nav>
+
+    </div>
   );
 }
-

@@ -16,6 +16,7 @@ model Tour {
   // Megamenu / Grouping
   region          String?  // e.g. "Cusco", "Lima"
   menuGroup       String?  // e.g. "Full Day", "Aventura"
+  isFeatured      Boolean  @default(false)
   
   // Images
   bannerImage     String

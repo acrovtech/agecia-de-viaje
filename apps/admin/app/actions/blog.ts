@@ -5,55 +5,70 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
-const BlogParagraphSchema = z.object({
-  subtitle: z.string().nullable().optional(),
-  content: z.string().min(1, 'El contenido es requerido'),
-  image: z.string().nullable().optional(),
-  order: z.number().int().nonnegative()
-});
-
 const BlogSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
-  slug: z.string().min(3, 'El slug es requerido'),
-  bannerImage: z.string().url('Debe ser una URL válida'),
+  title: z.string().min(1, 'El título es requerido'),
+  slug: z.string().min(1, 'El slug es requerido'),
+  bannerImage: z.string().optional().default(''),
   metaTitle: z.string().optional().default(''),
   metaDescription: z.string().optional().default(''),
-  keywords: z.string().optional().default(''),
-  paragraphsJSON: z.string().min(1, 'Los párrafos son requeridos')
+  keywords: z.string().optional().default('')
 });
 
+function extractParagraphs(formData: FormData): { subtitle: string; content: string; image: string; order: number }[] {
+  let paragraphs: any[] = [];
+  const rawParagraphsJSON = formData.get('paragraphsJSON') as string;
+
+  if (rawParagraphsJSON && rawParagraphsJSON.trim() !== '' && rawParagraphsJSON !== '[]') {
+    try {
+      paragraphs = JSON.parse(rawParagraphsJSON);
+    } catch (e) {
+      console.warn("Could not parse paragraphsJSON, falling back to form fields.");
+    }
+  }
+
+  if (!paragraphs || paragraphs.length === 0) {
+    let index = 0;
+    while (formData.has(`paragraph_content_${index}`)) {
+      const content = (formData.get(`paragraph_content_${index}`) as string) || '';
+      if (content.trim() !== '') {
+        paragraphs.push({
+          subtitle: (formData.get(`paragraph_subtitle_${index}`) as string) || '',
+          content,
+          image: (formData.get(`paragraph_image_${index}`) as string) || '',
+          order: index
+        });
+      }
+      index++;
+    }
+  }
+
+  return paragraphs.map((p, i) => ({
+    subtitle: p.subtitle || '',
+    content: p.content || '',
+    image: p.image || '',
+    order: typeof p.order === 'number' ? p.order : i
+  }));
+}
+
 export async function createBlog(formData: FormData) {
-  // 1. Validar los datos principales del formulario
   const rawData = {
     title: formData.get('title'),
     slug: formData.get('slug'),
-    bannerImage: formData.get('bannerImage'),
+    bannerImage: formData.get('bannerImage') || '',
     metaTitle: formData.get('metaTitle') || '',
     metaDescription: formData.get('metaDescription') || '',
     keywords: formData.get('keywords') || '',
-    paragraphsJSON: formData.get('paragraphsJSON'),
   };
 
   const parsed = BlogSchema.safeParse(rawData);
 
   if (!parsed.success) {
-    // Para simplificar, devolvemos el primer error, pero en una app real 
-    // podrías devolver todo el objeto de errores o usar next-safe-action
     throw new Error(`Validación fallida: ${parsed.error.issues[0]?.message}`);
   }
 
-  const { title, slug, bannerImage, metaTitle, metaDescription, keywords, paragraphsJSON } = parsed.data;
+  const { title, slug, bannerImage, metaTitle, metaDescription, keywords } = parsed.data;
+  const paragraphs = extractParagraphs(formData);
 
-  // 2. Validar los párrafos desde el JSON
-  let paragraphs = [];
-  try {
-    const rawParagraphs = JSON.parse(paragraphsJSON);
-    paragraphs = z.array(BlogParagraphSchema).parse(rawParagraphs);
-  } catch (error) {
-    throw new Error('Error al parsear o validar los párrafos del blog.');
-  }
-
-  // 3. Crear el registro en la base de datos de manera segura
   await prisma.blog.create({
     data: {
       title,
@@ -69,6 +84,54 @@ export async function createBlog(formData: FormData) {
   });
 
   revalidatePath('/blogs');
+  revalidatePath('/blog');
+  revalidatePath(`/blog/${slug}`);
+  redirect('/blogs');
+}
+
+export async function updateBlog(formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    throw new Error('ID de la publicación no proporcionado.');
+  }
+
+  const rawData = {
+    title: formData.get('title'),
+    slug: formData.get('slug'),
+    bannerImage: formData.get('bannerImage') || '',
+    metaTitle: formData.get('metaTitle') || '',
+    metaDescription: formData.get('metaDescription') || '',
+    keywords: formData.get('keywords') || '',
+  };
+
+  const parsed = BlogSchema.safeParse(rawData);
+
+  if (!parsed.success) {
+    throw new Error(`Validación fallida: ${parsed.error.issues[0]?.message}`);
+  }
+
+  const { title, slug, bannerImage, metaTitle, metaDescription, keywords } = parsed.data;
+  const paragraphs = extractParagraphs(formData);
+
+  await prisma.blog.update({
+    where: { id },
+    data: {
+      title,
+      slug,
+      bannerImage,
+      metaTitle,
+      metaDescription,
+      keywords,
+      paragraphs: {
+        deleteMany: {},
+        create: paragraphs
+      }
+    },
+  });
+
+  revalidatePath('/blogs');
+  revalidatePath('/blog');
+  revalidatePath(`/blog/${slug}`);
   redirect('/blogs');
 }
 
@@ -78,6 +141,7 @@ export async function deleteBlog(id: string) {
       where: { id }
     });
     revalidatePath('/blogs');
+    revalidatePath('/blog');
     revalidatePath('/');
     return { success: true };
   } catch (error) {
@@ -85,4 +149,3 @@ export async function deleteBlog(id: string) {
     return { success: false, error: "No se pudo eliminar la publicación." };
   }
 }
-

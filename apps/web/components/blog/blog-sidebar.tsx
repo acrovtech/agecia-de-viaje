@@ -1,37 +1,58 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { prisma } from '@repo/db';
 
-const latestPosts = [
-  { id: 1, title: 'Los Secretos Ocultos de la Ciudadela de Machu Picchu', image: '/fallback.svg', slug: 'secretos-machu-picchu', date: '15 de Agosto, 2024' },
-  { id: 2, title: 'Guía Definitiva para el Camino Inca', image: '/fallback.svg', slug: 'guia-camino-inca', date: '12 de Agosto, 2024' },
-  { id: 3, title: '5 Cosas que debes saber antes de ir a Cusco', image: '/fallback.svg', slug: 'tips-cusco', date: '08 de Agosto, 2024' }
-];
+export async function BlogSidebar({ currentSlug }: { currentSlug?: string }) {
+  let latestPosts: any[] = [];
+  try {
+    latestPosts = await prisma.blog.findMany({
+      take: 4,
+      orderBy: { createdAt: 'desc' },
+      where: currentSlug ? { slug: { not: currentSlug } } : undefined
+    });
+  } catch (e) {
+    console.error("Error fetching latest blog posts for sidebar:", e);
+  }
 
-export function BlogSidebar({ currentSlug }: { currentSlug?: string }) {
-  // Filter out the current post and limit to 3 posts max if needed
-  const displayPosts = latestPosts.filter(post => post.slug !== currentSlug).slice(0, 3);
+  if (latestPosts.length === 0) return null;
 
   return (
-    <div className="w-full space-y-8 sticky top-24">
+    <div className="w-full space-y-8 sticky top-28 select-none">
       <div className="p-2">
-        <h3 className="text-xl font-bold font-heading text-gray-900 mb-6 border-b border-gray-100 pb-4">Últimos Posts</h3>
+        <h3 className="text-xl font-bold font-heading text-slate-900 mb-6 border-b border-slate-100 pb-4">
+          Últimos Posts
+        </h3>
         <div className="flex flex-col gap-6">
-          {displayPosts.map(post => (
-            <Link href={`/blog/${post.slug}`} key={post.id} className="group flex gap-4 items-center">
-              <div className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100">
-                <Image src={post.image} alt={post.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
-              </div>
-              <div className="flex flex-col gap-1 justify-center">
-                <h4 className="font-semibold text-gray-800 text-sm group-hover:text-brand-teal transition-colors leading-snug line-clamp-2">
-                  {post.title}
-                </h4>
-                <span className="text-xs text-gray-500 italic">{post.date}</span>
-              </div>
-            </Link>
-          ))}
+          {latestPosts.map(post => {
+            const hasThumb = Boolean(
+              post.bannerImage &&
+              !post.bannerImage.includes('default-') &&
+              (post.bannerImage.startsWith('http') || post.bannerImage.startsWith('/uploads') || post.bannerImage.startsWith('/blogs'))
+            );
+            const dateStr = new Date(post.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            return (
+              <Link href={`/blog/${post.slug}`} key={post.id} className="group flex gap-4 items-center">
+                <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200/80">
+                  {hasThumb ? (
+                    <Image src={post.bannerImage} alt={post.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">
+                      Blog
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 justify-center">
+                  <h4 className="font-semibold text-slate-800 text-sm group-hover:text-[#062918] transition-colors leading-snug line-clamp-2">
+                    {post.title}
+                  </h4>
+                  <span className="text-xs text-slate-400 font-medium">{dateStr}</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
-
