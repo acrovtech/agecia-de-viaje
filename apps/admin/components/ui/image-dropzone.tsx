@@ -1,10 +1,10 @@
 'use client';
 
-import { UploadCloud, X, Settings2, CheckCircle2, Loader2 } from 'lucide-react';
-import { useState, useRef } from 'react';
-import { Input } from './input';
-import { Label } from './label';
-import { Button } from './button';
+import { useState, useRef, useEffect } from 'react';
+import { UploadCloud, X, Settings2, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ImageDropzoneProps {
   label?: string;
@@ -28,12 +28,20 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
   
   // Estados para el panel SEO
   const [showSeoPanel, setShowSeoPanel] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [altText, setAltText] = useState('');
   const [imageTitle, setImageTitle] = useState('');
   const [imageDesc, setImageDesc] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizar initialUrl si cambia dinámicamente
+  useEffect(() => {
+    if (isValidInitialUrl && initialUrl) {
+      setFilePreview(initialUrl);
+    }
+  }, [initialUrl, isValidInitialUrl]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -51,12 +59,11 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
     try {
       const formData = new FormData();
       formData.append('file', file);
-      if (folder) {
-        formData.append('folder', folder);
-      }
+      if (folder) formData.append('folder', folder);
+
       const res = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
       const data = await res.json();
       if (data.success && data.url) {
@@ -89,9 +96,10 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
     }
   };
 
-  const removeImage = () => {
+  const confirmRemoveImage = () => {
     setFilePreview(null);
     if (inputRef.current) inputRef.current.value = '';
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -143,7 +151,7 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
               </div>
             )}
             
-            {/* Overlay animado de acciones (Ajustes SEO + Eliminar) */}
+            {/* Overlay animado de acciones (Ajustes SEO + Eliminar con confirmación) */}
             {!isUploading && (
               <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 z-10 p-2">
                 <Button 
@@ -151,7 +159,7 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
                   variant="secondary" 
                   size="sm" 
                   onClick={() => setShowSeoPanel(true)} 
-                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-white/95 text-slate-800 hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300"
+                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-white/95 text-slate-800 hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300 rounded-[0.375rem]"
                 >
                   <Settings2 className="w-3.5 h-3.5 text-slate-600" />
                   <span>Ajustes SEO</span>
@@ -161,8 +169,8 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
                   type="button" 
                   variant="secondary" 
                   size="sm" 
-                  onClick={removeImage} 
-                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-rose-500 text-white hover:bg-rose-600 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300"
+                  onClick={() => setShowDeleteConfirm(true)} 
+                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-rose-500 text-white hover:bg-rose-600 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300 rounded-[0.375rem]"
                 >
                   <X className="w-3.5 h-3.5 text-white" />
                   <span>Eliminar</span>
@@ -188,6 +196,41 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
       <input type="hidden" name={`${name}_alt`} value={altText} />
       <input type="hidden" name={`${name}_title`} value={imageTitle} />
       <input type="hidden" name={`${name}_description`} value={imageDesc} />
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white text-slate-900 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">¿Eliminar esta imagen?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Se quitará del formulario. ¿Deseas continuar?</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowDeleteConfirm(false)} 
+                className="text-xs h-8 font-semibold rounded-[0.375rem]"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="button" 
+                onClick={confirmRemoveImage} 
+                className="text-xs h-8 font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-[0.375rem]"
+              >
+                Sí, eliminar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal / Panel de Ajustes SEO (Estilo WordPress Media Library) */}
       {showSeoPanel && (
@@ -247,8 +290,8 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
 
             {/* Footer */}
             <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowSeoPanel(false)} className="text-xs h-8 font-semibold">Cancelar</Button>
-              <Button type="button" onClick={() => setShowSeoPanel(false)} className="px-6 text-xs h-8 font-bold bg-slate-900 text-white hover:bg-black">Guardar Cambios</Button>
+              <Button type="button" variant="outline" onClick={() => setShowSeoPanel(false)} className="text-xs h-8 font-semibold rounded-[0.375rem]">Cancelar</Button>
+              <Button type="button" onClick={() => setShowSeoPanel(false)} className="px-6 text-xs h-8 font-bold bg-slate-900 text-white hover:bg-black rounded-[0.375rem]">Guardar Cambios</Button>
             </div>
           </div>
         </div>
