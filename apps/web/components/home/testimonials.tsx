@@ -142,14 +142,14 @@ export function Testimonials() {
                     </p>
                   </div>
                   
-                  {/* Bottom Row: Read more */}
+                  {/* Bottom Row: Leer más */}
                   <a 
-                    href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d23253509-Reviews-Inca_Bound-Cusco_Cusco_Region.html" 
+                    href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-left mt-3 text-gray-400 text-[14px] hover:text-gray-700 transition-colors inline-block"
+                    className="text-left mt-3 text-gray-400 text-[14px] hover:text-[#00aa6c] font-medium transition-colors inline-block"
                   >
-                    Read more
+                    Leer más
                   </a>
                 </div>
               </div>
