@@ -1,26 +1,25 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-// Configuración del cliente S3 para Cloudflare R2
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'incabound-bucket';
-const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN || 'https://pub-xxxxxx.r2.dev';
+export function isR2Configured(): boolean {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  return Boolean(
+    accountId && accessKeyId && secretAccessKey && accountId !== 'tu_account_id_de_cloudflare'
+  );
+}
 
-export const isR2Configured = Boolean(
-  R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_ACCOUNT_ID !== 'your_cloudflare_account_id'
-);
-
-const r2Client = isR2Configured
-  ? new S3Client({
-      region: 'auto',
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID!,
-        secretAccessKey: R2_SECRET_ACCESS_KEY!,
-      },
-    })
-  : null;
+function getR2Client(): S3Client | null {
+  if (!isR2Configured()) return null;
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+    },
+  });
+}
 
 /**
  * Sube un archivo a Cloudflare R2 Bucket y retorna su URL pública.
@@ -38,7 +37,9 @@ export async function uploadToR2(
     const sanitizedFolder = folder.replace(/^\/+|\/+$/g, '') || 'assets';
     const key = `${sanitizedFolder}/${timestamp}-${sanitizedFileName}`;
 
-    if (!isR2Configured || !r2Client) {
+    const r2Client = getR2Client();
+
+    if (!r2Client) {
       console.warn('⚠️ Cloudflare R2 no tiene credenciales configuradas en .env. Se usará fallback.');
       return {
         success: true,
@@ -46,8 +47,10 @@ export async function uploadToR2(
       };
     }
 
+    const bucketName = process.env.R2_BUCKET_NAME || 'incabound';
+
     const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: bucketName,
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
@@ -55,7 +58,8 @@ export async function uploadToR2(
 
     await r2Client.send(command);
 
-    const baseUrl = R2_PUBLIC_DOMAIN.endsWith('/') ? R2_PUBLIC_DOMAIN.slice(0, -1) : R2_PUBLIC_DOMAIN;
+    const publicDomain = process.env.R2_PUBLIC_DOMAIN || 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev';
+    const baseUrl = publicDomain.endsWith('/') ? publicDomain.slice(0, -1) : publicDomain;
     const publicUrl = `${baseUrl}/${key}`;
 
     return {
