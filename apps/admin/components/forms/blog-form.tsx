@@ -285,7 +285,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
         {initialData?.id && (
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <a 
-              href={`http://localhost:3000/blog/${slug || initialData.slug}`}
+              href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${slug || initialData.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all select-none"

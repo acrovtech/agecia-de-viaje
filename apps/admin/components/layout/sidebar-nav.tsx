@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   return (
     <div className="flex flex-col h-full bg-[#EBEBEB] text-[#303030] border-none select-none text-[13px]">
