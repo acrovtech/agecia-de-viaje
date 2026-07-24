@@ -6,12 +6,23 @@ export async function RecommendedTours() {
   let tours: any[] = [];
 
   try {
+    // Priorizar tours marcados como destacados en el admin
     tours = await prisma.tour.findMany({
+      where: { isFeatured: true },
       take: 6,
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
+
+    // Rellenar con los más recientes si hay menos de 6 destacados
+    if (tours.length < 6) {
+      const existingIds = tours.map(t => t.id);
+      const recentTours = await prisma.tour.findMany({
+        where: { id: { notIn: existingIds } },
+        take: 6 - tours.length,
+        orderBy: { createdAt: 'desc' },
+      });
+      tours = [...tours, ...recentTours];
+    }
   } catch (error) {
     console.error("Error cargando tours recomendados:", error);
   }
