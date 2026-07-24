@@ -38,13 +38,13 @@ export function Header({ variant = 'transparent' }: HeaderProps) {
     <header 
       className={`left-0 w-full z-50 transition-colors duration-300 ${
         isMobileMenuOpen 
-          ? 'fixed top-0 bg-[#062918] shadow-md py-3' 
+          ? 'fixed top-0 bg-[#062918] shadow-md py-4' 
           : isDark 
-            ? 'relative top-0 bg-[#062918] border-b border-[#0c4028] shadow-md py-3' 
+            ? 'relative top-0 bg-[#062918] border-b border-[#0c4028] shadow-md py-4' 
             : 'absolute top-0 py-4 mt-[10px]'
       }`}
     >
-      <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-14">
+      <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center z-50">
           <Image src="/logo.svg" alt="Inca Bound Logo" width={90} height={90} className="w-[60px] h-[60px] md:w-[78px] md:h-[78px] object-contain transition-all duration-300" priority />
