@@ -61,6 +61,29 @@ export async function generateMetadata({ params }: TourPageProps) {
   };
 }
 
+function formatAltitude(raw: string | null | undefined): string {
+  if (!raw) return '3,400 m s. n. m.';
+  const cleaned = raw.replace(/m\s*\.?\s*s\s*\.?\s*n\s*\.?\s*m\s*\.?/gi, '').replace(/\s*m\b/gi, '').trim();
+  const match = cleaned.match(/[\d.,]+/);
+  if (!match) return `${raw} m s. n. m.`;
+
+  let numStr = match[0];
+  if (/^\d{4,}$/.test(numStr)) {
+    numStr = parseInt(numStr, 10).toLocaleString('en-US');
+  }
+
+  return `${numStr} m s. n. m.`;
+}
+
+function formatGroupSize(raw: string | null | undefined): string {
+  if (!raw) return 'Hasta 15 personas';
+  const match = raw.match(/\d+/);
+  if (match) {
+    return `Hasta ${match[0]} personas`;
+  }
+  return raw.startsWith('Hasta') ? raw : `Hasta ${raw}`;
+}
+
 export default async function TourPage({ params }: TourPageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug || '';
@@ -105,8 +128,8 @@ export default async function TourPage({ params }: TourPageProps) {
     privatePrice: tour.privatePricing?.[0]?.price || null,
     duration: tour.duration || 'Por consultar',
     difficulty: tour.difficulty || 'Moderada',
-    groupSize: tour.groupSize ? `Máximo ${tour.groupSize} personas` : 'Grupo reducido',
-    maxAltitude: tour.altitude || 'N/A',
+    groupSize: formatGroupSize(tour.groupSize),
+    maxAltitude: formatAltitude(tour.altitude),
     overview: tour.description,
     mapImage: tour.mapImage,
     itinerary: tour.itineraries.map((it, idx) => ({
