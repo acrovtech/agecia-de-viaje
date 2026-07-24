@@ -24,6 +24,23 @@ function SubmitSaveButton() {
   );
 }
 
+function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    target.style.height = 'auto';
+    target.style.height = `${target.scrollHeight}px`;
+    if (props.onInput) props.onInput(e);
+  };
+
+  return (
+    <textarea
+      {...props}
+      onInput={handleInput}
+      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed resize-y ${props.className || ''}`}
+    />
+  );
+}
+
 export function BlogForm({ initialData }: { initialData?: any }) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [status, setStatus] = useState<'Active' | 'Draft'>('Active');
@@ -404,11 +421,11 @@ export function BlogForm({ initialData }: { initialData?: any }) {
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="keywords" className="text-xs font-semibold text-slate-700">Palabras Clave (Keywords)</Label>
-                <Input 
+                <AutoResizeTextarea 
                   id="keywords" 
                   name="keywords" 
+                  rows={1}
                   placeholder="Ej. Laguna Humantay, Tour Humantay Cusco" 
-                  className="bg-white border-slate-300 text-xs h-8" 
                   value={keywords} 
                   onChange={(e) => setKeywords(e.target.value)} 
                 />
@@ -416,11 +433,11 @@ export function BlogForm({ initialData }: { initialData?: any }) {
 
               <div className="space-y-1">
                 <Label htmlFor="metaTitle" className="text-xs font-semibold text-slate-700">Meta Título</Label>
-                <Input 
+                <AutoResizeTextarea 
                   id="metaTitle" 
                   name="metaTitle" 
+                  rows={1}
                   placeholder="Título para buscadores..." 
-                  className="bg-white border-slate-300 text-xs h-8" 
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
                 />
@@ -431,11 +448,10 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                   <Label htmlFor="metaDescription" className="text-xs font-semibold text-slate-700">Meta Descripción</Label>
                   <span className="text-[10px] text-slate-400">{metaDescription.length}/160</span>
                 </div>
-                <textarea 
+                <AutoResizeTextarea 
                   id="metaDescription" 
                   name="metaDescription" 
-                  rows={3}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 resize-y"
+                  rows={2}
                   placeholder="Descripción corta para Google (110-160 caracteres)..."
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}

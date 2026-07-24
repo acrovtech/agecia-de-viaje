@@ -813,7 +813,7 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="focusKeyphrase" className="text-xs font-semibold text-slate-700">Palabra clave principal</Label>
-                <Input id="focusKeyphrase" placeholder="Ej. Tour Valle Sagrado Cusco" className="bg-white border-slate-300 text-xs h-8" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
+                <AutoResizeTextarea id="focusKeyphrase" rows={1} placeholder="Ej. Tour Valle Sagrado Cusco" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
               </div>
 
               <div className="space-y-1">
