@@ -10,9 +10,9 @@ export const metadata = {
 export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
+      <Header variant="dark" />
       
-      <main className="flex-1 pt-24 pb-20">
+      <main className="flex-1 py-12">
         <div className="container mx-auto px-4 max-w-6xl">
           
           <div className="mb-8">

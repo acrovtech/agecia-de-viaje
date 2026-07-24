@@ -15,7 +15,11 @@ type MenuTour = {
   menuGroup: string | null;
 };
 
-export function Header() {
+export interface HeaderProps {
+  variant?: 'transparent' | 'dark';
+}
+
+export function Header({ variant = 'transparent' }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tours, setTours] = useState<MenuTour[]>([]);
 
@@ -28,8 +32,18 @@ export function Header() {
       .catch(console.error);
   }, []);
 
+  const isDark = variant === 'dark';
+
   return (
-    <header className={`left-0 w-full z-50 py-4 mt-[10px] transition-colors duration-300 ${isMobileMenuOpen ? 'fixed top-0 bg-white shadow-md' : 'absolute top-0'}`}>
+    <header 
+      className={`left-0 w-full z-50 transition-colors duration-300 ${
+        isMobileMenuOpen 
+          ? 'fixed top-0 bg-[#062918] shadow-md py-3' 
+          : isDark 
+            ? 'relative top-0 bg-[#062918] border-b border-[#0c4028] shadow-md py-3' 
+            : 'absolute top-0 py-4 mt-[10px]'
+      }`}
+    >
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-14">
         {/* Logo */}
         <Link href="/" className="flex items-center z-50">
@@ -40,7 +54,7 @@ export function Header() {
         <DesktopNav tours={tours} />
 
         {/* Right Section: Actions */}
-        <div className={`flex items-center gap-6 text-sm z-50 transition-colors duration-300 ${isMobileMenuOpen ? 'text-gray-900' : 'text-white'}`}>
+        <div className={`flex items-center gap-6 text-sm z-50 transition-colors duration-300 ${isMobileMenuOpen ? 'text-white' : 'text-white'}`}>
           {/* Cart Icon */}
           <Link href="/carrito" className="relative hover:text-[#2dd4bf] transition-colors">
             <ShoppingCart size={24} />
@@ -49,7 +63,7 @@ export function Header() {
 
           {/* Mobile Menu Toggle */}
           <button 
-            className="lg:hidden transition-transform active:scale-95 p-1 relative w-8 h-8 flex items-center justify-center overflow-hidden"
+            className="lg:hidden transition-transform active:scale-95 p-1 relative w-8 h-8 flex items-center justify-center overflow-hidden text-white"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             <Menu 
