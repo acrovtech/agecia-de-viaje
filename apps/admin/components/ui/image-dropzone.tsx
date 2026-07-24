@@ -13,9 +13,10 @@ interface ImageDropzoneProps {
   className?: string;
   initialUrl?: string;
   folder?: string;
+  buttonLayout?: 'horizontal' | 'vertical' | 'auto';
 }
 
-export function ImageDropzone({ label, labelPosition = 'top', name, className, initialUrl, folder }: ImageDropzoneProps) {
+export function ImageDropzone({ label, labelPosition = 'top', name, className, initialUrl, folder, buttonLayout = 'horizontal' }: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const isValidInitialUrl = Boolean(
     initialUrl && 
@@ -153,15 +154,19 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
             
             {/* Overlay animado de acciones (Ajustes SEO + Eliminar con confirmación) */}
             {!isUploading && (
-              <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 z-10 p-2">
+              <div className={`absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-300 flex ${
+                buttonLayout === 'vertical' ? 'flex-col items-center justify-center gap-1.5' : 'flex-row items-center justify-center gap-2'
+              } z-10 p-2`}>
                 <Button 
                   type="button" 
                   variant="secondary" 
                   size="sm" 
                   onClick={() => setShowSeoPanel(true)} 
-                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-white/95 text-slate-800 hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300 rounded-[0.375rem]"
+                  className={`gap-1.5 shadow-lg text-[11px] font-semibold h-7 bg-white/95 text-slate-800 hover:bg-white transition-all transform translate-y-1 group-hover:translate-y-0 duration-300 rounded-[0.375rem] ${
+                    buttonLayout === 'vertical' ? 'w-full max-w-[125px] justify-center' : ''
+                  }`}
                 >
-                  <Settings2 className="w-3.5 h-3.5 text-slate-600" />
+                  <Settings2 className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                   <span>Ajustes SEO</span>
                 </Button>
                 
@@ -170,9 +175,11 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
                   variant="secondary" 
                   size="sm" 
                   onClick={() => setShowDeleteConfirm(true)} 
-                  className="gap-1.5 shadow-lg text-[11px] font-semibold h-8 bg-rose-500 text-white hover:bg-rose-600 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300 rounded-[0.375rem]"
+                  className={`gap-1.5 shadow-lg text-[11px] font-semibold h-7 bg-rose-500 text-white hover:bg-rose-600 transition-all transform translate-y-1 group-hover:translate-y-0 duration-300 rounded-[0.375rem] ${
+                    buttonLayout === 'vertical' ? 'w-full max-w-[125px] justify-center' : ''
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5 text-white" />
+                  <X className="w-3.5 h-3.5 text-white shrink-0" />
                   <span>Eliminar</span>
                 </Button>
               </div>

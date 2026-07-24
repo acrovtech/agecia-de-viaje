@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -29,24 +29,31 @@ interface FaqItem {
 }
 
 function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [props.value, props.defaultValue]);
+
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-    target.style.height = 'auto';
-    target.style.height = `${target.scrollHeight}px`;
+    adjustHeight();
     if (props.onInput) props.onInput(e);
   };
 
   return (
     <textarea
       {...props}
-      ref={(el) => {
-        if (el) {
-          el.style.height = 'auto';
-          el.style.height = `${el.scrollHeight}px`;
-        }
-      }}
+      ref={textareaRef}
       onInput={handleInput}
-      className={`flex w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs focus:border-slate-900 focus:outline-none placeholder:text-slate-400 text-slate-800 transition-all resize-none overflow-hidden ${props.className || ''}`}
+      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed overflow-hidden resize-none transition-[height] duration-75 ${props.className || ''}`}
     />
   );
 }

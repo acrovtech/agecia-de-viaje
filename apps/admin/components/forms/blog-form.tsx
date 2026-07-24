@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,18 +25,31 @@ function SubmitSaveButton() {
 }
 
 function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [props.value, props.defaultValue]);
+
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-    target.style.height = 'auto';
-    target.style.height = `${target.scrollHeight}px`;
+    adjustHeight();
     if (props.onInput) props.onInput(e);
   };
 
   return (
     <textarea
       {...props}
+      ref={textareaRef}
       onInput={handleInput}
-      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed resize-y ${props.className || ''}`}
+      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed overflow-hidden resize-none transition-[height] duration-75 ${props.className || ''}`}
     />
   );
 }
@@ -364,7 +377,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                         />
                       </div>
                       <div className="md:col-span-3 flex flex-col space-y-1">
-                        <ImageDropzone name={`paragraph_image_${index}`} initialUrl={p.image || ''} folder={`blogs/${slug || 'nuevo'}`} label="Imagen Adjunta" className="h-full flex-1" />
+                        <ImageDropzone name={`paragraph_image_${index}`} initialUrl={p.image || ''} folder={`blogs/${slug || 'nuevo'}`} label="Imagen Adjunta" className="h-full flex-1" buttonLayout="vertical" />
                       </div>
                     </div>
                   </div>
