@@ -12,6 +12,34 @@ export interface TourCardProps {
   slug: string;
 }
 
+function formatAltitude(raw: string): string {
+  if (!raw) return '3,400 m s. n. m.';
+  // Limpiar cualquier variación de "m.s.n.m.", "m s n m", "msnm", "m", etc.
+  const cleaned = raw.replace(/m\s*\.?\s*s\s*\.?\s*n\s*\.?\s*m\s*\.?/gi, '').replace(/\s*m\b/gi, '').trim();
+  
+  // Extraer el valor numérico
+  const match = cleaned.match(/[\d.,]+/);
+  if (!match) return `${raw} m s. n. m.`;
+
+  let numStr = match[0];
+  // Si son dígitos puros como 4200 o 3700, formatear con coma -> 4,200
+  if (/^\d{4,}$/.test(numStr)) {
+    numStr = parseInt(numStr, 10).toLocaleString('en-US');
+  }
+
+  return `${numStr} m s. n. m.`;
+}
+
+function formatGroupSize(raw: string): string {
+  if (!raw) return 'Hasta 15';
+  // Extraer sólo el número ingresado en el admin
+  const match = raw.match(/\d+/);
+  if (match) {
+    return `Hasta ${match[0]}`;
+  }
+  return raw.startsWith('Hasta') ? raw : `Hasta ${raw}`;
+}
+
 export function TourCard({
   title,
   imageSrc,
@@ -23,8 +51,11 @@ export function TourCard({
 }: TourCardProps) {
   const isValidImage = imageSrc && (imageSrc.startsWith('http') || imageSrc.startsWith('/uploads') || imageSrc.startsWith('data:image') || imageSrc.startsWith('/salkantay'));
 
+  const formattedAltitude = formatAltitude(altitude);
+  const formattedGroupSize = formatGroupSize(groupSize);
+
   return (
-    <Link href={`/tours/${slug}`} className="group block h-full">
+    <Link href={`/tours/${slug}`} className="group block h-full select-none">
       <div className="bg-white rounded-[20px] transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-200 hover:border-[#062918] hover:shadow-md">
         {/* Top Image */}
         <div className="relative w-full h-[240px] sm:h-[260px] overflow-hidden bg-slate-100 flex items-center justify-center">
@@ -62,27 +93,27 @@ export function TourCard({
             </div>
           </div>
 
-          {/* Tech Specs Grid - Separado con borde y margen ordenado */}
+          {/* Tech Specs Grid */}
           <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 pt-3.5 border-t border-gray-100 mt-auto">
             {/* Duration */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0" title={`Duración: ${duration}`}>
               <Calendar className="w-4 h-4 text-[#0A3D2A] shrink-0" />
               <span className="text-[12.5px] font-medium text-gray-700 truncate">{duration || '1 Día'}</span>
             </div>
             {/* Difficulty */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0" title={`Dificultad: ${difficulty}`}>
               <PersonStanding className="w-4 h-4 text-[#0A3D2A] shrink-0" />
-              <span className="text-[12.5px] font-medium text-gray-700 truncate">{difficulty || 'Moderado'}</span>
+              <span className="text-[12.5px] font-medium text-gray-700 truncate">{difficulty || 'Moderada'}</span>
             </div>
             {/* Altitude */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0" title={`Altitud: ${formattedAltitude}`}>
               <Mountain className="w-4 h-4 text-[#0A3D2A] shrink-0" />
-              <span className="text-[12.5px] font-medium text-gray-700 truncate">{altitude || '3,400m'}</span>
+              <span className="text-[12.5px] font-medium text-gray-700 truncate">{formattedAltitude}</span>
             </div>
             {/* Group Size */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0" title={`Grupo: ${formattedGroupSize}`}>
               <Users className="w-4 h-4 text-[#0A3D2A] shrink-0" />
-              <span className="text-[12.5px] font-medium text-gray-700 truncate">{groupSize || 'Grupal'}</span>
+              <span className="text-[12.5px] font-medium text-gray-700 truncate">{formattedGroupSize}</span>
             </div>
           </div>
         </div>
