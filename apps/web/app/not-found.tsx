@@ -1,116 +1,129 @@
 import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { MapPin, ArrowRight, Home, Mountain, Sparkles } from 'lucide-react';
+import { MapPin, ArrowRight, Home, Mountain } from 'lucide-react';
 
-function Llama404Svg() {
+function CuteLlamaSvg() {
   return (
-    <div className="relative w-48 h-48 md:w-56 md:h-56 mx-auto mb-6 flex items-center justify-center">
-      {/* Background Soft Glow */}
-      <div className="absolute inset-0 bg-emerald-100/70 rounded-full blur-2xl transform scale-90" />
-
-      {/* SVG Llamita Exploradora */}
+    <div className="relative w-52 h-52 md:w-64 md:h-64 mx-auto mb-4 flex items-center justify-center">
       <svg
-        viewBox="0 0 200 200"
-        className="w-full h-full relative z-10 drop-shadow-md select-none"
+        viewBox="0 0 240 240"
+        className="w-full h-full relative z-10 select-none"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Nubes flotantes */}
-        <path
-          d="M25 55C25 49.4772 29.4772 45 35 45C38.6433 45 41.7997 46.9451 43.5 49.827C44.7554 48.0674 46.7869 47 49 47C52.866 47 56 50.134 56 54C56 54.3414 55.9756 54.677 55.9288 55.0051C57.7317 55.9084 59 57.8073 59 60C59 63.3137 56.3137 66 53 66H30C27.2386 66 25 63.7614 25 61V55Z"
-          fill="#E2E8F0"
-          className="animate-pulse"
-        />
-        <path
-          d="M140 35C140 29.4772 144.477 25 150 25C153.643 25 156.8 26.9451 158.5 29.827C159.755 28.0674 161.787 27 164 27C167.866 27 171 30.134 171 34C171 34.3414 170.976 34.677 170.929 35.0051C172.732 35.9084 174 37.8073 174 40C174 43.3137 171.314 46 168 46H145C142.239 46 140 43.7614 140 41V35Z"
-          fill="#CBD5E1"
-          className="animate-pulse"
-        />
+        {/* Sombra en el suelo */}
+        <ellipse cx="120" cy="205" rx="55" ry="8" fill="#E2E8F0" />
 
-        {/* Cuerpo de la Llamita */}
+        {/* Patas Traseras */}
+        <path d="M92 155V198C92 202 87 205 82 205H80V155H92Z" fill="#CBD5E1" />
+        <path d="M148 155V198C148 202 143 205 138 205H136V155H148Z" fill="#CBD5E1" />
+
+        {/* Patas Delanteras */}
+        <path d="M102 155V200C102 203.5 97 205 92 205H90V155H102Z" fill="#062918" />
+        <path d="M158 155V200C158 203.5 153 205 148 205H146V155H158Z" fill="#062918" />
+
+        {/* Cuerpo Exponencial Suave */}
         <path
-          d="M75 145C75 125 90 115 110 115C130 115 145 125 145 145V165H75V145Z"
-          fill="#F8FAFC"
+          d="M75 140C65 140 55 130 55 115C55 105 60 95 72 95C72 95 90 90 120 90C150 90 168 95 168 95C180 95 185 105 185 115C185 130 175 140 165 140H75Z"
+          fill="#FFFFFF"
           stroke="#062918"
-          strokeWidth="3.5"
+          strokeWidth="4"
           strokeLinejoin="round"
         />
 
-        {/* Patitas */}
-        <rect x="85" y="160" width="10" height="25" rx="5" fill="#062918" />
-        <rect x="125" y="160" width="10" height="25" rx="5" fill="#062918" />
-
-        {/* Ponchito / Manta Andina Multicolor */}
+        {/* Colita Fluffy */}
         <path
-          d="M85 130C85 130 110 138 135 130V150C135 150 110 158 85 150V130Z"
+          d="M57 105C50 100 42 108 48 116C52 122 60 118 60 112"
+          fill="#FFFFFF"
+          stroke="#062918"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+
+        {/* Ponchito / Manta Andina Tradicional */}
+        <path
+          d="M95 92C95 92 120 98 145 92V135C145 135 120 142 95 135V92Z"
           fill="#008060"
           stroke="#062918"
-          strokeWidth="2.5"
+          strokeWidth="3"
         />
-        <path d="M85 137H135" stroke="#F59E0B" strokeWidth="3" />
-        <path d="M85 143H135" stroke="#EF4444" strokeWidth="3" />
+        {/* Franjas del Ponchito */}
+        <path d="M95 102H145" stroke="#F59E0B" strokeWidth="4" />
+        <path d="M95 112H145" stroke="#E11D48" strokeWidth="4" />
+        <path d="M95 122H145" stroke="#3B82F6" strokeWidth="4" />
+        {/* Flecos del Ponchito */}
+        <path d="M98 136V143M108 137V144M118 138V145M128 137V144M138 136V143" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
 
-        {/* Cuello y Cabeza */}
+        {/* Cuello Alto Elegante */}
         <path
-          d="M85 135V75C85 60 95 50 110 50C118 50 125 55 125 65V135"
-          fill="#F8FAFC"
+          d="M135 95V45C135 38 142 32 150 32C158 32 165 38 165 45V95"
+          fill="#FFFFFF"
+          stroke="#062918"
+          strokeWidth="4"
+          strokeLinejoin="round"
+        />
+
+        {/* Cabeza Tiers */}
+        <path
+          d="M135 48C135 38 145 28 158 28C171 28 178 35 178 48C178 56 170 62 158 62C145 62 135 58 135 48Z"
+          fill="#FFFFFF"
+          stroke="#062918"
+          strokeWidth="4"
+          strokeLinejoin="round"
+        />
+
+        {/* Orejita Izquierda */}
+        <path
+          d="M145 32L140 8C138 3 146 3 150 8L153 32"
+          fill="#FFFFFF"
           stroke="#062918"
           strokeWidth="3.5"
           strokeLinejoin="round"
         />
+        <path d="M144 26L142 12" stroke="#FDA4AF" strokeWidth="2" strokeLinecap="round" />
 
-        {/* Orejitas */}
+        {/* Orejita Derecha */}
         <path
-          d="M92 52L86 32C85 28 92 28 95 32L100 52"
-          fill="#F8FAFC"
-          stroke="#062918"
-          strokeWidth="3.5"
-          strokeLinejoin="round"
-          className="origin-bottom animate-bounce-slow"
-        />
-        <path
-          d="M108 52L112 32C113 28 120 28 119 32L115 52"
-          fill="#F8FAFC"
+          d="M162 32L167 8C169 3 177 3 175 8L170 32"
+          fill="#FFFFFF"
           stroke="#062918"
           strokeWidth="3.5"
           strokeLinejoin="round"
         />
+        <path d="M165 26L167 12" stroke="#FDA4AF" strokeWidth="2" strokeLinecap="round" />
 
-        {/* Chullo / Gorrito Andino */}
-        <path d="M88 52C88 52 103 40 118 52V58H88V52Z" fill="#EF4444" stroke="#062918" strokeWidth="2.5" />
-        <circle cx="103" cy="38" r="6" fill="#F59E0B" stroke="#062918" strokeWidth="2" />
+        {/* Chullo / Gorro Andino Tradicional */}
+        <path
+          d="M140 32C140 32 158 20 174 32V38H140V32Z"
+          fill="#E11D48"
+          stroke="#062918"
+          strokeWidth="3"
+        />
+        {/* Pompones del Chullo */}
+        <circle cx="157" cy="18" r="6" fill="#F59E0B" stroke="#062918" strokeWidth="2" />
+        <path d="M140 38L137 46" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
+        <path d="M174 38L177 46" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
 
-        {/* Ojitos Tiernos */}
-        <circle cx="98" cy="68" r="3.5" fill="#062918" />
-        <circle cx="99.5" cy="66.5" r="1" fill="#FFFFFF" />
+        {/* Ojitos Curiosos Ternos */}
+        <circle cx="162" cy="42" r="4" fill="#062918" />
+        <circle cx="163.5" cy="40.5" r="1.5" fill="#FFFFFF" />
 
-        {/* Nariz / Hocico */}
-        <ellipse cx="90" cy="74" rx="7" ry="5" fill="#E2E8F0" stroke="#062918" strokeWidth="2" />
-        <path d="M88 74Q90 77 92 74" stroke="#062918" strokeWidth="2" strokeLinecap="round" />
+        {/* Hocico tierno */}
+        <ellipse cx="173" cy="48" rx="8" ry="6" fill="#F1F5F9" stroke="#062918" strokeWidth="2.5" />
+        <path d="M173 47V50M170 51C171.5 53 174.5 53 176 51" stroke="#062918" strokeWidth="2" strokeLinecap="round" />
 
         {/* Cachetito Sonrojado */}
-        <circle cx="104" cy="74" r="3.5" fill="#F43F5E" fillOpacity="0.4" />
+        <ellipse cx="152" cy="50" rx="4" ry="3" fill="#FDA4AF" />
 
-        {/* Brújula/Medalla colgando */}
-        <circle cx="110" cy="115" r="7" fill="#F59E0B" stroke="#062918" strokeWidth="2" />
-        <path d="M110 110V120M105 115H115" stroke="#062918" strokeWidth="1.5" />
-
-        {/* Signo de Pregunta animado flotando */}
-        <g className="animate-bounce">
-          <circle cx="152" cy="72" r="16" fill="#062918" />
-          <text
-            x="152"
-            y="78"
-            fill="#2DD4BF"
-            fontSize="18"
-            fontWeight="bold"
-            textAnchor="middle"
-            fontFamily="sans-serif"
-          >
-            ?
-          </text>
-        </g>
+        {/* Bufanda Andina en el Cuello */}
+        <path
+          d="M132 62C132 62 150 68 168 62L172 74C172 74 150 80 132 74V62Z"
+          fill="#F59E0B"
+          stroke="#062918"
+          strokeWidth="3"
+        />
+        <path d="M152 70V88" stroke="#E11D48" strokeWidth="4" strokeLinecap="round" strokeDasharray="2 2" />
       </svg>
     </div>
   );
@@ -119,95 +132,89 @@ function Llama404Svg() {
 export default function NotFound() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFA] text-gray-900">
-      {/* Header con estilo oscuro de la marca (#062918) */}
+      {/* Header con estilo verde de marca (#062918) */}
       <Header variant="dark" />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16 md:py-24 text-center">
-        <div className="bg-white p-8 md:p-14 rounded-3xl border border-gray-200/80 shadow-xl max-w-2xl w-full flex flex-col items-center relative overflow-hidden">
-          
-          {/* Accent top gradient bar */}
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#062918] via-[#008060] to-[#2dd4bf]" />
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 text-center max-w-4xl mx-auto w-full">
+        {/* SVG Llamita Exploradora */}
+        <CuteLlamaSvg />
 
-          {/* SVG Llamita Animada */}
-          <Llama404Svg />
+        {/* Número 404 Estilizado Limpio */}
+        <h1 className="text-6xl md:text-8xl font-black font-heading text-[#062918] tracking-tight mb-2">
+          404
+        </h1>
 
-          {/* Badge 404 */}
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-[#008060] font-bold text-xs tracking-wider uppercase mb-3 border border-emerald-200/60">
-            <Sparkles size={14} />
-            Error 404
-          </span>
+        {/* Título Principal */}
+        <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 font-heading mb-3 tracking-tight">
+          ¡Destino no encontrado!
+        </h2>
 
-          {/* Title & Description */}
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#062918] font-heading mb-3 tracking-tight">
-            ¡Destino no encontrado!
-          </h1>
-          <p className="text-gray-600 text-sm md:text-base max-w-md mx-auto mb-8 leading-relaxed">
-            Nuestra llamita exploradora buscó por todos los Andes, pero la ruta o página que buscas no existe o ha sido movida.
+        {/* Descripción Clara sin adornos excesivos */}
+        <p className="text-gray-600 text-base md:text-lg max-w-lg mx-auto mb-8 leading-relaxed font-sans">
+          Nuestra llamita exploradora buscó por todos los Andes, pero la ruta o página que buscas no existe o ha sido movida.
+        </p>
+
+        {/* Botones de Acción directos sobre el fondo */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mb-14">
+          <Link
+            href="/"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#062918] hover:bg-[#041c10] text-white font-bold text-sm rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-0.5"
+          >
+            <Home size={18} />
+            <span>Volver al Inicio</span>
+          </Link>
+
+          <Link
+            href="/tours"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 font-bold text-sm rounded-full shadow-sm transition-all duration-300 transform hover:-translate-y-0.5"
+          >
+            <Mountain size={18} className="text-[#008060]" />
+            <span>Ver todos los tours</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {/* Rutas Populares Directas */}
+        <div className="w-full border-t border-gray-200/80 pt-10">
+          <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-6 flex items-center justify-center gap-2">
+            <MapPin size={15} className="text-[#008060]" />
+            <span>Rutas populares recomendadas</span>
           </p>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full max-w-md mb-10">
-            <Link
-              href="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#062918] hover:bg-[#041c10] text-white font-semibold text-sm rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mx-auto">
+            <Link 
+              href="/tours/machu-picchu-full-day"
+              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
             >
-              <Home size={18} />
-              <span>Volver al Inicio</span>
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918] transition-colors">Machu Picchu</h4>
+                <p className="text-xs text-gray-500 mt-0.5">Full Day Express</p>
+              </div>
+              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
             </Link>
 
-            <Link
-              href="/tours"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-gray-50 hover:bg-gray-100 border border-gray-300 text-gray-800 font-semibold text-sm rounded-full transition-all duration-300 transform hover:-translate-y-0.5"
+            <Link 
+              href="/tours/camino-inca-4-dias"
+              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
             >
-              <Mountain size={18} className="text-[#008060]" />
-              <span>Ver todos los tours</span>
-              <ArrowRight size={16} />
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918]">Camino Inca</h4>
+                <p className="text-xs text-gray-500 mt-0.5">4 Días / 3 Noches</p>
+              </div>
+              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
+            </Link>
+
+            <Link 
+              href="/tours/montana-de-7-colores"
+              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
+            >
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918]">Vinicunca</h4>
+                <p className="text-xs text-gray-500 mt-0.5">7 Colores</p>
+              </div>
+              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
             </Link>
           </div>
-
-          {/* Quick Recommendation Destinations */}
-          <div className="w-full border-t border-gray-100 pt-8 mt-2">
-            <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-4 flex items-center justify-center gap-1.5">
-              <MapPin size={14} className="text-[#008060]" />
-              <span>Rutas populares para explorar</span>
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-              <Link 
-                href="/tours/machu-picchu-full-day"
-                className="group p-3.5 bg-gray-50 hover:bg-emerald-50/60 border border-gray-200 hover:border-emerald-300 rounded-xl transition-all duration-200 text-left flex items-center justify-between"
-              >
-                <div>
-                  <h4 className="font-bold text-xs text-gray-900 group-hover:text-[#062918]">Machu Picchu</h4>
-                  <p className="text-[11px] text-gray-500">Full Day Express</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-              </Link>
-
-              <Link 
-                href="/tours/camino-inca-4-dias"
-                className="group p-3.5 bg-gray-50 hover:bg-emerald-50/60 border border-gray-200 hover:border-emerald-300 rounded-xl transition-all duration-200 text-left flex items-center justify-between"
-              >
-                <div>
-                  <h4 className="font-bold text-xs text-gray-900 group-hover:text-[#062918]">Camino Inca</h4>
-                  <p className="text-[11px] text-gray-500">4 Días / 3 Noches</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-              </Link>
-
-              <Link 
-                href="/tours/montana-de-7-colores"
-                className="group p-3.5 bg-gray-50 hover:bg-emerald-50/60 border border-gray-200 hover:border-emerald-300 rounded-xl transition-all duration-200 text-left flex items-center justify-between"
-              >
-                <div>
-                  <h4 className="font-bold text-xs text-gray-900 group-hover:text-[#062918]">Vinicunca</h4>
-                  <p className="text-[11px] text-gray-500">7 Colores</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-              </Link>
-            </div>
-          </div>
-
         </div>
       </main>
 
