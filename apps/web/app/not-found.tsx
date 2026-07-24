@@ -3,127 +3,191 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MapPin, ArrowRight, Home, Mountain } from 'lucide-react';
 
-function CuteLlamaSvg() {
+function AnimatedLlamaSvg() {
   return (
-    <div className="relative w-52 h-52 md:w-64 md:h-64 mx-auto mb-4 flex items-center justify-center">
+    <div className="relative w-60 h-60 md:w-72 md:h-72 mx-auto mb-2 flex items-center justify-center select-none">
+      <style>{`
+        @keyframes llamaBreath {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-5px) rotate(1.5deg); }
+        }
+        @keyframes earWiggle {
+          0%, 88%, 100% { transform: rotate(0deg); }
+          92% { transform: rotate(-12deg); }
+          96% { transform: rotate(6deg); }
+        }
+        @keyframes tailWag {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(14deg); }
+        }
+        @keyframes cloudFloat {
+          0%, 100% { transform: translateX(0px); }
+          50% { transform: translateX(15px); }
+        }
+        .animate-llama-body {
+          animation: llamaBreath 4s ease-in-out infinite;
+          transform-origin: bottom center;
+        }
+        .animate-[#062918] {
+          animation: earWiggle 5s ease-in-out infinite;
+          transform-origin: bottom center;
+        }
+        .animate-tail {
+          animation: tailWag 3s ease-in-out infinite;
+          transform-origin: top right;
+        }
+        .animate-cloud-slow {
+          animation: cloudFloat 7s ease-in-out infinite;
+        }
+      `}</style>
+
       <svg
-        viewBox="0 0 240 240"
-        className="w-full h-full relative z-10 select-none"
+        viewBox="0 0 300 300"
+        className="w-full h-full relative z-10"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Sombra en el suelo */}
-        <ellipse cx="120" cy="205" rx="55" ry="8" fill="#E2E8F0" />
+        {/* Nubes Suaves de Fondo */}
+        <g className="animate-cloud-slow" opacity="0.6">
+          <path d="M30 70C30 63.4 35.4 58 42 58C46.3 58 50.1 60.3 52.2 63.7C53.7 61.6 56.1 60.3 58.8 60.3C63.4 60.3 67.2 64.1 67.2 68.7C67.2 69.1 67.1 69.5 67.1 69.9C69.2 71 70.7 73.3 70.7 75.9C70.7 79.9 67.5 83.1 63.5 83.1H36C32.7 83.1 30 80.4 30 77.1V70Z" fill="#CBD5E1" />
+          <path d="M210 50C210 44.5 214.5 40 220 40C223.6 40 226.8 41.9 228.5 44.8C229.8 43.1 231.8 42 234 42C237.9 42 241 45.1 241 49C241 49.3 241 49.7 240.9 50C242.7 50.9 244 52.8 244 55C244 58.3 241.3 61 238 61H215C212.2 61 210 58.8 210 56V50Z" fill="#E2E8F0" />
+        </g>
 
-        {/* Patas Traseras */}
-        <path d="M92 155V198C92 202 87 205 82 205H80V155H92Z" fill="#CBD5E1" />
-        <path d="M148 155V198C148 202 143 205 138 205H136V155H148Z" fill="#CBD5E1" />
+        {/* Sombra en el Suelo */}
+        <ellipse cx="150" cy="255" rx="75" ry="10" fill="#E2E8F0" />
 
-        {/* Patas Delanteras */}
-        <path d="M102 155V200C102 203.5 97 205 92 205H90V155H102Z" fill="#062918" />
-        <path d="M158 155V200C158 203.5 153 205 148 205H146V155H158Z" fill="#062918" />
+        {/* --- GRUPO ANIMA DE LA LLAMA --- */}
+        <g className="animate-llama-body">
 
-        {/* Cuerpo Exponencial Suave */}
-        <path
-          d="M75 140C65 140 55 130 55 115C55 105 60 95 72 95C72 95 90 90 120 90C150 90 168 95 168 95C180 95 185 105 185 115C185 130 175 140 165 140H75Z"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="4"
-          strokeLinejoin="round"
-        />
+          {/* Patita Trasera Izquierda (Fondo) */}
+          <path d="M105 185C105 185 102 225 100 248C100 252 94 254 88 254C84 254 82 250 83 245L90 185H105Z" fill="#CBD5E1" />
+          {/* Patita Delantera Izquierda (Fondo) */}
+          <path d="M185 185C185 185 182 225 180 248C180 252 174 254 168 254C164 254 162 250 163 245L170 185H185Z" fill="#CBD5E1" />
 
-        {/* Colita Fluffy */}
-        <path
-          d="M57 105C50 100 42 108 48 116C52 122 60 118 60 112"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-        />
+          {/* Colita Fluffy Movible */}
+          <g className="animate-tail">
+            <path
+              d="M72 135C60 128 48 138 52 152C55 162 66 165 74 158"
+              fill="#FFFFFF"
+              stroke="#062918"
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+          </g>
 
-        {/* Ponchito / Manta Andina Tradicional */}
-        <path
-          d="M95 92C95 92 120 98 145 92V135C145 135 120 142 95 135V92Z"
-          fill="#008060"
-          stroke="#062918"
-          strokeWidth="3"
-        />
-        {/* Franjas del Ponchito */}
-        <path d="M95 102H145" stroke="#F59E0B" strokeWidth="4" />
-        <path d="M95 112H145" stroke="#E11D48" strokeWidth="4" />
-        <path d="M95 122H145" stroke="#3B82F6" strokeWidth="4" />
-        {/* Flecos del Ponchito */}
-        <path d="M98 136V143M108 137V144M118 138V145M128 137V144M138 136V143" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+          {/* Cuerpo Esponjoso Principal */}
+          <path
+            d="M80 170C68 170 60 155 60 140C60 125 72 115 88 115H172C188 115 200 125 200 140C200 155 192 170 180 170H80Z"
+            fill="#FFFFFF"
+            stroke="#062918"
+            strokeWidth="4.5"
+            strokeLinejoin="round"
+          />
 
-        {/* Cuello Alto Elegante */}
-        <path
-          d="M135 95V45C135 38 142 32 150 32C158 32 165 38 165 45V95"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="4"
-          strokeLinejoin="round"
-        />
+          {/* Textura de Lana en la Espalda */}
+          <path d="M70 130C66 122 74 116 80 120C84 112 94 114 96 120" stroke="#E2E8F0" strokeWidth="3" strokeLinecap="round" />
 
-        {/* Cabeza Tiers */}
-        <path
-          d="M135 48C135 38 145 28 158 28C171 28 178 35 178 48C178 56 170 62 158 62C145 62 135 58 135 48Z"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="4"
-          strokeLinejoin="round"
-        />
+          {/* Patita Trasera Derecha (Frente) */}
+          <path d="M118 170C118 170 115 220 113 248C113 252 107 254 102 254C98 254 96 250 97 245L105 170H118Z" fill="#FFFFFF" stroke="#062918" strokeWidth="4" strokeLinejoin="round" />
+          {/* Pesuña Trasera */}
+          <path d="M113 244L113 248C113 252 107 254 102 254C98 254 96 250 97 245L98 244H113Z" fill="#062918" />
 
-        {/* Orejita Izquierda */}
-        <path
-          d="M145 32L140 8C138 3 146 3 150 8L153 32"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="3.5"
-          strokeLinejoin="round"
-        />
-        <path d="M144 26L142 12" stroke="#FDA4AF" strokeWidth="2" strokeLinecap="round" />
+          {/* Patita Delantera Derecha (Frente) */}
+          <path d="M198 170C198 170 195 220 193 248C193 252 187 254 182 254C178 254 176 250 177 245L185 170H198Z" fill="#FFFFFF" stroke="#062918" strokeWidth="4" strokeLinejoin="round" />
+          {/* Pesuña Delantera */}
+          <path d="M193 244L193 248C193 252 187 254 182 254C178 254 176 250 177 245L178 244H193Z" fill="#062918" />
 
-        {/* Orejita Derecha */}
-        <path
-          d="M162 32L167 8C169 3 177 3 175 8L170 32"
-          fill="#FFFFFF"
-          stroke="#062918"
-          strokeWidth="3.5"
-          strokeLinejoin="round"
-        />
-        <path d="M165 26L167 12" stroke="#FDA4AF" strokeWidth="2" strokeLinecap="round" />
+          {/* Manta Andina Tradicional (Ponchito) */}
+          <path
+            d="M105 115C105 115 135 124 165 115V168C165 168 135 177 105 168V115Z"
+            fill="#008060"
+            stroke="#062918"
+            strokeWidth="4"
+          />
+          {/* Franjas Multicolor del Ponchito */}
+          <path d="M105 128H165" stroke="#F59E0B" strokeWidth="5" />
+          <path d="M105 141H165" stroke="#E11D48" strokeWidth="5" />
+          <path d="M105 154H165" stroke="#3B82F6" strokeWidth="5" />
+          {/* Flecos del Ponchito */}
+          <path d="M110 169V177M122 170V178M135 171V179M148 170V178M160 169V177" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" />
 
-        {/* Chullo / Gorro Andino Tradicional */}
-        <path
-          d="M140 32C140 32 158 20 174 32V38H140V32Z"
-          fill="#E11D48"
-          stroke="#062918"
-          strokeWidth="3"
-        />
-        {/* Pompones del Chullo */}
-        <circle cx="157" cy="18" r="6" fill="#F59E0B" stroke="#062918" strokeWidth="2" />
-        <path d="M140 38L137 46" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
-        <path d="M174 38L177 46" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
+          {/* Cuello y Cabeza */}
+          <path
+            d="M152 120V55C152 46 160 38 170 38C180 38 188 46 188 55V120"
+            fill="#FFFFFF"
+            stroke="#062918"
+            strokeWidth="4.5"
+            strokeLinejoin="round"
+          />
 
-        {/* Ojitos Curiosos Ternos */}
-        <circle cx="162" cy="42" r="4" fill="#062918" />
-        <circle cx="163.5" cy="40.5" r="1.5" fill="#FFFFFF" />
+          {/* Cabeza de la Llamita */}
+          <path
+            d="M152 55C152 42 162 30 178 30C194 30 204 40 204 55C204 65 194 72 178 72C162 72 152 65 152 55Z"
+            fill="#FFFFFF"
+            stroke="#062918"
+            strokeWidth="4.5"
+            strokeLinejoin="round"
+          />
 
-        {/* Hocico tierno */}
-        <ellipse cx="173" cy="48" rx="8" ry="6" fill="#F1F5F9" stroke="#062918" strokeWidth="2.5" />
-        <path d="M173 47V50M170 51C171.5 53 174.5 53 176 51" stroke="#062918" strokeWidth="2" strokeLinecap="round" />
+          {/* Orejita Izquierda Animada */}
+          <g className="animate-[#062918]">
+            <path
+              d="M162 34L156 8C154 3 162 2 167 7L171 34"
+              fill="#FFFFFF"
+              stroke="#062918"
+              strokeWidth="4"
+              strokeLinejoin="round"
+            />
+            <path d="M162 26L160 12" stroke="#FDA4AF" strokeWidth="2.5" strokeLinecap="round" />
+          </g>
 
-        {/* Cachetito Sonrojado */}
-        <ellipse cx="152" cy="50" rx="4" ry="3" fill="#FDA4AF" />
+          {/* Orejita Derecha Animada */}
+          <g className="animate-[#062918]" style={{ animationDelay: '0.3s' }}>
+            <path
+              d="M182 34L188 8C190 3 198 2 196 7L191 34"
+              fill="#FFFFFF"
+              stroke="#062918"
+              strokeWidth="4"
+              strokeLinejoin="round"
+            />
+            <path d="M185 26L187 12" stroke="#FDA4AF" strokeWidth="2.5" strokeLinecap="round" />
+          </g>
 
-        {/* Bufanda Andina en el Cuello */}
-        <path
-          d="M132 62C132 62 150 68 168 62L172 74C172 74 150 80 132 74V62Z"
-          fill="#F59E0B"
-          stroke="#062918"
-          strokeWidth="3"
-        />
-        <path d="M152 70V88" stroke="#E11D48" strokeWidth="4" strokeLinecap="round" strokeDasharray="2 2" />
+          {/* Chullo / Gorrito Andino Tradicional */}
+          <path
+            d="M156 34C156 34 176 18 194 34V42H156V34Z"
+            fill="#E11D48"
+            stroke="#062918"
+            strokeWidth="3.5"
+          />
+          {/* Pompón Superior del Chullo */}
+          <circle cx="175" cy="18" r="7" fill="#F59E0B" stroke="#062918" strokeWidth="2.5" />
+          {/* Orejeras Colgantes del Chullo */}
+          <path d="M156 42L152 54" stroke="#E11D48" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="151" cy="56" r="3" fill="#F59E0B" />
+          <path d="M194 42L198 54" stroke="#E11D48" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="199" cy="56" r="3" fill="#F59E0B" />
+
+          {/* Ojitos Tiernos Curiosos */}
+          <circle cx="182" cy="48" r="4.5" fill="#062918" />
+          <circle cx="184" cy="46" r="1.5" fill="#FFFFFF" />
+
+          {/* Hocico Tierno */}
+          <ellipse cx="196" cy="55" rx="9" ry="7" fill="#F1F5F9" stroke="#062918" strokeWidth="3" />
+          <path d="M196 54V58M192 59C194 61 198 61 200 59" stroke="#062918" strokeWidth="2.5" strokeLinecap="round" />
+
+          {/* Cachetito Sonrojado */}
+          <ellipse cx="170" cy="56" rx="5" ry="3.5" fill="#FDA4AF" />
+
+          {/* Bufanda Andina en el Cuello */}
+          <path
+            d="M148 72C148 72 170 80 192 72L196 86C196 86 170 94 148 86V72Z"
+            fill="#F59E0B"
+            stroke="#062918"
+            strokeWidth="3.5"
+          />
+          <path d="M172 82V102" stroke="#E11D48" strokeWidth="5" strokeLinecap="round" />
+        </g>
       </svg>
     </div>
   );
@@ -136,10 +200,10 @@ export default function NotFound() {
       <Header variant="dark" />
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 text-center max-w-4xl mx-auto w-full">
-        {/* SVG Llamita Exploradora */}
-        <CuteLlamaSvg />
+        {/* SVG Llamita Exploradora Animada */}
+        <AnimatedLlamaSvg />
 
-        {/* Número 404 Estilizado Limpio */}
+        {/* Número 404 Estilizado */}
         <h1 className="text-6xl md:text-8xl font-black font-heading text-[#062918] tracking-tight mb-2">
           404
         </h1>
@@ -149,16 +213,16 @@ export default function NotFound() {
           ¡Destino no encontrado!
         </h2>
 
-        {/* Descripción Clara sin adornos excesivos */}
+        {/* Descripción Clara */}
         <p className="text-gray-600 text-base md:text-lg max-w-lg mx-auto mb-8 leading-relaxed font-sans">
           Nuestra llamita exploradora buscó por todos los Andes, pero la ruta o página que buscas no existe o ha sido movida.
         </p>
 
-        {/* Botones de Acción directos sobre el fondo */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mb-14">
+        {/* Botones de Acción - Ancho natural, sin texto partido en 2 líneas, sin pill deforme */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mb-14">
           <Link
             href="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#062918] hover:bg-[#041c10] text-white font-bold text-sm rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-0.5"
+            className="w-full sm:w-auto min-w-[200px] inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-[#062918] hover:bg-[#041c10] text-white font-bold text-sm rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
           >
             <Home size={18} />
             <span>Volver al Inicio</span>
@@ -166,7 +230,7 @@ export default function NotFound() {
 
           <Link
             href="/tours"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 font-bold text-sm rounded-full shadow-sm transition-all duration-300 transform hover:-translate-y-0.5"
+            className="w-full sm:w-auto min-w-[200px] inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 font-bold text-sm rounded-xl shadow-sm transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
           >
             <Mountain size={18} className="text-[#008060]" />
             <span>Ver todos los tours</span>
@@ -174,7 +238,7 @@ export default function NotFound() {
           </Link>
         </div>
 
-        {/* Rutas Populares Directas */}
+        {/* Rutas Populares Recomendadas */}
         <div className="w-full border-t border-gray-200/80 pt-10">
           <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-6 flex items-center justify-center gap-2">
             <MapPin size={15} className="text-[#008060]" />
