@@ -11,7 +11,7 @@ export function Footer() {
           {/* Column 1: Logo & Info */}
           <div className="flex flex-col items-center lg:col-span-3">
             <Link href="/" className="inline-block mb-4">
-              <Image src="/logo-footer.png" alt="Inca Bound Logo" width={160} height={160} className="w-32 md:w-40 h-auto object-contain" />
+              <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/logo-footer.webp" alt="Inca Bound Logo" width={160} height={160} className="w-32 md:w-40 h-auto object-contain" />
             </Link>
             <div className="text-center mb-6">
               <p className="font-bold tracking-widest text-sm uppercase">Tour Operator</p>
@@ -20,7 +20,7 @@ export function Footer() {
             {/* Mock QR and Cards */}
             <div className="flex gap-4 items-center">
               <div className="w-20 h-20 bg-white p-1 rounded-md flex items-center justify-center">
-                <Image src="/qr.png" alt="QR Code" width={80} height={80} className="w-full h-full object-cover rounded-sm" />
+                <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/qr.webp" alt="QR Code" width={80} height={80} className="w-full h-full object-cover rounded-sm" />
               </div>
               <a href="https://secure.micuentaweb.pe/vads-site/IZI_INCA_BOUND1" target="_blank" rel="noopener noreferrer" className="grid grid-cols-2 gap-2 w-24 hover:opacity-80 transition-opacity">
                 <div className="bg-white rounded overflow-hidden flex items-center justify-center h-8">
