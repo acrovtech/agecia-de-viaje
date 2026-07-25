@@ -22,7 +22,7 @@ export function AboutHero() {
               {/* Left tall image (Andes / Montaña) */}
               <div className="relative row-span-2 rounded-2xl overflow-hidden shadow-lg group">
                 <Image 
-                  src="/andes-hiker-custom.png" 
+                  src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-hiker-custom.webp" 
                   alt="Aventura en los Andes" 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 
@@ -32,7 +32,7 @@ export function AboutHero() {
               {/* Top right image (Naturaleza / Laguna) */}
               <div className="relative rounded-2xl overflow-hidden shadow-lg group">
                 <Image 
-                  src="/andes-lake-custom.png" 
+                  src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-lake-custom.webp" 
                   alt="Naturaleza andina" 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 
@@ -42,7 +42,7 @@ export function AboutHero() {
               {/* Bottom right image (Naturaleza / Colores) */}
               <div className="relative rounded-2xl overflow-hidden shadow-lg group">
                 <Image 
-                  src="/andes-llama-custom.png" 
+                  src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-llama-custom.webp" 
                   alt="Paisajes y colores" 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 

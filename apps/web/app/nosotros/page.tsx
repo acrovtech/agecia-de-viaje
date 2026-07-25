@@ -19,7 +19,7 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="relative h-[80dvh] min-h-[500px] w-full bg-gray-900 flex items-center justify-center">
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-[url('/hero-nosotros.webp')] bg-cover bg-center opacity-70" />
+            <div className="absolute inset-0 bg-[url('https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/hero-nosotros.webp')] bg-cover bg-center opacity-70" />
             <div className="absolute inset-0 bg-black/40" />
           </div>
           

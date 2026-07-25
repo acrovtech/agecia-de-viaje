@@ -67,48 +67,6 @@ export default function NotFound() {
           </Link>
         </div>
 
-        {/* Rutas Populares Recomendadas */}
-        <div className="w-full border-t border-gray-200/80 pt-10">
-          <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-6 flex items-center justify-center gap-2">
-            <MapPin size={15} className="text-[#008060]" />
-            <span>Rutas populares recomendadas</span>
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mx-auto">
-            <Link 
-              href="/tours/machu-picchu-full-day"
-              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
-            >
-              <div>
-                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918] transition-colors">Machu Picchu</h4>
-                <p className="text-xs text-gray-500 mt-0.5">Full Day Express</p>
-              </div>
-              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-            </Link>
-
-            <Link 
-              href="/tours/camino-inca-4-dias"
-              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
-            >
-              <div>
-                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918]">Camino Inca</h4>
-                <p className="text-xs text-gray-500 mt-0.5">4 Días / 3 Noches</p>
-              </div>
-              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-            </Link>
-
-            <Link 
-              href="/tours/montana-de-7-colores"
-              className="group p-4 bg-white hover:bg-emerald-50/50 border border-gray-200 hover:border-[#008060]/40 rounded-2xl transition-all duration-200 text-left flex items-center justify-between shadow-2xs"
-            >
-              <div>
-                <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#062918]">Vinicunca</h4>
-                <p className="text-xs text-gray-500 mt-0.5">7 Colores</p>
-              </div>
-              <ArrowRight size={16} className="text-gray-400 group-hover:text-[#008060] group-hover:translate-x-1 transition-all" />
-            </Link>
-          </div>
-        </div>
       </main>
 
       <Footer />
