@@ -25,6 +25,7 @@ function HoverSlideshow({ images }: { images: string[] }) {
           alt="Destino" 
           fill 
           className={`object-cover transition-all duration-1000 ${index === currentIndex ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`} 
+          unoptimized={true}
         />
       ))}
     </div>
@@ -54,14 +55,22 @@ export function DestinosMegamenu() {
             className="relative rounded-xl overflow-hidden cursor-pointer group h-full"
             onClick={() => setDestinoView('nacional')}
           >
-            <HoverSlideshow images={['/nacional-1.webp', '/nacional-2.webp', '/nacional-3.webp']} />
+            <HoverSlideshow images={[
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-1.webp',
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-2.webp',
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-3.webp'
+            ]} />
             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors pointer-events-none" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h2 className="text-4xl font-bold text-white tracking-widest drop-shadow-lg">NACIONAL</h2>
             </div>
           </div>
           <div className="relative rounded-xl overflow-hidden cursor-pointer group h-full">
-            <HoverSlideshow images={['/Alaska-Destino-Menu.webp', '/Arequipa-Destino-Menu.webp', '/Cristo-Redentor-Destino-Menu.webp']} />
+            <HoverSlideshow images={[
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Alaska-Destino-Menu.webp',
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Arequipa-Destino-Menu.webp',
+              'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Cristo-Redentor-Destino-Menu.webp'
+            ]} />
             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors pointer-events-none" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h2 className="text-4xl font-bold text-white tracking-widest drop-shadow-lg">INTERNACIONAL</h2>
@@ -84,12 +93,12 @@ export function DestinosMegamenu() {
           </div>
           <div className="grid grid-cols-3 gap-3 flex-1 pb-1">
             {[
-              { name: 'CUSCO', key: 'cusco', image: '/destino-cusco.webp' },
-              { name: 'PUNO', key: 'puno', image: '/destino-puno.webp' },
-              { name: 'AREQUIPA', key: 'arequipa', image: '/destino-arequipa.webp' },
-              { name: 'ICA', key: 'ica', image: '/destino-ica.webp' },
-              { name: 'LIMA', key: 'lima', image: '/destino-lima.webp' },
-              { name: 'SELVA', key: 'selva', image: '/destino-selva.webp' }
+              { name: 'CUSCO', key: 'cusco', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp' },
+              { name: 'PUNO', key: 'puno', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-puno.webp' },
+              { name: 'AREQUIPA', key: 'arequipa', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-arequipa.webp' },
+              { name: 'ICA', key: 'ica', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-ica.webp' },
+              { name: 'LIMA', key: 'lima', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-lima.webp' },
+              { name: 'SELVA', key: 'selva', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-selva.webp' }
             ].map((regionObj) => (
               <div 
                 key={regionObj.name}
@@ -97,7 +106,7 @@ export function DestinosMegamenu() {
                 onClick={() => setDestinoView(regionObj.key as DestinoView)}
               >
                 {regionObj.image ? (
-                  <Image src={regionObj.image} alt={regionObj.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <Image src={regionObj.image} alt={regionObj.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={true} />
                 ) : (
                   <div className="absolute inset-0 bg-gray-600 transition-transform duration-500 group-hover:scale-105" />
                 )}

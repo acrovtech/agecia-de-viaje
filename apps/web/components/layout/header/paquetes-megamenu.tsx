@@ -21,7 +21,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       {/* Lima - Cusco */}
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
-          <Image src="/sacred-valley.jpg" alt="Lima-Cusco" fill className="object-cover" />
+          <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-inca-bound.webp" alt="Lima-Cusco" fill className="object-cover" unoptimized={true} />
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Cusco</h3>
@@ -40,7 +40,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       {/* Lima - Arequipa */}
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
-          <Image src="/inca-trail.jpg" alt="Lima-Arequipa" fill className="object-cover" />
+          <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/experiencia-viajes-inca-bound.webp" alt="Lima-Arequipa" fill className="object-cover" unoptimized={true} />
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Arequipa</h3>

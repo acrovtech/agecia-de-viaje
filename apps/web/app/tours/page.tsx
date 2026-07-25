@@ -156,7 +156,7 @@ function ToursCatalogContent() {
       {/* Hero Section del Catálogo */}
       <div className="relative pt-20 w-full bg-gray-900 flex flex-col justify-end min-h-[80dvh] mb-8">
         <div className="absolute inset-0">
-          <Image src="/tours-peru-inca-bound.jpg" alt="Tours en Perú" fill className="object-cover" priority />
+          <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp" alt="Tours en Perú" fill className="object-cover" priority unoptimized={true} />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-black/30" />
         </div>
 
