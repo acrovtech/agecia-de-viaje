@@ -5,7 +5,7 @@ import { Footer } from '@/components/layout/footer';
 import { MapPin, ArrowRight, Home, Mountain } from 'lucide-react';
 
 function Llama404Image() {
-  const llamaUrl = "/assets/llama-404.webp";
+  const llamaUrl = "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/llama-404.webp";
 
   return (
     <div className="relative w-56 h-56 md:w-64 md:h-64 mx-auto mb-4 flex items-center justify-center select-none">
@@ -16,6 +16,7 @@ function Llama404Image() {
           fill
           className="object-contain drop-shadow-md"
           priority
+          unoptimized={true}
         />
       </div>
     </div>

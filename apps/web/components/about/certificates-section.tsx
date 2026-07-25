@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { X, ZoomIn } from 'lucide-react';
 
 const certificates = [
-  { id: 1, title: 'Registro SUNAT', image: '/cert-sunat.webp' },
-  { id: 2, title: 'Permisos Oficiales', image: '/cert-permisos.webp' },
-  { id: 3, title: 'Licencia de Funcionamiento', image: '/cert-licencia.webp' },
-  { id: 4, title: 'Constancia DIRCETUR', image: '/cert-dircetur.webp' }
+  { id: 1, title: 'Registro SUNAT', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/cert-sunat.webp' },
+  { id: 2, title: 'Permisos Oficiales', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/cert-permisos.webp' },
+  { id: 3, title: 'Licencia de Funcionamiento', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/cert-licencia.webp' },
+  { id: 4, title: 'Constancia DIRCETUR', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/cert-dircetur.webp' }
 ];
 
 export function CertificatesSection() {
@@ -44,6 +44,7 @@ export function CertificatesSection() {
                   alt={cert.title} 
                   fill 
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  unoptimized={true}
                 />
                 
                 {/* Zoom Icon Overlay on Hover */}

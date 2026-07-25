@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 const MOCK_IMAGES = [
-  "/agencia-viajes-inca-bound.webp",
-  "/experiencia-viajes-inca-bound.webp",
-  "/viajes-seguros-peru-inca-bound.webp",
+  "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-inca-bound.webp",
+  "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/experiencia-viajes-inca-bound.webp",
+  "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/viajes-seguros-peru-inca-bound.webp",
 ];
 
 export function WhyUs() {
@@ -42,7 +42,7 @@ export function WhyUs() {
           {/* Image Carousel */}
           <div 
             className="relative w-full max-w-xl lg:max-w-none h-[400px] md:h-[500px] lg:h-[600px] mx-auto overflow-hidden shadow-2xl bg-gray-100"
-            style={{ WebkitMaskImage: "url('/mascara.webp')", maskImage: "url('/mascara.webp')", WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center" }}
+            style={{ WebkitMaskImage: "url('https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/mascara.webp')", maskImage: "url('https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/mascara.webp')", WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center" }}
           >
             {MOCK_IMAGES.map((src, idx) => (
               <div 
@@ -55,6 +55,7 @@ export function WhyUs() {
                   fill 
                   className="object-cover"
                   priority={idx === 0}
+                  unoptimized={true}
                 />
               </div>
             ))}
