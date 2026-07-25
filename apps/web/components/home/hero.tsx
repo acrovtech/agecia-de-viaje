@@ -1,18 +1,31 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 export function Hero() {
+  const [showVideo, setShowVideo] = useState(false);
+
+  useEffect(() => {
+    // Defer heavy video iframe loading to improve LCP and initial page payload
+    const timer = setTimeout(() => setShowVideo(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section className="relative h-[100dvh] w-full flex items-center justify-center overflow-hidden bg-black">
-      {/* Video Background */}
+      {/* Video Background - Deferred to prevent 12MB initial load block */}
       <div className="absolute inset-0 z-0">
-        <iframe 
-          src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&app_id=122963" 
-          title="Video de presentación Inca Bound"
-          className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          frameBorder="0" 
-          allow="autoplay; fullscreen; picture-in-picture" 
-          allowFullScreen
-        ></iframe>
+        {showVideo && (
+          <iframe 
+            src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963" 
+            title="Video de presentación Inca Bound"
+            className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            frameBorder="0" 
+            allow="autoplay; fullscreen; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        )}
       </div>
       
       {/* Overlay to ensure text readability */}

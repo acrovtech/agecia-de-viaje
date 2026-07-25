@@ -52,10 +52,11 @@ const nextConfig = {
         ],
       },
       {
-        source: '/:path*',
+        source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' },
         ],
       },
     ];
