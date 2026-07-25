@@ -109,7 +109,7 @@ export function Testimonials() {
                       </div>
                       <div>
                         <p className="font-bold text-gray-900 text-[15px] leading-tight">{testimonial.name}</p>
-                        <p className="text-[13px] text-gray-400 mt-0.5">{testimonial.date}</p>
+                        <p className="text-[13px] text-gray-600 mt-0.5">{testimonial.date}</p>
                       </div>
                     </div>
                     <div className="w-6 h-6 rounded-full bg-[#00aa6c] flex items-center justify-center text-white shrink-0">
@@ -147,7 +147,7 @@ export function Testimonials() {
                     href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-left mt-3 text-gray-400 text-[14px] hover:text-[#00aa6c] font-medium transition-colors inline-block"
+                    className="text-left mt-3 text-[#008060] hover:text-[#062918] text-[14px] font-semibold transition-colors inline-block"
                   >
                     Leer más
                   </a>

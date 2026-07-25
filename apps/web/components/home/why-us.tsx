@@ -26,7 +26,7 @@ export function WhyUs() {
           {/* Text Content */}
           <div className="text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 text-[#062918] leading-tight">
-              ¿Por qué viajar con <span className="text-[#2dd4bf]">Inca Bound</span>?
+              ¿Por qué viajar con <span className="text-[#0d9488]">Inca Bound</span>?
             </h2>
             
             <div className="space-y-6 text-base md:text-lg leading-relaxed text-gray-600">
