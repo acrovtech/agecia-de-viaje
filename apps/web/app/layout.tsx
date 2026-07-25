@@ -23,6 +23,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={cn(inter.variable, poppins.variable)} suppressHydrationWarning>
+      <head>
+        {/* Resource Hints: Preconnect to critical CDNs to reduce critical request chain latency */}
+        <link rel="preconnect" href="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://player.vimeo.com" />
+        <link rel="preconnect" href="https://f.vimeocdn.com" />
+        <link rel="dns-prefetch" href="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev" />
+        <link rel="dns-prefetch" href="https://player.vimeo.com" />
+        <link rel="dns-prefetch" href="https://f.vimeocdn.com" />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
         {children}
         <WhatsappButton />
