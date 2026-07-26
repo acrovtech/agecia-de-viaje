@@ -17,10 +17,11 @@ export function Hero() {
       {/* Video & Poster Background */}
       <div className="absolute inset-0 z-0">
         <Image 
-          src="/Hero-Home.webp" 
+          src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp" 
           alt="Inca Bound Hero" 
           fill 
           priority 
+          unoptimized={true}
           className={`object-cover transition-opacity duration-1000 ${showVideo ? 'opacity-0' : 'opacity-100'}`} 
         />
         {showVideo && (
