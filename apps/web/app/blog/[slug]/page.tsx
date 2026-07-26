@@ -136,7 +136,7 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
                             </div>
 
                             {/* Image Container (Right) */}
-                            <div className="md:col-span-4 relative h-64 md:h-80 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
+                            <div className="md:col-span-4 relative aspect-[4/3] w-full max-h-[260px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
                               <Image 
                                 src={p.image!} 
                                 alt={p.subtitle || blog.title} 
@@ -149,7 +149,7 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
                         ) : (
                           <>
                             {/* Image Container (Left on desktop) */}
-                            <div className="md:col-span-4 relative h-64 md:h-80 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0 md:order-1 order-2">
+                            <div className="md:col-span-4 relative aspect-[4/3] w-full max-h-[260px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0 md:order-1 order-2">
                               <Image 
                                 src={p.image!} 
                                 alt={p.subtitle || blog.title} 
