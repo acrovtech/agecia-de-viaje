@@ -14,8 +14,15 @@ export function Hero() {
 
   return (
     <section className="relative h-[100dvh] w-full flex items-center justify-center overflow-hidden bg-black">
-      {/* Video Background - Deferred to prevent 12MB initial load block */}
+      {/* Video & Poster Background */}
       <div className="absolute inset-0 z-0">
+        <Image 
+          src="/Hero-Home.webp" 
+          alt="Inca Bound Hero" 
+          fill 
+          priority 
+          className={`object-cover transition-opacity duration-1000 ${showVideo ? 'opacity-0' : 'opacity-100'}`} 
+        />
         {showVideo && (
           <iframe 
             src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963" 
