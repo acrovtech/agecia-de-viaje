@@ -93,8 +93,8 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
         </div>
 
         {/* Post Title & Date */}
-        <div className="container mx-auto px-4 pt-12 pb-8 text-center max-w-4xl relative z-20">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-heading text-slate-900 leading-tight tracking-tight mb-6">
+        <div className="container mx-auto px-4 pt-12 pb-8 text-center relative z-20">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-heading text-slate-900 leading-tight tracking-tight mb-6 max-w-5xl mx-auto">
             {blog.title}
           </h1>
           <div className="w-16 h-1 bg-[#062918] mx-auto mb-6 rounded-full" />
@@ -108,34 +108,78 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
           <div className="flex flex-col lg:flex-row gap-12 w-full">
             
             {/* Left Column (70%) - Paragraph Blocks */}
-            <article className="lg:w-[70%] md:pr-8 space-y-8">
+            <article className="lg:w-[70%] md:pr-8 space-y-12">
               {blog.paragraphs.map((p, index) => {
                 const hasBlockImage = Boolean(
                   p.image &&
                   (p.image.startsWith('http') || p.image.startsWith('/uploads') || p.image.startsWith('/blogs'))
                 );
 
-                return (
-                  <div key={p.id || index} className="space-y-4">
-                    {p.subtitle && (
-                      <h2 className="text-xl md:text-2xl font-bold font-heading text-slate-900 pt-2">
-                        {p.subtitle}
-                      </h2>
-                    )}
+                const isEven = index % 2 === 0;
 
+                return (
+                  <div key={p.id || index} className="w-full">
                     {hasBlockImage ? (
-                      <div className="grid grid-cols-1 md:grid-cols-10 gap-6 items-center my-6">
-                        <div className="md:col-span-6 text-slate-700 text-base md:text-lg leading-relaxed space-y-3">
-                          {p.content.split('\n\n').map((paragraphText, i) => (
-                            <p key={i}>{paragraphText}</p>
-                          ))}
-                        </div>
-                        <div className="md:col-span-4 relative h-64 md:h-72 rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
-                          <Image src={p.image!} alt={p.subtitle || blog.title} fill className="object-cover" />
-                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-10 gap-6 lg:gap-8 items-start my-6">
+                        {isEven ? (
+                          <>
+                            {/* Text Container (Left) */}
+                            <div className="md:col-span-6 text-slate-700 text-base md:text-lg leading-relaxed space-y-4">
+                              {p.subtitle && (
+                                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-heading text-slate-900 leading-snug">
+                                  {p.subtitle}
+                                </h2>
+                              )}
+                              {p.content.split('\n\n').map((paragraphText, i) => (
+                                <p key={i}>{paragraphText}</p>
+                              ))}
+                            </div>
+
+                            {/* Image Container (Right) */}
+                            <div className="md:col-span-4 relative h-64 md:h-80 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
+                              <Image 
+                                src={p.image!} 
+                                alt={p.subtitle || blog.title} 
+                                fill 
+                                className="object-cover" 
+                                sizes="(max-width: 768px) 100vw, 40vw"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* Image Container (Left on desktop) */}
+                            <div className="md:col-span-4 relative h-64 md:h-80 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0 md:order-1 order-2">
+                              <Image 
+                                src={p.image!} 
+                                alt={p.subtitle || blog.title} 
+                                fill 
+                                className="object-cover" 
+                                sizes="(max-width: 768px) 100vw, 40vw"
+                              />
+                            </div>
+
+                            {/* Text Container (Right on desktop) */}
+                            <div className="md:col-span-6 text-slate-700 text-base md:text-lg leading-relaxed space-y-4 md:order-2 order-1">
+                              {p.subtitle && (
+                                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-heading text-slate-900 leading-snug">
+                                  {p.subtitle}
+                                </h2>
+                              )}
+                              {p.content.split('\n\n').map((paragraphText, i) => (
+                                <p key={i}>{paragraphText}</p>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
-                      <div className="text-slate-700 text-base md:text-lg leading-relaxed space-y-3">
+                      <div className="text-slate-700 text-base md:text-lg leading-relaxed space-y-4 my-6">
+                        {p.subtitle && (
+                          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-heading text-slate-900 leading-snug mb-3">
+                            {p.subtitle}
+                          </h2>
+                        )}
                         {p.content.split('\n\n').map((paragraphText, i) => (
                           <p key={i}>{paragraphText}</p>
                         ))}
