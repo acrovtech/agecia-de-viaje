@@ -93,9 +93,7 @@ export function Calendar({ selectedDate, onSelect }: CalendarProps) {
                   ? 'text-gray-300 cursor-not-allowed'
                   : selected 
                     ? 'bg-[#062918] text-white font-bold shadow-xs' 
-                    : today
-                      ? 'bg-gray-50 border border-gray-200 text-[#062918] font-bold hover:bg-gray-100'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               {day}
