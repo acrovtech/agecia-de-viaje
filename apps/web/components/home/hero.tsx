@@ -4,31 +4,38 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 export function Hero() {
-  const [showVideo, setShowVideo] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    // Defer heavy video iframe loading to improve LCP and initial page payload
-    const timer = setTimeout(() => setShowVideo(true), 800);
+    // Defer heavy video iframe DOM insertion to prioritize initial FCP/LCP
+    const timer = setTimeout(() => setShowIframe(true), 400);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <section className="relative h-[100dvh] w-full flex items-center justify-center overflow-hidden bg-black">
       {/* Video & Poster Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-black">
+        {/* Poster Base Layer: Always visible to guarantee 0ms instant display and ZERO black flash */}
         <Image 
           src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp" 
           alt="Inca Bound Hero" 
           fill 
           priority 
           unoptimized={true}
-          className={`object-cover transition-opacity duration-1000 ${showVideo ? 'opacity-0' : 'opacity-100'}`} 
+          className="object-cover" 
         />
-        {showVideo && (
+        
+        {/* Vimeo Video Layer: Fades in smoothly ONLY when iframe onLoad fires */}
+        {showIframe && (
           <iframe 
             src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963" 
             title="Video de presentación Inca Bound"
-            className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            onLoad={() => setIsVideoReady(true)}
+            className={`w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-1000 ${
+              isVideoReady ? 'opacity-100' : 'opacity-0'
+            }`}
             frameBorder="0" 
             allow="autoplay; fullscreen; picture-in-picture" 
             allowFullScreen
