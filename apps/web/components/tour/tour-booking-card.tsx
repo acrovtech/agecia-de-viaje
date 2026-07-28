@@ -30,7 +30,7 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tour
       price: currentPrice.toString(),
       total: (currentPrice * pax).toString()
     });
-    router.push(`/carrito?${query.toString()}`);
+    router.push(`/checkout?${query.toString()}`);
   };
 
   return (
