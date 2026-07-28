@@ -6,53 +6,52 @@ import { useRef } from 'react';
 
 const testimonials = [
   {
-    name: "Paola G",
-    date: "Hace 1 año",
-    title: "¡Recomendadísimo!",
-    text: "¡Una experiencia totalmente hermosa! Vale la pena el cansancio para llegar a ver ese paisaje. Mi guía fue Jeferson y 10/10 excelente actitud, buena vibra, pendiente de todos y excelente fotógrafo.",
+    name: "Julieth C",
+    date: "Mayo 2026",
+    title: "❤️ Excelente experiencia con Jeff",
+    text: "Buena experiencia, muy bonito todo. El guía Jeff es el mejor de todos, pendiente y amable.",
     avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/de/e7/default-avatar-2020-37.jpg"
   },
   {
-    name: "Jose Daniel S",
-    date: "Hace 2 años",
-    title: "Excelente experiencia en Humantay",
-    text: "Excelente experiencia, hicimos el tour al Humantay, nos correspondió con el guía Miguel y nos dio un acompañamiento excelente. Además el tour incluía desayuno y almuerzo en un lugar lindo y con bastantes opciones.",
-    avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/ed/00/default-avatar-2020-4.jpg"
-  },
-  {
-    name: "César Fernando P",
-    date: "Hace 2 años",
-    title: "Tour Montaña de 7 Colores",
-    text: "Excelente agencia de turismo. El itinerario al 100%, la visita a 7 colores cumplió la expectativa. El clima fue genial y el guía Miguel excepcional, colaborador y presto en todo momento.",
-    avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/eb/a3/default-avatar-2020-38.jpg"
-  },
-  {
-    name: "Cesar R",
-    date: "Hace 2 años",
-    title: "Excelente trip a la laguna",
-    text: "Todo estuvo perfecto, el transporte estuvo en tiempo, el desayuno estuvo bien y el guía Miguel estuvo 10/10!! Lo súper recomiendo, nos tuvo paciencia y nos explicó súper bien todo.",
-    avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/f0/9f/default-avatar-2020-16.jpg"
-  },
-  {
-    name: "Carla E",
-    date: "Hace 2 años",
-    title: "Genial 7 Colores y Humantay",
-    text: "Nosotras hicimos dos excursiones: Montaña de colores y Laguna Humantay. Nuestro guía en las dos fue Miguel, atento con la altitud y preocupándose por nuestro estado de salud en todo momento.",
+    name: "Emma V",
+    date: "Mayo 2026",
+    title: "¡Tour increíble!",
+    text: "Tuvimos un día increíble con Jheferson, nos dejó ir a nuestro propio ritmo y adaptó el viaje para que cada uno de nosotros pudiera tener una gran experiencia. Añadió muchas explicaciones culturales, sus recomendaciones fueron realmente útiles y nos permitieron disfrutar del día completo. Tomamos las mejores fotos.",
     avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/e3/1f/default-avatar-2020-46.jpg"
   },
   {
-    name: "Yara Barbosa",
-    date: "Hace 2 años",
-    title: "A melhor experiência em Cusco",
-    text: "Super recomendo e o diferencial do passeio foi a cortesia, educação e disponibilidade do guia além de todo seu conhecimento profissional e carinho com o grupo.",
+    name: "Luis Felipe C",
+    date: "Mayo 2026",
+    title: "Todo excelente",
+    text: "Todo muy bien coordinado y organizado. Gran servicio por parte del guía Jefferson durante todo el recorrido.",
+    avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/ed/00/default-avatar-2020-4.jpg"
+  },
+  {
+    name: "Jorge G",
+    date: "Octubre 2025",
+    title: "Calidad, compromiso y cercanía",
+    text: "Una excelente agencia para programar tu viaje, conocer una hermosa cultura y los más hermosos paisajes. Calidad, compromiso y cercanía con los turistas los definen de gran manera.",
     avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/eb/a3/default-avatar-2020-38.jpg"
+  },
+  {
+    name: "Vanessa R",
+    date: "Octubre 2025",
+    title: "Experiencia Inca Bound inolvidable",
+    text: "Es una empresa altamente comprometida, son cercanos, responsables y dispuestos a brindar la mejor experiencia en su país. Muy recomendados al 100%.",
+    avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/f0/9f/default-avatar-2020-16.jpg"
+  },
+  {
+    name: "Fabián R",
+    date: "Setiembre 2025",
+    title: "Cusco, toque ancestral único",
+    text: "Superó mis expectativas, el acompañamiento constante fue súper importante para desarrollar cada tour. Los paisajes y las caminatas estuvieron espectaculares.",
+    avatar: "https://media-cdn.tripadvisor.com/media/photo-m/1280/2c/70/c1/cd/caption.jpg"
   }
 ];
 
 export function Testimonials() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Avanzar exactamente 1 tarjeta a la izquierda
   const scrollPrev = () => {
     if (scrollRef.current) {
       const firstCard = scrollRef.current.firstElementChild as HTMLElement;
@@ -61,7 +60,6 @@ export function Testimonials() {
     }
   };
 
-  // Avanzar exactamente 1 tarjeta a la derecha
   const scrollNext = () => {
     if (scrollRef.current) {
       const firstCard = scrollRef.current.firstElementChild as HTMLElement;
