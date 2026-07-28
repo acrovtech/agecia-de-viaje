@@ -193,34 +193,34 @@ export function CheckoutForm() {
   }, [currentStep, formToken]);
 
   return (
-    /* MARCO CONTENEDOR PRINCIPAL (acrov-checkout-frame) */
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden w-full max-w-5xl mx-auto">
+    /* MARCO PRINCIPAL DE LA TARJETA (acrov-checkout-frame) */
+    <div className="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden w-full max-w-5xl mx-auto font-sans">
       
       {/* HERO HEADER (acrov-checkout-hero) */}
-      <header className="bg-white border-b border-gray-200/80 px-6 sm:px-10 pt-8 pb-6 text-center">
-        <p className="text-xs font-bold tracking-[0.18em] uppercase text-[#062918] mb-1.5">PROCESO DE RESERVA</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Completa tu reserva</h1>
-        <p className="text-xs sm:text-xs font-bold tracking-[0.12em] uppercase text-gray-500 max-w-xl mx-auto mt-2 leading-relaxed">
+      <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 pt-9 pb-7 text-center">
+        <p className="text-[11px] font-extrabold tracking-[0.18em] uppercase text-[#062918] mb-2">PROCESO DE RESERVA</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight">Completa tu reserva</h1>
+        <p className="text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase text-gray-400 max-w-xl mx-auto mt-2 leading-relaxed">
           Revisa tu tour, completa los datos de pasajeros y confirma tu forma de pago.
         </p>
       </header>
 
       {/* STEPPER NAV BAR (acrov-checkout-stepper) */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4 px-4 sm:px-8 py-4 bg-white border-b border-gray-200/80">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 px-6 sm:px-10 py-4 bg-white border-b border-gray-200/80">
         
         {/* Step 1 Pill */}
         <button 
           type="button"
           onClick={() => currentStep > 1 && setCurrentStep(1)}
-          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
             currentStep === 1 
               ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
               : currentStep > 1 
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                : 'bg-white border-gray-200 text-gray-400'
+                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
             currentStep === 1 ? 'bg-[#062918] text-white' : currentStep > 1 ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             {currentStep > 1 ? <Check size={12} /> : 1}
@@ -232,15 +232,15 @@ export function CheckoutForm() {
         <button 
           type="button"
           onClick={() => currentStep > 2 && setCurrentStep(2)}
-          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
             currentStep === 2 
               ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
               : currentStep > 2 
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                : 'bg-white border-gray-200 text-gray-400'
+                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
             currentStep === 2 ? 'bg-[#062918] text-white' : currentStep > 2 ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             {currentStep > 2 ? <Check size={12} /> : 2}
@@ -252,13 +252,13 @@ export function CheckoutForm() {
         <button 
           type="button"
           disabled={currentStep < 3}
-          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
             currentStep === 3 
               ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
               : 'bg-white border-gray-200 text-gray-400'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
             currentStep === 3 ? 'bg-[#062918] text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             3
@@ -269,7 +269,7 @@ export function CheckoutForm() {
       </div>
 
       {/* CHECKOUT BODY CONTAINER */}
-      <div className="p-5 sm:p-8 bg-white">
+      <div className="p-6 sm:p-10 bg-white">
         
         {/* ========================================================================= */}
         {/* PASO 1: RESUMEN DE RESERVA DE TOUR */}
@@ -278,55 +278,55 @@ export function CheckoutForm() {
           <div className="space-y-6">
             
             {/* Inline Alert Banner (acrov-checkout-inline-alert) */}
-            <div className="bg-[#062918]/10 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-3 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 text-center">
-              <Info size={16} className="shrink-0 text-[#062918]" />
+            <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-3 text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase flex items-center justify-center gap-2 text-center">
+              <Info size={15} className="shrink-0 text-[#062918]" />
               <span>Puedes seguir agregando tours al carrito, estos permaneceran durante 60 minutos.</span>
             </div>
 
             {/* Cart Card Layout (acrov-checkout-cart-card) */}
             <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
               
-              {/* Columna Izquierda: Imagen del Tour (30% / 4 cols) */}
-              <div className="md:col-span-4 min-h-[240px] md:min-h-[280px] relative bg-gradient-to-br from-[#062918] via-slate-900 to-black overflow-hidden flex items-center justify-center">
+              {/* Columna Izquierda: Imagen del Tour (32% / 4 cols) */}
+              <div className="md:col-span-4 min-h-[260px] md:min-h-[295px] relative bg-[#092215] overflow-hidden flex items-center justify-center">
                 {tourImage ? (
                   <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-white/50 p-6 text-center">
                     <ImageIcon size={48} className="mb-2 text-white/30" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">Inca Bound Expeditions</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">INCA BOUND EXPEDITIONS</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:hidden" />
               </div>
 
-              {/* Columna Derecha: Detalles & Precios (70% / 8 cols) */}
+              {/* Columna Derecha: Detalles & Precios (68% / 8 cols) */}
               <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between">
                 
                 <div>
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] text-xs font-extrabold rounded-md uppercase tracking-wider">
+                    <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] text-[11px] font-black rounded-md uppercase tracking-wider">
                       {serviceType === 'shared' ? 'Servicio Compartido' : 'Servicio Privado'}
                     </span>
-                    <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Inca Bound</span>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">INCA BOUND</span>
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight mb-4">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 uppercase tracking-tight mb-4">
                     {tourTitle}
                   </h3>
 
                   {/* Filas de Información Punteadas (Dashed Rows) */}
-                  <div className="border-y border-dashed border-gray-200 py-3 space-y-3">
-                    <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <div className="border-y border-dashed border-gray-200 py-3.5 space-y-3">
+                    <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold text-gray-500">Fecha de salida:</span>
                       <span className="font-bold text-gray-900 capitalize">{formattedDate}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs sm:text-sm">
+                    <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold text-gray-500">Pasajeros:</span>
                       <span className="font-bold text-gray-900">{numPax} {numPax === 1 ? 'Persona' : 'Personas'}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs sm:text-sm">
+                    <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold text-gray-500">Precio por pasajero:</span>
                       <span className="font-bold text-gray-900">${price} USD</span>
                     </div>
@@ -334,9 +334,9 @@ export function CheckoutForm() {
                 </div>
 
                 {/* Total Row */}
-                <div className="pt-4 flex items-center justify-between border-t border-gray-100 mt-2">
-                  <span className="text-sm font-bold text-gray-600 uppercase tracking-wider">Total</span>
-                  <span className="text-2xl sm:text-3xl font-black text-[#062918]">${total} USD</span>
+                <div className="pt-4 flex items-center justify-between border-t border-dashed border-gray-200 mt-2">
+                  <span className="text-xs font-extrabold tracking-[0.14em] uppercase text-gray-600">TOTAL</span>
+                  <span className="text-3xl font-black text-[#062918] tracking-tight">${total} USD</span>
                 </div>
 
               </div>
@@ -348,7 +348,7 @@ export function CheckoutForm() {
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
-                className="w-full sm:w-auto px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 Continuar a Datos de Pasajeros
                 <ArrowRight size={16} />
@@ -365,7 +365,7 @@ export function CheckoutForm() {
           <form onSubmit={handleProceedToStep3} className="space-y-6">
             
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#062918] mb-1">DATOS DE PASAJEROS</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#062918] mb-1">DATOS DE PASAJEROS</p>
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Completa la información requerida</h2>
               <p className="text-xs text-gray-500 mt-1">Registra al titular de la reserva y a cada uno de los viajeros nominativos.</p>
             </div>
@@ -377,7 +377,7 @@ export function CheckoutForm() {
             )}
 
             {/* FORMULARIO TITULAR DE CONTACTO */}
-            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 space-y-4">
+            <div className="bg-gray-50/70 rounded-2xl p-5 sm:p-6 border border-gray-200/80 space-y-4">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-700 flex items-center gap-2">
                 <UserCheck size={16} className="text-[#062918]" />
                 Titular de Contacto (Quien realiza la reserva)
