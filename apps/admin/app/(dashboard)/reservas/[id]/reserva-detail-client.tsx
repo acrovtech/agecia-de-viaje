@@ -5,23 +5,32 @@ import { Reservation, Tour } from '@repo/db';
 import { updateReservationStatus } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
-  ArrowLeft, MessageSquare, CheckCircle2, Clock, XCircle, Send, Check, Mail, AlertTriangle
+  ArrowLeft, MessageSquare, Check, Send, Clock, XCircle, Loader2, Save
 } from 'lucide-react';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
 export function ReservaDetailClient({ initialReserva }: { initialReserva: ReservationWithTour }) {
   const [reserva, setReserva] = useState(initialReserva);
+  const [selectedStatus, setSelectedStatus] = useState<'PENDING' | 'PAID' | 'CANCELLED'>(initialReserva.status);
   const [isPending, startTransition] = useTransition();
   const [emailNotification, setEmailNotification] = useState<string | null>(null);
 
-  const handleStatusChange = (status: 'PENDING' | 'PAID' | 'CANCELLED') => {
+  const hasUnsavedChanges = selectedStatus !== reserva.status;
+
+  const handleSaveChanges = () => {
     startTransition(async () => {
-      const res = await updateReservationStatus(reserva.id, status);
+      const res = await updateReservationStatus(reserva.id, selectedStatus);
       if (res.success) {
-        setReserva(prev => ({ ...prev, status }));
+        setReserva(prev => ({ ...prev, status: selectedStatus }));
+        setEmailNotification(`Estado de la reserva actualizado a ${selectedStatus === 'PAID' ? 'Pagado' : selectedStatus === 'PENDING' ? 'Pendiente' : 'Cancelado'}`);
+        setTimeout(() => setEmailNotification(null), 4000);
       }
     });
+  };
+
+  const handleDiscardChanges = () => {
+    setSelectedStatus(reserva.status);
   };
 
   const formatPhoneForWhatsapp = (phone: string) => {
@@ -74,8 +83,37 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   const cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto font-sans pb-12 select-none">
+    <div className="space-y-6 max-w-6xl mx-auto font-sans pb-16 select-none relative">
       
+      {/* BARRA FLOTANTE DE CAMBIOS SIN GUARDAR (Estilo Shopify Polaris Top Bar) */}
+      {hasUnsavedChanges && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1a1a1a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-200 min-w-[340px] sm:min-w-[460px]">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <span className="text-xs font-semibold text-slate-200">Cambios sin guardar en la reserva</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDiscardChanges}
+              disabled={isPending}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              Descartar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveChanges}
+              disabled={isPending}
+              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              <span>Guardar</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. NAVEGACIÓN Y HEADER */}
       <div className="space-y-3">
         <Link 
@@ -103,14 +141,14 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         </div>
       </div>
 
-      {/* Toast Notificación Email */}
+      {/* Toast Notificación Email / Estado */}
       {emailNotification && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2">
             <Check size={16} className="text-emerald-600 shrink-0" />
             <span>{emailNotification}</span>
           </div>
-          <button onClick={() => setEmailNotification(null)} className="text-emerald-600 hover:text-emerald-900 font-bold">
+          <button onClick={() => setEmailNotification(null)} className="text-emerald-600 hover:text-emerald-900 font-bold cursor-pointer">
             ×
           </button>
         </div>
@@ -145,7 +183,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* TITULAR Y DATOS DE CONTACTO (Sin icono en el título) */}
+          {/* DATOS DEL TITULAR (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -176,7 +214,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* LISTADO NOMINATIVO DE PASAJEROS (Sin icono en el título) */}
+          {/* LISTA NOMINATIVA DE PASAJEROS (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -219,7 +257,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* CARD 1: CARD INDEPENDIENTE DE ESTADO (Sin icono en título) */}
+          {/* CARD 1: ESTADO DE LA RESERVA (DROPDOWN RESPONSIVE) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -242,49 +280,25 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => handleStatusChange('PAID')}
-                disabled={isPending}
-                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
-                  reserva.status === 'PAID'
-                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                }`}
+            {/* DROPDOWN RESPONSIVE */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as 'PENDING' | 'PAID' | 'CANCELLED')}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all cursor-pointer"
               >
-                <span>Pagado</span>
-                {reserva.status === 'PAID' && <CheckCircle2 size={16} />}
-              </button>
-
-              <button
-                onClick={() => handleStatusChange('PENDING')}
-                disabled={isPending}
-                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
-                  reserva.status === 'PENDING'
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-2xs'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                }`}
-              >
-                <span>Pendiente</span>
-                {reserva.status === 'PENDING' && <Clock size={16} />}
-              </button>
-
-              <button
-                onClick={() => handleStatusChange('CANCELLED')}
-                disabled={isPending}
-                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
-                  reserva.status === 'CANCELLED'
-                    ? 'bg-red-600 text-white border-red-700 shadow-2xs'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                }`}
-              >
-                <span>Cancelado</span>
-                {reserva.status === 'CANCELLED' && <XCircle size={16} />}
-              </button>
+                <option value="PAID">🟢 Pagado</option>
+                <option value="PENDING">🟠 Pendiente</option>
+                <option value="CANCELLED">🔴 Cancelado</option>
+              </select>
+              <p className="text-[11px] text-slate-400">
+                Selecciona el estado y confirma haciendo clic en **Guardar** en la barra superior.
+              </p>
             </div>
           </div>
 
-          {/* CARD 2: RESUMEN DE PAGO (Sin icono en título) */}
+          {/* CARD 2: RESUMEN DE PAGO */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
               RESUMEN DE PAGO
@@ -317,7 +331,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 3: GESTIÓN DE EMAILS (Sin icono en el título) */}
+          {/* CARD 3: GESTIÓN DE EMAILS */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
               GESTIÓN DE EMAILS
@@ -353,7 +367,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 4: REQUERIMIENTOS ESPECIALES (Sin icono en el título) */}
+          {/* CARD 4: REQUERIMIENTOS ESPECIALES */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
               REQUERIMIENTOS ESPECIALES
