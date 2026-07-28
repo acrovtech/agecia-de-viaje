@@ -276,7 +276,7 @@ export function CheckoutForm() {
         <div className="p-6 sm:p-8 bg-white">
           
           {/* ========================================================================= */}
-          {/* PASO 1: RESUMEN DE RESERVA DE TOUR (TARJETA EXACTA A PLUGIN ACROV-BOOKING) */}
+          {/* PASO 1: RESUMEN DE RESERVA DE TOUR */}
           {/* ========================================================================= */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -287,17 +287,17 @@ export function CheckoutForm() {
                 <span>Puedes seguir agregando tours al carrito, estos permanecerán durante 60 minutos.</span>
               </div>
 
-              {/* CARD DE RESERVA EN 2 COLUMNAS (EXACTA AL PLUGIN ACROV-BOOKING) */}
+              {/* CARD DE RESERVA EN 2 COLUMNAS (CON FALLBACK GRIS CLARO Y VERDE INCA BOUND) */}
               <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
                 
-                {/* Columna Izquierda: Imagen del Tour o Fallback Oficial */}
-                <div className="md:col-span-4 min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-gradient-to-br from-[#e05252] to-[#c93b3b] flex items-center justify-center">
+                {/* Columna Izquierda: Imagen del Tour o Fallback Gris Claro Elegante */}
+                <div className="md:col-span-4 min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
                   {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
                     <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-white p-6 text-center">
-                      <Compass size={48} className="mb-2 text-white/80 animate-pulse" />
-                      <span className="text-xs font-bold tracking-widest uppercase text-white/90">INCA BOUND EXPEDITIONS</span>
+                    <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center">
+                      <Compass size={44} className="mb-2 text-slate-400" />
+                      <span className="text-[11px] font-bold tracking-widest uppercase text-slate-600">INCA BOUND OPERATOR</span>
                     </div>
                   )}
                 </div>
@@ -306,9 +306,9 @@ export function CheckoutForm() {
                 <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-6">
                   
                   <div>
-                    {/* Título & Botón de eliminar */}
+                    {/* Título (1.25rem / 20px) & Botón de eliminar */}
                     <div className="flex items-start justify-between gap-4 mb-4">
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                      <h3 className="text-[1.25rem] leading-snug font-bold text-gray-900 tracking-tight">
                         {tourTitle}
                       </h3>
                       <button 
@@ -374,7 +374,7 @@ export function CheckoutForm() {
                           <DollarSign size={15} className="text-gray-400 shrink-0" />
                           <span>Precio total</span>
                         </span>
-                        <span className="font-black text-lg text-[#e05252]">
+                        <span className="font-black text-lg text-[#062918]">
                           US$ {parseFloat(total).toFixed(2)}
                         </span>
                       </div>
@@ -382,7 +382,7 @@ export function CheckoutForm() {
                     </div>
                   </div>
 
-                  {/* BOTONES DENTRO DE LA CARD (EXACTOS A LA IMAGEN) */}
+                  {/* BOTONES DENTRO DE LA CARD (VERDE INCA BOUND) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     
                     <button
@@ -397,7 +397,7 @@ export function CheckoutForm() {
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="w-full py-2.5 px-5 rounded-xl bg-[#ff5252] hover:bg-[#e04545] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      className="w-full py-2.5 px-5 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                     >
                       <CheckCircle2 size={16} />
                       <span>Reservar ahora</span>
@@ -680,11 +680,11 @@ export function CheckoutForm() {
 
       </div>
 
-      {/* FOOTER LINK: "Ver más tours" (EXACTO A LA SEGUNDA CAPTURA) */}
+      {/* FOOTER LINK: "Ver más tours" */}
       <div className="pt-6 border-t border-gray-200/80 text-center">
         <Link 
           href="/tours" 
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] hover:text-[#ff5252] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] hover:text-[#062918] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Ver más tours</span>
