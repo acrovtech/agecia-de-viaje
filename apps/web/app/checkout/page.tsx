@@ -13,7 +13,7 @@ export default function CheckoutPage() {
       <Header variant="dark" />
       
       <main className="flex-1 pt-28 pb-16 flex items-center justify-center">
-        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <Suspense fallback={<div className="h-64 flex items-center justify-center text-gray-400">Cargando checkout...</div>}>
             <CheckoutForm />
           </Suspense>

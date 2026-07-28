@@ -184,8 +184,8 @@ export function CheckoutForm() {
   }, [currentStep, formToken]);
 
   return (
-    /* TARJETA ÚNICA UNIFICADA CONTENEDORA (CARD UNIFICADA) */
-    <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm max-w-4xl mx-auto space-y-8">
+    /* TARJETA ÚNICA UNIFICADA CONTENEDORA (MAXIMO ANCHO) */
+    <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm w-full max-w-6xl mx-auto space-y-8">
       
       {/* CABECERA DENTRO DE LA TARJETA */}
       <div>
