@@ -8,6 +8,7 @@ import {
   ChevronRight, Calendar, MessageSquare, CheckCircle2, 
   Clock, XCircle, Loader2, Send, Check
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
@@ -78,6 +79,13 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     if (!requirements) return null;
     const cleaned = requirements.replace(/\[Pasajeros:\s*.*?\]/gi, '').trim();
     return cleaned || null;
+  };
+
+  const getServiceType = () => {
+    if (reserva.specialRequirements?.toLowerCase().includes('privado')) {
+      return 'Servicio Privado';
+    }
+    return 'Servicio Compartido';
   };
 
   const passengerList = parsePassengerList(reserva.specialRequirements);
@@ -166,11 +174,13 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA IZQUIERDA (8 COLS) */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* CARD 1: TOUR RESERVADO */}
+          {/* CARD 1: TOUR RESERVADO (Badge de Tipo de Servicio en lugar de Inca Bound Operator) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Expedición Reservada</h3>
-              <span className="text-[10px] font-bold text-[#062918] bg-emerald-50 px-2 py-0.5 rounded-md">Inca Bound Operator</span>
+              <span className="text-[10px] font-bold text-[#062918] bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200/60">
+                {getServiceType()}
+              </span>
             </div>
 
             <h2 className="text-lg font-bold text-slate-900">{reserva.tour?.title || 'Tour Inca Bound'}</h2>
@@ -261,7 +271,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-5">
           
-          {/* CARD 1: ESTADO DE LA RESERVA (SIN EMOJIS - CON ICONOS DE ESTADO) */}
+          {/* CARD 1: ESTADO DE LA RESERVA (SELECT COMPONENT PULIDO SHADCN/RADIX) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
@@ -287,20 +297,37 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
-              <div className="flex items-center gap-2">
-                {selectedStatus === 'PAID' && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                {selectedStatus === 'PENDING' && <Clock className="w-4 h-4 text-amber-500 shrink-0" />}
-                {selectedStatus === 'CANCELLED' && <XCircle className="w-4 h-4 text-rose-500 shrink-0" />}
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as 'PENDING' | 'PAID' | 'CANCELLED')}
-                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer"
-                >
-                  <option value="PAID">Pagado</option>
-                  <option value="PENDING">Pendiente</option>
-                  <option value="CANCELLED">Cancelado</option>
-                </select>
-              </div>
+              
+              {/* SELECT PULIDO SHADCN / RADIX UI */}
+              <Select
+                value={selectedStatus}
+                onValueChange={(val) => setSelectedStatus(val as 'PENDING' | 'PAID' | 'CANCELLED')}
+              >
+                <SelectTrigger className="w-full bg-white text-xs font-semibold text-slate-900 border-slate-300 h-9 rounded-lg">
+                  <SelectValue placeholder="Seleccionar Estado" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-slate-200 shadow-lg rounded-xl">
+                  <SelectItem value="PAID" className="text-xs font-semibold cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Pagado</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="PENDING" className="text-xs font-semibold cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Pendiente</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="CANCELLED" className="text-xs font-semibold cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span>Cancelado</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
               <p className="text-[11px] text-slate-400">
                 Selecciona el estado y confirma haciendo clic en **Guardar** en la barra superior.
               </p>
@@ -357,7 +384,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             )}
           </div>
 
-          {/* CARD 4: GESTIÓN DE EMAILS (Ubicado al final de la columna derecha) */}
+          {/* CARD 4: GESTIÓN DE EMAILS */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Gestión de Emails</h3>
