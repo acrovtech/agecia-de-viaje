@@ -66,13 +66,8 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tour
       <div className="space-y-6 mb-8">
         {/* Inline Embedded Calendar */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha de Viaje</label>
-            {selectedDate && (
-              <span className="text-xs font-semibold text-[#062918] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                {selectedDate.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-            )}
           </div>
           
           <div className="border border-gray-100 rounded-xl overflow-hidden shadow-2xs">
