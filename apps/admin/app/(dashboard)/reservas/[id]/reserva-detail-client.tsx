@@ -5,8 +5,8 @@ import { Reservation, Tour } from '@repo/db';
 import { updateReservationStatus } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
-  ChevronLeft, ChevronRight, Calendar, MessageSquare, CheckCircle2, 
-  Clock, XCircle, Loader2, Send, Check, Mail, User, Users
+  ChevronRight, Calendar, MessageSquare, CheckCircle2, 
+  Clock, XCircle, Loader2, Send, Check
 } from 'lucide-react';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
@@ -86,7 +86,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   return (
     <div className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 font-sans select-none relative">
       
-      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Idéntica a tour-form.tsx) */}
+      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS */}
       {hasUnsavedChanges && (
         <div className="fixed top-2 left-2 right-2 md:left-1/2 md:-translate-x-1/2 md:right-auto z-[60] flex items-center justify-between gap-2 md:gap-8 md:min-w-[620px] bg-[#222222] text-white py-1.5 px-3 md:py-1 md:pr-1 md:pb-1 md:pl-3.5 rounded-xl shadow-2xl border border-white/15 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-2 overflow-hidden">
@@ -122,7 +122,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         </div>
       )}
 
-      {/* HEADER DE PÁGINA (Idéntico a tour-form.tsx) */}
+      {/* HEADER DE PÁGINA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-1.5 min-w-0">
           <Link href="/reservas" className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" title="Volver a Reservas">
@@ -261,22 +261,25 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-5">
           
-          {/* CARD 1: ESTADO DE LA RESERVA (DROPDOWN RESPONSIVE) */}
+          {/* CARD 1: ESTADO DE LA RESERVA (SIN EMOJIS - CON ICONOS DE ESTADO) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
               {reserva.status === 'PAID' && (
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                   Pagado
                 </span>
               )}
               {reserva.status === 'PENDING' && (
-                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3 text-amber-600 shrink-0" />
                   Pendiente
                 </span>
               )}
               {reserva.status === 'CANCELLED' && (
-                <span className="text-[10px] font-bold text-red-800 bg-red-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full">
+                  <XCircle className="w-3 h-3 text-rose-600 shrink-0" />
                   Cancelado
                 </span>
               )}
@@ -284,15 +287,20 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as 'PENDING' | 'PAID' | 'CANCELLED')}
-                className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer"
-              >
-                <option value="PAID">🟢 Pagado</option>
-                <option value="PENDING">🟠 Pendiente</option>
-                <option value="CANCELLED">🔴 Cancelado</option>
-              </select>
+              <div className="flex items-center gap-2">
+                {selectedStatus === 'PAID' && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                {selectedStatus === 'PENDING' && <Clock className="w-4 h-4 text-amber-500 shrink-0" />}
+                {selectedStatus === 'CANCELLED' && <XCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value as 'PENDING' | 'PAID' | 'CANCELLED')}
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer"
+                >
+                  <option value="PAID">Pagado</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="CANCELLED">Cancelado</option>
+                </select>
+              </div>
               <p className="text-[11px] text-slate-400">
                 Selecciona el estado y confirma haciendo clic en **Guardar** en la barra superior.
               </p>
@@ -332,7 +340,24 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 3: GESTIÓN DE EMAILS */}
+          {/* CARD 3: REQUERIMIENTOS ESPECIALES */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="font-semibold text-xs text-slate-800">Requerimientos Especiales</h3>
+            </div>
+
+            {cleanNotes ? (
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg text-xs text-slate-700 leading-relaxed font-medium">
+                {cleanNotes}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">
+                El cliente no ingresó requerimientos o dietas especiales al momento de reservar.
+              </p>
+            )}
+          </div>
+
+          {/* CARD 4: GESTIÓN DE EMAILS (Ubicado al final de la columna derecha) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Gestión de Emails</h3>
@@ -366,23 +391,6 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 <span>Enviar Email de Cancelación</span>
               </button>
             </div>
-          </div>
-
-          {/* CARD 4: REQUERIMIENTOS ESPECIALES */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-semibold text-xs text-slate-800">Requerimientos Especiales</h3>
-            </div>
-
-            {cleanNotes ? (
-              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg text-xs text-slate-700 leading-relaxed font-medium">
-                {cleanNotes}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400 italic">
-                El cliente no ingresó requerimientos o dietas especiales al momento de reservar.
-              </p>
-            )}
           </div>
 
         </div>
