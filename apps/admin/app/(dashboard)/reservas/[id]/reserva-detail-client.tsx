@@ -6,9 +6,9 @@ import { updateReservationStatus, updateReservationDetails } from '../../../acti
 import Link from 'next/link';
 import { 
   ChevronRight, Calendar, MessageSquare, CheckCircle2, 
-  Clock, XCircle, Loader2, Send, Check, Pencil, User, Users
+  Clock, XCircle, Loader2, Send, Check, Pencil
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
@@ -488,7 +488,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-5">
           
-          {/* CARD 1: ESTADO DE LA RESERVA (SELECT COMPONENT DE ANCHO COMPLETO PULIDO) */}
+          {/* CARD 1: ESTADO DE LA RESERVA (100% EN ESPAÑOL DENTRO DE SELECT TRIGGER) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
@@ -515,13 +515,20 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
               
-              {/* SELECT PULIDO ALINEADO ABAJO CON ANCHO COMPLETO */}
+              {/* SELECT CON ETIQUETA 100% EN ESPAÑOL */}
               <Select
                 value={selectedStatus}
                 onValueChange={(val) => setSelectedStatus(val as 'PENDING' | 'PAID' | 'CANCELLED')}
               >
-                <SelectTrigger className="w-full bg-white text-xs font-semibold text-slate-900 border-slate-300 h-9 rounded-lg">
-                  <SelectValue placeholder="Seleccionar Estado" />
+                <SelectTrigger className="w-full bg-white text-xs font-semibold text-slate-900 border-slate-300 h-9 rounded-lg px-3">
+                  <div className="flex items-center gap-2 truncate">
+                    {selectedStatus === 'PAID' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    {selectedStatus === 'PENDING' && <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                    {selectedStatus === 'CANCELLED' && <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                    <span>
+                      {selectedStatus === 'PAID' ? 'Pagado' : selectedStatus === 'PENDING' ? 'Pendiente' : 'Cancelado'}
+                    </span>
+                  </div>
                 </SelectTrigger>
                 <SelectContent 
                   alignItemWithTrigger={false} 
