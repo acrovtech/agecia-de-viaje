@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, Copy, Info, Calendar, DollarSign, Tag, MapPin } from 'lucide-react';
+import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, Copy, Info, Compass } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
 import KRGlue from '@lyracom/embedded-form-glue';
@@ -14,15 +14,13 @@ type Passenger = {
   documentNumber: string;
 };
 
-const DEFAULT_TOUR_IMAGE = "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp";
-
 export function CheckoutForm() {
   const searchParams = useSearchParams();
   
   // Extraer parámetros de la URL
   const tourTitle = searchParams.get('tourTitle') || 'Tour no seleccionado';
   const tourSlug = searchParams.get('slug') || '';
-  const tourImage = searchParams.get('image') || DEFAULT_TOUR_IMAGE;
+  const tourImage = searchParams.get('image');
   const dateStr = searchParams.get('date');
   const pax = searchParams.get('pax') || '1';
   const serviceType = searchParams.get('type') || 'shared';
@@ -31,9 +29,10 @@ export function CheckoutForm() {
 
   const numPax = Math.max(1, parseInt(pax) || 1);
 
+  // Formato de fecha estándar en español sin TitleCase exagerado
   const dateObj = dateStr ? new Date(dateStr) : null;
   const formattedDate = dateObj 
-    ? dateObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    ? dateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     : 'Fecha por confirmar';
 
   // Control del Stepper (Paso 1: Reserva | Paso 2: Pasajeros | Paso 3: Pago)
@@ -198,11 +197,10 @@ export function CheckoutForm() {
     /* MARCO PRINCIPAL DE LA TARJETA (acrov-checkout-frame - Max Width 1280px) */
     <div className="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden w-full max-w-7xl mx-auto font-sans">
       
-      {/* HERO HEADER (acrov-checkout-hero) */}
-      <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 pt-9 pb-7 text-center">
-        <p className="text-[11px] font-extrabold tracking-[0.18em] uppercase text-[#062918] mb-2">PROCESO DE RESERVA</p>
-        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight">Completa tu reserva</h1>
-        <p className="text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase text-gray-400 max-w-xl mx-auto mt-2 leading-relaxed">
+      {/* HERO HEADER (acrov-checkout-hero - Tipografía limpia sin gritar) */}
+      <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 pt-8 pb-6 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Completa tu reserva</h1>
+        <p className="text-sm text-gray-500 max-w-xl mx-auto mt-1.5 leading-relaxed">
           Revisa tu tour, completa los datos de pasajeros y confirma tu forma de pago.
         </p>
       </header>
@@ -214,15 +212,15 @@ export function CheckoutForm() {
         <button 
           type="button"
           onClick={() => currentStep > 1 && setCurrentStep(1)}
-          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-10 px-4 rounded-xl border text-xs font-bold transition-all ${
             currentStep === 1 
-              ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
+              ? 'bg-[#062918]/10 border-[#062918] text-[#062918]' 
               : currentStep > 1 
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
+                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
             currentStep === 1 ? 'bg-[#062918] text-white' : currentStep > 1 ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             {currentStep > 1 ? <Check size={12} /> : 1}
@@ -234,15 +232,15 @@ export function CheckoutForm() {
         <button 
           type="button"
           onClick={() => currentStep > 2 && setCurrentStep(2)}
-          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-10 px-4 rounded-xl border text-xs font-bold transition-all ${
             currentStep === 2 
-              ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
+              ? 'bg-[#062918]/10 border-[#062918] text-[#062918]' 
               : currentStep > 2 
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
+                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
             currentStep === 2 ? 'bg-[#062918] text-white' : currentStep > 2 ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             {currentStep > 2 ? <Check size={12} /> : 2}
@@ -254,13 +252,13 @@ export function CheckoutForm() {
         <button 
           type="button"
           disabled={currentStep < 3}
-          className={`flex items-center justify-center gap-2.5 h-11 px-4 rounded-xl border text-xs sm:text-xs font-extrabold uppercase tracking-wider transition-all ${
+          className={`flex items-center justify-center gap-2.5 h-10 px-4 rounded-xl border text-xs font-bold transition-all ${
             currentStep === 3 
-              ? 'bg-[#062918]/10 border-[#062918] text-[#062918] shadow-2xs' 
+              ? 'bg-[#062918]/10 border-[#062918] text-[#062918]' 
               : 'bg-white border-gray-200 text-gray-400'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
             currentStep === 3 ? 'bg-[#062918] text-white' : 'bg-gray-100 text-gray-400'
           }`}>
             3
@@ -271,7 +269,7 @@ export function CheckoutForm() {
       </div>
 
       {/* CHECKOUT BODY CONTAINER */}
-      <div className="p-6 sm:p-10 bg-white">
+      <div className="p-6 sm:p-8 bg-white">
         
         {/* ========================================================================= */}
         {/* PASO 1: RESUMEN DE RESERVA DE TOUR */}
@@ -279,94 +277,89 @@ export function CheckoutForm() {
         {currentStep === 1 && (
           <div className="space-y-6">
             
-            {/* Inline Alert Banner (acrov-checkout-inline-alert) */}
-            <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-3 text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase flex items-center justify-center gap-2 text-center">
-              <Info size={15} className="shrink-0 text-[#062918]" />
-              <span>PUEDES SEGUIR AGREGANDO TOURS AL CARRITO, ESTOS PERMANECERAN DURANTE 60 MINUTOS.</span>
+            {/* Inline Alert Banner (acrov-checkout-inline-alert - Texto limpio) */}
+            <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-2.5 text-xs font-medium flex items-center justify-center gap-2 text-center">
+              <Info size={16} className="shrink-0 text-[#062918]" />
+              <span>Puedes seguir agregando tours al carrito, estos permanecerán durante 60 minutos.</span>
             </div>
 
             {/* Cart Card Layout (acrov-checkout-cart-card) */}
             <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
               
-              {/* Columna Izquierda: Imagen del Tour (30% / 4 cols) */}
-              <div className="md:col-span-4 min-h-[260px] md:min-h-[295px] relative bg-slate-900 overflow-hidden flex items-center justify-center">
-                <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:hidden" />
+              {/* Columna Izquierda: Imagen del Tour o Fallback Oficial del Plugin */}
+              <div className="md:col-span-4 min-h-[240px] md:min-h-[280px] relative overflow-hidden bg-gradient-to-br from-[#062918] via-[#0c4028] to-slate-900 flex items-center justify-center">
+                {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
+                  <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-white/70 p-6 text-center">
+                    <Compass size={44} className="mb-2 text-white/50 animate-pulse" />
+                    <span className="text-xs font-bold tracking-widest uppercase text-white/90">INCA BOUND EXPEDITIONS</span>
+                  </div>
+                )}
               </div>
 
-              {/* Columna Derecha: Detalles & Precios (70% / 8 cols) */}
-              <div className="md:col-span-8 p-6 sm:p-8 flex flex-col justify-between">
+              {/* Columna Derecha: Detalles & Precios con Tamaños Homogéneos */}
+              <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-4">
                 
                 <div>
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] text-[11px] font-black rounded-md uppercase tracking-wider">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] text-xs font-bold rounded-full uppercase tracking-wider">
                       {serviceType === 'shared' ? 'Servicio Compartido' : 'Servicio Privado'}
                     </span>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">INCA BOUND</span>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Inca Bound</span>
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase tracking-tight mb-4">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mb-3">
                     {tourTitle}
                   </h3>
 
-                  {/* Filas de Información Punteadas (Dashed Grid Rows acrov-checkout-cart-rows) */}
-                  <div className="border-y border-dashed border-gray-200 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                  {/* Filas Punteadas (Dashed Rows con font-size uniforme) */}
+                  <div className="border-y border-dashed border-gray-200 py-3 space-y-2.5 text-xs sm:text-sm">
                     
-                    <div className="flex justify-between items-center text-sm py-1 border-b sm:border-b-0 border-dashed border-gray-100">
-                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
-                        Fecha de salida:
-                      </span>
-                      <span className="font-bold text-gray-900 capitalize">{formattedDate}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-500">Fecha de salida:</span>
+                      <span className="font-semibold text-gray-900 capitalize">{formattedDate}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm py-1 border-b sm:border-b-0 border-dashed border-gray-100">
-                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
-                        <Users size={14} className="text-gray-400" />
-                        Pasajeros:
-                      </span>
-                      <span className="font-bold text-gray-900">{numPax} {numPax === 1 ? 'Persona' : 'Personas'}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-500">Pasajeros:</span>
+                      <span className="font-semibold text-gray-900">{numPax} {numPax === 1 ? 'Persona' : 'Personas'}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm py-1 sm:col-span-2 border-t border-dashed border-gray-200 pt-2.5">
-                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
-                        <Tag size={14} className="text-gray-400" />
-                        Precio por pasajero:
-                      </span>
-                      <span className="font-bold text-gray-900">${price} USD</span>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-500">Precio por pasajero:</span>
+                      <span className="font-semibold text-gray-900">${price} USD</span>
                     </div>
 
                   </div>
                 </div>
 
-                {/* Total Row incorporada en el lado derecho */}
-                <div className="pt-4 flex items-center justify-between border-t border-dashed border-gray-200 mt-3">
-                  <span className="text-xs font-black tracking-[0.14em] uppercase text-gray-600">TOTAL</span>
-                  <span className="text-3xl font-black text-[#062918] tracking-tight">${total} USD</span>
+                {/* Fila de Total dentro de la tarjeta */}
+                <div className="pt-3 flex items-center justify-between border-t border-gray-100">
+                  <span className="text-xs font-bold tracking-wider uppercase text-gray-500">Total</span>
+                  <span className="text-2xl font-bold text-[#062918]">${total} USD</span>
                 </div>
 
               </div>
 
             </div>
 
-            {/* Layout del Footer (acrov-checkout-cart-footer-layout) */}
-            <div className="pt-4 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            {/* Layout de Footer del Plugin */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
               
-              <div className="sm:col-span-7 bg-[#062918]/8 border border-[#062918]/20 px-6 py-3.5 rounded-xl flex items-center justify-between">
-                <span className="text-xs font-black tracking-[0.14em] uppercase text-gray-600">RESUMEN TOTAL</span>
-                <span className="text-xl font-black text-[#062918]">${total} USD</span>
+              <div className="w-full sm:w-auto flex-1 bg-[#062918]/8 border border-[#062918]/20 px-5 py-3 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-bold tracking-wider uppercase text-gray-600">Resumen Total</span>
+                <span className="text-xl font-bold text-[#062918]">${total} USD</span>
               </div>
 
-              <div className="sm:col-span-5 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="w-full py-3.5 px-6 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-                >
-                  Continuar a Datos de Pasajeros
-                  <ArrowRight size={16} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="w-full sm:w-auto px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                Continuar a Datos de Pasajeros
+                <ArrowRight size={16} />
+              </button>
 
             </div>
 
@@ -380,27 +373,26 @@ export function CheckoutForm() {
           <form onSubmit={handleProceedToStep3} className="space-y-6">
             
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#062918] mb-1">DATOS DE PASAJEROS</p>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Completa la información requerida</h2>
+              <h2 className="text-xl font-bold text-gray-900">Completa la información requerida</h2>
               <p className="text-xs text-gray-500 mt-1">Registra al titular de la reserva y a cada uno de los viajeros nominativos.</p>
             </div>
 
             {step2Error && (
-              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold">
+              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
                 {step2Error}
               </div>
             )}
 
             {/* FORMULARIO TITULAR DE CONTACTO */}
-            <div className="bg-gray-50/70 rounded-2xl p-5 sm:p-6 border border-gray-200/80 space-y-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-700 flex items-center gap-2">
+            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 space-y-4">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                 <UserCheck size={16} className="text-[#062918]" />
                 Titular de Contacto (Quien realiza la reserva)
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Nombres *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Nombres *</label>
                   <input
                     type="text"
                     required
@@ -412,7 +404,7 @@ export function CheckoutForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Apellidos *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Apellidos *</label>
                   <input
                     type="text"
                     required
@@ -426,7 +418,7 @@ export function CheckoutForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Correo Electrónico *</label>
                   <input
                     type="email"
                     required
@@ -438,7 +430,7 @@ export function CheckoutForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono / WhatsApp *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Teléfono / WhatsApp *</label>
                   <input
                     type="tel"
                     required
@@ -451,7 +443,7 @@ export function CheckoutForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Hotel de Recojo en Cusco (Opcional)</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Hotel de Recojo en Cusco (Opcional)</label>
                 <input
                   type="text"
                   value={formData.hotel}
@@ -466,7 +458,7 @@ export function CheckoutForm() {
             <div className="space-y-4 pt-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-700 flex items-center gap-2">
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                     <Users size={16} className="text-[#062918]" />
                     Detalle de Pasajeros ({numPax})
                   </p>
@@ -508,7 +500,7 @@ export function CheckoutForm() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Nombres *</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Nombres *</label>
                       <input
                         type="text"
                         required
@@ -519,7 +511,7 @@ export function CheckoutForm() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Apellidos *</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Apellidos *</label>
                       <input
                         type="text"
                         required
@@ -533,7 +525,7 @@ export function CheckoutForm() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Documento</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Documento</label>
                       <select
                         value={paxItem.documentType}
                         onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
@@ -545,7 +537,7 @@ export function CheckoutForm() {
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Número de Documento</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Número de Documento</label>
                       <input
                         type="text"
                         value={paxItem.documentNumber}
@@ -615,7 +607,7 @@ export function CheckoutForm() {
               <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full uppercase tracking-wider inline-block mb-2">
                 Reserva Registrada
               </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Completa tu Pago Seguro</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Completa tu Pago Seguro</h2>
               <p className="text-xs text-gray-500 max-w-md mx-auto mt-1">
                 Ingresa los datos de tu tarjeta en la pasarela cifrada de **Izipay (PCI-DSS)**.
               </p>
@@ -632,7 +624,7 @@ export function CheckoutForm() {
               </div>
               <div className="flex justify-between border-t border-gray-200 pt-2 text-sm">
                 <span className="font-bold">Total a pagar:</span>
-                <span className="font-black text-[#062918] text-base">${total} USD</span>
+                <span className="font-bold text-[#062918] text-base">${total} USD</span>
               </div>
             </div>
 

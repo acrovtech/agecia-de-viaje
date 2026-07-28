@@ -103,19 +103,19 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
           <p className="font-semibold text-slate-600">No se encontraron reservas con los filtros aplicados.</p>
         </div>
       ) : (
-        /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS */
+        /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS (PROPORCIONES PERFECTAS) */
         <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs table-fixed">
+            <table className="w-full text-left text-xs">
               <colgroup>
-                <col className="w-12" />
-                <col className="w-56" />
+                <col className="w-10" />
+                <col className="w-64" />
                 <col className="w-auto" />
                 <col className="w-32" />
-                <col className="w-20" />
-                <col className="w-28" />
+                <col className="w-16" />
+                <col className="w-36" />
                 <col className="w-32" />
-                <col className="w-28" />
+                <col className="w-32" />
               </colgroup>
               <thead>
                 {selectedIds.length > 0 ? (
@@ -144,9 +144,9 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                     </th>
                     <th className="px-4 py-3">CLIENTE</th>
                     <th className="px-4 py-3">TOUR RESERVADO</th>
-                    <th className="px-4 py-3">FECHA VIAJE</th>
+                    <th className="px-4 py-3 whitespace-nowrap">FECHA VIAJE</th>
                     <th className="px-4 py-3 text-center">PAX</th>
-                    <th className="px-4 py-3 text-right">TOTAL</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">TOTAL</th>
                     <th className="px-4 py-3 text-center">ESTADO</th>
                     <th className="px-4 py-3 text-right">DETALLE</th>
                   </tr>
@@ -172,26 +172,26 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                         <div className="font-semibold text-[#2f2f2f] truncate">{reserva.customerFirstName} {reserva.customerLastName}</div>
                         <div className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</div>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-[#2f2f2f] uppercase truncate">
+                      <td className="px-4 py-3 font-bold text-[#2f2f2f] uppercase truncate">
                         {reserva.tour?.title || 'TOUR INCA BOUND'}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 font-medium">
+                      <td className="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">
                         {new Date(reserva.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-center font-semibold text-slate-700">
                         {reserva.pax}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#2f2f2f]">
+                      <td className="px-4 py-3 text-right font-bold text-[#2f2f2f] whitespace-nowrap">
                         ${reserva.totalPrice.toFixed(2)} USD
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         {reserva.status === 'PAID' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <CheckCircle2 size={12} /> Pagado
                           </span>
                         )}
                         {reserva.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                             <Clock size={12} /> Pendiente
                           </span>
                         )}
@@ -201,10 +201,10 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <Link
                           href={`/reservas/${reserva.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                         >
                           <span>Ver Detalle</span>
                           <ArrowRight size={12} />
