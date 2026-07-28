@@ -39,10 +39,8 @@ export function CheckoutForm() {
     ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'Fecha por confirmar';
 
-  // Fecha de fin (para tours de 1 día es la misma fecha de inicio)
-  const formattedEndDate = dateObj
-    ? new Date(dateObj.getTime() + 24 * 60 * 60 * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-    : 'Fecha por confirmar';
+  // Fecha de fin (para tours de 1D / 1/2 Día la fecha de fin es el mismo día)
+  const formattedEndDate = formattedStartDate;
 
   // Control del Stepper (Paso 1: Reserva | Paso 2: Pasajeros | Paso 3: Pago)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -196,7 +194,7 @@ export function CheckoutForm() {
   }, [currentStep, formToken, reservationId]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto font-sans space-y-8 select-none">
+    <div className="w-full max-w-6xl mx-auto font-sans select-none">
       
       {/* MARCO PRINCIPAL DE LA TARJETA CHECKOUT */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden w-full">
@@ -287,10 +285,10 @@ export function CheckoutForm() {
                 <span>Puedes seguir agregando tours al carrito, estos permanecerán durante 60 minutos.</span>
               </div>
 
-              {/* CARD DE RESERVA EN 2 COLUMNAS (CON FALLBACK GRIS CLARO Y VERDE INCA BOUND) */}
+              {/* CARD DE RESERVA EN 2 COLUMNAS */}
               <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
                 
-                {/* Columna Izquierda: Imagen del Tour o Fallback Gris Claro Elegante */}
+                {/* Columna Izquierda: Imagen del Tour o Fallback Gris Claro */}
                 <div className="md:col-span-4 min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
                   {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
                     <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
@@ -302,12 +300,12 @@ export function CheckoutForm() {
                   )}
                 </div>
 
-                {/* Columna Derecha: Información en 2 Columnas + Botones integrados DENTRO de la Card */}
-                <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-6">
+                {/* Columna Derecha: Información en 2 Columnas + Separadores de Título y Botones */}
+                <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-4">
                   
                   <div>
-                    {/* Título (1.25rem / 20px) & Botón de eliminar */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
+                    {/* Título & Botón de eliminar (Con línea separadora inferior pb-3 mb-3 border-b) */}
+                    <div className="flex items-center justify-between gap-4 pb-3 mb-3 border-b border-gray-100">
                       <h3 className="text-[1.25rem] leading-snug font-bold text-gray-900 tracking-tight">
                         {tourTitle}
                       </h3>
@@ -322,7 +320,7 @@ export function CheckoutForm() {
                     </div>
 
                     {/* Grilla en 2 Columnas idéntica al Plugin */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6 text-xs sm:text-sm border-t border-gray-100 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6 text-xs sm:text-sm">
                       
                       {/* Fila 1 */}
                       <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
@@ -382,8 +380,8 @@ export function CheckoutForm() {
                     </div>
                   </div>
 
-                  {/* BOTONES DENTRO DE LA CARD (VERDE INCA BOUND) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  {/* BOTONES DENTRO DE LA CARD (Con línea separadora superior pt-4 mt-3 border-t) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 mt-3 border-t border-gray-100">
                     
                     <button
                       type="button"
@@ -407,6 +405,17 @@ export function CheckoutForm() {
 
                 </div>
 
+              </div>
+
+              {/* ENLACE VER MÁS TOURS DENTRO DEL CONTENEDOR DE LA CARD CON LÍNEA SEPARADORA */}
+              <div className="pt-6 mt-8 border-t border-gray-200/80 text-center">
+                <Link 
+                  href="/tours" 
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] hover:text-[#062918] transition-colors"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Ver más tours</span>
+                </Link>
               </div>
 
             </div>
@@ -678,17 +687,6 @@ export function CheckoutForm() {
 
         </div>
 
-      </div>
-
-      {/* FOOTER LINK: "Ver más tours" */}
-      <div className="pt-6 border-t border-gray-200/80 text-center">
-        <Link 
-          href="/tours" 
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] hover:text-[#062918] transition-colors"
-        >
-          <ArrowLeft size={14} />
-          <span>Ver más tours</span>
-        </Link>
       </div>
 
     </div>
