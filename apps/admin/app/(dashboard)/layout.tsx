@@ -6,6 +6,7 @@ import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { UserNavDropdown } from '@/components/layout/user-nav-dropdown';
 import { MobileSidebarDrawer } from '@/components/layout/mobile-sidebar-drawer';
 import { TitleProvider } from '@/components/ui/title-context';
+import { InactivityTimer } from '@/components/inactivity-timer';
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +24,7 @@ export default async function DashboardLayout({
 
   return (
     <TitleProvider>
+      <InactivityTimer />
       <div className="flex h-screen w-full overflow-hidden bg-[#EBEBEB] font-sans">
         
         {/* TOPBAR NEGRO SHOPIFY ADMIN (#0a0a0a) */}

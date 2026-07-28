@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { TourCard } from '@/components/ui/tour-card';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -180,9 +181,11 @@ export function ToursCatalogClient() {
               Explora el Perú con IncaBound
             </h1>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs md:text-sm text-white mb-4 font-medium">
-              <span className="hover:text-gray-200 cursor-pointer transition-colors">Inicio</span>
+              <Link href="/" className="hover:text-gray-200 transition-colors underline decoration-white/30 underline-offset-2">
+                Inicio
+              </Link>
               <span className="text-white/60">/</span>
-              <span>Tours</span>
+              <span className="text-white font-semibold">Tours</span>
             </div>
             <p className="text-gray-300 text-base md:text-lg">
               Desde caminatas desafiantes en los Andes hasta tours culturales de un día. Encuentra tu próxima aventura.

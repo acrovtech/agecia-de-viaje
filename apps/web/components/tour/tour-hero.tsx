@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export function TourHero({ tour }: { tour: any }) {
   const hasImage = Boolean(tour.image);
@@ -20,10 +21,15 @@ export function TourHero({ tour }: { tour: any }) {
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight drop-shadow-lg leading-tight font-heading mb-4">
             {tour.title}
           </h1>
+          {/* Breadcrumb Navegable */}
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs md:text-sm text-white/80 mb-2 font-medium">
-            <span className="hover:text-white cursor-pointer transition-colors">Inicio</span>
+            <Link href="/" className="hover:text-white transition-colors underline decoration-white/30 underline-offset-2">
+              Inicio
+            </Link>
             <span className="text-white/40">/</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Tours</span>
+            <Link href="/tours" className="hover:text-white transition-colors underline decoration-white/30 underline-offset-2">
+              Tours
+            </Link>
             <span className="text-white/40">/</span>
             <span className="text-white font-semibold">{tour.title}</span>
           </div>

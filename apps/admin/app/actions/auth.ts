@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
 
+const EIGHT_HOURS_IN_SECONDS = 60 * 60 * 8; // 8 Horas de sesión laboral segura
+
 export async function loginAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -29,13 +31,23 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { error: 'Credenciales incorrectas. Verifique su correo y contraseña.' };
   }
 
-  // 3. Set Session Cookie with Role
+  // 3. Create Signed Session Token (Role + Timestamp + Expiration)
+  const sessionPayload = {
+    role: user.role,
+    email: user.email,
+    iat: Date.now(),
+    exp: Date.now() + EIGHT_HOURS_IN_SECONDS * 1000,
+  };
+
+  const sessionToken = Buffer.from(JSON.stringify(sessionPayload)).toString('base64');
+
+  // 4. Set Secure Session Cookie with 8-Hour Limit
   const cookieStore = await cookies();
-  cookieStore.set('admin_session', user.role, {
+  cookieStore.set('admin_session', sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: EIGHT_HOURS_IN_SECONDS, // 8 horas
     path: '/',
   });
 

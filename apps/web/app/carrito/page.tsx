@@ -1,15 +1,16 @@
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
+import { Suspense } from 'react';
+import { CarritoClient } from './carrito-client';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Tu Carrito de Reservas | Inca Bound',
+  description: 'Revisa las expediciones seleccionadas en Inca Bound y procede al pago seguro.',
+};
 
 export default function CarritoPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header variant="dark" />
-      <main className="flex-1 flex flex-col items-center justify-center py-16">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Tu Carrito de Reservas</h1>
-        <p className="text-gray-500">Próximamente podrás finalizar tus reservas aquí.</p>
-      </main>
-      <Footer />
-    </div>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Cargando carrito...</div>}>
+      <CarritoClient />
+    </Suspense>
   );
 }
