@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
   Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
-  AlertTriangle
+  AlertTriangle, Globe, MapPin, MessageSquare
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
@@ -53,10 +53,11 @@ export function CheckoutForm() {
     email: '',
     phone: '',
     hotel: '',
+    language: 'Español',
     requirements: ''
   });
 
-  // Estado de pasajeros
+  // Estado de pasajeros (Secuencia limpia de tabla)
   const [passengers, setPassengers] = useState<Passenger[]>(() => 
     Array.from({ length: numPax }, () => ({
       firstName: '',
@@ -104,13 +105,23 @@ export function CheckoutForm() {
   const handleProceedToStep3 = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar titular de contacto
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.phone.trim()) {
       setStep2Error('Por favor completa todos los campos requeridos del titular de contacto.');
       return;
     }
 
+    // Validar al menos nombres y apellidos de cada pasajero
+    for (let i = 0; i < passengers.length; i++) {
+      const p = passengers[i];
+      if (!p?.firstName.trim() || !p?.lastName.trim() || !p?.documentNumber.trim()) {
+        setStep2Error(`Por favor completa los nombres, apellidos y número de documento del Pasajero #${i + 1}.`);
+        return;
+      }
+    }
+
     if (!termsAccepted) {
-      setStep2Error('Debes aceptar los términos para continuar con la reserva.');
+      setStep2Error('Debes aceptar los términos y condiciones para continuar con la reserva.');
       return;
     }
 
@@ -122,9 +133,10 @@ export function CheckoutForm() {
         `Pax ${idx + 1}: ${p.firstName} ${p.lastName} (${p.documentType}: ${p.documentNumber || 'N/A'})`
       ).join(' | ');
 
-      const fullRequirements = formData.requirements 
-        ? `${formData.requirements} [Pasajeros: ${paxSummary}]`
-        : `[Pasajeros: ${paxSummary}]`;
+      const langInfo = `Idioma: ${formData.language}`;
+      const notes = formData.requirements ? `Notas: ${formData.requirements}` : '';
+
+      const fullRequirements = [langInfo, notes, `[Pasajeros: ${paxSummary}]`].filter(Boolean).join(' | ');
 
       const result = await createReservationAndPaymentToken({
         tourSlug,
@@ -423,12 +435,12 @@ export function CheckoutForm() {
           )}
 
           {/* ========================================================================= */}
-          {/* PASO 2: DATOS DEL TITULAR Y PASAJEROS */}
+          {/* PASO 2: DATOS DE PASAJEROS, CONTACTO Y DATOS ADICIONALES */}
           {/* ========================================================================= */}
           {currentStep === 2 && (
-            <form onSubmit={handleProceedToStep3} className="space-y-6">
+            <form onSubmit={handleProceedToStep3} className="space-y-8">
               
-              {/* CARD DE AVISO IMPORTANTE (ALERT AMBER BORDER & BACKGROUND) */}
+              {/* CARD DE AVISO IMPORTANTE */}
               <div className="bg-[#fffbeb] border border-[#f59e0b] rounded-xl p-4 sm:p-4.5 flex items-start gap-3 text-amber-900 shadow-2xs">
                 <AlertTriangle size={18} className="text-[#d97706] shrink-0 mt-0.5" />
                 <div className="space-y-1 text-xs sm:text-xs leading-relaxed">
@@ -439,23 +451,123 @@ export function CheckoutForm() {
                 </div>
               </div>
 
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Completa la información requerida</h2>
-                <p className="text-xs text-gray-500 mt-1">Registra al titular de la reserva y a cada uno de los viajeros nominativos.</p>
-              </div>
-
               {step2Error && (
                 <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
                   {step2Error}
                 </div>
               )}
 
-              {/* FORMULARIO TITULAR DE CONTACTO */}
-              <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 space-y-4">
-                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                  <UserCheck size={16} className="text-[#062918]" />
-                  Titular de Contacto (Quien realiza la reserva)
-                </p>
+              {/* ------------------------------------------------------------------------- */}
+              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (TABLA LIMPIA INLINE SIN TARJETAS EXCESIVAS) */}
+              {/* ------------------------------------------------------------------------- */}
+              <div className="space-y-4">
+                <div className="border-b border-gray-200 pb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    1. Información de los pasajeros ({numPax})
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Encabezados de Columna (Solo visible en pantallas medianas/grandes) */}
+                  <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    <div className="sm:col-span-1">PAS.</div>
+                    <div className="sm:col-span-3">NOMBRES *</div>
+                    <div className="sm:col-span-3">APELLIDOS *</div>
+                    <div className="sm:col-span-2">TIPO DOC *</div>
+                    <div className="sm:col-span-3">NRO DOC *</div>
+                  </div>
+
+                  {/* Filas de Pasajeros Inline */}
+                  {passengers.map((paxItem, idx) => (
+                    <div 
+                      key={idx} 
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center p-3.5 sm:p-2 bg-gray-50/50 rounded-xl border border-gray-200/80 sm:bg-transparent sm:border-0 sm:p-0"
+                    >
+                      {/* Label PAS. X */}
+                      <div className="sm:col-span-1 text-xs font-bold text-gray-600 flex items-center justify-between sm:justify-start">
+                        <span>PAS. {idx + 1}</span>
+                        <span className="sm:hidden text-[10px] text-gray-400 uppercase font-semibold">Pasajero #{idx + 1}</span>
+                      </div>
+
+                      {/* Nombres */}
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nombres *</label>
+                        <input 
+                          type="text"
+                          required
+                          value={paxItem.firstName}
+                          onChange={(e) => handlePassengerChange(idx, 'firstName', e.target.value)}
+                          placeholder="Nombres"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                        />
+                      </div>
+
+                      {/* Apellidos */}
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Apellidos *</label>
+                        <input 
+                          type="text"
+                          required
+                          value={paxItem.lastName}
+                          onChange={(e) => handlePassengerChange(idx, 'lastName', e.target.value)}
+                          placeholder="Apellidos"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                        />
+                      </div>
+
+                      {/* Tipo Documento */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo Doc *</label>
+                        <select
+                          value={paxItem.documentType}
+                          onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                        >
+                          <option value="DNI">DNI</option>
+                          <option value="Pasaporte">Pasaporte</option>
+                          <option value="Carnet Extranjería">Carnet Extranjería</option>
+                        </select>
+                      </div>
+
+                      {/* Nro Documento */}
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nro Doc *</label>
+                        <input 
+                          type="text"
+                          required
+                          value={paxItem.documentNumber}
+                          onChange={(e) => handlePassengerChange(idx, 'documentNumber', e.target.value)}
+                          placeholder="74288119"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs font-mono focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                        />
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO */}
+              {/* ------------------------------------------------------------------------- */}
+              <div className="space-y-4 pt-4 border-t border-gray-200/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    2. Titular de contacto
+                  </h3>
+                  
+                  {formData.firstName && (
+                    <button
+                      type="button"
+                      onClick={copyContactToPax1}
+                      className="text-[11px] font-bold text-[#062918] hover:underline flex items-center gap-1 bg-[#062918]/10 px-2.5 py-1 rounded-lg transition-colors self-start sm:self-auto"
+                    >
+                      <Check size={13} />
+                      {copiedPax1 ? '¡Copiado a Pasajero 1!' : 'Copiar titular a Pasajero 1'}
+                    </button>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">Nombres *</label>
@@ -468,6 +580,7 @@ export function CheckoutForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     />
                   </div>
+
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">Apellidos *</label>
                     <input 
@@ -479,8 +592,9 @@ export function CheckoutForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Correo Electrónico *</label>
+                    <label className="block text-gray-700 font-semibold mb-1">Correo electrónico *</label>
                     <input 
                       type="email" 
                       required
@@ -490,8 +604,9 @@ export function CheckoutForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Teléfono / WhatsApp *</label>
+                    <label className="block text-gray-700 font-semibold mb-1">Número de teléfono / WhatsApp *</label>
                     <input 
                       type="tel" 
                       required
@@ -501,111 +616,67 @@ export function CheckoutForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-gray-700 font-semibold mb-1">Hotel o Lugar de Recojo en Cusco</label>
+                </div>
+              </div>
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SECCIÓN 3: DATOS ADICIONALES */}
+              {/* ------------------------------------------------------------------------- */}
+              <div className="space-y-4 pt-4 border-t border-gray-200/80">
+                <div className="border-b border-gray-200 pb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    3. Datos adicionales
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  {/* Lugar u Hotel de recojo */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-gray-400" />
+                      <span>Lugar u hotel de recojo</span>
+                    </label>
                     <input 
                       type="text" 
                       value={formData.hotel}
                       onChange={(e) => setFormData({ ...formData, hotel: e.target.value })}
-                      placeholder="Ej. Hotel Monasterio / Plaza de Armas"
+                      placeholder="Ej. Hotel Monasterio / Plaza de Armas de Cusco"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     />
                   </div>
-                </div>
-              </div>
 
-              {/* LISTA NOMINATIVA DE PASAJEROS */}
-              <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200/80 pb-3">
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                    <Users size={16} className="text-[#062918]" />
-                    Lista Nominativa de Pasajeros ({numPax})
-                  </p>
-                  
-                  {formData.firstName && (
-                    <button
-                      type="button"
-                      onClick={copyContactToPax1}
-                      className="text-[11px] font-bold text-[#062918] hover:underline flex items-center gap-1 bg-[#062918]/10 px-2.5 py-1 rounded-lg transition-colors"
+                  {/* Idioma del servicio (Dropdown: Español, Inglés, Portugués) */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
+                      <Globe size={14} className="text-gray-400" />
+                      <span>Idioma del servicio</span>
+                    </label>
+                    <select
+                      value={formData.language}
+                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
                     >
-                      <Check size={13} />
-                      {copiedPax1 ? '¡Copiado a Pasajero 1!' : 'Copiar titular a Pasajero 1'}
-                    </button>
-                  )}
-                </div>
+                      <option value="Español">Español</option>
+                      <option value="Inglés">Inglés</option>
+                      <option value="Portugués">Portugués</option>
+                    </select>
+                  </div>
 
-                <div className="space-y-4">
-                  {passengers.map((paxItem, idx) => (
-                    <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200/90 shadow-2xs space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#062918]">Pasajero #{idx + 1}</span>
-                        <span className="text-[11px] text-gray-400">Dato requerido para boleto/ticket</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                        <div>
-                          <label className="block text-gray-600 mb-1 font-medium">Nombres *</label>
-                          <input 
-                            type="text"
-                            required
-                            value={paxItem.firstName}
-                            onChange={(e) => handlePassengerChange(idx, 'firstName', e.target.value)}
-                            placeholder="Nombre"
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-1 focus:ring-[#062918] outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-600 mb-1 font-medium">Apellidos *</label>
-                          <input 
-                            type="text"
-                            required
-                            value={paxItem.lastName}
-                            onChange={(e) => handlePassengerChange(idx, 'lastName', e.target.value)}
-                            placeholder="Apellido"
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-1 focus:ring-[#062918] outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-600 mb-1 font-medium">Tipo Documento</label>
-                          <select
-                            value={paxItem.documentType}
-                            onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white focus:ring-1 focus:ring-[#062918] outline-none"
-                          >
-                            <option value="DNI">DNI</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                            <option value="Carnet Extranjería">Carnet Extranjería</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-gray-600 mb-1 font-medium">N° Documento *</label>
-                          <input 
-                            type="text"
-                            required
-                            value={paxItem.documentNumber}
-                            onChange={(e) => handlePassengerChange(idx, 'documentNumber', e.target.value)}
-                            placeholder="12345678"
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-mono focus:ring-1 focus:ring-[#062918] outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  {/* Requerimientos especiales (Textarea Opcional) */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
+                      <MessageSquare size={14} className="text-gray-400" />
+                      <span>Requerimientos especiales (Opcional)</span>
+                    </label>
+                    <textarea 
+                      rows={3}
+                      value={formData.requirements}
+                      onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                      placeholder="Ej. Alimentación vegetariana, alergias, dietas o solicitudes de horario..."
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none leading-relaxed resize-none"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              {/* REQUERIMIENTOS ESPECIALES */}
-              <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 space-y-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Requerimientos Especiales o Dietas
-                </label>
-                <textarea 
-                  rows={2}
-                  value={formData.requirements}
-                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                  placeholder="Ej. Alimentación vegetariana, alergias, o solicitudes de horario..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none leading-relaxed resize-none"
-                />
               </div>
 
               {/* TÉRMINOS Y CONDICIONES */}
@@ -623,7 +694,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ACCIONES DEL PASO 2 */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
