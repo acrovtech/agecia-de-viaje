@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useRef } from 'react';
 
 const testimonials = [
   {
@@ -50,65 +50,61 @@ const testimonials = [
 ];
 
 export function Testimonials() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const prevSlide = () => {
-    setCurrentIndex(prev => (prev === 0 ? testimonials.length - 1 : prev - 1));
+  // Avanzar exactamente 1 tarjeta a la izquierda
+  const scrollPrev = () => {
+    if (scrollRef.current) {
+      const firstCard = scrollRef.current.firstElementChild as HTMLElement;
+      const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 340;
+      scrollRef.current.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+    }
   };
 
-  const nextSlide = () => {
-    setCurrentIndex(prev => (prev === testimonials.length - 1 ? 0 : prev + 1));
+  // Avanzar exactamente 1 tarjeta a la derecha
+  const scrollNext = () => {
+    if (scrollRef.current) {
+      const firstCard = scrollRef.current.firstElementChild as HTMLElement;
+      const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 340;
+      scrollRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+    }
   };
 
   return (
     <section className="py-24 bg-white relative overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">
         
-        {/* Header con título y controles de carrusel */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div className="max-w-2xl">
-            <h2 className="section-title text-left">
-              Nuestros viajeros <span className="text-[#062918]">lo confirman</span>
-            </h2>
-            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-              Historias reales de personas que vivieron la magia del Perú con Inca Bound. Más de 1000 opiniones de 5 estrellas en TripAdvisor.
-            </p>
-          </div>
-
-          {/* Controles del Carrusel (Flecha Izq / Der) */}
-          <div className="flex items-center gap-3 shrink-0">
-            <button 
-              onClick={prevSlide}
-              aria-label="Testimonio anterior"
-              className="w-12 h-12 rounded-full border border-gray-200 bg-white hover:bg-[#062918] hover:text-white hover:border-[#062918] text-gray-700 flex items-center justify-center transition-all shadow-xs cursor-pointer"
-            >
-              <ChevronLeft size={22} />
-            </button>
-            
-            <div className="text-xs font-bold text-gray-400 px-2">
-              <span className="text-gray-900">{currentIndex + 1}</span> / {testimonials.length}
-            </div>
-
-            <button 
-              onClick={nextSlide}
-              aria-label="Testimonio siguiente"
-              className="w-12 h-12 rounded-full border border-gray-200 bg-white hover:bg-[#062918] hover:text-white hover:border-[#062918] text-gray-700 flex items-center justify-center transition-all shadow-xs cursor-pointer"
-            >
-              <ChevronRight size={22} />
-            </button>
-          </div>
+        {/* Encabezado */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="section-title">
+            Nuestros viajeros <span className="text-[#062918]">lo confirman</span>
+          </h2>
+          <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+            Historias reales de personas que vivieron la magia del Perú con Inca Bound. Más de 1000 opiniones de 5 estrellas en TripAdvisor.
+          </p>
         </div>
 
-        {/* Carrusel Desplazable de 1 en 1 */}
-        <div className="overflow-hidden">
+        {/* Contenedor relativo con grupo de Hover para las Flechas Flotantes */}
+        <div className="relative group max-w-[1400px] mx-auto">
+          
+          {/* Flecha Flotante Izquierda (Aparece en Hover) */}
+          <button 
+            onClick={scrollPrev}
+            aria-label="Testimonio anterior"
+            className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white text-gray-800 shadow-xl border border-gray-100 flex items-center justify-center hover:bg-[#062918] hover:text-white hover:border-[#062918] opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          {/* Lista Flotante de 1 en 1 */}
           <div 
-            className="flex transition-transform duration-500 ease-out gap-6"
-            style={{ transform: `translateX(-${currentIndex * (100 / 1)}%)` }}
+            ref={scrollRef}
+            className="flex overflow-x-auto scroll-smooth hide-scrollbar gap-6 py-2 snap-x snap-mandatory"
           >
             {testimonials.map((testimonial, index) => (
               <div 
                 key={index} 
-                className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.3333%-16px)] shrink-0"
+                className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.3333%-16px)] snap-start shrink-0"
               >
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 h-full flex flex-col justify-between shadow-2xs hover:border-gray-300 transition-colors">
                   <div>
@@ -158,9 +154,28 @@ export function Testimonials() {
               </div>
             ))}
           </div>
+
+          {/* Flecha Flotante Derecha (Aparece en Hover) */}
+          <button 
+            onClick={scrollNext}
+            aria-label="Testimonio siguiente"
+            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white text-gray-800 shadow-xl border border-gray-100 flex items-center justify-center hover:bg-[#062918] hover:text-white hover:border-[#062918] opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+          >
+            <ChevronRight size={22} />
+          </button>
         </div>
 
       </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}} />
     </section>
   );
 }
