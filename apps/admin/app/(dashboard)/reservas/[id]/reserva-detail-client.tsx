@@ -84,31 +84,9 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black tracking-tight text-[#2f2f2f]">
-                Reserva #{reserva.id.slice(-6).toUpperCase()}
-              </h1>
-              {reserva.status === 'PAID' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <CheckCircle2 size={14} /> Pagado
-                </span>
-              )}
-              {reserva.status === 'PENDING' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                  <Clock size={14} /> Pendiente
-                </span>
-              )}
-              {reserva.status === 'CANCELLED' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-                  <XCircle size={14} /> Cancelado
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Registrada el {new Date(reserva.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
+          <h1 className="text-2xl font-black tracking-tight text-[#2f2f2f]">
+            Reserva #{reserva.id.slice(-6).toUpperCase()}
+          </h1>
 
           <a
             href={`https://wa.me/${formatPhoneForWhatsapp(reserva.customerPhone)}?text=Hola%20${reserva.customerFirstName},%20te%20escribimos%20de%20Inca%20Bound%20sobre%20tu%20reserva%20de%20${encodeURIComponent(reserva.tour?.title || 'Tour')}`}
@@ -312,6 +290,12 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </h3>
 
             <div className="space-y-3 text-xs">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Fecha registro</span>
+                <span className="font-semibold text-slate-800">
+                  {new Date(reserva.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Subtotal tour</span>
                 <span className="font-bold text-slate-900">${reserva.totalPrice.toFixed(2)} USD</span>
