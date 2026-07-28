@@ -87,10 +87,7 @@ export function TourTabs({ tour }: { tour: any }) {
 
         {activeTab === 'recomendaciones' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-lg text-gray-900 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
-                <Compass className="text-[#062918]" size={22} /> Recomendaciones para tu viaje
-              </h3>
+            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {tour.recommendations && tour.recommendations.length > 0 ? (
                   tour.recommendations.map((item: string, idx: number) => (
@@ -115,8 +112,7 @@ export function TourTabs({ tour }: { tour: any }) {
 
         {activeTab === 'galeria' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-lg text-gray-900 mb-6 pb-4 border-b border-gray-100">Galería del Tour</h3>
+            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
               {tour.images && tour.images.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {tour.images.map((url: string, idx: number) => (
