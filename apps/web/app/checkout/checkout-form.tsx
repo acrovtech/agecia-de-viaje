@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
-  Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2 
+  Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
@@ -427,6 +428,17 @@ export function CheckoutForm() {
           {currentStep === 2 && (
             <form onSubmit={handleProceedToStep3} className="space-y-6">
               
+              {/* CARD DE AVISO IMPORTANTE (ALERT AMBER BORDER & BACKGROUND) */}
+              <div className="bg-[#fffbeb] border border-[#f59e0b] rounded-xl p-4 sm:p-4.5 flex items-start gap-3 text-amber-900 shadow-2xs">
+                <AlertTriangle size={18} className="text-[#d97706] shrink-0 mt-0.5" />
+                <div className="space-y-1 text-xs sm:text-xs leading-relaxed">
+                  <h4 className="font-bold text-amber-900 text-xs sm:text-xs">Aviso importante</h4>
+                  <p className="text-amber-800/90 font-medium">
+                    Los nombres y apellidos deben coincidir exactamente con los del pasaporte o DNI. Cualquier error en los datos es responsabilidad del cliente y puede generar retrasos o incluso perdida de disponibilidad.
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Completa la información requerida</h2>
                 <p className="text-xs text-gray-500 mt-1">Registra al titular de la reserva y a cada uno de los viajeros nominativos.</p>
