@@ -1,8 +1,8 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, ArrowRight, ArrowLeft, CreditCard, Loader2, Check, UserCheck, Users, Copy, FileText, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, Copy } from 'lucide-react';
 import { createReservationAndPaymentToken } from '../actions/reservation';
 import KRGlue from '@lyracom/embedded-form-glue';
 
@@ -91,7 +91,6 @@ export function CheckoutForm() {
   const handleProceedToStep3 = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación básica de contacto
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.phone.trim()) {
       setStep2Error('Por favor completa todos los campos requeridos del titular de contacto.');
       return;
@@ -101,7 +100,6 @@ export function CheckoutForm() {
     setIsLoading(true);
 
     try {
-      // Formatear resumen de pasajeros
       const paxSummary = passengers.map((p, idx) => 
         `Pax ${idx + 1}: ${p.firstName} ${p.lastName} (${p.documentType}: ${p.documentNumber || 'N/A'})`
       ).join(' | ');
@@ -186,13 +184,19 @@ export function CheckoutForm() {
   }, [currentStep, formToken]);
 
   return (
-    <div className="w-full">
+    /* TARJETA ÚNICA UNIFICADA CONTENEDORA (CARD UNIFICADA) */
+    <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm max-w-4xl mx-auto space-y-8">
       
-      {/* STEPPER HEADER (PROGRESBAR EN 3 PASOS) */}
-      <div className="mb-10 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between relative">
+      {/* CABECERA DENTRO DE LA TARJETA */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 mb-1">Completar Reserva</h1>
+        <p className="text-sm text-gray-500">Estás a un paso de tu próxima gran aventura en los Andes.</p>
+      </div>
+
+      {/* STEPPER HEADER (DENTRO DE LA TARJETA) */}
+      <div className="pt-2 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between relative max-w-2xl mx-auto">
           
-          {/* Línea de conexión de fondo */}
           <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0" />
           <div 
             className="absolute top-1/2 left-0 h-1 bg-[#062918] -translate-y-1/2 z-0 transition-all duration-500"
@@ -202,7 +206,7 @@ export function CheckoutForm() {
           {/* Paso 1 */}
           <div 
             onClick={() => currentStep > 1 && setCurrentStep(1)}
-            className={`relative z-10 flex flex-col items-center cursor-pointer group`}
+            className="relative z-10 flex flex-col items-center cursor-pointer group"
           >
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all shadow-sm ${
               currentStep === 1 ? 'bg-[#062918] text-white ring-4 ring-[#062918]/20' : currentStep > 1 ? 'bg-emerald-600 text-white' : 'bg-white text-gray-400 border-2 border-gray-200'
@@ -217,7 +221,7 @@ export function CheckoutForm() {
           {/* Paso 2 */}
           <div 
             onClick={() => currentStep > 2 && setCurrentStep(2)}
-            className={`relative z-10 flex flex-col items-center cursor-pointer group`}
+            className="relative z-10 flex flex-col items-center cursor-pointer group"
           >
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all shadow-sm ${
               currentStep === 2 ? 'bg-[#062918] text-white ring-4 ring-[#062918]/20' : currentStep > 2 ? 'bg-emerald-600 text-white' : 'bg-white text-gray-400 border-2 border-gray-200'
@@ -248,18 +252,18 @@ export function CheckoutForm() {
       {/* PASO 1: RESUMEN DE RESERVA DE TOUR */}
       {/* ========================================================================= */}
       {currentStep === 1 && (
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm max-w-3xl mx-auto space-y-6">
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-2xl font-bold font-heading text-gray-900">1. Resumen de tu Expedición</h2>
-            <p className="text-gray-500 text-sm mt-1">Verifica la fecha y cantidad de viajeros antes de completar tus datos.</p>
+        <div className="space-y-6 pt-2">
+          <div>
+            <h2 className="text-xl font-bold font-heading text-gray-900">1. Resumen de tu Expedición</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Verifica la fecha y cantidad de viajeros antes de completar tus datos.</p>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 space-y-4">
+          <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-100 space-y-4">
             <div className="flex items-center justify-between">
               <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] font-bold text-xs rounded-lg uppercase tracking-wider">
                 {serviceType === 'shared' ? 'Servicio Compartido' : 'Servicio Privado'}
               </span>
-              <span className="text-sm text-gray-500 font-medium">Inca Bound Tour Operator</span>
+              <span className="text-xs text-gray-500 font-medium">Inca Bound Tour Operator</span>
             </div>
 
             <h3 className="text-xl font-bold text-gray-900">{tourTitle}</h3>
@@ -297,10 +301,10 @@ export function CheckoutForm() {
       {/* PASO 2: DATOS DEL TITULAR Y PASAJEROS */}
       {/* ========================================================================= */}
       {currentStep === 2 && (
-        <form onSubmit={handleProceedToStep3} className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm max-w-3xl mx-auto space-y-8">
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-2xl font-bold font-heading text-gray-900">2. Información del Titular y Pasajeros</h2>
-            <p className="text-gray-500 text-sm mt-1">Completa los nombres nominativos para el registro de tu expedición.</p>
+        <form onSubmit={handleProceedToStep3} className="space-y-8 pt-2">
+          <div>
+            <h2 className="text-xl font-bold font-heading text-gray-900">2. Información del Titular y Pasajeros</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Completa los nombres nominativos para el registro de tu expedición.</p>
           </div>
 
           {step2Error && (
@@ -412,7 +416,7 @@ export function CheckoutForm() {
             </div>
 
             {passengers.map((paxItem, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-2xl p-5 border border-gray-200/80 space-y-4">
+              <div key={idx} className="bg-gray-50/80 rounded-2xl p-5 border border-gray-200/80 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Pasajero {idx + 1} {idx === 0 && '(Principal)'}
@@ -512,18 +516,18 @@ export function CheckoutForm() {
       {/* PASO 3: PAGO SEGURO CON IZIPAY */}
       {/* ========================================================================= */}
       {currentStep === 3 && (
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm max-w-2xl mx-auto space-y-6">
-          <div className="border-b border-gray-100 pb-4 text-center">
+        <div className="space-y-6 pt-2">
+          <div className="text-center">
             <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full uppercase tracking-wider inline-block mb-2">
-              Reserva Creada
+              Reserva Registrada
             </span>
-            <h2 className="text-2xl font-bold font-heading text-gray-900">3. Completa tu Pago Seguro</h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <h2 className="text-xl font-bold font-heading text-gray-900">3. Completa tu Pago Seguro</h2>
+            <p className="text-gray-500 text-sm mt-0.5">
               Ingresa los datos de tu tarjeta en la pasarela cifrada de **Izipay (PCI-DSS)**.
             </p>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs space-y-1.5 text-gray-600">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs space-y-1.5 text-gray-600 max-w-lg mx-auto">
             <div className="flex justify-between">
               <span>Tour:</span>
               <span className="font-bold text-gray-900">{tourTitle}</span>
