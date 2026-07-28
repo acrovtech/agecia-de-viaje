@@ -10,10 +10,33 @@ export async function updateReservationStatus(reservationId: string, status: 'PE
       data: { status }
     });
     revalidatePath('/reservas');
+    revalidatePath(`/reservas/${reservationId}`);
     revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error("Error updating reservation status:", error);
     return { success: false, error: "No se pudo actualizar el estado de la reserva." };
+  }
+}
+
+export async function updateReservationDetails(reservationId: string, data: {
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  pickupHotel?: string;
+  specialRequirements?: string;
+}) {
+  try {
+    await prisma.reservation.update({
+      where: { id: reservationId },
+      data
+    });
+    revalidatePath('/reservas');
+    revalidatePath(`/reservas/${reservationId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating reservation details:", error);
+    return { success: false, error: "No se pudo actualizar la reserva." };
   }
 }

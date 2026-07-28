@@ -2,30 +2,141 @@
 
 import { useState, useTransition } from 'react';
 import { Reservation, Tour } from '@repo/db';
-import { updateReservationStatus } from '../../../actions/reservation';
+import { updateReservationStatus, updateReservationDetails } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
   ChevronRight, Calendar, MessageSquare, CheckCircle2, 
-  Clock, XCircle, Loader2, Send, Check
+  Clock, XCircle, Loader2, Send, Check, Pencil, User, Users
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
+type Passenger = {
+  name: string;
+  docType: string;
+  docNumber: string;
+};
+
+function formatSpanishDate(dateInput: Date | string): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return 'Fecha por confirmar';
+
+  const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  const dayName = days[d.getUTCDay()];
+  const dayNum = d.getUTCDate();
+  const monthName = months[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+
+  return `${dayName}, ${dayNum} de ${monthName} de ${year}`;
+}
+
+function formatSpanishDateShort(dateInput: Date | string): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return 'N/A';
+
+  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const dayNum = d.getUTCDate();
+  const monthName = months[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+
+  return `${dayNum} ${monthName} ${year}`;
+}
+
 export function ReservaDetailClient({ initialReserva }: { initialReserva: ReservationWithTour }) {
   const [reserva, setReserva] = useState(initialReserva);
   const [selectedStatus, setSelectedStatus] = useState<'PENDING' | 'PAID' | 'CANCELLED'>(initialReserva.status);
+  
+  // Estado editable para titular
+  const [isEditingTitular, setIsEditingTitular] = useState(false);
+  const [titularData, setTitularData] = useState({
+    firstName: initialReserva.customerFirstName,
+    lastName: initialReserva.customerLastName,
+    email: initialReserva.customerEmail,
+    phone: initialReserva.customerPhone,
+    hotel: initialReserva.pickupHotel || '',
+  });
+
+  // Estado editable para pasajeros
+  const [isEditingPax, setIsEditingPax] = useState(false);
+
+  // Extraer lista nominativa de pasajeros de specialRequirements
+  const parsePassengerList = (requirements: string | null): Passenger[] => {
+    if (!requirements) return [];
+    const match = requirements.match(/\[Pasajeros:\s*(.*?)\]/);
+    if (!match || !match[1]) return [];
+    const paxParts = match[1].split('|').map(p => p.trim());
+    return paxParts.map(part => {
+      const nameMatch = part.match(/Pax\s*\d+:\s*([^(]+)/);
+      const docMatch = part.match(/\(([^:]+):\s*([^)]+)\)/);
+      const nameVal = nameMatch && nameMatch[1] ? nameMatch[1].trim() : part;
+      const docTypeVal = docMatch && docMatch[1] ? docMatch[1].trim() : 'DNI';
+      const docNumVal = docMatch && docMatch[2] ? docMatch[2].trim() : '';
+      return {
+        name: nameVal,
+        docType: docTypeVal,
+        docNumber: docNumVal,
+      };
+    });
+  };
+
+  const [passengerList, setPassengerList] = useState<Passenger[]>(() => parsePassengerList(initialReserva.specialRequirements));
+  
   const [isPending, startTransition] = useTransition();
   const [emailNotification, setEmailNotification] = useState<string | null>(null);
 
-  const hasUnsavedChanges = selectedStatus !== reserva.status;
+  // Comprobar si hay cambios sin guardar
+  const isStatusChanged = selectedStatus !== reserva.status;
+  const isTitularChanged = 
+    titularData.firstName !== reserva.customerFirstName ||
+    titularData.lastName !== reserva.customerLastName ||
+    titularData.email !== reserva.customerEmail ||
+    titularData.phone !== reserva.customerPhone ||
+    titularData.hotel !== (reserva.pickupHotel || '');
+
+  const hasUnsavedChanges = isStatusChanged || isTitularChanged || isEditingPax;
 
   const handleSaveChanges = () => {
     startTransition(async () => {
-      const res = await updateReservationStatus(reserva.id, selectedStatus);
-      if (res.success) {
-        setReserva(prev => ({ ...prev, status: selectedStatus }));
-        setEmailNotification(`Estado de la reserva actualizado a ${selectedStatus === 'PAID' ? 'Pagado' : selectedStatus === 'PENDING' ? 'Pendiente' : 'Cancelado'}`);
+      // Reconstruir specialRequirements con lista nominativa
+      let cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements) || '';
+      if (passengerList.length > 0) {
+        const paxSummary = passengerList.map((p, idx) => 
+          `Pax ${idx + 1}: ${p.name} (${p.docType}: ${p.docNumber || 'N/A'})`
+        ).join(' | ');
+        cleanNotes = cleanNotes ? `${cleanNotes} [Pasajeros: ${paxSummary}]` : `[Pasajeros: ${paxSummary}]`;
+      }
+
+      // Guardar estado y datos en BD
+      if (isStatusChanged) {
+        await updateReservationStatus(reserva.id, selectedStatus);
+      }
+
+      const resDetails = await updateReservationDetails(reserva.id, {
+        customerFirstName: titularData.firstName,
+        customerLastName: titularData.lastName,
+        customerEmail: titularData.email,
+        customerPhone: titularData.phone,
+        pickupHotel: titularData.hotel,
+        specialRequirements: cleanNotes,
+      });
+
+      if (resDetails.success) {
+        setReserva(prev => ({
+          ...prev,
+          status: selectedStatus,
+          customerFirstName: titularData.firstName,
+          customerLastName: titularData.lastName,
+          customerEmail: titularData.email,
+          customerPhone: titularData.phone,
+          pickupHotel: titularData.hotel,
+          specialRequirements: cleanNotes,
+        }));
+        setIsEditingTitular(false);
+        setIsEditingPax(false);
+        setEmailNotification('Reserva y datos actualizados correctamente.');
         setTimeout(() => setEmailNotification(null), 4000);
       }
     });
@@ -33,6 +144,16 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
 
   const handleDiscardChanges = () => {
     setSelectedStatus(reserva.status);
+    setTitularData({
+      firstName: reserva.customerFirstName,
+      lastName: reserva.customerLastName,
+      email: reserva.customerEmail,
+      phone: reserva.customerPhone,
+      hotel: reserva.pickupHotel || '',
+    });
+    setPassengerList(parsePassengerList(reserva.specialRequirements));
+    setIsEditingTitular(false);
+    setIsEditingPax(false);
   };
 
   const formatPhoneForWhatsapp = (phone: string) => {
@@ -54,26 +175,6 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     setTimeout(() => setEmailNotification(null), 4000);
   };
 
-  // Extraer lista nominativa de pasajeros de specialRequirements
-  const parsePassengerList = (requirements: string | null) => {
-    if (!requirements) return [];
-    const match = requirements.match(/\[Pasajeros:\s*(.*?)\]/);
-    if (!match || !match[1]) return [];
-    const paxParts = match[1].split('|').map(p => p.trim());
-    return paxParts.map(part => {
-      const nameMatch = part.match(/Pax\s*\d+:\s*([^(]+)/);
-      const docMatch = part.match(/\(([^:]+):\s*([^)]+)\)/);
-      const nameVal = nameMatch && nameMatch[1] ? nameMatch[1].trim() : part;
-      const docTypeVal = docMatch && docMatch[1] ? docMatch[1].trim() : 'Documento';
-      const docNumVal = docMatch && docMatch[2] ? docMatch[2].trim() : 'N/A';
-      return {
-        name: nameVal,
-        docType: docTypeVal,
-        docNumber: docNumVal,
-      };
-    });
-  };
-
   // Limpiar requerimientos especiales omitiendo el string de [Pasajeros: ...]
   const getCleanSpecialRequirements = (requirements: string | null) => {
     if (!requirements) return null;
@@ -88,7 +189,6 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     return 'Servicio Compartido';
   };
 
-  const passengerList = parsePassengerList(reserva.specialRequirements);
   const cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements);
 
   return (
@@ -174,7 +274,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA IZQUIERDA (8 COLS) */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* CARD 1: TOUR RESERVADO (Badge de Tipo de Servicio en lugar de Inca Bound Operator) */}
+          {/* CARD 1: TOUR RESERVADO */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Expedición Reservada</h3>
@@ -189,7 +289,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Salida</span>
                 <span className="font-bold text-slate-900 text-xs capitalize">
-                  {new Date(reserva.date).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                  {formatSpanishDate(reserva.date)}
                 </span>
               </div>
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
@@ -199,41 +299,110 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 2: DATOS DEL TITULAR */}
+          {/* CARD 2: DATOS DEL TITULAR (Con Botón Editar) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Datos del Titular</h3>
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                Contacto Principal
-              </span>
+              
+              <button
+                type="button"
+                onClick={() => setIsEditingTitular(!isEditingTitular)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3 h-3 text-slate-500" />
+                <span>{isEditingTitular ? 'Cancelar' : 'Editar'}</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Nombres y Apellidos</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.customerFirstName} {reserva.customerLastName}</span>
+            {isEditingTitular ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Nombres</label>
+                  <input
+                    type="text"
+                    value={titularData.firstName}
+                    onChange={(e) => setTitularData({ ...titularData, firstName: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Apellidos</label>
+                  <input
+                    type="text"
+                    value={titularData.lastName}
+                    onChange={(e) => setTitularData({ ...titularData, lastName: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    value={titularData.email}
+                    onChange={(e) => setTitularData({ ...titularData, email: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Teléfono / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={titularData.phone}
+                    onChange={(e) => setTitularData({ ...titularData, phone: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Hotel de Recojo en Cusco</label>
+                  <input
+                    type="text"
+                    value={titularData.hotel}
+                    onChange={(e) => setTitularData({ ...titularData, hotel: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Correo Electrónico</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.customerEmail}</span>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Nombres y Apellidos</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.customerFirstName} {reserva.customerLastName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Correo Electrónico</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.customerEmail}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Teléfono / WhatsApp</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.customerPhone}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Hotel de Recojo en Cusco</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.pickupHotel || 'No especificado'}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Teléfono / WhatsApp</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.customerPhone}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Hotel de Recojo en Cusco</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.pickupHotel || 'No especificado'}</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* CARD 3: LISTA NOMINATIVA DE PASAJEROS */}
+          {/* CARD 3: LISTA NOMINATIVA DE PASAJEROS (Con Botón Editar) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">
                 Lista Nominativa de Pasajeros ({reserva.pax})
               </h3>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingPax(!isEditingPax)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3 h-3 text-slate-500" />
+                <span>{isEditingPax ? 'Cancelar' : 'Editar'}</span>
+              </button>
             </div>
 
             {passengerList.length > 0 ? (
@@ -251,9 +420,57 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                     {passengerList.map((pax, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/60">
                         <td className="px-3 py-2 font-bold text-slate-400 text-center">{idx + 1}</td>
-                        <td className="px-3 py-2 font-semibold text-slate-900">{pax.name}</td>
-                        <td className="px-3 py-2 text-slate-600 font-medium">{pax.docType}</td>
-                        <td className="px-3 py-2 font-mono font-semibold text-slate-800">{pax.docNumber}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-900">
+                          {isEditingPax ? (
+                            <input
+                              type="text"
+                              value={pax.name}
+                              onChange={(e) => {
+                                const next = [...passengerList];
+                                if (next[idx]) next[idx].name = e.target.value;
+                                setPassengerList(next);
+                              }}
+                              className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-medium"
+                            />
+                          ) : (
+                            pax.name
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600 font-medium">
+                          {isEditingPax ? (
+                            <select
+                              value={pax.docType}
+                              onChange={(e) => {
+                                const next = [...passengerList];
+                                if (next[idx]) next[idx].docType = e.target.value;
+                                setPassengerList(next);
+                              }}
+                              className="px-2 py-1 rounded border border-slate-300 text-xs font-medium bg-white"
+                            >
+                              <option value="DNI">DNI</option>
+                              <option value="Pasaporte">Pasaporte</option>
+                              <option value="Carnet Extranjería">Carnet Extranjería</option>
+                            </select>
+                          ) : (
+                            pax.docType
+                          )}
+                        </td>
+                        <td className="px-3 py-2 font-mono font-semibold text-slate-800">
+                          {isEditingPax ? (
+                            <input
+                              type="text"
+                              value={pax.docNumber}
+                              onChange={(e) => {
+                                const next = [...passengerList];
+                                if (next[idx]) next[idx].docNumber = e.target.value;
+                                setPassengerList(next);
+                              }}
+                              className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-mono"
+                            />
+                          ) : (
+                            pax.docNumber
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -271,7 +488,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-5">
           
-          {/* CARD 1: ESTADO DE LA RESERVA (SELECT COMPONENT PULIDO SHADCN/RADIX) */}
+          {/* CARD 1: ESTADO DE LA RESERVA (SELECT COMPONENT DE ANCHO COMPLETO PULIDO) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
@@ -298,7 +515,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
               
-              {/* SELECT PULIDO SHADCN / RADIX UI */}
+              {/* SELECT PULIDO ALINEADO ABAJO CON ANCHO COMPLETO */}
               <Select
                 value={selectedStatus}
                 onValueChange={(val) => setSelectedStatus(val as 'PENDING' | 'PAID' | 'CANCELLED')}
@@ -306,20 +523,26 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 <SelectTrigger className="w-full bg-white text-xs font-semibold text-slate-900 border-slate-300 h-9 rounded-lg">
                   <SelectValue placeholder="Seleccionar Estado" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-slate-200 shadow-lg rounded-xl">
-                  <SelectItem value="PAID" className="text-xs font-semibold cursor-pointer">
+                <SelectContent 
+                  alignItemWithTrigger={false} 
+                  align="start" 
+                  side="bottom" 
+                  sideOffset={6}
+                  className="w-[var(--anchor-width)] min-w-[var(--anchor-width)] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50"
+                >
+                  <SelectItem value="PAID" className="text-xs font-semibold cursor-pointer py-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                       <span>Pagado</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="PENDING" className="text-xs font-semibold cursor-pointer">
+                  <SelectItem value="PENDING" className="text-xs font-semibold cursor-pointer py-2">
                     <div className="flex items-center gap-2">
                       <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span>Pendiente</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="CANCELLED" className="text-xs font-semibold cursor-pointer">
+                  <SelectItem value="CANCELLED" className="text-xs font-semibold cursor-pointer py-2">
                     <div className="flex items-center gap-2">
                       <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                       <span>Cancelado</span>
@@ -343,8 +566,8 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between items-center text-slate-600">
                 <span>Fecha registro</span>
-                <span className="font-semibold text-slate-800">
-                  {new Date(reserva.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                <span className="font-semibold text-slate-800 capitalize">
+                  {formatSpanishDateShort(reserva.createdAt)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
