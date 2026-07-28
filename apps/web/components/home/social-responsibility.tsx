@@ -5,7 +5,7 @@ const bentoItems = [
   {
     id: 'reforestacion',
     title: 'Proyecto de Reforestación',
-    description: 'Comprometidos con devolverle a la Pachamama lo que nos da. Reforestamos los Andes peruanos.',
+    description: 'Comprometidos con devolverle a la Pachamama lo que nos da. Reforestamos los Andes peruanos con especies nativas.',
     image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/reforestacion.webp', 
     icon: TreePine,
     className: 'md:col-span-2 md:row-span-2 min-h-[320px] md:min-h-[500px]',
@@ -13,7 +13,7 @@ const bentoItems = [
   {
     id: 'comunidades',
     title: 'Ayuda a Comunidades',
-    description: 'Turismo ético y sostenible con impacto directo.',
+    description: 'Turismo ético e inversión directa en educación y salud para familias de nuestros arrieros y porteadores.',
     image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/comunidades.webp', 
     icon: Users,
     className: 'md:col-span-1 md:row-span-1 min-h-[250px]',
@@ -21,7 +21,7 @@ const bentoItems = [
   {
     id: 'recreacion',
     title: 'Campañas de Recreación',
-    description: 'Llevando sonrisas a los niños de los Andes.',
+    description: 'Llevando alegría, útiles escolares y chocolatadas a los niños de las comunidades más alejadas de Cusco.',
     image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/recreacion.webp', 
     icon: HeartHandshake,
     className: 'md:col-span-1 md:row-span-1 min-h-[250px]',
@@ -41,7 +41,7 @@ export function SocialResponsibility() {
           </p>
         </div>
 
-        {/* Bento Grid (Sin Modales) */}
+        {/* Bento Grid con Hover Fade-In */}
         <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-6">
           {bentoItems.map((item) => {
             const Icon = item.icon;
@@ -59,18 +59,21 @@ export function SocialResponsibility() {
                   className="object-cover transition-transform duration-700 group-hover:scale-105 z-0 opacity-90"
                 />
                 
-                {/* Dark Overlay */}
-                <div className="absolute inset-0 bg-black/45 group-hover:bg-black/60 transition-colors duration-700 z-10" />
+                {/* Dark Overlay - Intensifica en Hover */}
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/70 transition-colors duration-700 z-10" />
 
-                {/* Content: Centered Icon and Title */}
+                {/* Content: Centered Icon, Title and Hover Fade-In Description */}
                 <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center z-20">
-                  <div className="mb-4 transform group-hover:-translate-y-1 transition-transform duration-500">
+                  <div className="mb-3 transform group-hover:-translate-y-2 transition-transform duration-500">
                     <Icon className="w-10 h-10 text-white drop-shadow-md" />
                   </div>
+                  
                   <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide drop-shadow-md mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-sm text-emerald-100/90 max-w-sm opacity-90 font-medium">
+                  
+                  {/* Texto de Descripción con Fade-In al hacer Hover */}
+                  <p className="text-xs md:text-sm text-emerald-100/90 max-w-sm font-medium opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500 leading-relaxed px-2">
                     {item.description}
                   </p>
                 </div>
