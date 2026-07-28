@@ -45,6 +45,25 @@ function formatSpanishDateShort(dateInput: Date | string): string {
   return `${dayNum} ${monthName} ${year}`;
 }
 
+function calculateEndDate(dateInput: Date | string, durationStr?: string | null): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return 'Fecha por confirmar';
+
+  let addDays = 0;
+  if (durationStr) {
+    const match = durationStr.match(/(\d+)\s*d[íi]as?/i);
+    if (match && match[1]) {
+      const parsedDays = parseInt(match[1], 10);
+      if (!isNaN(parsedDays) && parsedDays > 1) {
+        addDays = parsedDays - 1;
+      }
+    }
+  }
+
+  const endDate = new Date(d.getTime() + addDays * 24 * 60 * 60 * 1000);
+  return formatSpanishDate(endDate);
+}
+
 export function ReservaDetailClient({ initialReserva }: { initialReserva: ReservationWithTour }) {
   const [reserva, setReserva] = useState(initialReserva);
   const [selectedStatus, setSelectedStatus] = useState<'PENDING' | 'PAID' | 'CANCELLED'>(initialReserva.status);
@@ -190,6 +209,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   };
 
   const cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements);
+  const pricePerPax = reserva.totalPrice / Math.max(reserva.pax, 1);
 
   return (
     <div className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 font-sans select-none relative">
@@ -274,7 +294,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA IZQUIERDA (8 COLS) */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* CARD 1: TOUR RESERVADO */}
+          {/* CARD 1: EXPEDICIÓN RESERVADA (Con Servicio Contratado, Fecha Inicio/Fin e Idioma) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Expedición Reservada</h3>
@@ -287,14 +307,28 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Salida</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Servicio Contratado</span>
+                <span className="font-bold text-slate-900 text-xs">
+                  {getServiceType()}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Idioma del Servicio</span>
+                <span className="font-bold text-slate-900 text-xs">
+                  Español / Inglés (Bilingüe)
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Inicio</span>
                 <span className="font-bold text-slate-900 text-xs capitalize">
                   {formatSpanishDate(reserva.date)}
                 </span>
               </div>
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Viajeros Totales</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.pax} {reserva.pax === 1 ? 'Persona' : 'Personas'}</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Fin</span>
+                <span className="font-bold text-slate-900 text-xs capitalize">
+                  {calculateEndDate(reserva.date, reserva.tour?.duration)}
+                </span>
               </div>
             </div>
           </div>
@@ -488,7 +522,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-5">
           
-          {/* CARD 1: ESTADO DE LA RESERVA (100% EN ESPAÑOL DENTRO DE SELECT TRIGGER) */}
+          {/* CARD 1: ESTADO DE LA RESERVA */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
@@ -564,10 +598,10 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 2: RESUMEN DE PAGO */}
+          {/* CARD 2: RESUMEN DE PAGO (Con Cantidad de Pasajeros y Precio por Persona) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-semibold text-xs text-slate-800">Resumen de Pago</h3>
+              <h3 className="font-semibold text-xs text-slate-800">Información de Pago</h3>
             </div>
 
             <div className="space-y-2.5 text-xs">
@@ -578,8 +612,12 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
-                <span>Subtotal tour</span>
-                <span className="font-bold text-slate-900">${reserva.totalPrice.toFixed(2)} USD</span>
+                <span>Cantidad de pasajeros</span>
+                <span className="font-semibold text-slate-800">{reserva.pax} {reserva.pax === 1 ? 'Pasajero' : 'Pasajeros'}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Precio por persona</span>
+                <span className="font-bold text-slate-900">${pricePerPax.toFixed(2)} USD</span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Pasarela</span>
