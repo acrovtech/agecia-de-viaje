@@ -236,6 +236,7 @@ export default async function TourPage({ params }: TourPageProps) {
                 slug={formattedTour.slug}
                 price={formattedTour.price} 
                 privatePrice={formattedTour.privatePrice} 
+                image={formattedTour.image}
               />
             </div>
 

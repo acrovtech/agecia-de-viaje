@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Calendar } from '../ui/calendar';
 import { useRouter } from 'next/navigation';
 
-export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tourTitle: string, slug: string, price: number, privatePrice?: number | null }) {
+export function TourBookingCard({ tourTitle, slug, price, privatePrice, image }: { tourTitle: string, slug: string, price: number, privatePrice?: number | null, image?: string | null }) {
   const [pax, setPax] = useState(1);
   const [serviceType, setServiceType] = useState<'shared' | 'private'>('shared');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -28,7 +28,8 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice }: { tour
       pax: pax.toString(),
       type: serviceType,
       price: currentPrice.toString(),
-      total: (currentPrice * pax).toString()
+      total: (currentPrice * pax).toString(),
+      ...(image ? { image } : {})
     });
     router.push(`/checkout?${query.toString()}`);
   };
