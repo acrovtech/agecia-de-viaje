@@ -18,19 +18,17 @@ type Passenger = {
   docNumber: string;
 };
 
-function formatSpanishDate(dateInput: Date | string): string {
+function formatSpanishDateNoDay(dateInput: Date | string): string {
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return 'Fecha por confirmar';
 
-  const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-  const dayName = days[d.getUTCDay()];
   const dayNum = d.getUTCDate();
   const monthName = months[d.getUTCMonth()];
   const year = d.getUTCFullYear();
 
-  return `${dayName}, ${dayNum} de ${monthName} de ${year}`;
+  return `${dayNum} de ${monthName} de ${year}`;
 }
 
 function formatSpanishDateShort(dateInput: Date | string): string {
@@ -45,7 +43,7 @@ function formatSpanishDateShort(dateInput: Date | string): string {
   return `${dayNum} ${monthName} ${year}`;
 }
 
-function calculateEndDate(dateInput: Date | string, durationStr?: string | null): string {
+function calculateEndDateNoDay(dateInput: Date | string, durationStr?: string | null): string {
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return 'Fecha por confirmar';
 
@@ -61,7 +59,7 @@ function calculateEndDate(dateInput: Date | string, durationStr?: string | null)
   }
 
   const endDate = new Date(d.getTime() + addDays * 24 * 60 * 60 * 1000);
-  return formatSpanishDate(endDate);
+  return formatSpanishDateNoDay(endDate);
 }
 
 export function ReservaDetailClient({ initialReserva }: { initialReserva: ReservationWithTour }) {
@@ -294,7 +292,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA IZQUIERDA (8 COLS) */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* CARD 1: EXPEDICIÓN RESERVADA (Con Servicio Contratado, Fecha Inicio/Fin e Idioma) */}
+          {/* CARD 1: EXPEDICIÓN RESERVADA (Limpio como Datos del Titular, sin sub-tarjetas) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Expedición Reservada</h3>
@@ -306,29 +304,21 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <h2 className="text-lg font-bold text-slate-900">{reserva.tour?.title || 'Tour Inca Bound'}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Servicio Contratado</span>
-                <span className="font-bold text-slate-900 text-xs">
-                  {getServiceType()}
-                </span>
+              <div>
+                <span className="text-slate-400 block font-medium text-[11px]">Hotel de Recojo</span>
+                <span className="font-bold text-slate-900 text-xs">{reserva.pickupHotel || 'No especificado'}</span>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Idioma del Servicio</span>
-                <span className="font-bold text-slate-900 text-xs">
-                  Español / Inglés (Bilingüe)
-                </span>
+              <div>
+                <span className="text-slate-400 block font-medium text-[11px]">Idioma del Servicio</span>
+                <span className="font-bold text-slate-900 text-xs">Español / Inglés (Bilingüe)</span>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Inicio</span>
-                <span className="font-bold text-slate-900 text-xs capitalize">
-                  {formatSpanishDate(reserva.date)}
-                </span>
+              <div>
+                <span className="text-slate-400 block font-medium text-[11px]">Fecha de Inicio</span>
+                <span className="font-bold text-slate-900 text-xs capitalize">{formatSpanishDateNoDay(reserva.date)}</span>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Fecha de Fin</span>
-                <span className="font-bold text-slate-900 text-xs capitalize">
-                  {calculateEndDate(reserva.date, reserva.tour?.duration)}
-                </span>
+              <div>
+                <span className="text-slate-400 block font-medium text-[11px]">Fecha de Fin</span>
+                <span className="font-bold text-slate-900 text-xs capitalize">{calculateEndDateNoDay(reserva.date, reserva.tour?.duration)}</span>
               </div>
             </div>
           </div>
@@ -549,7 +539,6 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Seleccionar Estado</label>
               
-              {/* SELECT CON ETIQUETA 100% EN ESPAÑOL */}
               <Select
                 value={selectedStatus}
                 onValueChange={(val) => setSelectedStatus(val as 'PENDING' | 'PAID' | 'CANCELLED')}
@@ -598,7 +587,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 2: RESUMEN DE PAGO (Con Cantidad de Pasajeros y Precio por Persona) */}
+          {/* CARD 2: INFORMACIÓN DE PAGO (Ordenado: Registro -> Pasarela -> Token -> Pax -> Precio por persona -> Total) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Información de Pago</h3>
@@ -612,20 +601,20 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
-                <span>Cantidad de pasajeros</span>
-                <span className="font-semibold text-slate-800">{reserva.pax} {reserva.pax === 1 ? 'Pasajero' : 'Pasajeros'}</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Precio por persona</span>
-                <span className="font-bold text-slate-900">${pricePerPax.toFixed(2)} USD</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600">
                 <span>Pasarela</span>
                 <span className="font-semibold text-slate-800">Izipay (PCI-DSS)</span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Ref / Token</span>
                 <span className="font-mono text-slate-700">{reserva.paymentReference || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Cantidad de pasajeros</span>
+                <span className="font-semibold text-slate-800">{reserva.pax} {reserva.pax === 1 ? 'Pasajero' : 'Pasajeros'}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Precio por persona</span>
+                <span className="font-bold text-slate-900">${pricePerPax.toFixed(2)} USD</span>
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-sm font-bold">
