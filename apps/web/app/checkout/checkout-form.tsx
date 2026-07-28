@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, Copy, Info, Image as ImageIcon } from 'lucide-react';
+import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, Copy, Info, Calendar, DollarSign, Tag, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
 import KRGlue from '@lyracom/embedded-form-glue';
@@ -14,13 +14,15 @@ type Passenger = {
   documentNumber: string;
 };
 
+const DEFAULT_TOUR_IMAGE = "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp";
+
 export function CheckoutForm() {
   const searchParams = useSearchParams();
   
   // Extraer parámetros de la URL
   const tourTitle = searchParams.get('tourTitle') || 'Tour no seleccionado';
   const tourSlug = searchParams.get('slug') || '';
-  const tourImage = searchParams.get('image');
+  const tourImage = searchParams.get('image') || DEFAULT_TOUR_IMAGE;
   const dateStr = searchParams.get('date');
   const pax = searchParams.get('pax') || '1';
   const serviceType = searchParams.get('type') || 'shared';
@@ -193,8 +195,8 @@ export function CheckoutForm() {
   }, [currentStep, formToken]);
 
   return (
-    /* MARCO PRINCIPAL DE LA TARJETA (acrov-checkout-frame) */
-    <div className="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden w-full max-w-5xl mx-auto font-sans">
+    /* MARCO PRINCIPAL DE LA TARJETA (acrov-checkout-frame - Max Width 1280px) */
+    <div className="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden w-full max-w-7xl mx-auto font-sans">
       
       {/* HERO HEADER (acrov-checkout-hero) */}
       <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 pt-9 pb-7 text-center">
@@ -280,62 +282,66 @@ export function CheckoutForm() {
             {/* Inline Alert Banner (acrov-checkout-inline-alert) */}
             <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-3 text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase flex items-center justify-center gap-2 text-center">
               <Info size={15} className="shrink-0 text-[#062918]" />
-              <span>Puedes seguir agregando tours al carrito, estos permaneceran durante 60 minutos.</span>
+              <span>PUEDES SEGUIR AGREGANDO TOURS AL CARRITO, ESTOS PERMANECERAN DURANTE 60 MINUTOS.</span>
             </div>
 
             {/* Cart Card Layout (acrov-checkout-cart-card) */}
             <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
               
-              {/* Columna Izquierda: Imagen del Tour (32% / 4 cols) */}
-              <div className="md:col-span-4 min-h-[260px] md:min-h-[295px] relative bg-[#092215] overflow-hidden flex items-center justify-center">
-                {tourImage ? (
-                  <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-white/50 p-6 text-center">
-                    <ImageIcon size={48} className="mb-2 text-white/30" />
-                    <span className="text-xs font-bold uppercase tracking-wider">INCA BOUND EXPEDITIONS</span>
-                  </div>
-                )}
+              {/* Columna Izquierda: Imagen del Tour (30% / 4 cols) */}
+              <div className="md:col-span-4 min-h-[260px] md:min-h-[295px] relative bg-slate-900 overflow-hidden flex items-center justify-center">
+                <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:hidden" />
               </div>
 
-              {/* Columna Derecha: Detalles & Precios (68% / 8 cols) */}
-              <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between">
+              {/* Columna Derecha: Detalles & Precios (70% / 8 cols) */}
+              <div className="md:col-span-8 p-6 sm:p-8 flex flex-col justify-between">
                 
                 <div>
-                  <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center justify-between gap-3 mb-3">
                     <span className="px-3 py-1 bg-[#062918]/10 text-[#062918] text-[11px] font-black rounded-md uppercase tracking-wider">
                       {serviceType === 'shared' ? 'Servicio Compartido' : 'Servicio Privado'}
                     </span>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">INCA BOUND</span>
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 uppercase tracking-tight mb-4">
+                  <h3 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase tracking-tight mb-4">
                     {tourTitle}
                   </h3>
 
-                  {/* Filas de Información Punteadas (Dashed Rows) */}
-                  <div className="border-y border-dashed border-gray-200 py-3.5 space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-gray-500">Fecha de salida:</span>
+                  {/* Filas de Información Punteadas (Dashed Grid Rows acrov-checkout-cart-rows) */}
+                  <div className="border-y border-dashed border-gray-200 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                    
+                    <div className="flex justify-between items-center text-sm py-1 border-b sm:border-b-0 border-dashed border-gray-100">
+                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
+                        <Calendar size={14} className="text-gray-400" />
+                        Fecha de salida:
+                      </span>
                       <span className="font-bold text-gray-900 capitalize">{formattedDate}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-gray-500">Pasajeros:</span>
+                    <div className="flex justify-between items-center text-sm py-1 border-b sm:border-b-0 border-dashed border-gray-100">
+                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
+                        <Users size={14} className="text-gray-400" />
+                        Pasajeros:
+                      </span>
                       <span className="font-bold text-gray-900">{numPax} {numPax === 1 ? 'Persona' : 'Personas'}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-gray-500">Precio por pasajero:</span>
+                    <div className="flex justify-between items-center text-sm py-1 sm:col-span-2 border-t border-dashed border-gray-200 pt-2.5">
+                      <span className="font-semibold text-gray-500 flex items-center gap-1.5">
+                        <Tag size={14} className="text-gray-400" />
+                        Precio por pasajero:
+                      </span>
                       <span className="font-bold text-gray-900">${price} USD</span>
                     </div>
+
                   </div>
                 </div>
 
-                {/* Total Row */}
-                <div className="pt-4 flex items-center justify-between border-t border-dashed border-gray-200 mt-2">
-                  <span className="text-xs font-extrabold tracking-[0.14em] uppercase text-gray-600">TOTAL</span>
+                {/* Total Row incorporada en el lado derecho */}
+                <div className="pt-4 flex items-center justify-between border-t border-dashed border-gray-200 mt-3">
+                  <span className="text-xs font-black tracking-[0.14em] uppercase text-gray-600">TOTAL</span>
                   <span className="text-3xl font-black text-[#062918] tracking-tight">${total} USD</span>
                 </div>
 
@@ -343,16 +349,25 @@ export function CheckoutForm() {
 
             </div>
 
-            {/* Footer Action Button */}
-            <div className="pt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(2)}
-                className="w-full sm:w-auto px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-              >
-                Continuar a Datos de Pasajeros
-                <ArrowRight size={16} />
-              </button>
+            {/* Layout del Footer (acrov-checkout-cart-footer-layout) */}
+            <div className="pt-4 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+              
+              <div className="sm:col-span-7 bg-[#062918]/8 border border-[#062918]/20 px-6 py-3.5 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-black tracking-[0.14em] uppercase text-gray-600">RESUMEN TOTAL</span>
+                <span className="text-xl font-black text-[#062918]">${total} USD</span>
+              </div>
+
+              <div className="sm:col-span-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="w-full py-3.5 px-6 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  Continuar a Datos de Pasajeros
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+
             </div>
 
           </div>
