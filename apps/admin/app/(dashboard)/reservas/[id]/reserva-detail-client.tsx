@@ -5,9 +5,7 @@ import { Reservation, Tour } from '@repo/db';
 import { updateReservationStatus } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
-  ArrowLeft, Calendar, MapPin, Mail, Phone, MessageSquare, 
-  CheckCircle2, Clock, XCircle, User, Users, Send, Check, 
-  CreditCard, FileText, AlertCircle 
+  ArrowLeft, MessageSquare, CheckCircle2, Clock, XCircle, Send, Check, Mail, AlertTriangle
 } from 'lucide-react';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
@@ -31,12 +29,17 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   };
 
   const handleSendEmailConfirmation = () => {
-    setEmailNotification(`Confirmación de reserva enviada exitosamente a ${reserva.customerEmail}`);
+    setEmailNotification(`Email de confirmación enviado exitosamente a ${reserva.customerEmail}`);
     setTimeout(() => setEmailNotification(null), 4000);
   };
 
-  const handleSendPaymentReminder = () => {
-    setEmailNotification(`Recordatorio de pago enviado exitosamente a ${reserva.customerEmail}`);
+  const handleSendTripReminder = () => {
+    setEmailNotification(`Email de recordatorio de viaje (24h antes) enviado exitosamente a ${reserva.customerEmail}`);
+    setTimeout(() => setEmailNotification(null), 4000);
+  };
+
+  const handleSendCancellationEmail = () => {
+    setEmailNotification(`Email de cancelación enviado a ${reserva.customerEmail}`);
     setTimeout(() => setEmailNotification(null), 4000);
   };
 
@@ -107,7 +110,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <Check size={16} className="text-emerald-600 shrink-0" />
             <span>{emailNotification}</span>
           </div>
-          <button onClick={() => setEmailNotification(null)} className="text-emerald-600 hover:text-emerald-900">
+          <button onClick={() => setEmailNotification(null)} className="text-emerald-600 hover:text-emerald-900 font-bold">
             ×
           </button>
         </div>
@@ -142,12 +145,11 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* TITULAR Y DATOS DE CONTACTO */}
+          {/* TITULAR Y DATOS DE CONTACTO (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <User size={16} className="text-[#062918]" />
-                Datos del Titular
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                DATOS DEL TITULAR
               </span>
               <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
                 Contacto Principal
@@ -174,12 +176,11 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* LISTADO NOMINATIVO DE PASAJEROS */}
+          {/* LISTADO NOMINATIVO DE PASAJEROS (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Users size={16} className="text-[#062918]" />
-                Lista Nominativa de Pasajeros ({reserva.pax})
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                LISTA NOMINATIVA DE PASAJEROS ({reserva.pax})
               </span>
             </div>
 
@@ -218,11 +219,11 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* CARD 1: CARD INDEPENDIENTE DE ESTADO */}
+          {/* CARD 1: CARD INDEPENDIENTE DE ESTADO (Sin icono en título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Estado de la Reserva
+                ESTADO DE LA RESERVA
               </h3>
               {reserva.status === 'PAID' && (
                 <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
@@ -283,10 +284,10 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 2: RESUMEN DE PAGO */}
+          {/* CARD 2: RESUMEN DE PAGO (Sin icono en título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
-              Resumen de Pago
+              RESUMEN DE PAGO
             </h3>
 
             <div className="space-y-3 text-xs">
@@ -316,11 +317,10 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
           </div>
 
-          {/* CARD 3: GESTIÓN DE EMAILS */}
+          {/* CARD 3: GESTIÓN DE EMAILS (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-1.5">
-              <Mail size={15} className="text-[#062918]" />
-              Gestión de Emails
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
+              GESTIÓN DE EMAILS
             </h3>
 
             <div className="space-y-2">
@@ -330,25 +330,33 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <Send size={14} />
-                Reenviar Voucher de Reserva
+                Enviar Email de Confirmación
               </button>
 
               <button
                 type="button"
-                onClick={handleSendPaymentReminder}
+                onClick={handleSendTripReminder}
                 className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-slate-200"
               >
-                <Mail size={14} />
-                Enviar Recordatorio de Pago
+                <Clock size={14} />
+                Email Recordatorio de Viaje (24h)
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendCancellationEmail}
+                className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-200"
+              >
+                <XCircle size={14} />
+                Enviar Email de Cancelación
               </button>
             </div>
           </div>
 
-          {/* CARD 4: REQUERIMIENTOS ESPECIALES */}
+          {/* CARD 4: REQUERIMIENTOS ESPECIALES (Sin icono en el título) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-1.5">
-              <FileText size={15} className="text-[#062918]" />
-              Requerimientos Especiales
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
+              REQUERIMIENTOS ESPECIALES
             </h3>
 
             {cleanNotes ? (
