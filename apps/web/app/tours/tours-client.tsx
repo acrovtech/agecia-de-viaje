@@ -126,19 +126,39 @@ export function ToursCatalogClient() {
     setSelectedDifficulty(null);
   };
 
-  const destinoOptions = ['Cusco', 'Lima', 'Ica', 'Arequipa', 'Puno', 'Madre de Dios'];
-  const categoryOptions = categories.map(c => c.name);
+  // Opciones dinámicas extraídas del Admin (Base de datos)
+  const rawRegions = tours.map(t => t.region).filter(Boolean);
+  const destinoOptions = Array.from(new Set(['Cusco', ...rawRegions]));
+  const categoryOptions = Array.from(new Set(categories.map(c => c.name).filter(Boolean)));
   const durationOptions = Array.from(new Set(tours.map(t => t.duration).filter(Boolean)));
-  const difficultyOptions = ['Fácil', 'Moderado', 'Desafiante'];
+  const rawDifficulties = tours.map(t => t.difficulty).filter(Boolean);
+  const difficultyOptions = Array.from(new Set(['Fácil', 'Moderado', 'Desafiante', ...rawDifficulties]));
 
+  // Lógica de filtrado case-insensitive conectada 100% a la BD
   const filteredTours = tours.filter(tour => {
-    if (selectedDestino && tour.region !== selectedDestino.toUpperCase()) return false;
-    if (selectedDuration && tour.duration !== selectedDuration) return false;
-    if (selectedDifficulty && tour.difficulty !== selectedDifficulty) return false;
+    if (selectedDestino) {
+      const tourRegion = (tour.region || '').trim().toLowerCase();
+      const targetDestino = selectedDestino.trim().toLowerCase();
+      if (tourRegion !== targetDestino) return false;
+    }
+
+    if (selectedDuration) {
+      const tourDuration = (tour.duration || '').trim().toLowerCase();
+      const targetDuration = selectedDuration.trim().toLowerCase();
+      if (tourDuration !== targetDuration) return false;
+    }
+
+    if (selectedDifficulty) {
+      const tourDifficulty = (tour.difficulty || '').trim().toLowerCase();
+      const targetDifficulty = selectedDifficulty.trim().toLowerCase();
+      if (tourDifficulty !== targetDifficulty) return false;
+    }
     
     if (selectedCategory) {
-      const tourCatNames = tour.categories?.map((c: any) => c.category?.name) || [];
-      if (!tourCatNames.includes(selectedCategory)) return false;
+      const tourCats = tour.categories || [];
+      const tourCatNames = tourCats.map((c: any) => (c.name || c.category?.name || '').trim().toLowerCase());
+      const targetCat = selectedCategory.trim().toLowerCase();
+      if (!tourCatNames.includes(targetCat)) return false;
     }
     
     return true;
@@ -186,18 +206,22 @@ export function ToursCatalogClient() {
                   selectedOption={selectedDestino}
                   onChange={setSelectedDestino}
                 />
-                <FilterDropdown 
-                  title="Categoría" 
-                  options={categoryOptions} 
-                  selectedOption={selectedCategory}
-                  onChange={setSelectedCategory}
-                />
-                <FilterDropdown 
-                  title="Duración" 
-                  options={durationOptions} 
-                  selectedOption={selectedDuration}
-                  onChange={setSelectedDuration}
-                />
+                {categoryOptions.length > 0 && (
+                  <FilterDropdown 
+                    title="Categoría" 
+                    options={categoryOptions} 
+                    selectedOption={selectedCategory}
+                    onChange={setSelectedCategory}
+                  />
+                )}
+                {durationOptions.length > 0 && (
+                  <FilterDropdown 
+                    title="Duración" 
+                    options={durationOptions} 
+                    selectedOption={selectedDuration}
+                    onChange={setSelectedDuration}
+                  />
+                )}
                 <FilterDropdown 
                   title="Dificultad" 
                   options={difficultyOptions} 
@@ -239,7 +263,7 @@ export function ToursCatalogClient() {
                   imageSrc={tour.cardImage || '/placeholder.jpg'}
                   duration={tour.duration}
                   difficulty={tour.difficulty}
-                  altitude={tour.maxAltitude}
+                  altitude={tour.altitude || tour.maxAltitude}
                   groupSize={tour.groupSize}
                 />
               ))}
