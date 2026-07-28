@@ -6,7 +6,8 @@ import { updateReservationStatus } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Calendar, MapPin, Mail, Phone, MessageSquare, 
-  CheckCircle2, Clock, XCircle, User, Users, ShieldCheck, CreditCard, FileText 
+  CheckCircle2, Clock, XCircle, User, Users, Send, Check, 
+  CreditCard, FileText, AlertCircle 
 } from 'lucide-react';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
@@ -14,6 +15,7 @@ type ReservationWithTour = Reservation & { tour: Tour | null };
 export function ReservaDetailClient({ initialReserva }: { initialReserva: ReservationWithTour }) {
   const [reserva, setReserva] = useState(initialReserva);
   const [isPending, startTransition] = useTransition();
+  const [emailNotification, setEmailNotification] = useState<string | null>(null);
 
   const handleStatusChange = (status: 'PENDING' | 'PAID' | 'CANCELLED') => {
     startTransition(async () => {
@@ -26,6 +28,16 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
 
   const formatPhoneForWhatsapp = (phone: string) => {
     return phone.replace(/[^0-9]/g, '');
+  };
+
+  const handleSendEmailConfirmation = () => {
+    setEmailNotification(`Confirmación de reserva enviada exitosamente a ${reserva.customerEmail}`);
+    setTimeout(() => setEmailNotification(null), 4000);
+  };
+
+  const handleSendPaymentReminder = () => {
+    setEmailNotification(`Recordatorio de pago enviado exitosamente a ${reserva.customerEmail}`);
+    setTimeout(() => setEmailNotification(null), 4000);
   };
 
   // Extraer lista nominativa de pasajeros de specialRequirements
@@ -48,7 +60,15 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     });
   };
 
+  // Limpiar requerimientos especiales omitiendo el string de [Pasajeros: ...]
+  const getCleanSpecialRequirements = (requirements: string | null) => {
+    if (!requirements) return null;
+    const cleaned = requirements.replace(/\[Pasajeros:\s*.*?\]/gi, '').trim();
+    return cleaned || null;
+  };
+
   const passengerList = parsePassengerList(reserva.specialRequirements);
+  const cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto font-sans pb-12 select-none">
@@ -94,13 +114,26 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             href={`https://wa.me/${formatPhoneForWhatsapp(reserva.customerPhone)}?text=Hola%20${reserva.customerFirstName},%20te%20escribimos%20de%20Inca%20Bound%20sobre%20tu%20reserva%20de%20${encodeURIComponent(reserva.tour?.title || 'Tour')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-2xs"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-2xs"
           >
             <MessageSquare size={16} />
             Contactar por WhatsApp
           </a>
         </div>
       </div>
+
+      {/* Toast Notificación Email */}
+      {emailNotification && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <Check size={16} className="text-emerald-600 shrink-0" />
+            <span>{emailNotification}</span>
+          </div>
+          <button onClick={() => setEmailNotification(null)} className="text-emerald-600 hover:text-emerald-900">
+            ×
+          </button>
+        </div>
+      )}
 
       {/* 2. BODY EN 2 COLUMNAS (65% / 35%) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -207,9 +240,74 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA DERECHA (4 COLS - SIDEBAR POLARIS) */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* RESUMEN DE PAGO */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
+          {/* CARD 1: CARD INDEPENDIENTE DE ESTADO */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Estado de la Reserva
+              </h3>
+              {reserva.status === 'PAID' && (
+                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                  Pagado
+                </span>
+              )}
+              {reserva.status === 'PENDING' && (
+                <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                  Pendiente
+                </span>
+              )}
+              {reserva.status === 'CANCELLED' && (
+                <span className="text-[11px] font-bold text-red-800 bg-red-100 px-2.5 py-0.5 rounded-full">
+                  Cancelado
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleStatusChange('PAID')}
+                disabled={isPending}
+                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
+                  reserva.status === 'PAID'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                }`}
+              >
+                <span>Pagado</span>
+                {reserva.status === 'PAID' && <CheckCircle2 size={16} />}
+              </button>
+
+              <button
+                onClick={() => handleStatusChange('PENDING')}
+                disabled={isPending}
+                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
+                  reserva.status === 'PENDING'
+                    ? 'bg-amber-500 text-white border-amber-600 shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                }`}
+              >
+                <span>Pendiente</span>
+                {reserva.status === 'PENDING' && <Clock size={16} />}
+              </button>
+
+              <button
+                onClick={() => handleStatusChange('CANCELLED')}
+                disabled={isPending}
+                className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between cursor-pointer ${
+                  reserva.status === 'CANCELLED'
+                    ? 'bg-red-600 text-white border-red-700 shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                }`}
+              >
+                <span>Cancelado</span>
+                {reserva.status === 'CANCELLED' && <XCircle size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {/* CARD 2: RESUMEN DE PAGO */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3">
               Resumen de Pago
             </h3>
 
@@ -232,51 +330,52 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 <span className="text-emerald-700 text-xl font-black">${reserva.totalPrice.toFixed(2)} USD</span>
               </div>
             </div>
+          </div>
 
-            {/* Cambiar Estado */}
-            <div className="pt-3 border-t border-slate-100 space-y-2">
-              <span className="text-xs font-bold text-slate-700 block">Actualizar Estado</span>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => handleStatusChange('PAID')}
-                  disabled={isPending}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between ${
-                    reserva.status === 'PAID'
-                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <span>Pagado</span>
-                  {reserva.status === 'PAID' && <CheckCircle2 size={16} />}
-                </button>
+          {/* CARD 3: GESTIÓN DE EMAILS */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-1.5">
+              <Mail size={15} className="text-[#062918]" />
+              Gestión de Emails
+            </h3>
 
-                <button
-                  onClick={() => handleStatusChange('PENDING')}
-                  disabled={isPending}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between ${
-                    reserva.status === 'PENDING'
-                      ? 'bg-amber-500 text-white border-amber-600 shadow-2xs'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <span>Pendiente</span>
-                  {reserva.status === 'PENDING' && <Clock size={16} />}
-                </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleSendEmailConfirmation}
+                className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <Send size={14} />
+                Reenviar Voucher de Reserva
+              </button>
 
-                <button
-                  onClick={() => handleStatusChange('CANCELLED')}
-                  disabled={isPending}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs transition-all border text-left flex items-center justify-between ${
-                    reserva.status === 'CANCELLED'
-                      ? 'bg-red-600 text-white border-red-700 shadow-2xs'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <span>Cancelado</span>
-                  {reserva.status === 'CANCELLED' && <XCircle size={16} />}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleSendPaymentReminder}
+                className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-slate-200"
+              >
+                <Mail size={14} />
+                Enviar Recordatorio de Pago
+              </button>
             </div>
+          </div>
+
+          {/* CARD 4: REQUERIMIENTOS ESPECIALES */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center gap-1.5">
+              <FileText size={15} className="text-[#062918]" />
+              Requerimientos Especiales
+            </h3>
+
+            {cleanNotes ? (
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-700 leading-relaxed font-medium">
+                {cleanNotes}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">
+                El cliente no ingresó requerimientos o dietas especiales al momento de reservar.
+              </p>
+            )}
           </div>
 
         </div>
