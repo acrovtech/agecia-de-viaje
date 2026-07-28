@@ -1,23 +1,17 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Reservation, Tour } from '@repo/db';
-import { updateReservationStatus } from '../../actions/reservation';
-import { 
-  Search, Calendar, MapPin, 
-  Mail, Phone, MessageSquare, X, CheckCircle2, 
-  Clock, XCircle, User, Users, FileText, ExternalLink, ShieldCheck 
-} from 'lucide-react';
+import Link from 'next/link';
+import { Search, Calendar, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
 export function ReservasClient({ initialReservas }: { initialReservas: ReservationWithTour[] }) {
-  const [reservas, setReservas] = useState(initialReservas);
-  const [selectedReserva, setSelectedReserva] = useState<ReservationWithTour | null>(null);
+  const [reservas] = useState(initialReservas);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isPending, startTransition] = useTransition();
 
   const filteredReservas = reservas.filter((reserva) => {
     const matchesStatus = filterStatus === 'ALL' || reserva.status === filterStatus;
@@ -46,44 +40,6 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
-  };
-
-  const handleStatusChange = (status: 'PENDING' | 'PAID' | 'CANCELLED') => {
-    if (!selectedReserva) return;
-    
-    startTransition(async () => {
-      const res = await updateReservationStatus(selectedReserva.id, status);
-      if (res.success) {
-        const updated = reservas.map(r => r.id === selectedReserva.id ? { ...r, status } : r);
-        setReservas(updated);
-        setSelectedReserva({ ...selectedReserva, status });
-      }
-    });
-  };
-
-  const formatPhoneForWhatsapp = (phone: string) => {
-    return phone.replace(/[^0-9]/g, '');
-  };
-
-  // Extraer pasajeros de specialRequirements si existe
-  const parsePassengerList = (requirements: string | null) => {
-    if (!requirements) return [];
-    const match = requirements.match(/\[Pasajeros:\s*(.*?)\]/);
-    if (!match || !match[1]) return [];
-    const paxParts = match[1].split('|').map(p => p.trim());
-    return paxParts.map(part => {
-      // Pax 1: Juan Perez (DNI: 72839401)
-      const nameMatch = part.match(/Pax\s*\d+:\s*([^(]+)/);
-      const docMatch = part.match(/\(([^:]+):\s*([^)]+)\)/);
-      const nameVal = nameMatch && nameMatch[1] ? nameMatch[1].trim() : part;
-      const docTypeVal = docMatch && docMatch[1] ? docMatch[1].trim() : 'Documento';
-      const docNumVal = docMatch && docMatch[2] ? docMatch[2].trim() : 'N/A';
-      return {
-        name: nameVal,
-        docType: docTypeVal,
-        docNumber: docNumVal,
-      };
-    });
   };
 
   return (
@@ -246,181 +202,19 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => setSelectedReserva(reserva)}
-                          className="px-3 py-1 bg-[#EBEBEB] hover:bg-slate-200 text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                        <Link
+                          href={`/reservas/${reserva.id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                         >
-                          Ver Detalle
-                        </button>
+                          <span>Ver Detalle</span>
+                          <ArrowRight size={12} />
+                        </Link>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* 4. MODAL DETALLE DE RESERVA SHOPIFY POLARIS STYLE */}
-      {selectedReserva && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-            
-            {/* Header Modal */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Detalle de Reserva</span>
-                <h3 className="text-xl font-black text-[#2f2f2f]">{selectedReserva.tour?.title || 'Tour Inca Bound'}</h3>
-              </div>
-              <button 
-                onClick={() => setSelectedReserva(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-5 text-xs">
-              
-              {/* Tarjeta Titular */}
-              <div className="bg-slate-50 p-4 rounded-xl space-y-2.5 border border-slate-200/80">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-                    <User className="w-4 h-4 text-[#062918]" />
-                    <span>{selectedReserva.customerFirstName} {selectedReserva.customerLastName}</span>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
-                    Titular Principal
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{selectedReserva.customerEmail}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{selectedReserva.customerPhone}</span>
-                  </div>
-                </div>
-
-                {selectedReserva.pickupHotel && (
-                  <div className="flex items-center gap-2 text-slate-600 pt-2 border-t border-slate-200/60">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span><strong>Hotel de recojo en Cusco:</strong> {selectedReserva.pickupHotel}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Grid resumen de Viaje & Monto */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Fecha de Viaje</span>
-                  <span className="font-bold text-slate-900 text-sm capitalize">
-                    {new Date(selectedReserva.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Pasajeros (Pax)</span>
-                  <span className="font-bold text-slate-900 text-sm">{selectedReserva.pax} {selectedReserva.pax === 1 ? 'Persona' : 'Personas'}</span>
-                </div>
-
-                <div className="bg-slate-900 text-white p-3.5 rounded-xl flex flex-col justify-between">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Monto Total</span>
-                  <span className="text-xl font-black text-emerald-400">${selectedReserva.totalPrice.toFixed(2)} USD</span>
-                </div>
-              </div>
-
-              {/* Nominativos de Pasajeros si se ingresaron */}
-              {parsePassengerList(selectedReserva.specialRequirements).length > 0 && (
-                <div className="space-y-2 pt-1">
-                  <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                    <Users size={14} className="text-[#062918]" />
-                    Lista Nominativa de Pasajeros
-                  </p>
-                  <div className="border border-slate-200 rounded-xl overflow-hidden">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-100 text-slate-600 font-semibold uppercase text-[10px]">
-                        <tr>
-                          <th className="px-3 py-2">#</th>
-                          <th className="px-3 py-2">Pasajero</th>
-                          <th className="px-3 py-2">Tipo Doc</th>
-                          <th className="px-3 py-2">N° Documento</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {parsePassengerList(selectedReserva.specialRequirements).map((pax, idx) => (
-                          <tr key={idx}>
-                            <td className="px-3 py-2 font-bold text-slate-400">{idx + 1}</td>
-                            <td className="px-3 py-2 font-semibold text-slate-900">{pax.name}</td>
-                            <td className="px-3 py-2 text-slate-600">{pax.docType}</td>
-                            <td className="px-3 py-2 font-mono text-slate-700">{pax.docNumber}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Actualizar Estado de Pago */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-700 block">Cambiar Estado de Reserva</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => handleStatusChange('PENDING')}
-                    disabled={isPending}
-                    className={`py-2 rounded-xl font-bold text-xs transition-all border ${
-                      selectedReserva.status === 'PENDING'
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
-                    }`}
-                  >
-                    Pendiente
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange('PAID')}
-                    disabled={isPending}
-                    className={`py-2 rounded-xl font-bold text-xs transition-all border ${
-                      selectedReserva.status === 'PAID'
-                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
-                    }`}
-                  >
-                    Pagado
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange('CANCELLED')}
-                    disabled={isPending}
-                    className={`py-2 rounded-xl font-bold text-xs transition-all border ${
-                      selectedReserva.status === 'CANCELLED'
-                        ? 'bg-red-600 text-white border-red-700 shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
-                    }`}
-                  >
-                    Cancelado
-                  </button>
-                </div>
-              </div>
-
-              {/* Botón WhatsApp */}
-              <div className="pt-2">
-                <a
-                  href={`https://wa.me/${formatPhoneForWhatsapp(selectedReserva.customerPhone)}?text=Hola%20${selectedReserva.customerFirstName},%20te%20escribimos%20de%20Inca%20Bound%20sobre%20tu%20reserva%20de%20${encodeURIComponent(selectedReserva.tour?.title || 'Tour')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-xs text-xs"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Contactar Titular por WhatsApp
-                </a>
-              </div>
-
-            </div>
-
           </div>
         </div>
       )}
