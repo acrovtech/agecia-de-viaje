@@ -729,11 +729,11 @@ export function CheckoutForm() {
               </div>
 
               {/* ACCIONES DEL PASO 2 */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200/80">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200/80">
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="px-5 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft size={16} />
                   Volver al Resumen
@@ -742,7 +742,7 @@ export function CheckoutForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm rounded-lg transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm rounded-lg transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isLoading ? (
                     <>
