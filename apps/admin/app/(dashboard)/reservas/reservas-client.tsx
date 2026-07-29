@@ -82,7 +82,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3 space-y-3">
         
         {/* Tabs de estado */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 overflow-x-auto text-xs">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 overflow-x-auto text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: 'ALL', label: 'Todas', count: reservas.length },
             { id: 'PAID', label: 'Pagadas', count: reservas.filter(r => r.status === 'PAID').length },
@@ -92,7 +92,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
             <button
               key={tab.id}
               onClick={() => setFilterStatus(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 filterStatus === tab.id
                   ? 'bg-slate-900 text-white shadow-2xs'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -122,9 +122,10 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
           <p className="font-semibold text-slate-600">No se encontraron reservas con los filtros aplicados.</p>
         </div>
       ) : (
-        /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS (CABECERAS CENTRADAS + SELECCIÓN MÚLTIPLE Y BORRAR TODOS) */
-        <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
-          <div className="hidden md:block overflow-x-auto">
+        <>
+          {/* 3. VISTA DESKTOP: TABLA COMPLETA SHOPIFY POLARIS */}
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-center text-xs">
               <colgroup>
                 <col className="w-12" />
@@ -251,13 +252,14 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
               </tbody>
             </table>
           </div>
+        </div>
 
-          {/* VISTA MOBILE: CARDS INDEPENDIENTES SIN CHECKBOX */}
+        {/* 4. VISTA MOBILE: CARDS INDEPENDIENTES SIN CHECKBOX NI ENVOLTORIO EXTERIOR */}
           <div className="md:hidden flex flex-col gap-3">
             {filteredReservas.map((reserva) => (
-              <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 flex flex-col gap-2.5">
+              <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-4 flex flex-col gap-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-slate-900 text-xs truncate">
                       {reserva.customerFirstName} {reserva.customerLastName}
                     </h4>
@@ -305,7 +307,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
               </div>
             ))}
           </div>
-        </div>
+        </>
       )}
 
     </div>
