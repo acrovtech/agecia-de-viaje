@@ -778,19 +778,19 @@ export function CheckoutForm() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 pt-1">
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                      <div className="flex justify-between">
                         <span>Fecha inicio</span>
                         <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
                       </div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                      <div className="flex justify-between">
                         <span>Fecha fin</span>
                         <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
                       </div>
-                      <div className="flex justify-between pt-0.5">
+                      <div className="flex justify-between">
                         <span>Pasajeros</span>
                         <span className="font-semibold text-gray-800">{numPax}</span>
                       </div>
-                      <div className="flex justify-between pt-0.5">
+                      <div className="flex justify-between">
                         <span>Servicio</span>
                         <span className="font-semibold text-gray-800 capitalize">
                           {serviceType === 'shared' ? 'Compartido' : 'Privado'}
