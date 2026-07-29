@@ -1,12 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
   Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
-  AlertTriangle
+  AlertTriangle, Minus, Plus, RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
@@ -21,6 +21,7 @@ import {
 import { useCartManager } from '@/hooks/use-cart';
 import { formatSpanishDate } from '@repo/ui/lib/date-utils';
 import { formatCurrency } from '@repo/ui/lib/currency';
+import { Calendar as CalendarUI } from '@/components/ui/calendar';
 
 type Passenger = {
   firstName: string;
@@ -31,6 +32,7 @@ type Passenger = {
 
 export function CheckoutForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   
   // Extraer parámetros de la URL
   const tourTitle = searchParams.get('tourTitle') || 'Tour Inca Bound';
@@ -41,8 +43,52 @@ export function CheckoutForm() {
   const serviceType = searchParams.get('type') || 'shared';
   const price = searchParams.get('price') || '0';
   const total = searchParams.get('total') || '0';
+  const privatePriceStr = searchParams.get('privatePrice');
+  const durationStr = searchParams.get('duration');
 
   const numPax = Math.max(1, parseInt(pax) || 1);
+
+  // Calcular si existe servicio privado y la duración del tour (días)
+  const hasPrivateService = Boolean(privatePriceStr && parseFloat(privatePriceStr) > 0) || (serviceType === 'private');
+  
+  let durationDays = 1;
+  if (durationStr) {
+    const match = durationStr.match(/(\d+)\s*d[íi]as?/i);
+    if (match && match[1]) {
+      durationDays = Math.max(1, parseInt(match[1], 10) || 1);
+    }
+  } else if (tourTitle.toLowerCase().includes('2 días') || tourTitle.toLowerCase().includes('2d')) {
+    durationDays = 2;
+  }
+
+  // Estado del Modal de Edición de Tour
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [modalDate, setModalDate] = useState<Date | null>(dateStr ? new Date(dateStr) : new Date());
+  const [modalPax, setModalPax] = useState<number>(numPax);
+  const [modalServiceType, setModalServiceType] = useState<'shared' | 'private'>(serviceType === 'private' ? 'private' : 'shared');
+
+  useEffect(() => {
+    if (dateStr) setModalDate(new Date(dateStr));
+    setModalPax(numPax);
+    setModalServiceType(serviceType === 'private' ? 'private' : 'shared');
+  }, [dateStr, numPax, serviceType]);
+
+  const handleUpdateReservation = () => {
+    if (!modalDate) return;
+    const newPricePerPax = modalServiceType === 'private' && privatePriceStr ? (parseFloat(privatePriceStr) || parseFloat(price)) : parseFloat(price);
+    const newTotal = newPricePerPax * modalPax;
+    const newDateStr = modalDate.toISOString();
+
+    const query = new URLSearchParams(searchParams.toString());
+    query.set('date', newDateStr);
+    query.set('pax', modalPax.toString());
+    query.set('type', modalServiceType);
+    query.set('price', newPricePerPax.toString());
+    query.set('total', newTotal.toString());
+
+    router.replace(`/checkout?${query.toString()}`);
+    setIsEditModalOpen(false);
+  };
 
   const { remainingMinutes, updateCart } = useCartManager();
 
@@ -438,7 +484,7 @@ export function CheckoutForm() {
 
                     <button
                       type="button"
-                      onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
+                      onClick={() => setIsEditModalOpen(true)}
                       className="w-full sm:flex-1 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer order-2 sm:order-1"
                     >
                       <Edit3 size={15} className="text-gray-500" />
@@ -870,6 +916,128 @@ export function CheckoutForm() {
         </div>
 
       </div>
+
+      {/* MODAL INTERACTIVO DE EDITAR RESERVA */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-bold text-gray-900 font-heading">Editar reserva</h3>
+              <button 
+                type="button"
+                onClick={() => setIsEditModalOpen(false)} 
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 1. Tipo de Servicio (MOSTRAR SOLO SI EXISTE OPCIÓN DE SERVICIO PRIVADO) */}
+            {hasPrivateService && (
+              <div>
+                <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+                  Tipo de Servicio
+                </label>
+                <div className="grid grid-cols-2 gap-3 p-1.5 bg-gray-100/80 rounded-2xl border border-gray-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setModalServiceType('shared')}
+                    className={`py-3 px-4 rounded-xl text-center transition-all cursor-pointer ${
+                      modalServiceType === 'shared'
+                        ? 'bg-[#062918] text-white font-bold shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 font-semibold'
+                    }`}
+                  >
+                    <div className="text-sm">Compartido</div>
+                    <div className={`text-xs ${modalServiceType === 'shared' ? 'text-emerald-200' : 'text-gray-400'}`}>
+                      (US$ {parseFloat(price).toFixed(2)})
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModalServiceType('private')}
+                    className={`py-3 px-4 rounded-xl text-center transition-all cursor-pointer ${
+                      modalServiceType === 'private'
+                        ? 'bg-[#062918] text-white font-bold shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 font-semibold'
+                    }`}
+                  >
+                    <div className="text-sm">Privado</div>
+                    <div className={`text-xs ${modalServiceType === 'private' ? 'text-emerald-200' : 'text-gray-400'}`}>
+                      (US$ {parseFloat(privatePriceStr || price).toFixed(2)})
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. Fecha del Tour (CON CALENDARIO Y RANGO DE DÍAS DESTACADO) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+                Fecha del Tour
+              </label>
+              <CalendarUI 
+                selectedDate={modalDate}
+                durationDays={durationDays}
+                onSelect={(d) => setModalDate(d)}
+              />
+            </div>
+
+            {/* 3. Pasajeros (100% DE ANCHO, SIN (mínimo 1) REDUNDANTE) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+                Pasajeros
+              </label>
+              <div className="flex items-center justify-between border border-gray-200/90 rounded-2xl p-2.5 bg-white w-full shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setModalPax(Math.max(1, modalPax - 1))}
+                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#062918] flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <Minus size={18} className="stroke-[3]" />
+                </button>
+
+                <span className="text-base font-bold text-gray-900">
+                  {modalPax} {modalPax === 1 ? 'Pasajero' : 'Pasajeros'}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setModalPax(modalPax + 1)}
+                  className="w-10 h-10 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <Plus size={18} className="stroke-[3]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Acciones Modal */}
+            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="py-3 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <X size={16} />
+                <span>Cancelar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUpdateReservation}
+                className="py-3 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RefreshCw size={16} />
+                <span>Actualizar</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
