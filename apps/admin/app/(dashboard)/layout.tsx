@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { UserNavDropdown } from '@/components/layout/user-nav-dropdown';
 import { MobileSidebarDrawer } from '@/components/layout/mobile-sidebar-drawer';
+import { NotificationsDropdown } from '@/components/layout/notifications-dropdown';
 import { TitleProvider } from '@/components/ui/title-context';
 import { InactivityTimer } from '@/components/inactivity-timer';
+import { getRecentNotificationsAction } from '@/app/actions/reservation';
 
 export default async function DashboardLayout({
   children,
@@ -21,6 +23,10 @@ export default async function DashboardLayout({
   const userName = isMaster ? 'Adriano Admin' : 'Cliente Operador';
   const userEmail = isMaster ? 'master@incabound.com' : 'cliente@incabound.com';
   const userRole = isMaster ? 'Administrador Master' : 'Operador Cliente';
+
+  // Cargar notificaciones iniciales desde el servidor
+  const notifRes = await getRecentNotificationsAction();
+  const initialNotifications = notifRes.notifications || [];
 
   return (
     <TitleProvider>
@@ -42,15 +48,8 @@ export default async function DashboardLayout({
           {/* Derecha: Notificaciones y Dropdown de Usuario */}
           <div className="flex items-center gap-3">
             
-            {/* Notificaciones (Para reservas y alertas) */}
-            <button 
-              type="button" 
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors relative" 
-              title="Notificaciones de Reservas"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            </button>
+            {/* Componente Interactivo de Notificaciones de Reservas */}
+            <NotificationsDropdown initialNotifications={initialNotifications} />
 
             <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
 

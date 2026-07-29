@@ -57,3 +57,29 @@ export async function deleteReservationsAction(ids: string[]) {
     return { success: false, error: "No se pudieron eliminar las reservas seleccionadas." };
   }
 }
+
+export async function getRecentNotificationsAction() {
+  try {
+    const reservations = await prisma.reservation.findMany({
+      take: 8,
+      orderBy: { createdAt: 'desc' },
+      include: { tour: true }
+    });
+    return { 
+      success: true, 
+      notifications: reservations.map(r => ({
+        id: r.id,
+        customerName: `${r.customerFirstName} ${r.customerLastName}`,
+        customerEmail: r.customerEmail,
+        tourTitle: r.tour?.title || 'Tour Inca Bound',
+        pax: r.pax,
+        totalPrice: r.totalPrice,
+        status: r.status,
+        createdAt: r.createdAt.toISOString()
+      }))
+    };
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return { success: false, notifications: [] };
+  }
+}
