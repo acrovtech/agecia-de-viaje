@@ -40,6 +40,17 @@ export function CheckoutForm() {
 
   const numPax = Math.max(1, parseInt(pax) || 1);
 
+  // Sincronizar item con el carrito global en localStorage para el badge del Header
+  useEffect(() => {
+    if (tourTitle && tourSlug) {
+      const item = { tourTitle, tourSlug, date: dateStr, pax: numPax, price, total };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('incabound_cart', JSON.stringify(item));
+        window.dispatchEvent(new Event('storage'));
+      }
+    }
+  }, [tourTitle, tourSlug, dateStr, numPax, price, total]);
+
   // Formato de fechas en español sin TitleCase exagerado
   const dateObj = dateStr ? new Date(dateStr) : null;
   const formattedStartDate = dateObj 
@@ -221,8 +232,8 @@ export function CheckoutForm() {
       {/* MARCO PRINCIPAL DE LA TARJETA CHECKOUT */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden w-full">
         
-        {/* HERO HEADER */}
-        <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 pt-8 pb-6 text-center">
+        {/* HERO HEADER (EQUILIBRADO CON PADDING TOP Y BOTTOM IDÉNTICOS: py-6 sm:py-7) */}
+        <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 py-6 sm:py-7 text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Completa tu reserva</h1>
           <p className="text-sm text-gray-500 max-w-xl mx-auto mt-1.5 leading-relaxed">
             Revisa tu tour, completa los datos de pasajeros y confirma tu forma de pago.
@@ -524,7 +535,7 @@ export function CheckoutForm() {
                         />
                       </div>
 
-                      {/* Tipo Documento (Radix UI Select idéntico al Admin) */}
+                      {/* Tipo Documento (Radix UI Select) */}
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo doc *</label>
                         <Select 
@@ -658,7 +669,7 @@ export function CheckoutForm() {
                     />
                   </div>
 
-                  {/* Idioma del servicio (Radix UI Select idéntico al Admin) */}
+                  {/* Idioma del servicio (Radix UI Select) */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">
                       Idioma del servicio

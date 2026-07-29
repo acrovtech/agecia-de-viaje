@@ -37,7 +37,7 @@ export function Header({ variant = 'transparent' }: HeaderProps) {
     <header 
       className={`w-full z-50 transition-colors duration-300 ${
         isMobileMenuOpen 
-          ? 'fixed top-0 left-0 bg-[#062918] shadow-md py-4 md:py-5' 
+          ? 'fixed top-0 left-0 bg-white border-b border-gray-100 shadow-xs py-4 md:py-5' 
           : isDark 
             ? 'relative bg-[#062918] border-b border-[#0c4028]/80 shadow-md py-4 md:py-5' 
             : 'absolute top-0 left-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent py-4 md:py-5'
