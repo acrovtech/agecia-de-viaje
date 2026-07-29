@@ -535,38 +535,38 @@ export function CheckoutForm() {
                     );
                   })}
 
-                  {/* Resumen Total Acumulado si hay múltiples tours: 3 items en grid con cards independientes (sin card exterior) */}
+                  {/* Resumen Total Acumulado si hay múltiples tours: 3 items compactos en 1 sola fila con la misma altura que el botón del tour */}
                   {activeItems.length > 1 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center pt-2">
                       
-                      {/* Card 1 Independiente: Cantidad de expediciones */}
-                      <div className="bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-center items-center sm:items-start text-center sm:text-left h-full">
-                        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-                          Expediciones
+                      {/* Card 1: Expediciones (Compacto Inline h-[42px]) */}
+                      <div className="bg-white border border-gray-200/90 rounded-xl px-4 py-2.5 shadow-2xs flex items-center justify-between sm:justify-center gap-2 h-[42px]">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider shrink-0">
+                          Expediciones:
                         </span>
-                        <span className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
-                          {activeItems.length} {activeItems.length === 1 ? 'Expedición Seleccionada' : 'Expediciones Seleccionadas'}
+                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                          {activeItems.length} {activeItems.length === 1 ? 'Seleccionada' : 'Seleccionadas'}
                         </span>
                       </div>
 
-                      {/* Card 2 Independiente: Total a pagar */}
-                      <div className="bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-center items-center sm:items-center text-center h-full">
-                        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-                          Total a pagar
+                      {/* Card 2: Total a Pagar (Compacto Inline h-[42px]) */}
+                      <div className="bg-white border border-gray-200/90 rounded-xl px-4 py-2.5 shadow-2xs flex items-center justify-between sm:justify-center gap-2 h-[42px]">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider shrink-0">
+                          Total a pagar:
                         </span>
-                        <span className="text-xl sm:text-2xl font-black text-[#062918] leading-tight">
+                        <span className="text-xs sm:text-sm font-extrabold text-[#062918] whitespace-nowrap">
                           US$ {grandTotal.toFixed(2)}
                         </span>
                       </div>
 
-                      {/* Elemento 3: Botón Independiente SIN CARD */}
+                      {/* Elemento 3: Botón Reservar tours (Misma altura h-[42px] que las cards) */}
                       <button
                         type="button"
                         onClick={() => setCurrentStep(2)}
-                        className="w-full h-full min-h-[58px] py-4 px-6 rounded-2xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg transform active:scale-98 cursor-pointer"
+                        className="w-full h-[42px] py-2.5 px-4 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-2xs hover:shadow-xs cursor-pointer shrink-0"
                       >
                         <span>Reservar tours</span>
-                        <ArrowRight size={18} />
+                        <ArrowRight size={15} />
                       </button>
 
                     </div>
