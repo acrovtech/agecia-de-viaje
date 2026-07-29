@@ -6,11 +6,17 @@ import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
   Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
-  AlertTriangle, ChevronDown
+  AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
 import KRGlue from '@lyracom/embedded-form-glue';
+import { 
+  Select, 
+  SelectTrigger, 
+  SelectContent, 
+  SelectItem 
+} from '@/components/ui/select';
 
 type Passenger = {
   firstName: string;
@@ -73,9 +79,8 @@ export function CheckoutForm() {
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [step2Error, setStep2Error] = useState<string | null>(null);
 
-  // Estilos UI normalizados (Focus elegante + Border radius redondeado limpio)
-  const inputBaseStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
-  const selectCustomStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs appearance-none pr-8 focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all cursor-pointer";
+  // Estilos UI normalizados
+  const inputBaseStyle = "w-full h-[38px] px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
 
   // Copiar datos del titular de contacto al Pasajero 1
   const copyContactToPax1 = (e: React.MouseEvent) => {
@@ -462,7 +467,7 @@ export function CheckoutForm() {
               )}
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (TÍTULO 1rem Y HEADERS SIN UPPERCASE) */}
+              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-2">
@@ -472,7 +477,7 @@ export function CheckoutForm() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Encabezados de Columna (Normalizados sin uppercase) */}
+                  {/* Encabezados de Columna */}
                   <div className="hidden sm:grid sm:grid-cols-[48px_repeat(4,1fr)] gap-3 px-1 text-xs font-semibold text-gray-500">
                     <div>Pas.</div>
                     <div>Nombres *</div>
@@ -519,21 +524,22 @@ export function CheckoutForm() {
                         />
                       </div>
 
-                      {/* Tipo Documento (Custom Select con Chevron Down Icon) */}
+                      {/* Tipo Documento (Radix UI Select idéntico al Admin) */}
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo doc *</label>
-                        <div className="relative">
-                          <select
-                            value={paxItem.documentType}
-                            onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
-                            className={selectCustomStyle}
-                          >
-                            <option value="DNI">DNI</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                            <option value="Carnet Extranjería">Carnet Extranjería</option>
-                          </select>
-                          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                        </div>
+                        <Select 
+                          value={paxItem.documentType} 
+                          onValueChange={(val) => val && handlePassengerChange(idx, 'documentType', val)}
+                        >
+                          <SelectTrigger className="w-full h-[38px]">
+                            <span>{paxItem.documentType || 'DNI'}</span>
+                          </SelectTrigger>
+                          <SelectContent alignItemWithTrigger={false} side="bottom" className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
+                            <SelectItem value="DNI">DNI</SelectItem>
+                            <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                            <SelectItem value="Carnet Extranjería">Carnet Extranjería</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Nro Documento */}
@@ -555,7 +561,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 2: TITULAR DE CONTACTO (TÍTULO 1rem Y 4 CAMPOS EN 1 SOLA FILA) */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
@@ -628,7 +634,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 3: DATOS ADICIONALES (TÍTULO 1rem) */}
+              {/* SECCIÓN 3: DATOS ADICIONALES */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="border-b border-gray-200 pb-2">
@@ -652,23 +658,24 @@ export function CheckoutForm() {
                     />
                   </div>
 
-                  {/* Idioma del servicio (Custom Select con Chevron Down Icon) */}
+                  {/* Idioma del servicio (Radix UI Select idéntico al Admin) */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">
                       Idioma del servicio
                     </label>
-                    <div className="relative">
-                      <select
-                        value={formData.language}
-                        onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                        className={selectCustomStyle}
-                      >
-                        <option value="Español">Español</option>
-                        <option value="Inglés">Inglés</option>
-                        <option value="Portugués">Portugués</option>
-                      </select>
-                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
+                    <Select 
+                      value={formData.language} 
+                      onValueChange={(val) => val && setFormData({ ...formData, language: val })}
+                    >
+                      <SelectTrigger className="w-full h-[38px]">
+                        <span>{formData.language || 'Español'}</span>
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} side="bottom" className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
+                        <SelectItem value="Español">Español</SelectItem>
+                        <SelectItem value="Inglés">Inglés</SelectItem>
+                        <SelectItem value="Portugués">Portugués</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Requerimientos especiales */}
@@ -681,7 +688,7 @@ export function CheckoutForm() {
                       value={formData.requirements}
                       onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                       placeholder="Ej. Alimentación vegetariana, alergias, dietas o solicitudes de horario..."
-                      className={`${inputBaseStyle} resize-none leading-relaxed`}
+                      className={`${inputBaseStyle} h-auto resize-none leading-relaxed`}
                     />
                   </div>
                 </div>
