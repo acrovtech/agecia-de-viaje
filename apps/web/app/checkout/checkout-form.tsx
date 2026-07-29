@@ -93,22 +93,19 @@ export function CheckoutForm() {
   // Estilos UI normalizados
   const inputBaseStyle = "w-full h-[38px] px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
 
-  // Copiar datos del titular de contacto al Pasajero 1
-  const copyContactToPax1 = (e: React.MouseEvent) => {
+  // Copiar datos del Pasajero 1 al Titular de contacto (Nombres y Apellidos)
+  const copyPax1ToContact = (e: React.MouseEvent) => {
     e.preventDefault();
-    setPassengers(prev => {
-      const next = [...prev];
-      if (next[0]) {
-        next[0] = {
-          ...next[0],
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-        };
-      }
-      return next;
-    });
-    setCopiedPax1(true);
-    setTimeout(() => setCopiedPax1(false), 2500);
+    const pax1 = passengers[0];
+    if (pax1 && (pax1.firstName || pax1.lastName)) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: pax1.firstName,
+        lastName: pax1.lastName,
+      }));
+      setCopiedPax1(true);
+      setTimeout(() => setCopiedPax1(false), 2500);
+    }
   };
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
@@ -232,7 +229,7 @@ export function CheckoutForm() {
       {/* MARCO PRINCIPAL DE LA TARJETA CHECKOUT */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden w-full">
         
-        {/* HERO HEADER (EQUILIBRADO CON PADDING TOP Y BOTTOM IDÉNTICOS: py-6 sm:py-7) */}
+        {/* HERO HEADER */}
         <header className="bg-white border-b border-gray-200/80 px-6 sm:px-12 py-6 sm:py-7 text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Completa tu reserva</h1>
           <p className="text-sm text-gray-500 max-w-xl mx-auto mt-1.5 leading-relaxed">
@@ -572,7 +569,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 2: TITULAR DE CONTACTO */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO (CON BOTÓN DE COPIAR PASAJERO 1 A TITULAR) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
@@ -580,14 +577,14 @@ export function CheckoutForm() {
                     2. Titular de contacto
                   </h3>
                   
-                  {formData.firstName && (
+                  {passengers[0]?.firstName && (
                     <button
                       type="button"
-                      onClick={copyContactToPax1}
-                      className="text-[11px] font-bold text-[#062918] hover:underline flex items-center gap-1 bg-[#062918]/10 px-2.5 py-1 rounded-lg transition-colors self-start sm:self-auto"
+                      onClick={copyPax1ToContact}
+                      className="text-[11px] font-bold text-[#062918] hover:underline flex items-center gap-1 bg-[#062918]/10 px-2.5 py-1 rounded-lg transition-colors self-start sm:self-auto cursor-pointer"
                     >
                       <Check size={13} />
-                      {copiedPax1 ? '¡Copiado a Pasajero 1!' : 'Copiar titular a Pasajero 1'}
+                      {copiedPax1 ? '¡Copiado de Pasajero 1!' : 'Copiar datos de Pasajero 1'}
                     </button>
                   )}
                 </div>
