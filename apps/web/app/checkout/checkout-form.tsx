@@ -135,15 +135,34 @@ export function CheckoutForm() {
     requirements: ''
   });
 
+  const totalPax = activeItems.reduce((sum, item) => sum + item.pax, 0) || numPax;
+
   // Estado de pasajeros
   const [passengers, setPassengers] = useState<Passenger[]>(() => 
-    Array.from({ length: numPax }, () => ({
+    Array.from({ length: totalPax }, () => ({
       firstName: '',
       lastName: '',
       documentType: 'DNI',
       documentNumber: '',
     }))
   );
+
+  // Sincronizar dinámicamente la cantidad de formularios de pasajeros según el total de pax en el carrito
+  useEffect(() => {
+    setPassengers(prev => {
+      if (prev.length === totalPax) return prev;
+      if (prev.length < totalPax) {
+        const added = Array.from({ length: totalPax - prev.length }, () => ({
+          firstName: '',
+          lastName: '',
+          documentType: 'DNI',
+          documentNumber: '',
+        }));
+        return [...prev, ...added];
+      }
+      return prev.slice(0, totalPax);
+    });
+  }, [totalPax]);
 
   const [copiedPax1, setCopiedPax1] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -597,7 +616,7 @@ export function CheckoutForm() {
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-2">
                   <h3 className="text-[1rem] font-bold text-gray-900">
-                    1. Información de los pasajeros ({numPax})
+                    1. Información de los pasajeros ({totalPax})
                   </h3>
                 </div>
 
