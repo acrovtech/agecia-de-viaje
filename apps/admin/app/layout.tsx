@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={cn("h-full font-sans bg-[#F1F1F1]", inter.variable)} suppressHydrationWarning>
-      <body className={`${inter.className} h-full min-h-full font-sans bg-[#F1F1F1] text-slate-900`} suppressHydrationWarning>
+    <html lang="es" className={cn("font-sans bg-[#F1F1F1]", inter.variable)} suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen font-sans bg-[#F1F1F1] text-slate-900`} suppressHydrationWarning>
         {children}
       </body>
     </html>
