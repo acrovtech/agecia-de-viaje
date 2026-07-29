@@ -119,9 +119,9 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
         )}
       </button>
 
-      {/* Popover / Panel de Notificaciones */}
+      {/* Popover / Panel de Notificaciones (Responsive Full Width en Mobile) */}
       {isOpen && (
-        <div className="absolute right-0 mt-3.5 w-80 sm:w-96 rounded-xl bg-white border border-slate-200/90 shadow-2xl text-slate-800 p-0 z-50 animate-in fade-in-50 zoom-in-95 duration-100 font-sans text-xs overflow-hidden">
+        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-14 sm:top-auto sm:mt-3.5 w-auto sm:w-96 rounded-xl bg-white border border-slate-200/90 shadow-2xl text-slate-800 p-0 z-50 animate-in fade-in-50 zoom-in-95 duration-100 font-sans text-xs overflow-hidden">
           
           {/* Encabezado del Popover */}
           <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
@@ -148,8 +148,8 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
             )}
           </div>
 
-          {/* Lista de Notificaciones Recientes */}
-          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100">
+          {/* Lista de Notificaciones Recientes con Scroll Estilizado Fino */}
+          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
             {notifications.length === 0 ? (
               <div className="p-8 text-center text-slate-400">
                 <p className="font-semibold text-slate-600">No hay reservas recientes.</p>

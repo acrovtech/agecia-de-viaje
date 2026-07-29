@@ -124,7 +124,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
       ) : (
         /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS (CABECERAS CENTRADAS + SELECCIÓN MÚLTIPLE Y BORRAR TODOS) */
         <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-center text-xs">
               <colgroup>
                 <col className="w-12" />
@@ -250,6 +250,60 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* VISTA MOBILE: CARDS INDEPENDIENTES SIN CHECKBOX */}
+          <div className="md:hidden flex flex-col gap-3">
+            {filteredReservas.map((reserva) => (
+              <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 flex flex-col gap-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 text-xs truncate">
+                      {reserva.customerFirstName} {reserva.customerLastName}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</p>
+                  </div>
+                  <span className="font-extrabold text-[#062918] text-xs shrink-0">
+                    ${reserva.totalPrice.toFixed(2)} USD
+                  </span>
+                </div>
+
+                <div className="text-xs font-semibold text-slate-800 uppercase truncate">
+                  {reserva.tour?.title || 'TOUR INCA BOUND'}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                  <div className="flex items-center gap-2">
+                    {reserva.status === 'PAID' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 size={11} /> Pagado
+                      </span>
+                    )}
+                    {reserva.status === 'PENDING' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        <Clock size={11} /> Pendiente
+                      </span>
+                    )}
+                    {reserva.status === 'CANCELLED' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                        <XCircle size={11} /> Cancelado
+                      </span>
+                    )}
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      {reserva.pax} {reserva.pax === 1 ? 'pax' : 'pax'}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={`/reservas/${reserva.id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <span>Ver Detalle</span>
+                    <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -261,20 +261,13 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
             </div>
           </div>
 
-          {/* VISTA MOBILE: CARDS INDEPENDIENTES CON CHECKBOX Y BADGE ACTIVO */}
+          {/* VISTA MOBILE: CARDS INDEPENDIENTES SIN CHECKBOX */}
           <div className="md:hidden flex flex-col gap-3">
             {filteredBlogs.map((blog) => {
-              const isSelected = selectedIds.includes(blog.id);
               return (
-                <div key={blog.id} className={`bg-white rounded-xl border border-slate-200/90 shadow-xs p-3.5 flex flex-col gap-3 transition-all ${isSelected ? 'ring-1 ring-slate-900 border-slate-900' : 'hover:border-slate-300'}`}>
-                  {/* Fila Top: Checkbox + Imagen + Título */}
+                <div key={blog.id} className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-3.5 flex flex-col gap-3 transition-all hover:border-slate-300">
+                  {/* Fila Top: Imagen + Título */}
                   <div className="flex items-start gap-3">
-                    <input 
-                      type="checkbox" 
-                      checked={isSelected}
-                      onChange={() => toggleSelectBlog(blog.id)}
-                      className="w-4 h-4 mt-1 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer shrink-0" 
-                    />
                     <BlogThumbnail src={blog.bannerImage} title={blog.title} />
                     <div className="flex-1 min-w-0">
                       <Link href={`/blogs/${blog.id}/edit`} className="font-bold text-slate-900 hover:underline text-xs leading-snug line-clamp-2">
