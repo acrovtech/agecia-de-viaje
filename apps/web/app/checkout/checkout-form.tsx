@@ -535,38 +535,34 @@ export function CheckoutForm() {
                     );
                   })}
 
-                  {/* Resumen Total Acumulado si hay múltiples tours (Diseño Premium Gradient) */}
+                  {/* Resumen Total Acumulado si hay múltiples tours (Diseño Limpio Sin BG, Solo Border, 1 Row) */}
                   {activeItems.length > 1 && (
-                    <div className="bg-gradient-to-r from-[#062918] via-[#0b4028] to-[#062918] rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-5 border border-emerald-900/40">
-                      {/* Brillo decorativo sutil de fondo */}
-                      <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
-
-                      <div className="space-y-1 text-center sm:text-left z-10">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
-                          <ShoppingBag size={12} />
-                          <span>Carrito Multi-Tour</span>
-                        </div>
-                        <h4 className="text-lg sm:text-xl font-bold tracking-tight text-white font-heading">
-                          {activeItems.length} Expediciones Seleccionadas
-                        </h4>
+                    <div className="bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                      
+                      {/* Cantidad de tours */}
+                      <div className="text-sm sm:text-base font-bold text-gray-900">
+                        <span>{activeItems.length} {activeItems.length === 1 ? 'Expedición Seleccionada' : 'Expediciones Seleccionadas'}</span>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto z-10">
-                        <div className="text-center sm:text-right">
-                          <span className="text-[11px] font-medium text-emerald-200/80 uppercase tracking-wider block">Total a pagar</span>
-                          <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      {/* Total a pagar & Botón Reservar */}
+                      <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
+                        <div className="text-right">
+                          <span className="text-xs text-gray-500 block font-medium">Total a pagar:</span>
+                          <span className="text-xl sm:text-2xl font-black text-[#062918]">
                             US$ {grandTotal.toFixed(2)}
                           </span>
                         </div>
+
                         <button
                           type="button"
                           onClick={() => setCurrentStep(2)}
-                          className="w-full sm:w-auto py-3 px-6 rounded-xl bg-white hover:bg-emerald-50 text-[#062918] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg transform active:scale-98 cursor-pointer shrink-0"
+                          className="py-3 px-6 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer shrink-0"
                         >
-                          <span>Continuar al Pago</span>
+                          <span>Reservar tours</span>
                           <ArrowRight size={16} />
                         </button>
                       </div>
+
                     </div>
                   )}
 
