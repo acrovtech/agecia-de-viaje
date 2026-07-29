@@ -165,13 +165,34 @@ model Reservation {
   totalPrice       Float
   
   pickupHotel      String?
-  specialRequirements String?
+  specialRequirements String? @db.Text
   
   status           ReservationStatus @default(PENDING)
   paymentReference String? // Izipay transaction ID or token
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  passengers       ReservationPassenger[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([tourId])
+  @@index([customerEmail])
+}
+
+model ReservationPassenger {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  
+  name          String
+  docType       String      @default("DNI") // DNI, Pasaporte, CE
+  docNumber     String
+  
+  createdAt     DateTime    @default(now())
+
+  @@index([reservationId])
 }
 
 enum ReservationStatus {

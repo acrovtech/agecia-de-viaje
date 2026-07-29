@@ -41,6 +41,32 @@ export async function updateReservationDetails(reservationId: string, data: {
   }
 }
 
+export async function updateReservationPassengersAction(reservationId: string, passengers: Array<{ name: string; docType: string; docNumber: string }>) {
+  try {
+    await prisma.reservationPassenger.deleteMany({
+      where: { reservationId }
+    });
+
+    if (passengers.length > 0) {
+      await prisma.reservationPassenger.createMany({
+        data: passengers.map(p => ({
+          reservationId,
+          name: p.name,
+          docType: p.docType || 'DNI',
+          docNumber: p.docNumber || ''
+        }))
+      });
+    }
+
+    revalidatePath(`/reservas/${reservationId}`);
+    revalidatePath('/reservas');
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating reservation passengers:", error);
+    return { success: false, error: "No se pudieron actualizar los pasajeros." };
+  }
+}
+
 export async function deleteReservationsAction(ids: string[]) {
   try {
     if (!ids || ids.length === 0) return { success: true };

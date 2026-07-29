@@ -10,7 +10,7 @@ export default async function ReservaDetailPage({ params }: { params: Promise<{ 
 
   const reserva = await prisma.reservation.findUnique({
     where: { id },
-    include: { tour: true }
+    include: { tour: true, passengers: true }
   });
 
   if (!reserva) {

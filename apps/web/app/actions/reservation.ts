@@ -11,6 +11,7 @@ type CheckoutData = {
   customerPhone: string;
   pickupHotel?: string;
   specialRequirements?: string;
+  passengers?: Array<{ name: string; docType?: string; docNumber?: string }>;
   date: string;
   pax: number;
   totalPrice: number;
@@ -45,6 +46,13 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
         pax: data.pax || 1,
         totalPrice: data.totalPrice || 100,
         status: 'PENDING',
+        passengers: data.passengers && data.passengers.length > 0 ? {
+          create: data.passengers.map(p => ({
+            name: p.name,
+            docType: p.docType || 'DNI',
+            docNumber: p.docNumber || ''
+          }))
+        } : undefined
       }
     });
 

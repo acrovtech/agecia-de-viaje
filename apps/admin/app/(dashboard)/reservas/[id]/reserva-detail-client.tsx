@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Reservation, Tour } from '@repo/db';
-import { updateReservationStatus, updateReservationDetails } from '../../../actions/reservation';
+import { updateReservationStatus, updateReservationDetails, updateReservationPassengersAction } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
   ChevronRight, Calendar, MessageSquare, CheckCircle2, 
@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
-type ReservationWithTour = Reservation & { tour: Tour | null };
+type ReservationPassenger = { id?: string; name: string; docType: string; docNumber: string };
+type ReservationWithTour = Reservation & { tour: Tour | null; passengers?: ReservationPassenger[] };
 
 type Passenger = {
   name: string;
@@ -64,8 +65,16 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   // Estado editable para pasajeros
   const [isEditingPax, setIsEditingPax] = useState(false);
 
-  // Extraer lista nominativa de pasajeros de specialRequirements
-  const parsePassengerList = (requirements: string | null): Passenger[] => {
+  // Extraer lista nominativa de pasajeros (de la relación BD o fallback)
+  const parsePassengerList = (res: ReservationWithTour): Passenger[] => {
+    if (res.passengers && res.passengers.length > 0) {
+      return res.passengers.map(p => ({
+        name: p.name,
+        docType: p.docType || 'DNI',
+        docNumber: p.docNumber || ''
+      }));
+    }
+    const requirements = res.specialRequirements;
     if (!requirements) return [];
     const match = requirements.match(/\[Pasajeros:\s*(.*?)\]/);
     if (!match || !match[1]) return [];
@@ -84,7 +93,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     });
   };
 
-  const [passengerList, setPassengerList] = useState<Passenger[]>(() => parsePassengerList(initialReserva.specialRequirements));
+  const [passengerList, setPassengerList] = useState<Passenger[]>(() => parsePassengerList(initialReserva));
   
   const [isPending, startTransition] = useTransition();
   const [emailNotification, setEmailNotification] = useState<string | null>(null);
@@ -98,22 +107,21 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     titularData.phone !== reserva.customerPhone ||
     titularData.hotel !== (reserva.pickupHotel || '');
 
-  const hasUnsavedChanges = isStatusChanged || isTitularChanged || isEditingPax;
+  const isPaxChanged = JSON.stringify(passengerList) !== JSON.stringify(parsePassengerList(reserva));
+
+  const hasUnsavedChanges = isStatusChanged || isTitularChanged || isPaxChanged;
 
   const handleSaveChanges = () => {
     startTransition(async () => {
-      // Reconstruir specialRequirements con lista nominativa
       let cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements) || '';
-      if (passengerList.length > 0) {
-        const paxSummary = passengerList.map((p, idx) => 
-          `Pax ${idx + 1}: ${p.name} (${p.docType}: ${p.docNumber || 'N/A'})`
-        ).join(' | ');
-        cleanNotes = cleanNotes ? `${cleanNotes} [Pasajeros: ${paxSummary}]` : `[Pasajeros: ${paxSummary}]`;
-      }
 
       // Guardar estado y datos en BD
       if (isStatusChanged) {
         await updateReservationStatus(reserva.id, selectedStatus);
+      }
+
+      if (isPaxChanged) {
+        await updateReservationPassengersAction(reserva.id, passengerList);
       }
 
       const resDetails = await updateReservationDetails(reserva.id, {
@@ -135,10 +143,11 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
           customerPhone: titularData.phone,
           pickupHotel: titularData.hotel,
           specialRequirements: cleanNotes,
+          passengers: passengerList,
         }));
         setIsEditingTitular(false);
         setIsEditingPax(false);
-        setEmailNotification('Reserva y datos actualizados correctamente.');
+        setEmailNotification('Reserva y pasajeros actualizados correctamente.');
         setTimeout(() => setEmailNotification(null), 4000);
       }
     });
@@ -153,7 +162,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
       phone: reserva.customerPhone,
       hotel: reserva.pickupHotel || '',
     });
-    setPassengerList(parsePassengerList(reserva.specialRequirements));
+    setPassengerList(parsePassengerList(reserva));
     setIsEditingTitular(false);
     setIsEditingPax(false);
   };
