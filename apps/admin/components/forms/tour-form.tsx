@@ -631,8 +631,8 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
         <div className="lg:col-span-1 space-y-5">
           
           {/* Card 1: Estado del Producto */}
+          <input type="hidden" name="status" value={status} />
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
-            <input type="hidden" name="status" value={status} />
             <Label className="text-xs font-semibold text-slate-700">Estado</Label>
             <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
@@ -646,21 +646,19 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
           </div>
 
           {/* Card 2: Sección recomendados (Home) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4">
-            <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-700">Sección recomendados (Home)</Label>
-              <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
-                <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                  <SelectValue placeholder={isFeatured === 'Active' ? 'Activo' : 'Desactivado'} />
-                </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                  <SelectItem value="Active">Activo</SelectItem>
-                  <SelectItem value="Draft">Desactivado</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-slate-400">Desactivado por defecto. Máximo 6 tours destacados en el Home.</p>
-            </div>
+          <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+            <Label className="text-xs font-semibold text-slate-700">Sección recomendados (Home)</Label>
+            <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
+              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                <SelectValue placeholder={isFeatured === 'Active' ? 'Activo' : 'Desactivado'} />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                <SelectItem value="Active">Activo</SelectItem>
+                <SelectItem value="Draft">Desactivado</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-slate-400">Desactivado por defecto. Máximo 6 tours destacados en el Home.</p>
           </div>
 
           {/* Card 3: Destino (Filtro Catálogo) */}
