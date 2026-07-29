@@ -917,71 +917,71 @@ export function CheckoutForm() {
 
       </div>
 
-      {/* MODAL INTERACTIVO DE EDITAR RESERVA CON ANIMACIÓN DE ENTRADA Y RADIUS NORMALIZADO */}
+      {/* MODAL INTERACTIVO DE EDITAR RESERVA - DISEÑO ULTRA CLEAN & PREMIUM */}
       {isEditModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-all duration-300 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsEditModalOpen(false);
           }}
         >
-          <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 ease-out">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-[420px] w-full shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
             
             {/* Header Modal */}
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-xl font-bold text-gray-900 font-heading">Editar reserva</h3>
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
               <button 
                 type="button"
                 onClick={() => setIsEditModalOpen(false)} 
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={15} />
               </button>
             </div>
 
-            {/* 1. Tipo de Servicio (MOSTRAR SOLO SI EXISTE OPCIÓN DE SERVICIO PRIVADO) */}
+            {/* 1. Tipo de Servicio (TABS SEGMENTADAS ULTRA CLEAN) */}
             {hasPrivateService && (
               <div>
-                <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Tipo de Servicio
                 </label>
-                <div className="grid grid-cols-2 gap-2.5 p-1 bg-gray-100/80 rounded-xl border border-gray-200/60">
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100/90 rounded-xl border border-gray-200/50">
                   <button
                     type="button"
                     onClick={() => setModalServiceType('shared')}
-                    className={`py-2.5 px-3 rounded-lg text-center transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       modalServiceType === 'shared'
-                        ? 'bg-[#062918] text-white font-bold shadow-2xs'
-                        : 'text-gray-600 hover:text-gray-900 font-semibold'
+                        ? 'bg-white text-gray-900 font-bold shadow-2xs border border-gray-200/80'
+                        : 'text-gray-500 hover:text-gray-800 font-semibold'
                     }`}
                   >
-                    <div className="text-sm">Compartido</div>
-                    <div className={`text-xs ${modalServiceType === 'shared' ? 'text-emerald-200' : 'text-gray-400'}`}>
-                      (US$ {parseFloat(price).toFixed(2)})
-                    </div>
+                    <span className="text-xs">Compartido</span>
+                    <span className="text-[11px] font-bold text-[#062918]">
+                      (${parseFloat(price).toFixed(0)})
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setModalServiceType('private')}
-                    className={`py-3 px-4 rounded-lg text-center transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       modalServiceType === 'private'
-                        ? 'bg-[#062918] text-white font-bold shadow-2xs'
-                        : 'text-gray-600 hover:text-gray-900 font-semibold'
+                        ? 'bg-white text-gray-900 font-bold shadow-2xs border border-gray-200/80'
+                        : 'text-gray-500 hover:text-gray-800 font-semibold'
                     }`}
                   >
-                    <div className="text-sm">Privado</div>
-                    <div className={`text-xs ${modalServiceType === 'private' ? 'text-emerald-200' : 'text-gray-400'}`}>
-                      (US$ {parseFloat(privatePriceStr || price).toFixed(2)})
-                    </div>
+                    <span className="text-xs">Privado</span>
+                    <span className="text-[11px] font-bold text-[#062918]">
+                      (${parseFloat(privatePriceStr || price).toFixed(0)})
+                    </span>
                   </button>
                 </div>
               </div>
             )}
 
-            {/* 2. Fecha del Tour (CON CALENDARIO Y RANGO DE DÍAS DESTACADO) */}
+            {/* 2. Fecha del Tour (CON CALENDARIO COMPACTO Y DÍA 2 DESTACADO) */}
             <div>
-              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Fecha del Tour
               </label>
               <CalendarUI 
@@ -991,51 +991,54 @@ export function CheckoutForm() {
               />
             </div>
 
-            {/* 3. Pasajeros (100% DE ANCHO, RADIUS PATRÓN) */}
+            {/* 3. Pasajeros (FILA INLINE ULTRA SLIM) */}
             <div>
-              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Pasajeros
               </label>
-              <div className="flex items-center justify-between border border-gray-200/90 rounded-xl p-2 bg-white w-full shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setModalPax(Math.max(1, modalPax - 1))}
-                  className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-[#062918] flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <Minus size={16} className="stroke-[3]" />
-                </button>
-
-                <span className="text-sm font-bold text-gray-900">
-                  {modalPax} {modalPax === 1 ? 'Pasajero' : 'Pasajeros'}
+              <div className="flex items-center justify-between border border-gray-200/80 rounded-xl px-3 py-2 bg-gray-50/50 w-full">
+                <span className="text-xs font-bold text-gray-800">
+                  {modalPax} {modalPax === 1 ? 'Viajero' : 'Viajeros'}
                 </span>
 
-                <button
-                  type="button"
-                  onClick={() => setModalPax(modalPax + 1)}
-                  className="w-9 h-9 rounded-lg bg-[#062918] hover:bg-[#0a4026] text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <Plus size={16} className="stroke-[3]" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={modalPax <= 1}
+                    onClick={() => setModalPax(Math.max(1, modalPax - 1))}
+                    className="w-7 h-7 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center justify-center shadow-2xs transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Minus size={14} className="stroke-[2.5]" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModalPax(modalPax + 1)}
+                    className="w-7 h-7 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center justify-center shadow-2xs transition-all cursor-pointer"
+                  >
+                    <Plus size={14} className="stroke-[2.5]" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Acciones Modal */}
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+            <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="py-2.5 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="py-2.5 px-4 border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <X size={16} />
+                <X size={14} />
                 <span>Cancelar</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleUpdateReservation}
-                className="py-2.5 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+                className="py-2.5 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={14} />
                 <span>Actualizar</span>
               </button>
             </div>

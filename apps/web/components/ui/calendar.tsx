@@ -55,31 +55,31 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
   };
 
   return (
-    <div className="p-3 sm:p-4 bg-white border border-gray-200 rounded-xl w-full select-none shadow-2xs">
-      {/* Header Mes (Limpio como el Single Tour) */}
-      <div className="flex justify-between items-center mb-3">
-        <button onClick={handlePrevMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 cursor-pointer">
-          <ChevronLeft size={18} />
+    <div className="p-3 bg-white border border-gray-200/80 rounded-xl w-full select-none shadow-2xs">
+      {/* Header Mes */}
+      <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
+        <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-500 cursor-pointer">
+          <ChevronLeft size={16} />
         </button>
-        <h2 className="font-bold text-xs sm:text-sm text-gray-900 capitalize">
+        <h2 className="font-bold text-xs text-gray-800 capitalize tracking-tight">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h2>
-        <button onClick={handleNextMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 cursor-pointer">
-          <ChevronRight size={18} />
+        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-500 cursor-pointer">
+          <ChevronRight size={16} />
         </button>
       </div>
       
       {/* Cabecera Días */}
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 text-center">
+      <div className="grid grid-cols-7 gap-1 mb-1 text-center">
         {days.map(day => (
-          <div key={day} className="text-[10px] sm:text-xs font-bold text-gray-400 py-0.5">
+          <div key={day} className="text-[10px] font-bold text-gray-400 py-0.5">
             {day}
           </div>
         ))}
       </div>
       
       {/* Grilla Días del Mes */}
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+      <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: firstDayOfMonth }).map((_, i) => (
           <div key={`empty-${i}`} />
         ))}
@@ -95,13 +95,13 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
               key={day}
               disabled={isPast}
               onClick={(e) => handleDateClick(day, e)}
-              className={`h-8 sm:h-9 w-full rounded-lg flex items-center justify-center text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              className={`h-7 sm:h-8 w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer ${
                 isPast
                   ? 'text-gray-300 cursor-not-allowed'
                   : isStart 
                     ? 'bg-[#062918] text-white font-bold shadow-2xs' 
                     : inRange
-                      ? 'bg-[#062918]/15 text-[#062918] border border-[#062918]/30 font-bold'
+                      ? 'bg-[#062918]/12 text-[#062918] border border-[#062918]/25 font-bold'
                       : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -112,17 +112,19 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
       </div>
 
       {/* Leyenda en la parte inferior */}
-      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-3 mt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2 mt-2 border-t border-gray-100">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gray-200"></span>
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
           <span>Disponible</span>
         </div>
+        {durationDays > 1 && (
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#062918]/20 border border-[#062918]/40"></span>
+            <span>Día 2 (Multidía)</span>
+          </div>
+        )}
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#062918]/20 border border-[#062918]/40"></span>
-          <span>Rango tour</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#062918]"></span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#062918]"></span>
           <span>Seleccionado</span>
         </div>
       </div>
