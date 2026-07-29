@@ -764,24 +764,24 @@ export function CheckoutForm() {
           )}
 
           {/* ========================================================================= */}
-          {/* PASO 3: PASARELA DE PAGO IZIPAY EN 2 COLUMNAS (RESUMEN EN COL 1 + PAGO EN COL 2) */}
+          {/* PASO 3: PASARELA DE PAGO IZIPAY EN 2 COLUMNAS (RESUMEN DE RESERVAS + PAGO) */}
           {/* ========================================================================= */}
           {currentStep === 3 && (
             <div className="space-y-6">
               
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                {/* COLUMNA 1: RESUMEN DE RESERVAS (DISEÑO IDÉNTICO AL PLUGIN) */}
-                <div className="lg:col-span-6 border border-gray-200 rounded-2xl p-6 bg-white shadow-2xs space-y-5">
+                {/* COLUMNA 1: RESUMEN DE RESERVAS (ESTILO LIMPIO 100% IDÉNTICO AL PLUGIN) */}
+                <div className="lg:col-span-6 border border-gray-200/90 rounded-2xl p-6 bg-white shadow-2xs space-y-5">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                     Resumen de reservas
                   </h3>
 
-                  {/* ITEM DE TOUR */}
-                  <div className="flex items-start gap-3.5 p-4 rounded-xl bg-gray-50/80 border border-gray-100">
+                  {/* ITEM DE TOUR (SIN DOBLE MARCO DE CARD INTERNA) */}
+                  <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-[#f8fafc]">
                     
                     {/* Monograma de Tour o Imagen Fallback */}
-                    <div className="w-14 h-14 rounded-xl bg-gray-200/80 shrink-0 flex items-center justify-center font-black text-gray-500 text-sm overflow-hidden relative border border-gray-200/50">
+                    <div className="w-14 h-14 rounded-xl bg-gray-200/80 shrink-0 flex items-center justify-center font-black text-gray-500 text-sm overflow-hidden relative">
                       {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
                         <Image src={tourImage} alt={tourTitle} fill className="object-cover" unoptimized />
                       ) : (
@@ -799,11 +799,11 @@ export function CheckoutForm() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500 pt-1">
-                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <div className="flex justify-between border-b border-gray-100/80 pb-1">
                           <span>Fecha inicio</span>
                           <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
                         </div>
-                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <div className="flex justify-between border-b border-gray-100/80 pb-1">
                           <span>Fecha fin</span>
                           <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
                         </div>
@@ -822,7 +822,7 @@ export function CheckoutForm() {
 
                   </div>
 
-                  {/* SUBTOTAL & TOTAL LINEAS PUNTEADAS */}
+                  {/* SUBTOTAL & TOTAL EN VERDE INCA BOUND */}
                   <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between text-xs sm:text-sm">
                     <span className="text-gray-600 font-medium">Subtotal</span>
                     <span className="font-bold text-gray-900">US$ {parseFloat(total).toFixed(2)}</span>
@@ -830,7 +830,7 @@ export function CheckoutForm() {
 
                   <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <span className="font-bold text-gray-900 text-sm sm:text-base">Total a pagar</span>
-                    <span className="font-black text-lg sm:text-xl text-rose-500">
+                    <span className="font-black text-lg sm:text-xl text-[#062918]">
                       US$ {parseFloat(total).toFixed(2)}
                     </span>
                   </div>
@@ -841,7 +841,7 @@ export function CheckoutForm() {
                 <div className="lg:col-span-6 space-y-4">
                   
                   <div className="space-y-1 text-center lg:text-left">
-                    <div className="flex items-center justify-center lg:justify-start gap-2 text-emerald-700 font-bold text-sm">
+                    <div className="flex items-center justify-center lg:justify-start gap-2 text-[#062918] font-bold text-sm">
                       <ShieldCheck size={18} />
                       <span>Pago 100% Seguro con Izipay</span>
                     </div>
@@ -862,19 +862,20 @@ export function CheckoutForm() {
                     </div>
                   </div>
 
-                  <div className="pt-2 text-center lg:text-left">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <ArrowLeft size={14} />
-                      Regresar a modificar datos de pasajeros
-                    </button>
-                  </div>
-
                 </div>
 
+              </div>
+
+              {/* ENLACE REGRESAR AL PASO 2 AL PIE DEL CONTENEDOR PRINCIPAL CON LÍNEA SEPARADORA */}
+              <div className="pt-6 mt-8 border-t border-gray-200/80 text-center">
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentStep(2)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] hover:text-[#062918] transition-colors cursor-pointer"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Regresar a modificar datos de pasajeros</span>
+                </button>
               </div>
 
             </div>
