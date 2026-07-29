@@ -917,19 +917,19 @@ export function CheckoutForm() {
 
       </div>
 
-      {/* MODAL INTERACTIVO DE EDITAR RESERVA - DISEÑO ULTRA CLEAN & PREMIUM */}
+      {/* MODAL INTERACTIVO DE EDITAR RESERVA - DISEÑO RESPONSIVE Y BOTONES EN GRIS */}
       {isEditModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsEditModalOpen(false);
           }}
         >
-          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-[420px] w-full shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-[420px] w-[95vw] shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
             
             {/* Header Modal */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
+              <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
               <button 
                 type="button"
                 onClick={() => setIsEditModalOpen(false)} 
@@ -939,7 +939,7 @@ export function CheckoutForm() {
               </button>
             </div>
 
-            {/* 1. Tipo de Servicio (TABS SEGMENTADAS ULTRA CLEAN) */}
+            {/* 1. Tipo de Servicio (TABS SEGMENTADAS) */}
             {hasPrivateService && (
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -979,7 +979,7 @@ export function CheckoutForm() {
               </div>
             )}
 
-            {/* 2. Fecha del Tour (CON CALENDARIO COMPACTO Y DÍA 2 DESTACADO) */}
+            {/* 2. Fecha del Tour (CALENDARIO RESPONSIVE Y DÍA 2 DESTACADO) */}
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Fecha del Tour
@@ -991,34 +991,32 @@ export function CheckoutForm() {
               />
             </div>
 
-            {/* 3. Pasajeros (FILA INLINE ULTRA SLIM) */}
+            {/* 3. Pasajeros (SELECTOR CON BOTONES EN GRIS IDÉNTICOS A LA REFERENCIA) */}
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Pasajeros
               </label>
-              <div className="flex items-center justify-between border border-gray-200/80 rounded-xl px-3 py-2 bg-gray-50/50 w-full">
-                <span className="text-xs font-bold text-gray-800">
-                  {modalPax} {modalPax === 1 ? 'Viajero' : 'Viajeros'}
+              <div className="flex items-center justify-between border border-gray-200/90 rounded-xl p-1.5 bg-white w-full shadow-2xs">
+                <button
+                  type="button"
+                  disabled={modalPax <= 1}
+                  onClick={() => setModalPax(Math.max(1, modalPax - 1))}
+                  className="w-9 h-9 rounded-lg bg-gray-100/90 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center transition-colors disabled:opacity-40 cursor-pointer shrink-0"
+                >
+                  <Minus size={16} className="stroke-[2.5]" />
+                </button>
+
+                <span className="text-xs sm:text-sm font-bold text-gray-900 text-center px-2">
+                  {modalPax} {modalPax === 1 ? 'Pasajero' : 'Pasajeros'}
                 </span>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={modalPax <= 1}
-                    onClick={() => setModalPax(Math.max(1, modalPax - 1))}
-                    className="w-7 h-7 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center justify-center shadow-2xs transition-all disabled:opacity-30 cursor-pointer"
-                  >
-                    <Minus size={14} className="stroke-[2.5]" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setModalPax(modalPax + 1)}
-                    className="w-7 h-7 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center justify-center shadow-2xs transition-all cursor-pointer"
-                  >
-                    <Plus size={14} className="stroke-[2.5]" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalPax(modalPax + 1)}
+                  className="w-9 h-9 rounded-lg bg-gray-100/90 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  <Plus size={16} className="stroke-[2.5]" />
+                </button>
               </div>
             </div>
 
