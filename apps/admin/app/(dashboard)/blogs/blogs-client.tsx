@@ -242,7 +242,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
 
                         {/* Acciones: Editar */}
                         <td className="px-4 py-3 text-center">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-center gap-1">
                             <Link
                               href={`/blogs/${blog.id}/edit`}
                               className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1"
