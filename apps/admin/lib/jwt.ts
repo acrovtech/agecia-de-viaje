@@ -10,7 +10,16 @@ export interface AdminSessionPayload {
  * Si ADMIN_SESSION_SECRET no existe en las variables de entorno, lanza un error crítico explícito.
  */
 function getJwtSecretKey(): Uint8Array {
-  const secret = process.env.ADMIN_SESSION_SECRET || process.env.JWT_SECRET || 'incabound_admin_jwt_production_secret_key_2026';
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret || secret.trim() === '') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '❌ CRÍTICO EN PRODUCCIÓN: La variable de entorno ADMIN_SESSION_SECRET no está configurada.'
+      );
+    }
+    // En desarrollo local (localhost), usar clave por defecto para evitar caídas
+    return new TextEncoder().encode('incabound_admin_local_dev_secret_key_2026');
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -45,7 +54,10 @@ export async function verifyAdminToken(token: string): Promise<AdminSessionPaylo
       };
     }
     return null;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('ADMIN_SESSION_SECRET')) {
+      throw error;
+    }
     return null;
   }
 }
