@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
   Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
-  AlertTriangle
+  AlertTriangle, ChevronDown
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
@@ -75,7 +75,7 @@ export function CheckoutForm() {
 
   // Estilos UI normalizados (Focus elegante + Border radius redondeado limpio)
   const inputBaseStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
-  const selectCustomStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2214%22%20height%3D%2214%22%20viewBox%3D%220%200%2024%2024%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_10px_center] bg-no-repeat focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
+  const selectCustomStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs appearance-none pr-8 focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all cursor-pointer";
 
   // Copiar datos del titular de contacto al Pasajero 1
   const copyContactToPax1 = (e: React.MouseEvent) => {
@@ -462,23 +462,23 @@ export function CheckoutForm() {
               )}
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (4 CAMPOS DE ANCHO IDÉNTICO) */}
+              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (TÍTULO 1rem Y HEADERS SIN UPPERCASE) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-2">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  <h3 className="text-[1rem] font-bold text-gray-900">
                     1. Información de los pasajeros ({numPax})
                   </h3>
                 </div>
 
                 <div className="space-y-3">
-                  {/* Encabezados de Columna con 4 anchos 100% iguales */}
-                  <div className="hidden sm:grid sm:grid-cols-[48px_repeat(4,1fr)] gap-3 px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    <div>PAS.</div>
-                    <div>NOMBRES *</div>
-                    <div>APELLIDOS *</div>
-                    <div>TIPO DOC *</div>
-                    <div>NRO DOC *</div>
+                  {/* Encabezados de Columna (Normalizados sin uppercase) */}
+                  <div className="hidden sm:grid sm:grid-cols-[48px_repeat(4,1fr)] gap-3 px-1 text-xs font-semibold text-gray-500">
+                    <div>Pas.</div>
+                    <div>Nombres *</div>
+                    <div>Apellidos *</div>
+                    <div>Tipo doc *</div>
+                    <div>Nro doc *</div>
                   </div>
 
                   {/* Filas de Pasajeros Inline */}
@@ -487,10 +487,10 @@ export function CheckoutForm() {
                       key={idx} 
                       className="grid grid-cols-1 sm:grid-cols-[48px_repeat(4,1fr)] gap-3 items-center p-3.5 sm:p-0 bg-gray-50/50 rounded-lg border border-gray-200/80 sm:bg-transparent sm:border-0"
                     >
-                      {/* Label PAS. X */}
+                      {/* Label Pas. X */}
                       <div className="text-xs font-bold text-gray-600 flex items-center justify-between sm:justify-start">
-                        <span>PAS. {idx + 1}</span>
-                        <span className="sm:hidden text-[10px] text-gray-400 uppercase font-semibold">Pasajero #{idx + 1}</span>
+                        <span>Pas. {idx + 1}</span>
+                        <span className="sm:hidden text-[10px] text-gray-400 font-semibold">Pasajero #{idx + 1}</span>
                       </div>
 
                       {/* Nombres */}
@@ -519,23 +519,26 @@ export function CheckoutForm() {
                         />
                       </div>
 
-                      {/* Tipo Documento (Custom Select) */}
+                      {/* Tipo Documento (Custom Select con Chevron Down Icon) */}
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo Doc *</label>
-                        <select
-                          value={paxItem.documentType}
-                          onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
-                          className={selectCustomStyle}
-                        >
-                          <option value="DNI">DNI</option>
-                          <option value="Pasaporte">Pasaporte</option>
-                          <option value="Carnet Extranjería">Carnet Extranjería</option>
-                        </select>
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo doc *</label>
+                        <div className="relative">
+                          <select
+                            value={paxItem.documentType}
+                            onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
+                            className={selectCustomStyle}
+                          >
+                            <option value="DNI">DNI</option>
+                            <option value="Pasaporte">Pasaporte</option>
+                            <option value="Carnet Extranjería">Carnet Extranjería</option>
+                          </select>
+                          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
                       </div>
 
                       {/* Nro Documento */}
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nro Doc *</label>
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nro doc *</label>
                         <input 
                           type="text"
                           required
@@ -552,11 +555,11 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 2: TITULAR DE CONTACTO (4 CAMPOS EN 1 SOLA FILA) */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO (TÍTULO 1rem Y 4 CAMPOS EN 1 SOLA FILA) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  <h3 className="text-[1rem] font-bold text-gray-900">
                     2. Titular de contacto
                   </h3>
                   
@@ -611,7 +614,7 @@ export function CheckoutForm() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Teléfono / WhatsApp *</label>
+                    <label className="block text-gray-700 font-semibold mb-1">Número de teléfono / WhatsApp *</label>
                     <input 
                       type="tel" 
                       required
@@ -625,17 +628,17 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 3: DATOS ADICIONALES (SIN ÍCONOS) */}
+              {/* SECCIÓN 3: DATOS ADICIONALES (TÍTULO 1rem) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="border-b border-gray-200 pb-2">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  <h3 className="text-[1rem] font-bold text-gray-900">
                     3. Datos adicionales
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  {/* Lugar u Hotel de recojo (Sin icono) */}
+                  {/* Lugar u Hotel de recojo */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">
                       Lugar u hotel de recojo
@@ -649,23 +652,26 @@ export function CheckoutForm() {
                     />
                   </div>
 
-                  {/* Idioma del servicio (Sin icono, Custom Select) */}
+                  {/* Idioma del servicio (Custom Select con Chevron Down Icon) */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">
                       Idioma del servicio
                     </label>
-                    <select
-                      value={formData.language}
-                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                      className={selectCustomStyle}
-                    >
-                      <option value="Español">Español</option>
-                      <option value="Inglés">Inglés</option>
-                      <option value="Portugués">Portugués</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.language}
+                        onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                        className={selectCustomStyle}
+                      >
+                        <option value="Español">Español</option>
+                        <option value="Inglés">Inglés</option>
+                        <option value="Portugués">Portugués</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
-                  {/* Requerimientos especiales (Sin icono) */}
+                  {/* Requerimientos especiales */}
                   <div className="sm:col-span-2">
                     <label className="block text-gray-700 font-semibold mb-1">
                       Requerimientos especiales (Opcional)
@@ -681,7 +687,7 @@ export function CheckoutForm() {
                 </div>
               </div>
 
-              {/* TÉRMINOS Y CONDICIONES (CLEAN TEXT INLINE SIN CARD NI CAJA) */}
+              {/* TÉRMINOS Y CONDICIONES (CLEAN TEXT INLINE) */}
               <div className="flex items-start gap-2.5 text-xs text-gray-600 pt-2">
                 <input 
                   type="checkbox"
