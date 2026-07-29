@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   return (
     <TitleProvider>
       <InactivityTimer />
-      <div className="flex flex-col h-screen w-full overflow-hidden bg-[#EBEBEB] font-sans">
+      <div className="flex flex-col h-full min-h-[100dvh] w-full overflow-hidden bg-[#EBEBEB] font-sans">
         
         {/* TOPBAR NEGRO SHOPIFY ADMIN (#0a0a0a) */}
         <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between bg-[#0a0a0a] text-white px-4 shrink-0 shadow-sm text-xs select-none">
