@@ -65,15 +65,6 @@ export function CheckoutForm() {
   const formattedEndDate = formattedStartDate;
   const formattedEndDateShort = formattedStartDateShort;
 
-  // Monograma de tour (ej: MP para Machu Picchu)
-  const tourInitials = tourTitle
-    .split(' ')
-    .filter(Boolean)
-    .map(w => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'IB';
-
   // Control del Stepper (Paso 1: Reserva | Paso 2: Pasajeros | Paso 3: Pago)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [termsAccepted, setTermsAccepted] = useState(true);
@@ -642,7 +633,7 @@ export function CheckoutForm() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Número de teléfono / WhatsApp *</label>
+                    <label className="block text-[#1a1a1a] font-semibold mb-1">Número de teléfono / WhatsApp *</label>
                     <input 
                       type="tel" 
                       required
@@ -771,59 +762,45 @@ export function CheckoutForm() {
               
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                {/* COLUMNA 1: RESUMEN DE RESERVAS (ESTILO LIMPIO 100% IDÉNTICO AL PLUGIN) */}
-                <div className="lg:col-span-6 border border-gray-200/90 rounded-2xl p-6 bg-white shadow-2xs space-y-5">
+                {/* COLUMNA 1: RESUMEN DE RESERVAS (SOLO TEXTO, SIN IMAGEN, CON BORDER TOP Y BOTTOM) */}
+                <div className="lg:col-span-6 border border-gray-200/90 rounded-2xl p-6 bg-white shadow-2xs space-y-4">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                     Resumen de reservas
                   </h3>
 
-                  {/* ITEM DE TOUR (SIN DOBLE MARCO DE CARD INTERNA) */}
-                  <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-[#f8fafc]">
-                    
-                    {/* Monograma de Tour o Imagen Fallback */}
-                    <div className="w-14 h-14 rounded-xl bg-gray-200/80 shrink-0 flex items-center justify-center font-black text-gray-500 text-sm overflow-hidden relative">
-                      {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
-                        <Image src={tourImage} alt={tourTitle} fill className="object-cover" unoptimized />
-                      ) : (
-                        <span className="tracking-wider">{tourInitials}</span>
-                      )}
+                  {/* ITEM DE TOUR (SOLO TEXTO, FONDO BLANCO, BORDER TOP Y BOTTOM) */}
+                  <div className="py-4 border-y border-gray-200/80 bg-white space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-bold text-gray-900 text-sm leading-snug">{tourTitle}</h4>
+                      <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
+                        US$ {parseFloat(total).toFixed(2)}
+                      </span>
                     </div>
 
-                    {/* Detalles del Tour */}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2">{tourTitle}</h4>
-                        <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
-                          US$ {parseFloat(total).toFixed(2)}
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 pt-1">
+                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <span>Fecha inicio</span>
+                        <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <span>Fecha fin</span>
+                        <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
+                      </div>
+                      <div className="flex justify-between pt-0.5">
+                        <span>Pasajeros</span>
+                        <span className="font-semibold text-gray-800">{numPax}</span>
+                      </div>
+                      <div className="flex justify-between pt-0.5">
+                        <span>Servicio</span>
+                        <span className="font-semibold text-gray-800 capitalize">
+                          {serviceType === 'shared' ? 'Compartido' : 'Privado'}
                         </span>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500 pt-1">
-                        <div className="flex justify-between border-b border-gray-100/80 pb-1">
-                          <span>Fecha inicio</span>
-                          <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-100/80 pb-1">
-                          <span>Fecha fin</span>
-                          <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
-                        </div>
-                        <div className="flex justify-between pt-0.5">
-                          <span>Pasajeros</span>
-                          <span className="font-semibold text-gray-800">{numPax}</span>
-                        </div>
-                        <div className="flex justify-between pt-0.5">
-                          <span>Servicio</span>
-                          <span className="font-semibold text-gray-800 capitalize">
-                            {serviceType === 'shared' ? 'Compartido' : 'Privado'}
-                          </span>
-                        </div>
-                      </div>
                     </div>
-
                   </div>
 
                   {/* SUBTOTAL & TOTAL EN VERDE INCA BOUND */}
-                  <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between text-xs sm:text-sm">
+                  <div className="pt-2 flex items-center justify-between text-xs sm:text-sm">
                     <span className="text-gray-600 font-medium">Subtotal</span>
                     <span className="font-bold text-gray-900">US$ {parseFloat(total).toFixed(2)}</span>
                   </div>
