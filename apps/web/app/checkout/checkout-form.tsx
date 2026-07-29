@@ -174,7 +174,7 @@ export function CheckoutForm() {
         setReservationId(result.reservationId);
         setCurrentStep(3);
       } else {
-        setStep2Error("Ocurrió un error al registrar tu reserva. Intenta de nuevo.");
+        setStep2Error(result.error || "Ocurrió un error al registrar tu reserva. Intenta de nuevo.");
       }
     } catch (error) {
       console.error(error);
