@@ -48,51 +48,9 @@ export function CheckoutForm() {
 
   const numPax = Math.max(1, parseInt(pax) || 1);
 
-  // Calcular si existe servicio privado y la duración del tour (días)
-  const hasPrivateService = Boolean(privatePriceStr && parseFloat(privatePriceStr) > 0) || (serviceType === 'private');
-  
-  let durationDays = 1;
-  if (durationStr) {
-    const match = durationStr.match(/(\d+)\s*d[íi]as?/i);
-    if (match && match[1]) {
-      durationDays = Math.max(1, parseInt(match[1], 10) || 1);
-    }
-  } else if (tourTitle.toLowerCase().includes('2 días') || tourTitle.toLowerCase().includes('2d')) {
-    durationDays = 2;
-  }
+  const { cartItems, remainingMinutes, updateCart, removeItemBySlug, removeItem } = useCartManager();
 
-  // Estado del Modal de Edición de Tour
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [modalDate, setModalDate] = useState<Date | null>(dateStr ? new Date(dateStr) : new Date());
-  const [modalPax, setModalPax] = useState<number>(numPax);
-  const [modalServiceType, setModalServiceType] = useState<'shared' | 'private'>(serviceType === 'private' ? 'private' : 'shared');
-
-  useEffect(() => {
-    if (dateStr) setModalDate(new Date(dateStr));
-    setModalPax(numPax);
-    setModalServiceType(serviceType === 'private' ? 'private' : 'shared');
-  }, [dateStr, numPax, serviceType]);
-
-  const handleUpdateReservation = () => {
-    if (!modalDate) return;
-    const newPricePerPax = modalServiceType === 'private' && privatePriceStr ? (parseFloat(privatePriceStr) || parseFloat(price)) : parseFloat(price);
-    const newTotal = newPricePerPax * modalPax;
-    const newDateStr = modalDate.toISOString();
-
-    const query = new URLSearchParams(searchParams.toString());
-    query.set('date', newDateStr);
-    query.set('pax', modalPax.toString());
-    query.set('type', modalServiceType);
-    query.set('price', newPricePerPax.toString());
-    query.set('total', newTotal.toString());
-
-    router.replace(`/checkout?${query.toString()}`);
-    setIsEditModalOpen(false);
-  };
-
-  const { remainingMinutes, updateCart } = useCartManager();
-
-  // Sincronizar item con el carrito global en localStorage con timestamp real
+  // Sincronizar item de la URL con el carrito global en localStorage
   useEffect(() => {
     if (tourTitle && tourSlug) {
       updateCart({
@@ -107,6 +65,55 @@ export function CheckoutForm() {
       });
     }
   }, [tourTitle, tourSlug, tourImage, dateStr, numPax, serviceType, price, total, updateCart]);
+
+  // Lista de tours activos (Soporta multi-tour)
+  const activeItems = cartItems.length > 0 ? cartItems : (tourSlug ? [{
+    tourSlug,
+    tourTitle,
+    image: tourImage,
+    date: dateStr,
+    pax: numPax,
+    serviceType,
+    price: parseFloat(price) || 0,
+    totalPrice: parseFloat(total) || (numPax * (parseFloat(price) || 0)),
+    createdAt: Date.now()
+  }] : []);
+
+  const grandTotal = activeItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+
+  // Estado del Modal de Edición de Tour
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTour, setEditingTour] = useState<typeof activeItems[0] | null>(null);
+  const [modalDate, setModalDate] = useState<Date | null>(new Date());
+  const [modalPax, setModalPax] = useState<number>(1);
+  const [modalServiceType, setModalServiceType] = useState<'shared' | 'private'>('shared');
+
+  const openEditModal = (tourItem: typeof activeItems[0]) => {
+    setEditingTour(tourItem);
+    setModalDate(tourItem.date ? new Date(tourItem.date) : new Date());
+    setModalPax(tourItem.pax);
+    setModalServiceType(tourItem.serviceType === 'private' ? 'private' : 'shared');
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateReservation = () => {
+    if (!modalDate || !editingTour) return;
+    const itemPrice = editingTour.price || parseFloat(price) || 0;
+    const newPricePerPax = modalServiceType === 'private' && privatePriceStr ? (parseFloat(privatePriceStr) || itemPrice) : itemPrice;
+    const newTotal = newPricePerPax * modalPax;
+    const newDateStr = modalDate.toISOString();
+
+    updateCart({
+      ...editingTour,
+      date: newDateStr,
+      pax: modalPax,
+      serviceType: modalServiceType,
+      price: newPricePerPax,
+      totalPrice: newTotal,
+    });
+
+    setIsEditModalOpen(false);
+  };
 
   // Formato de fechas en español unificado (DRY)
   const formattedStartDate = formatSpanishDate(dateStr, 'long');
@@ -358,7 +365,7 @@ export function CheckoutForm() {
         <div className="p-6 sm:p-8 bg-white">
           
           {/* ========================================================================= */}
-          {/* PASO 1: RESUMEN DE RESERVA DE TOUR */}
+          {/* PASO 1: RESUMEN DE RESERVAS DE TOUR (MULTI-TOUR) */}
           {/* ========================================================================= */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -368,136 +375,175 @@ export function CheckoutForm() {
                 <Info size={16} className="shrink-0 text-[#062918]" />
                 <span>
                   {remainingMinutes > 0
-                    ? `Puedes seguir agregando tours al carrito, este tour permanecerá disponible durante los próximos ${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}.`
-                    : 'El tiempo de reserva de tu carrito ha expirado. Por favor selecciona tu tour nuevamente.'}
+                    ? `Puedes seguir agregando tours al carrito, tus expediciones permanecerán reservadas durante los próximos ${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}.`
+                    : 'El tiempo de reserva de tu carrito ha expirado. Por favor selecciona tus tours nuevamente.'}
                 </span>
               </div>
 
-              {/* CARD DE RESERVA EN 2 COLUMNAS */}
-              <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12 relative">
-                
-                {/* Botón de eliminar X (Posicionado en la esquina superior derecha siempre) */}
-                <button 
-                  type="button"
-                  onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
-                  className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-gray-900 border border-gray-200/60 shadow-2xs transition-all cursor-pointer"
-                  title="Eliminar o cambiar tour"
-                >
-                  <X size={16} />
-                </button>
+              {/* LISTA DE TOURS EN EL CARRITO DE RESERVAS */}
+              {activeItems.length === 0 ? (
+                <div className="text-center py-12 px-4 border border-dashed border-gray-300 rounded-2xl space-y-4">
+                  <Compass size={48} className="mx-auto text-gray-300" />
+                  <h3 className="text-base font-bold text-gray-800">Tu carrito de reservas está vacío</h3>
+                  <p className="text-xs text-gray-500 max-w-sm mx-auto">Selecciona tus experiencias favoritas para proceder a la reserva y pago seguro.</p>
+                  <Link 
+                    href="/tours" 
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#062918] text-white rounded-xl text-xs font-bold hover:bg-[#0a4026] transition-colors"
+                  >
+                    <span>Explorar expediciones</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {activeItems.map((item, idx) => {
+                    const itemStartDate = formatSpanishDate(item.date, 'long');
+                    const itemEndDate = formatSpanishDate(item.date, 'long');
 
-                {/* Columna Izquierda: Imagen del Tour o Fallback Gris Claro */}
-                <div className="md:col-span-4 min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
-                  {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
-                    <Image src={tourImage} alt={tourTitle} fill className="object-cover" priority unoptimized={true} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center">
-                      <Compass size={44} className="mb-2 text-slate-400" />
-                      <span className="text-[11px] font-bold tracking-widest uppercase text-slate-600">INCA BOUND OPERATOR</span>
+                    return (
+                      <div key={item.tourSlug || idx} className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12 relative">
+                        
+                        {/* Botón de eliminar X */}
+                        <button 
+                          type="button"
+                          onClick={() => removeItemBySlug(item.tourSlug)}
+                          className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-white/90 hover:bg-white text-gray-400 hover:text-red-600 border border-gray-200/60 shadow-2xs transition-all cursor-pointer"
+                          title="Eliminar tour del carrito"
+                        >
+                          <X size={16} />
+                        </button>
+
+                        {/* Imagen del Tour */}
+                        <div className="md:col-span-4 min-h-[200px] md:min-h-[250px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
+                          {item.image && item.image !== 'null' && item.image !== 'undefined' ? (
+                            <Image src={item.image} alt={item.tourTitle} fill className="object-cover" priority unoptimized={true} />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center">
+                              <Compass size={40} className="mb-2 text-slate-400" />
+                              <span className="text-[10px] font-bold tracking-widest uppercase text-slate-500">INCA BOUND OPERATOR</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Detalles del Tour */}
+                        <div className="md:col-span-8 p-5 sm:p-6 flex flex-col justify-between space-y-4">
+                          <div>
+                            <div className="pb-2.5 mb-3 border-b border-gray-100 pr-6">
+                              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                {item.tourTitle}
+                              </h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-xs sm:text-sm">
+                              <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <Calendar size={15} className="text-gray-400 shrink-0" />
+                                  <span>Fecha de inicio</span>
+                                </span>
+                                <span className="font-bold text-gray-900 capitalize">{itemStartDate}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <Calendar size={15} className="text-gray-400 shrink-0" />
+                                  <span>Fecha de fin</span>
+                                </span>
+                                <span className="font-bold text-gray-900 capitalize">{itemEndDate}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <Users size={15} className="text-gray-400 shrink-0" />
+                                  <span>Pasajeros</span>
+                                </span>
+                                <span className="font-bold text-gray-900">{item.pax}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <Ticket size={15} className="text-gray-400 shrink-0" />
+                                  <span>Precio por pasajero</span>
+                                </span>
+                                <span className="font-bold text-gray-900">US$ {item.price.toFixed(2)}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <Tag size={15} className="text-gray-400 shrink-0" />
+                                  <span>Tipo de servicio</span>
+                                </span>
+                                <span className="font-bold text-gray-900 capitalize">
+                                  {item.serviceType === 'shared' ? 'Compartido' : 'Privado'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1">
+                                <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                                  <DollarSign size={15} className="text-gray-400 shrink-0" />
+                                  <span>Subtotal tour</span>
+                                </span>
+                                <span className="font-black text-lg text-[#062918]">
+                                  US$ {item.totalPrice.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Acciones por card */}
+                          <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-gray-100">
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep(2)}
+                              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer order-1 sm:order-2"
+                            >
+                              <CheckCircle2 size={16} />
+                              <span>Reservar ahora</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer order-2 sm:order-1"
+                            >
+                              <Edit3 size={15} className="text-gray-500" />
+                              <span>Editar tour</span>
+                            </button>
+                          </div>
+
+                        </div>
+
+                      </div>
+                    );
+                  })}
+
+                  {/* Resumen Total Acumulado si hay múltiples tours */}
+                  {activeItems.length > 1 && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div>
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Resumen Total de Carrito</span>
+                        <span className="text-xl font-black text-[#062918]">{activeItems.length} Expediciones Seleccionadas</span>
+                      </div>
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="text-right">
+                          <span className="text-xs text-gray-500 block">Total a pagar:</span>
+                          <span className="text-2xl font-black text-[#062918]">US$ {grandTotal.toFixed(2)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(2)}
+                          className="py-3 px-6 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <span>Continuar al Pago</span>
+                          <ArrowRight size={16} />
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
-
-                {/* Columna Derecha: Información en 2 Columnas + Separadores de Título y Botones */}
-                <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-4">
-                  
-                  <div>
-                    {/* Título & Botón de eliminar (Con línea separadora inferior pb-3 mb-3 border-b) */}
-                    <div className="pb-3 mb-3 border-b border-gray-100 pr-6">
-                      <h3 className="text-[1.25rem] leading-snug font-bold text-gray-900 tracking-tight">
-                        {tourTitle}
-                      </h3>
-                    </div>
-
-                    {/* Grilla en 2 Columnas idéntica al Plugin */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6 text-xs sm:text-sm">
-                      
-                      {/* Fila 1 */}
-                      <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <Calendar size={15} className="text-gray-400 shrink-0" />
-                          <span>Fecha de inicio</span>
-                        </span>
-                        <span className="font-bold text-gray-900 capitalize">{formattedStartDate}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <Calendar size={15} className="text-gray-400 shrink-0" />
-                          <span>Fecha de fin</span>
-                        </span>
-                        <span className="font-bold text-gray-900 capitalize">{formattedEndDate}</span>
-                      </div>
-
-                      {/* Fila 2 */}
-                      <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <Users size={15} className="text-gray-400 shrink-0" />
-                          <span>Pasajeros</span>
-                        </span>
-                        <span className="font-bold text-gray-900">{numPax}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between border-b border-gray-100/80 pb-2">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <Ticket size={15} className="text-gray-400 shrink-0" />
-                          <span>Precio por pasajero</span>
-                        </span>
-                        <span className="font-bold text-gray-900">US$ {parseFloat(price).toFixed(2)}</span>
-                      </div>
-
-                      {/* Fila 3 */}
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <Tag size={15} className="text-gray-400 shrink-0" />
-                          <span>Tipo de servicio</span>
-                        </span>
-                        <span className="font-bold text-gray-900 capitalize">
-                          {serviceType === 'shared' ? 'Compartido' : 'Privado'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                          <DollarSign size={15} className="text-gray-400 shrink-0" />
-                          <span>Precio total</span>
-                        </span>
-                        <span className="font-black text-lg text-[#062918]">
-                          US$ {parseFloat(total).toFixed(2)}
-                        </span>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* BOTONES DENTRO DE LA CARD (Con línea separadora superior pt-4 mt-3 border-t) */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-3 border-t border-gray-100">
-                    
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="w-full sm:flex-1 py-2.5 px-5 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer order-1 sm:order-2"
-                    >
-                      <CheckCircle2 size={16} />
-                      <span>Reservar ahora</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsEditModalOpen(true)}
-                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer order-2 sm:order-1"
-                    >
-                      <Edit3 size={15} className="text-gray-500" />
-                      <span>Editar tour</span>
-                    </button>
-
-                  </div>
 
                 </div>
+              )}
 
-              </div>
-
-              {/* ENLACE VER MÁS TOURS DENTRO DEL CONTENEDOR DE LA CARD CON LÍNEA SEPARADORA */}
+              {/* ENLACE VER MÁS TOURS */}
               <div className="pt-6 mt-8 border-t border-gray-200/80 text-center">
                 <Link 
                   href="/tours" 
@@ -817,53 +863,62 @@ export function CheckoutForm() {
               
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                {/* COLUMNA 1: RESUMEN DE RESERVAS (SOLO TEXTO, SIN IMAGEN, CON BORDER TOP Y BOTTOM) */}
+                {/* COLUMNA 1: RESUMEN DE RESERVAS (SOLO TEXTO, MULTI-TOUR CON BORDER TOP Y BOTTOM) */}
                 <div className="lg:col-span-6 border border-gray-200/90 rounded-2xl p-6 bg-white shadow-2xs space-y-4">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                     Resumen de reservas
                   </h3>
 
-                  {/* ITEM DE TOUR (SOLO TEXTO, FONDO BLANCO, BORDER TOP Y BOTTOM) */}
-                  <div className="py-4 border-y border-gray-200/80 bg-white space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-bold text-gray-900 text-sm leading-snug">{tourTitle}</h4>
-                      <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
-                        {formatCurrency(total)}
-                      </span>
-                    </div>
+                  {/* ITEMS DE TOUR EN EL CARRITO */}
+                  <div className="space-y-3">
+                    {activeItems.map((item, idx) => {
+                      const itemStartShort = formatSpanishDate(item.date, 'short');
+                      const itemEndShort = formatSpanishDate(item.date, 'short');
 
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 pt-1">
-                      <div className="flex justify-between">
-                        <span>Fecha inicio</span>
-                        <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Fecha fin</span>
-                        <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pasajeros</span>
-                        <span className="font-semibold text-gray-800">{numPax}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Servicio</span>
-                        <span className="font-semibold text-gray-800 capitalize">
-                          {serviceType === 'shared' ? 'Compartido' : 'Privado'}
-                        </span>
-                      </div>
-                    </div>
+                      return (
+                        <div key={item.tourSlug || idx} className="py-4 border-y border-gray-200/80 bg-white space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-bold text-gray-900 text-sm leading-snug">{item.tourTitle}</h4>
+                            <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
+                              {formatCurrency(item.totalPrice)}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 pt-1">
+                            <div className="flex justify-between">
+                              <span>Fecha inicio</span>
+                              <span className="font-semibold text-gray-800">{itemStartShort}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Fecha fin</span>
+                              <span className="font-semibold text-gray-800">{itemEndShort}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Pasajeros</span>
+                              <span className="font-semibold text-gray-800">{item.pax}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Servicio</span>
+                              <span className="font-semibold text-gray-800 capitalize">
+                                {item.serviceType === 'shared' ? 'Compartido' : 'Privado'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* SUBTOTAL & TOTAL EN VERDE INCA BOUND */}
                   <div className="pt-2 flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-gray-600 font-medium">Subtotal</span>
-                    <span className="font-bold text-gray-900">{formatCurrency(total)}</span>
+                    <span className="text-gray-600 font-medium">Subtotal ({activeItems.length} {activeItems.length === 1 ? 'tour' : 'tours'})</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(grandTotal)}</span>
                   </div>
 
                   <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <span className="font-bold text-gray-900 text-sm sm:text-base">Total a pagar</span>
                     <span className="font-black text-lg sm:text-xl text-[#062918]">
-                      {formatCurrency(total)}
+                      {formatCurrency(grandTotal)}
                     </span>
                   </div>
 
@@ -918,29 +973,33 @@ export function CheckoutForm() {
       </div>
 
       {/* MODAL INTERACTIVO DE EDITAR RESERVA - DISEÑO RESPONSIVE Y BOTONES EN GRIS */}
-      {isEditModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsEditModalOpen(false);
-          }}
-        >
-          <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-[420px] w-[95vw] shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
-            
-            {/* Header Modal */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
-              <button 
-                type="button"
-                onClick={() => setIsEditModalOpen(false)} 
-                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-              >
-                <X size={15} />
-              </button>
-            </div>
+      {isEditModalOpen && (() => {
+        const hasPrivateService = Boolean(privatePriceStr && parseFloat(privatePriceStr) > 0) || (editingTour?.serviceType === 'private');
+        const durationDays = (editingTour?.tourTitle || tourTitle).toLowerCase().includes('2 días') || (editingTour?.tourTitle || tourTitle).toLowerCase().includes('2d') ? 2 : 1;
 
-            {/* 1. Tipo de Servicio (TABS SEGMENTADAS) */}
-            {hasPrivateService && (
+        return (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsEditModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-[420px] w-[95vw] shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
+              
+              {/* Header Modal */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)} 
+                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* 1. Tipo de Servicio (TABS SEGMENTADAS) */}
+              {hasPrivateService && (
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Tipo de Servicio
@@ -1043,7 +1102,8 @@ export function CheckoutForm() {
 
           </div>
         </div>
-      )}
+        );
+      })()}
 
     </div>
   );

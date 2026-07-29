@@ -50,42 +50,72 @@ export function parseCartItemFromParams(searchParams: URLSearchParams): CartItem
 }
 
 /**
- * Lee el carrito de localStorage y AUTO-LIMPIA items con más de 60 minutos de antigüedad
+ * Lee la lista completa de tours del carrito (soporta multi-tour) y auto-limpia expirados
  */
-export function getStoredCart(): CartItem | null {
-  if (typeof window === 'undefined') return null;
+export function getStoredCartList(): CartItem[] {
+  if (typeof window === 'undefined') return [];
 
   try {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) return null;
+    if (!raw) return [];
 
-    const item: CartItem = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    const rawItems: CartItem[] = Array.isArray(parsed) ? parsed : [parsed];
 
-    // Si no tiene timestamp createdAt (migración) o pasaron más de 60 min, auto-limpiar
-    if (!item.createdAt || (Date.now() - item.createdAt > CART_EXPIRATION_MS)) {
-      clearCart();
-      return null;
+    // Filtrar items no expirados (menos de 60 min)
+    const validItems = rawItems.filter(item => {
+      return item && item.createdAt && (Date.now() - item.createdAt <= CART_EXPIRATION_MS);
+    });
+
+    if (validItems.length !== rawItems.length) {
+      if (validItems.length === 0) {
+        clearCart();
+      } else {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(validItems));
+        window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+      }
     }
 
-    return item;
+    return validItems;
   } catch {
     clearCart();
-    return null;
+    return [];
   }
 }
 
 /**
- * Guarda o actualiza un item en el carrito agregando createdAt y notificando a la app
+ * Retorna el primer item del carrito (compatibilidad con vistas single)
+ */
+export function getStoredCart(): CartItem | null {
+  const items = getStoredCartList();
+  return items[0] || null;
+}
+
+/**
+ * Guarda o actualiza un item en la lista del carrito (multi-tour)
  */
 export function saveCart(item: CartItem): void {
   if (typeof window === 'undefined') return;
 
   try {
+    const existing = getStoredCartList();
     const itemWithTimestamp: CartItem = {
       ...item,
       createdAt: item.createdAt || Date.now(),
     };
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(itemWithTimestamp));
+
+    // Si ya existe el tour en la lista, actualizarlo; si no, agregarlo
+    const index = existing.findIndex(i => i.tourSlug === item.tourSlug);
+    let updatedList: CartItem[];
+
+    if (index >= 0) {
+      updatedList = [...existing];
+      updatedList[index] = itemWithTimestamp;
+    } else {
+      updatedList = [...existing, itemWithTimestamp];
+    }
+
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
   } catch (err) {
     console.error('Error guardando carrito:', err);
@@ -93,7 +123,28 @@ export function saveCart(item: CartItem): void {
 }
 
 /**
- * Elimina el carrito de localStorage y emite el evento de actualización
+ * Elimina un tour específico del carrito por su tourSlug
+ */
+export function removeCartItemBySlug(slug: string): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const existing = getStoredCartList();
+    const filtered = existing.filter(item => item.tourSlug !== slug);
+
+    if (filtered.length === 0) {
+      clearCart();
+    } else {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+    }
+  } catch (err) {
+    console.error('Error eliminando item del carrito:', err);
+  }
+}
+
+/**
+ * Vacía completamente el carrito de localStorage
  */
 export function clearCart(): void {
   if (typeof window === 'undefined') return;
@@ -109,9 +160,13 @@ export function clearCart(): void {
 /**
  * Calcula los minutos restantes antes de que el carrito expire (0 a 60 minutos)
  */
-export function getCartRemainingMinutes(item: CartItem | null): number {
-  if (!item || !item.createdAt) return 0;
-  const elapsedMs = Date.now() - item.createdAt;
+export function getCartRemainingMinutes(item: CartItem | null | CartItem[]): number {
+  const items = Array.isArray(item) ? item : (item ? [item] : []);
+  if (items.length === 0) return 0;
+
+  // Tomar el timestamp del item más antiguo
+  const oldestTime = Math.min(...items.map(i => i.createdAt || Date.now()));
+  const elapsedMs = Date.now() - oldestTime;
   const remainingMs = CART_EXPIRATION_MS - elapsedMs;
   if (remainingMs <= 0) return 0;
   return Math.ceil(remainingMs / (60 * 1000));

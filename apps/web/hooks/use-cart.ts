@@ -3,22 +3,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   CartItem, 
+  getStoredCartList,
   getStoredCart, 
   saveCart, 
+  removeCartItemBySlug,
   clearCart, 
   getCartRemainingMinutes, 
   CART_UPDATED_EVENT 
 } from '@/lib/cart-utils';
 
 export function useCartManager() {
-  const [cartItem, setCartItem] = useState<CartItem | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [remainingMinutes, setRemainingMinutes] = useState<number>(60);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   const refreshCart = useCallback(() => {
-    const stored = getStoredCart(); // auto-limpia si pasaron 60 minutos
-    setCartItem(stored);
-    setRemainingMinutes(getCartRemainingMinutes(stored));
+    const storedList = getStoredCartList(); // auto-limpia si pasaron 60 minutos
+    setCartItems(storedList);
+    setRemainingMinutes(getCartRemainingMinutes(storedList));
     setIsLoaded(true);
   }, []);
 
@@ -51,16 +53,24 @@ export function useCartManager() {
     refreshCart();
   }, [refreshCart]);
 
+  const removeItemBySlug = useCallback((slug: string) => {
+    removeCartItemBySlug(slug);
+    refreshCart();
+  }, [refreshCart]);
+
   const removeItem = useCallback(() => {
     clearCart();
     refreshCart();
   }, [refreshCart]);
 
   return {
-    cartItem,
+    cartItems,
+    cartItem: cartItems[0] || null,
+    cartCount: cartItems.length,
     remainingMinutes,
     isLoaded,
     updateCart,
+    removeItemBySlug,
     removeItem,
     refreshCart,
   };

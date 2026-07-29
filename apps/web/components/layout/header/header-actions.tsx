@@ -10,8 +10,7 @@ interface HeaderActionsProps {
 }
 
 export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderActionsProps) {
-  const { cartItem } = useCartManager();
-  const cartCount = cartItem ? 1 : 0;
+  const { cartCount } = useCartManager();
 
   const textColor = isMobileMenuOpen ? 'text-gray-900' : 'text-white';
   const hoverBg = isMobileMenuOpen ? 'hover:bg-gray-100' : 'hover:bg-white/10';
@@ -20,9 +19,9 @@ export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderAc
     <div className={`flex items-center gap-5 text-sm z-50 transition-colors ${textColor}`}>
       {/* Shopping Cart Icon with Badge */}
       <Link 
-        href="/carrito" 
+        href="/checkout" 
         className={`relative p-2 transition-colors rounded-full ${hoverBg}`}
-        aria-label="Ver Carrito"
+        aria-label="Ver Carrito de Reservas"
       >
         <ShoppingCart size={22} />
         {cartCount > 0 && (
