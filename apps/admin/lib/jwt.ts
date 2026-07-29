@@ -12,9 +12,13 @@ export interface AdminSessionPayload {
 function getJwtSecretKey(): Uint8Array {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.trim() === '') {
-    throw new Error(
-      '❌ CRÍTICO: La variable de entorno ADMIN_SESSION_SECRET no está configurada. Debe definir una clave secreta segura antes de iniciar el panel de administración.'
-    );
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '❌ CRÍTICO EN PRODUCCIÓN: La variable de entorno ADMIN_SESSION_SECRET no está configurada.'
+      );
+    }
+    // En desarrollo local (localhost), usar clave por defecto para evitar caídas
+    return new TextEncoder().encode('incabound_admin_local_dev_secret_key_2026');
   }
   return new TextEncoder().encode(secret);
 }
