@@ -141,8 +141,8 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                   <col className="w-12" />
                   <col className="w-auto" />
                   <col className="w-28" />
-                  <col className="w-36" />
                   <col className="w-48" />
+                  <col className="w-32" />
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
@@ -183,7 +183,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                     </tr>
                   ) : (
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                      <th className="px-4 py-3 w-8">
+                      <th className="px-4 py-3 text-center w-8">
                         <input 
                           type="checkbox" 
                           checked={isAllSelected}
@@ -191,10 +191,10 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
-                      <th className="px-4 py-3">Artículo</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">Fecha Publicación</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th className="px-4 py-3 text-left">Artículo</th>
+                      <th className="px-4 py-3 text-center">Estado</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Publicación</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
                   )}
                 </thead>
@@ -203,7 +203,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                     const isSelected = selectedIds.includes(blog.id);
                     return (
                       <tr key={blog.id} className={`transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <input 
                             type="checkbox" 
                             checked={isSelected}
@@ -213,7 +213,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                         </td>
                       
                         {/* Artículo: Imagen + Título + Slug */}
-                        <td className="px-4 py-3 font-semibold text-slate-900">
+                        <td className="px-4 py-3 text-left font-semibold text-slate-900">
                           <div className="flex items-center gap-3">
                             <BlogThumbnail src={blog.bannerImage} title={blog.title} />
                             <div className="min-w-0">
@@ -226,14 +226,14 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                         </td>
 
                         {/* Estado: Badge Verde Activo */}
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                             Activo
                           </span>
                         </td>
 
                         {/* Fecha Publicación */}
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-4 py-3 text-center text-slate-600 text-xs whitespace-nowrap">
                           <span className="inline-flex items-center gap-1.5 font-medium">
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
                             {new Date(blog.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -241,7 +241,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
                         </td>
 
                         {/* Acciones: Editar */}
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-end gap-1">
                             <Link
                               href={`/blogs/${blog.id}/edit`}

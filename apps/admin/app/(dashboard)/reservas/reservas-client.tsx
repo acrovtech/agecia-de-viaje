@@ -177,8 +177,8 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                         className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
                       />
                     </th>
-                    <th className="px-4 py-3 text-center">CLIENTE</th>
-                    <th className="px-4 py-3 text-center">TOUR RESERVADO</th>
+                    <th className="px-4 py-3 text-left">CLIENTE</th>
+                    <th className="px-4 py-3 text-left">TOUR RESERVADO</th>
                     <th className="px-4 py-3 text-center whitespace-nowrap">FECHA VIAJE</th>
                     <th className="px-4 py-3 text-center">PAX</th>
                     <th className="px-4 py-3 text-center whitespace-nowrap">TOTAL</th>
@@ -203,11 +203,11 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                           className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-left">
                         <div className="font-semibold text-[#2f2f2f] truncate">{reserva.customerFirstName} {reserva.customerLastName}</div>
                         <div className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</div>
                       </td>
-                      <td className="px-4 py-3 text-center font-bold text-[#2f2f2f] uppercase truncate">
+                      <td className="px-4 py-3 text-left font-bold text-[#2f2f2f] uppercase truncate">
                         {reserva.tour?.title || 'TOUR INCA BOUND'}
                       </td>
                       <td className="px-4 py-3 text-center text-slate-600 font-medium whitespace-nowrap">

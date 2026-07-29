@@ -190,11 +190,11 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
-                      <th className="px-4 py-3">Tour</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">Duración</th>
-                      <th className="px-4 py-3">Destino</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th className="px-4 py-3 text-left">Tour</th>
+                      <th className="px-4 py-3 text-center">Estado</th>
+                      <th className="px-4 py-3 text-center">Duración</th>
+                      <th className="px-4 py-3 text-center">Destino</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
                   )}
                 </thead>
@@ -203,7 +203,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                     const isSelected = selectedIds.includes(tour.id);
                     return (
                       <tr key={tour.id} className={`transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <input 
                             type="checkbox" 
                             checked={isSelected}
@@ -213,7 +213,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                         </td>
                       
                       {/* Producto: Imagen + Nombre */}
-                      <td className="px-4 py-3 font-semibold text-slate-900">
+                      <td className="px-4 py-3 text-left font-semibold text-slate-900">
                         <div className="flex items-center gap-3">
                           <TourThumbnail src={tour.cardImage} title={tour.title} />
                           <div>
@@ -226,14 +226,14 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                       </td>
 
                       {/* Estado: Badge Verde Activo */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           Activo
                         </span>
                       </td>
 
                       {/* Duración */}
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-center text-slate-600">
                         {tour.duration ? (
                           <span className="inline-flex items-center gap-1 font-semibold">
                             <Clock className="w-3 h-3 text-slate-400" />
@@ -245,7 +245,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                       </td>
 
                       {/* Destino */}
-                      <td className="px-4 py-3 font-semibold text-slate-900">
+                      <td className="px-4 py-3 text-center font-semibold text-slate-900">
                         {tour.region ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
                             <MapPin className="w-3 h-3 text-slate-500" />
@@ -257,7 +257,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                       </td>
 
                       {/* Acciones */}
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/tours/${tour.id}/edit`}
