@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
   Info, Compass, Calendar, Ticket, Tag, DollarSign, Edit3, X, CheckCircle2,
-  AlertTriangle, Globe, MapPin, MessageSquare
+  AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
@@ -57,7 +57,7 @@ export function CheckoutForm() {
     requirements: ''
   });
 
-  // Estado de pasajeros (Secuencia limpia de tabla)
+  // Estado de pasajeros
   const [passengers, setPassengers] = useState<Passenger[]>(() => 
     Array.from({ length: numPax }, () => ({
       firstName: '',
@@ -72,6 +72,10 @@ export function CheckoutForm() {
   const [formToken, setFormToken] = useState<string | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [step2Error, setStep2Error] = useState<string | null>(null);
+
+  // Estilos UI normalizados (Focus elegante + Border radius redondeado limpio)
+  const inputBaseStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
+  const selectCustomStyle = "w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2214%22%20height%3D%2214%22%20viewBox%3D%220%200%2024%2024%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_10px_center] bg-no-repeat focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
 
   // Copiar datos del titular de contacto al Pasajero 1
   const copyContactToPax1 = (e: React.MouseEvent) => {
@@ -458,7 +462,7 @@ export function CheckoutForm() {
               )}
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (TABLA LIMPIA INLINE SIN TARJETAS EXCESIVAS) */}
+              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (4 CAMPOS DE ANCHO IDÉNTICO) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-2">
@@ -468,29 +472,29 @@ export function CheckoutForm() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Encabezados de Columna (Solo visible en pantallas medianas/grandes) */}
-                  <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    <div className="sm:col-span-1">PAS.</div>
-                    <div className="sm:col-span-3">NOMBRES *</div>
-                    <div className="sm:col-span-3">APELLIDOS *</div>
-                    <div className="sm:col-span-2">TIPO DOC *</div>
-                    <div className="sm:col-span-3">NRO DOC *</div>
+                  {/* Encabezados de Columna con 4 anchos 100% iguales */}
+                  <div className="hidden sm:grid sm:grid-cols-[48px_repeat(4,1fr)] gap-3 px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    <div>PAS.</div>
+                    <div>NOMBRES *</div>
+                    <div>APELLIDOS *</div>
+                    <div>TIPO DOC *</div>
+                    <div>NRO DOC *</div>
                   </div>
 
                   {/* Filas de Pasajeros Inline */}
                   {passengers.map((paxItem, idx) => (
                     <div 
                       key={idx} 
-                      className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center p-3.5 sm:p-2 bg-gray-50/50 rounded-xl border border-gray-200/80 sm:bg-transparent sm:border-0 sm:p-0"
+                      className="grid grid-cols-1 sm:grid-cols-[48px_repeat(4,1fr)] gap-3 items-center p-3.5 sm:p-0 bg-gray-50/50 rounded-lg border border-gray-200/80 sm:bg-transparent sm:border-0"
                     >
                       {/* Label PAS. X */}
-                      <div className="sm:col-span-1 text-xs font-bold text-gray-600 flex items-center justify-between sm:justify-start">
+                      <div className="text-xs font-bold text-gray-600 flex items-center justify-between sm:justify-start">
                         <span>PAS. {idx + 1}</span>
                         <span className="sm:hidden text-[10px] text-gray-400 uppercase font-semibold">Pasajero #{idx + 1}</span>
                       </div>
 
                       {/* Nombres */}
-                      <div className="sm:col-span-3">
+                      <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nombres *</label>
                         <input 
                           type="text"
@@ -498,12 +502,12 @@ export function CheckoutForm() {
                           value={paxItem.firstName}
                           onChange={(e) => handlePassengerChange(idx, 'firstName', e.target.value)}
                           placeholder="Nombres"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                          className={inputBaseStyle}
                         />
                       </div>
 
                       {/* Apellidos */}
-                      <div className="sm:col-span-3">
+                      <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Apellidos *</label>
                         <input 
                           type="text"
@@ -511,17 +515,17 @@ export function CheckoutForm() {
                           value={paxItem.lastName}
                           onChange={(e) => handlePassengerChange(idx, 'lastName', e.target.value)}
                           placeholder="Apellidos"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                          className={inputBaseStyle}
                         />
                       </div>
 
-                      {/* Tipo Documento */}
-                      <div className="sm:col-span-2">
+                      {/* Tipo Documento (Custom Select) */}
+                      <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo Doc *</label>
                         <select
                           value={paxItem.documentType}
                           onChange={(e) => handlePassengerChange(idx, 'documentType', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                          className={selectCustomStyle}
                         >
                           <option value="DNI">DNI</option>
                           <option value="Pasaporte">Pasaporte</option>
@@ -530,7 +534,7 @@ export function CheckoutForm() {
                       </div>
 
                       {/* Nro Documento */}
-                      <div className="sm:col-span-3">
+                      <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nro Doc *</label>
                         <input 
                           type="text"
@@ -538,7 +542,7 @@ export function CheckoutForm() {
                           value={paxItem.documentNumber}
                           onChange={(e) => handlePassengerChange(idx, 'documentNumber', e.target.value)}
                           placeholder="74288119"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs font-mono focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                          className={`${inputBaseStyle} font-mono`}
                         />
                       </div>
 
@@ -548,7 +552,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 2: TITULAR DE CONTACTO */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO (4 CAMPOS EN 1 SOLA FILA) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
@@ -568,7 +572,8 @@ export function CheckoutForm() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                {/* Grid de 4 campos en 1 sola fila en desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <label className="block text-gray-700 font-semibold mb-1">Nombres *</label>
                     <input 
@@ -577,7 +582,7 @@ export function CheckoutForm() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       placeholder="Ej. Juan"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={inputBaseStyle}
                     />
                   </div>
 
@@ -589,7 +594,7 @@ export function CheckoutForm() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       placeholder="Ej. Pérez"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={inputBaseStyle}
                     />
                   </div>
 
@@ -601,26 +606,26 @@ export function CheckoutForm() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="juan@ejemplo.com"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={inputBaseStyle}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Número de teléfono / WhatsApp *</label>
+                    <label className="block text-gray-700 font-semibold mb-1">Teléfono / WhatsApp *</label>
                     <input 
                       type="tel" 
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+51 987 654 321"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={inputBaseStyle}
                     />
                   </div>
                 </div>
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 3: DATOS ADICIONALES */}
+              {/* SECCIÓN 3: DATOS ADICIONALES (SIN ÍCONOS) */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="border-b border-gray-200 pb-2">
@@ -630,31 +635,29 @@ export function CheckoutForm() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  {/* Lugar u Hotel de recojo */}
+                  {/* Lugar u Hotel de recojo (Sin icono) */}
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
-                      <MapPin size={14} className="text-gray-400" />
-                      <span>Lugar u hotel de recojo</span>
+                    <label className="block text-gray-700 font-semibold mb-1">
+                      Lugar u hotel de recojo
                     </label>
                     <input 
                       type="text" 
                       value={formData.hotel}
                       onChange={(e) => setFormData({ ...formData, hotel: e.target.value })}
                       placeholder="Ej. Hotel Monasterio / Plaza de Armas de Cusco"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={inputBaseStyle}
                     />
                   </div>
 
-                  {/* Idioma del servicio (Dropdown: Español, Inglés, Portugués) */}
+                  {/* Idioma del servicio (Sin icono, Custom Select) */}
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
-                      <Globe size={14} className="text-gray-400" />
-                      <span>Idioma del servicio</span>
+                    <label className="block text-gray-700 font-semibold mb-1">
+                      Idioma del servicio
                     </label>
                     <select
                       value={formData.language}
                       onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none"
+                      className={selectCustomStyle}
                     >
                       <option value="Español">Español</option>
                       <option value="Inglés">Inglés</option>
@@ -662,43 +665,42 @@ export function CheckoutForm() {
                     </select>
                   </div>
 
-                  {/* Requerimientos especiales (Textarea Opcional) */}
+                  {/* Requerimientos especiales (Sin icono) */}
                   <div className="sm:col-span-2">
-                    <label className="block text-gray-700 font-semibold mb-1 flex items-center gap-1.5">
-                      <MessageSquare size={14} className="text-gray-400" />
-                      <span>Requerimientos especiales (Opcional)</span>
+                    <label className="block text-gray-700 font-semibold mb-1">
+                      Requerimientos especiales (Opcional)
                     </label>
                     <textarea 
                       rows={3}
                       value={formData.requirements}
                       onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                       placeholder="Ej. Alimentación vegetariana, alergias, dietas o solicitudes de horario..."
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-[#062918] focus:border-[#062918] outline-none leading-relaxed resize-none"
+                      className={`${inputBaseStyle} resize-none leading-relaxed`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* TÉRMINOS Y CONDICIONES */}
-              <div className="flex items-start gap-3 p-4 bg-gray-50/90 rounded-xl border border-gray-200 text-xs">
+              {/* TÉRMINOS Y CONDICIONES (CLEAN TEXT INLINE SIN CARD NI CAJA) */}
+              <div className="flex items-start gap-2.5 text-xs text-gray-600 pt-2">
                 <input 
                   type="checkbox"
                   id="terms"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 text-[#062918] rounded border-gray-300 focus:ring-[#062918]"
+                  className="mt-0.5 w-4 h-4 text-[#062918] rounded border-gray-300 focus:ring-[#062918] cursor-pointer"
                 />
-                <label htmlFor="terms" className="text-gray-600 leading-relaxed">
+                <label htmlFor="terms" className="cursor-pointer leading-relaxed">
                   He leído y acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#062918] underline">Términos y Condiciones</Link> y las políticas de cancelación de Inca Bound.
                 </label>
               </div>
 
               {/* ACCIONES DEL PASO 2 */}
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200/80">
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="px-5 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-2"
+                  className="px-5 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft size={16} />
                   Volver al Resumen
@@ -707,7 +709,7 @@ export function CheckoutForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  className="px-8 py-3.5 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm rounded-lg transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isLoading ? (
                     <>
