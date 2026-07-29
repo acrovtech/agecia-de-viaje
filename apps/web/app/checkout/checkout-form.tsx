@@ -607,12 +607,6 @@ export function CheckoutForm() {
                 </div>
               </div>
 
-              {step2Error && (
-                <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
-                  {step2Error}
-                </div>
-              )}
-
               {/* ------------------------------------------------------------------------- */}
               {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS */}
               {/* ------------------------------------------------------------------------- */}
@@ -864,18 +858,31 @@ export function CheckoutForm() {
                 </div>
               </div>
 
-              {/* TÉRMINOS Y CONDICIONES (CLEAN TEXT INLINE) */}
-              <div className="flex items-start gap-2.5 text-xs text-gray-600 pt-2">
-                <input 
-                  type="checkbox"
-                  id="terms"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 text-[#062918] rounded border-gray-300 focus:ring-[#062918] cursor-pointer"
-                />
-                <label htmlFor="terms" className="cursor-pointer leading-relaxed">
-                  He leído y acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#062918] underline">Términos y Condiciones</Link> y las políticas de cancelación de Inca Bound.
-                </label>
+              {/* TÉRMINOS Y CONDICIONES (CON MENSAJE DE ERROR RED LABEL DEBAJO) */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-start gap-2.5 text-xs text-gray-600">
+                  <input 
+                    type="checkbox"
+                    id="terms"
+                    checked={termsAccepted}
+                    onChange={(e) => {
+                      setTermsAccepted(e.target.checked);
+                      if (e.target.checked && step2Error) setStep2Error(null);
+                    }}
+                    className="mt-0.5 w-4 h-4 text-[#062918] rounded border-gray-300 focus:ring-[#062918] cursor-pointer"
+                  />
+                  <label htmlFor="terms" className="cursor-pointer leading-relaxed">
+                    He leído y acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#062918] underline">Términos y Condiciones</Link> y las políticas de cancelación de Inca Bound.
+                  </label>
+                </div>
+
+                {/* MENSAJE DE ERROR RED LABEL JUSTO DEBAJO DE LOS TÉRMINOS */}
+                {step2Error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
+                    <AlertTriangle size={15} className="shrink-0 text-red-600" />
+                    <span>{step2Error}</span>
+                  </div>
+                )}
               </div>
 
               {/* ACCIONES DEL PASO 2 */}
