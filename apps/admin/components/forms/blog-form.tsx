@@ -403,11 +403,11 @@ export function BlogForm({ initialData }: { initialData?: any }) {
         <div className="space-y-6">
           
           {/* Card 1: Estado (Activo / Desactivado) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
             <Label className="text-xs font-semibold text-slate-700">Estado</Label>
             <Select value={status} onValueChange={(v: any) => { setStatus(v); setIsDirty(true); }}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue placeholder={status === 'Active' ? 'Activo' : 'Borrador'} />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
                 <SelectItem value="Active">Activo</SelectItem>

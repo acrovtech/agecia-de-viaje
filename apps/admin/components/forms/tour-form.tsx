@@ -292,6 +292,8 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
       className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none"
     >
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
       
       {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Integrada al topbar) */}
       {(isDirty || !initialData?.id) && (
@@ -627,16 +629,17 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
 
         {/* ==========================================
             SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
+        {/* ==========================================
+            SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
         ========================================== */}
-        <div className="lg:col-span-1 space-y-5">
+        <div className="lg:col-span-1 space-y-6">
           
           {/* Card 1: Estado del Producto */}
-          <input type="hidden" name="status" value={status} />
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
             <Label className="text-xs font-semibold text-slate-700">Estado</Label>
             <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue placeholder={status === 'Active' ? 'Activo' : 'Desactivado'} />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
                 <SelectItem value="Active">Activo</SelectItem>
@@ -646,12 +649,11 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
           </div>
 
           {/* Card 2: Sección recomendados (Home) */}
-          <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
             <Label className="text-xs font-semibold text-slate-700">Sección recomendados (Home)</Label>
             <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue placeholder={isFeatured === 'Active' ? 'Activo' : 'Desactivado'} />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
                 <SelectItem value="Active">Activo</SelectItem>
@@ -662,7 +664,7 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
           </div>
 
           {/* Card 3: Destino (Filtro Catálogo) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-2">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
             <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
             <Select name="region" defaultValue={initialData?.region || undefined} onValueChange={() => setIsDirty(true)}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
