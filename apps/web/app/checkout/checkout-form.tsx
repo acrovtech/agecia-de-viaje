@@ -876,12 +876,12 @@ export function CheckoutForm() {
                   </label>
                 </div>
 
-                {/* MENSAJE DE ERROR RED LABEL JUSTO DEBAJO DE LOS TÉRMINOS */}
+                {/* MENSAJE DE ERROR TEXTO LIMPIO SIN CARD */}
                 {step2Error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-                    <AlertTriangle size={15} className="shrink-0 text-red-600" />
+                  <p className="text-red-600 text-xs font-semibold flex items-center gap-1.5 pt-1 animate-in fade-in duration-150">
+                    <AlertTriangle size={14} className="shrink-0 text-red-600" />
                     <span>{step2Error}</span>
-                  </div>
+                  </p>
                 )}
               </div>
 
