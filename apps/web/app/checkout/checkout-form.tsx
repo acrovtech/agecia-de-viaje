@@ -328,8 +328,18 @@ export function CheckoutForm() {
               </div>
 
               {/* CARD DE RESERVA EN 2 COLUMNAS */}
-              <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12">
+              <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-2xs grid grid-cols-1 md:grid-cols-12 relative">
                 
+                {/* Botón de eliminar X (Posicionado en la esquina superior derecha siempre) */}
+                <button 
+                  type="button"
+                  onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
+                  className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-gray-900 border border-gray-200/60 shadow-2xs transition-all cursor-pointer"
+                  title="Eliminar o cambiar tour"
+                >
+                  <X size={16} />
+                </button>
+
                 {/* Columna Izquierda: Imagen del Tour o Fallback Gris Claro */}
                 <div className="md:col-span-4 min-h-[220px] md:min-h-[280px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
                   {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
@@ -347,18 +357,10 @@ export function CheckoutForm() {
                   
                   <div>
                     {/* Título & Botón de eliminar (Con línea separadora inferior pb-3 mb-3 border-b) */}
-                    <div className="flex items-center justify-between gap-4 pb-3 mb-3 border-b border-gray-100">
+                    <div className="pb-3 mb-3 border-b border-gray-100 pr-6">
                       <h3 className="text-[1.25rem] leading-snug font-bold text-gray-900 tracking-tight">
                         {tourTitle}
                       </h3>
-                      <button 
-                        type="button"
-                        onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
-                        className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        title="Eliminar o cambiar tour"
-                      >
-                        <X size={18} />
-                      </button>
                     </div>
 
                     {/* Grilla en 2 Columnas idéntica al Plugin */}
