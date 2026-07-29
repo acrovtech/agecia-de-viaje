@@ -135,11 +135,11 @@ export function CheckoutForm() {
     requirements: ''
   });
 
-  const totalPax = activeItems.reduce((sum, item) => sum + item.pax, 0) || numPax;
+  const maxPax = activeItems.length > 0 ? Math.max(...activeItems.map(item => item.pax)) : numPax;
 
-  // Estado de pasajeros
+  // Estado de pasajeros (Basado en la cantidad máxima de viajeros del grupo en el carrito)
   const [passengers, setPassengers] = useState<Passenger[]>(() => 
-    Array.from({ length: totalPax }, () => ({
+    Array.from({ length: maxPax }, () => ({
       firstName: '',
       lastName: '',
       documentType: 'DNI',
@@ -147,12 +147,12 @@ export function CheckoutForm() {
     }))
   );
 
-  // Sincronizar dinámicamente la cantidad de formularios de pasajeros según el total de pax en el carrito
+  // Sincronizar dinámicamente la cantidad de formularios de pasajeros según el valor máximo de pax (maxPax)
   useEffect(() => {
     setPassengers(prev => {
-      if (prev.length === totalPax) return prev;
-      if (prev.length < totalPax) {
-        const added = Array.from({ length: totalPax - prev.length }, () => ({
+      if (prev.length === maxPax) return prev;
+      if (prev.length < maxPax) {
+        const added = Array.from({ length: maxPax - prev.length }, () => ({
           firstName: '',
           lastName: '',
           documentType: 'DNI',
@@ -160,9 +160,9 @@ export function CheckoutForm() {
         }));
         return [...prev, ...added];
       }
-      return prev.slice(0, totalPax);
+      return prev.slice(0, maxPax);
     });
-  }, [totalPax]);
+  }, [maxPax]);
 
   const [copiedPax1, setCopiedPax1] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -616,7 +616,7 @@ export function CheckoutForm() {
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-2">
                   <h3 className="text-[1rem] font-bold text-gray-900">
-                    1. Información de los pasajeros ({totalPax})
+                    1. Información de los pasajeros ({maxPax})
                   </h3>
                 </div>
 
