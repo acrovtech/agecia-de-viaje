@@ -423,24 +423,24 @@ export function CheckoutForm() {
                   </div>
 
                   {/* BOTONES DENTRO DE LA CARD (Con línea separadora superior pt-4 mt-3 border-t) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 mt-3 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-3 border-t border-gray-100">
                     
                     <button
                       type="button"
-                      onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
-                      className="w-full py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      onClick={() => setCurrentStep(2)}
+                      className="w-full sm:flex-1 py-2.5 px-5 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer order-1 sm:order-2"
                     >
-                      <Edit3 size={15} className="text-gray-500" />
-                      <span>Editar tour</span>
+                      <CheckCircle2 size={16} />
+                      <span>Reservar ahora</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="w-full py-2.5 px-5 rounded-xl bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      onClick={() => window.location.href = tourSlug ? `/tours/${tourSlug}` : '/tours'}
+                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer order-2 sm:order-1"
                     >
-                      <CheckCircle2 size={16} />
-                      <span>Reservar ahora</span>
+                      <Edit3 size={15} className="text-gray-500" />
+                      <span>Editar tour</span>
                     </button>
 
                   </div>
