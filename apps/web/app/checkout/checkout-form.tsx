@@ -227,14 +227,9 @@ export function CheckoutForm() {
     setIsLoading(true);
 
     try {
-      const paxSummary = passengers.map((p, idx) => 
-        `Pax ${idx + 1}: ${p.firstName} ${p.lastName} (${p.documentType}: ${p.documentNumber || 'N/A'})`
-      ).join(' | ');
-
       const langInfo = `Idioma: ${formData.language}`;
       const notes = formData.requirements ? `Notas: ${formData.requirements}` : '';
-
-      const fullRequirements = [langInfo, notes, `[Pasajeros: ${paxSummary}]`].filter(Boolean).join(' | ');
+      const cleanRequirements = [langInfo, notes].filter(Boolean).join(' | ');
 
       const result = await createReservationAndPaymentToken({
         tourSlug,
@@ -244,7 +239,13 @@ export function CheckoutForm() {
         customerEmail: formData.email,
         customerPhone: formData.phone,
         pickupHotel: formData.hotel,
-        specialRequirements: fullRequirements,
+        specialRequirements: cleanRequirements,
+        passengers: passengers.map(p => ({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          docType: p.documentType || 'DNI',
+          docNumber: p.documentNumber || ''
+        })),
         date: dateStr || new Date().toISOString(),
         pax: numPax,
         totalPrice: parseFloat(total),
