@@ -41,7 +41,10 @@ export async function updateReservationDetails(reservationId: string, data: {
   }
 }
 
-export async function updateReservationPassengersAction(reservationId: string, passengers: Array<{ name: string; docType: string; docNumber: string }>) {
+export async function updateReservationPassengersAction(
+  reservationId: string, 
+  passengers: Array<{ firstName?: string; lastName?: string; name?: string; docType: string; docNumber: string }>
+) {
   try {
     await prisma.reservationPassenger.deleteMany({
       where: { reservationId }
@@ -49,12 +52,22 @@ export async function updateReservationPassengersAction(reservationId: string, p
 
     if (passengers.length > 0) {
       await prisma.reservationPassenger.createMany({
-        data: passengers.map(p => ({
-          reservationId,
-          name: p.name,
-          docType: p.docType || 'DNI',
-          docNumber: p.docNumber || ''
-        }))
+        data: passengers.map(p => {
+          let fName = p.firstName || '';
+          let lName = p.lastName || '';
+          if (!fName && p.name) {
+            const parts = p.name.trim().split(' ');
+            fName = parts[0] || 'Pasajero';
+            lName = parts.slice(1).join(' ') || '';
+          }
+          return {
+            reservationId,
+            firstName: fName || 'Pasajero',
+            lastName: lName,
+            docType: p.docType || 'DNI',
+            docNumber: p.docNumber || ''
+          };
+        })
       });
     }
 

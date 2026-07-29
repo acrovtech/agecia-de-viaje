@@ -11,7 +11,7 @@ type CheckoutData = {
   customerPhone: string;
   pickupHotel?: string;
   specialRequirements?: string;
-  passengers?: Array<{ name: string; docType?: string; docNumber?: string }>;
+  passengers?: Array<{ firstName?: string; lastName?: string; name?: string; docType?: string; docNumber?: string }>;
   date: string;
   pax: number;
   totalPrice: number;
@@ -32,6 +32,17 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       return { success: false, error: 'No hay tours disponibles en la base de datos.' };
     }
 
+    // Helper para separar nombre en firstName y lastName si viene consolidado
+    const splitName = (p: { firstName?: string; lastName?: string; name?: string }): { firstName: string; lastName: string } => {
+      if (p.firstName && p.lastName) return { firstName: p.firstName, lastName: p.lastName };
+      const fullName = (p.name || '').trim();
+      const parts = fullName.split(' ');
+      if (parts.length > 1) {
+        return { firstName: parts[0] || 'Pasajero', lastName: parts.slice(1).join(' ') || '' };
+      }
+      return { firstName: fullName || 'Pasajero', lastName: '' };
+    };
+
     // 2. Crear la reserva en la Base de Datos
     const reservation = await prisma.reservation.create({
       data: {
@@ -47,11 +58,15 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
         totalPrice: data.totalPrice || 100,
         status: 'PENDING',
         passengers: data.passengers && data.passengers.length > 0 ? {
-          create: data.passengers.map(p => ({
-            name: p.name,
-            docType: p.docType || 'DNI',
-            docNumber: p.docNumber || ''
-          }))
+          create: data.passengers.map(p => {
+            const { firstName, lastName } = splitName(p);
+            return {
+              firstName,
+              lastName,
+              docType: p.docType || 'DNI',
+              docNumber: p.docNumber || ''
+            };
+          })
         } : undefined
       }
     });

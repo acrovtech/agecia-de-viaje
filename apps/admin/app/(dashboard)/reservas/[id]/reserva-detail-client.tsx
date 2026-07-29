@@ -10,10 +10,12 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
-type ReservationPassenger = { id?: string; name: string; docType: string; docNumber: string };
+type ReservationPassenger = { id?: string; firstName: string; lastName: string; docType: string; docNumber: string };
 type ReservationWithTour = Reservation & { tour: Tour | null; passengers?: ReservationPassenger[] };
 
 type Passenger = {
+  firstName: string;
+  lastName: string;
   name: string;
   docType: string;
   docNumber: string;
@@ -69,7 +71,9 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
   const parsePassengerList = (res: ReservationWithTour): Passenger[] => {
     if (res.passengers && res.passengers.length > 0) {
       return res.passengers.map(p => ({
-        name: p.name,
+        firstName: p.firstName || 'Pasajero',
+        lastName: p.lastName || '',
+        name: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
         docType: p.docType || 'DNI',
         docNumber: p.docNumber || ''
       }));
@@ -82,11 +86,16 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     return paxParts.map(part => {
       const nameMatch = part.match(/Pax\s*\d+:\s*([^(]+)/);
       const docMatch = part.match(/\(([^:]+):\s*([^)]+)\)/);
-      const nameVal = nameMatch && nameMatch[1] ? nameMatch[1].trim() : part;
+      const fullName = nameMatch && nameMatch[1] ? nameMatch[1].trim() : part;
+      const parts = fullName.split(' ');
+      const fName = parts[0] || 'Pasajero';
+      const lName = parts.slice(1).join(' ') || '';
       const docTypeVal = docMatch && docMatch[1] ? docMatch[1].trim() : 'DNI';
       const docNumVal = docMatch && docMatch[2] ? docMatch[2].trim() : '';
       return {
-        name: nameVal,
+        firstName: fName,
+        lastName: lName,
+        name: fullName,
         docType: docTypeVal,
         docNumber: docNumVal,
       };
@@ -143,7 +152,12 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
           customerPhone: titularData.phone,
           pickupHotel: titularData.hotel,
           specialRequirements: cleanNotes,
-          passengers: passengerList,
+          passengers: passengerList.map(p => ({
+            firstName: p.firstName || (p.name.split(' ')[0] || 'Pasajero'),
+            lastName: p.lastName || (p.name.split(' ').slice(1).join(' ') || ''),
+            docType: p.docType,
+            docNumber: p.docNumber
+          })),
         }));
         setIsEditingTitular(false);
         setIsEditingPax(false);

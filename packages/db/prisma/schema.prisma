@@ -186,7 +186,8 @@ model ReservationPassenger {
   reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   
-  name          String
+  firstName     String
+  lastName      String
   docType       String      @default("DNI") // DNI, Pasaporte, CE
   docNumber     String
   
