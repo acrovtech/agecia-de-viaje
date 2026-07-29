@@ -18,14 +18,16 @@ export type NotificationItem = {
 };
 
 export function NotificationsDropdown({ initialNotifications = [] }: { initialNotifications?: NotificationItem[] }) {
+  const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const [readIds, setReadIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Cargar IDs leídos desde localStorage al montar
+  // Cargar IDs leídos desde localStorage al montar y habilitar renderizado cliente
   useEffect(() => {
+    setIsMounted(true);
     try {
       const stored = localStorage.getItem('incabound_read_notifications');
       if (stored) {
@@ -112,7 +114,7 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
       >
         <Bell className="w-4 h-4" />
         
-        {unreadCount > 0 && (
+        {isMounted && unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white font-bold text-[9px] flex items-center justify-center shadow-xs animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
