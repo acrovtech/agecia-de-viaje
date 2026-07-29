@@ -40,3 +40,20 @@ export async function updateReservationDetails(reservationId: string, data: {
     return { success: false, error: "No se pudo actualizar la reserva." };
   }
 }
+
+export async function deleteReservationsAction(ids: string[]) {
+  try {
+    if (!ids || ids.length === 0) return { success: true };
+    await prisma.reservation.deleteMany({
+      where: {
+        id: { in: ids }
+      }
+    });
+    revalidatePath('/reservas');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting reservations:", error);
+    return { success: false, error: "No se pudieron eliminar las reservas seleccionadas." };
+  }
+}

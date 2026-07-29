@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Reservation, Tour } from '@repo/db';
 import Link from 'next/link';
-import { Search, Calendar, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
+import { Search, Calendar, CheckCircle2, Clock, XCircle, ArrowRight, Trash2 } from 'lucide-react';
+import { deleteReservationsAction } from '@/app/actions/reservation';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
 export function ReservasClient({ initialReservas }: { initialReservas: ReservationWithTour[] }) {
-  const [reservas] = useState(initialReservas);
+  const [reservas, setReservas] = useState(initialReservas);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
 
   const filteredReservas = reservas.filter((reserva) => {
     const matchesStatus = filterStatus === 'ALL' || reserva.status === filterStatus;
@@ -40,6 +42,23 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar las ${selectedIds.length} reservas seleccionadas?`)) {
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await deleteReservationsAction(selectedIds);
+      if (res.success) {
+        setReservas(prev => prev.filter(r => !selectedIds.includes(r.id)));
+        setSelectedIds([]);
+      } else {
+        alert(res.error || 'Ocurrió un error al eliminar las reservas.');
+      }
+    });
   };
 
   return (
@@ -103,38 +122,54 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
           <p className="font-semibold text-slate-600">No se encontraron reservas con los filtros aplicados.</p>
         </div>
       ) : (
-        /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS (PROPORCIONES PERFECTAS) */
+        /* 3. VISTA TABLA COMPLETA SHOPIFY POLARIS (CABECERAS CENTRADAS + SELECCIÓN MÚLTIPLE Y BORRAR TODOS) */
         <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-center text-xs">
               <colgroup>
-                <col className="w-10" />
-                <col className="w-64" />
+                <col className="w-12" />
+                <col className="w-56" />
                 <col className="w-auto" />
                 <col className="w-32" />
                 <col className="w-16" />
-                <col className="w-36" />
+                <col className="w-32" />
                 <col className="w-32" />
                 <col className="w-32" />
               </colgroup>
               <thead>
                 {selectedIds.length > 0 ? (
-                  <tr className="bg-slate-100/90 border-b border-slate-200 text-[#2f2f2f] text-xs font-medium animate-in fade-in duration-150">
-                    <th colSpan={8} className="px-4 py-2.5">
+                  <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
+                    <th colSpan={8} className="px-4 py-2.5 text-left">
                       <div className="flex items-center gap-4">
-                        <input 
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={toggleSelectAll}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
-                        />
-                        <span className="font-semibold text-slate-900">{selectedIds.length} seleccionadas</span>
+                        <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
+                          <input 
+                            type="checkbox" 
+                            checked={isAllSelected}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                          />
+                          <span className="font-semibold text-slate-900 text-xs">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleBulkDelete}
+                            disabled={isPending}
+                            className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                            <span>{isPending ? 'Borrando...' : 'Borrar todos'}</span>
+                          </button>
+                        </div>
                       </div>
                     </th>
                   </tr>
                 ) : (
                   <tr className="bg-[#F7F7F7] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="px-4 py-3 text-center">
+                    <th className="px-4 py-3 text-center w-12">
                       <input 
                         type="checkbox"
                         checked={isAllSelected}
@@ -142,13 +177,13 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                         className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
                       />
                     </th>
-                    <th className="px-4 py-3">CLIENTE</th>
-                    <th className="px-4 py-3">TOUR RESERVADO</th>
-                    <th className="px-4 py-3 whitespace-nowrap">FECHA VIAJE</th>
+                    <th className="px-4 py-3 text-center">CLIENTE</th>
+                    <th className="px-4 py-3 text-center">TOUR RESERVADO</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">FECHA VIAJE</th>
                     <th className="px-4 py-3 text-center">PAX</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">TOTAL</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">TOTAL</th>
                     <th className="px-4 py-3 text-center">ESTADO</th>
-                    <th className="px-4 py-3 text-right">DETALLE</th>
+                    <th className="px-4 py-3 text-center">DETALLE</th>
                   </tr>
                 )}
               </thead>
@@ -168,20 +203,20 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                           className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-center">
                         <div className="font-semibold text-[#2f2f2f] truncate">{reserva.customerFirstName} {reserva.customerLastName}</div>
                         <div className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-[#2f2f2f] uppercase truncate">
+                      <td className="px-4 py-3 text-center font-bold text-[#2f2f2f] uppercase truncate">
                         {reserva.tour?.title || 'TOUR INCA BOUND'}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">
+                      <td className="px-4 py-3 text-center text-slate-600 font-medium whitespace-nowrap">
                         {new Date(reserva.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-center font-semibold text-slate-700">
                         {reserva.pax}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#2f2f2f] whitespace-nowrap">
+                      <td className="px-4 py-3 text-center font-bold text-[#2f2f2f] whitespace-nowrap">
                         ${reserva.totalPrice.toFixed(2)} USD
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
@@ -201,7 +236,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <Link
                           href={`/reservas/${reserva.id}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
