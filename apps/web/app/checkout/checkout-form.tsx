@@ -165,6 +165,7 @@ export function CheckoutForm() {
   }, [maxPax]);
 
   const [copiedPax1, setCopiedPax1] = useState(false);
+  const [showLanguageTooltip, setShowLanguageTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formToken, setFormToken] = useState<string | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(null);
@@ -804,11 +805,34 @@ export function CheckoutForm() {
                     />
                   </div>
 
-                  {/* Idioma del servicio (Radix UI Select) */}
+                  {/* Idioma del servicio (Radix UI Select con Tooltip de Marca) */}
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">
-                      Idioma del servicio
-                    </label>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <label className="block text-gray-700 font-semibold">
+                        Idioma del servicio *
+                      </label>
+                      
+                      {/* Tooltip trigger icon & popup */}
+                      <div 
+                        className="relative inline-flex items-center cursor-pointer group"
+                        onMouseEnter={() => setShowLanguageTooltip(true)}
+                        onMouseLeave={() => setShowLanguageTooltip(false)}
+                        onClick={() => setShowLanguageTooltip(prev => !prev)}
+                      >
+                        <div className="w-4 h-4 rounded-full bg-[#062918] hover:bg-[#0a4026] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs transition-transform hover:scale-110">
+                          i
+                        </div>
+
+                        {/* Tooltip Floating Popup */}
+                        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col items-center w-64 z-30 pointer-events-none transition-all duration-150 ${showLanguageTooltip ? 'flex opacity-100 scale-100' : 'hidden group-hover:flex opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100'}`}>
+                          <div className="bg-[#062918] text-white text-[11px] font-medium leading-relaxed rounded-xl px-3.5 py-2.5 text-center shadow-xl border border-emerald-800/40">
+                            Tenga en cuenta que la mayoría de nuestros tours son bilingües.
+                          </div>
+                          {/* Triangle arrow pointing down */}
+                          <div className="w-2.5 h-2.5 bg-[#062918] rotate-45 -mt-1 rounded-xs border-r border-b border-emerald-800/40" />
+                        </div>
+                      </div>
+                    </div>
                     <Select 
                       value={formData.language} 
                       onValueChange={(val) => val && setFormData({ ...formData, language: val })}
