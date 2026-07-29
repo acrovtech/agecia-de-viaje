@@ -92,7 +92,7 @@ export function CarritoClient() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header variant="dark" />
 
-      <main className="flex-1 container mx-auto px-4 lg:px-8 pt-32 pb-20">
+      <main className="flex-1 container mx-auto px-4 lg:px-8 py-10 md:py-14">
         <div className="max-w-4xl mx-auto">
           
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
