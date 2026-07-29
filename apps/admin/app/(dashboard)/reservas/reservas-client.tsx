@@ -62,18 +62,18 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
   };
 
   return (
-    <div className="space-y-4 font-sans select-none">
+    <div className="space-y-4 font-sans select-none w-full min-w-0">
       
       {/* 1. Header Estilo Shopify Admin */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <Calendar className="w-5 h-5 text-[#2f2f2f] shrink-0" />
-          <h1 className="text-[1.125rem] font-semibold tracking-tight text-[#2f2f2f]">Reservas</h1>
+          <h1 className="text-[1.125rem] font-semibold tracking-tight text-[#2f2f2f] truncate">Reservas</h1>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs shrink-0">
           <span className="text-xs text-slate-500 font-medium">
-            {reservas.length} {reservas.length === 1 ? 'Reserva recibida' : 'Reservas recibidas'}
+            {reservas.length} {reservas.length === 1 ? 'Reserva' : 'Reservas'}
           </span>
         </div>
       </div>
@@ -255,17 +255,17 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
         </div>
 
         {/* 4. VISTA MOBILE: CARDS INDEPENDIENTES SIN CHECKBOX NI ENVOLTORIO EXTERIOR */}
-          <div className="md:hidden flex flex-col gap-3">
+          <div className="md:hidden flex flex-col gap-3 w-full min-w-0">
             {filteredReservas.map((reserva) => (
-              <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-4 flex flex-col gap-2.5">
-                <div className="flex items-start justify-between gap-2">
+              <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3.5 flex flex-col gap-2.5 w-full min-w-0">
+                <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-slate-900 text-xs truncate">
                       {reserva.customerFirstName} {reserva.customerLastName}
                     </h4>
                     <p className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</p>
                   </div>
-                  <span className="font-extrabold text-[#062918] text-xs shrink-0">
+                  <span className="font-extrabold text-[#062918] text-xs shrink-0 whitespace-nowrap">
                     ${reserva.totalPrice.toFixed(2)} USD
                   </span>
                 </div>
@@ -274,31 +274,31 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
                   {reserva.tour?.title || 'TOUR INCA BOUND'}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0 shrink-0">
                     {reserva.status === 'PAID' && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                         <CheckCircle2 size={11} /> Pagado
                       </span>
                     )}
                     {reserva.status === 'PENDING' && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
                         <Clock size={11} /> Pendiente
                       </span>
                     )}
                     {reserva.status === 'CANCELLED' && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 shrink-0">
                         <XCircle size={11} /> Cancelado
                       </span>
                     )}
-                    <span className="text-[11px] text-slate-500 font-medium">
+                    <span className="text-[11px] text-slate-500 font-medium shrink-0">
                       {reserva.pax} {reserva.pax === 1 ? 'pax' : 'pax'}
                     </span>
                   </div>
 
                   <Link
                     href={`/reservas/${reserva.id}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0"
                   >
                     <span>Ver Detalle</span>
                     <ArrowRight size={12} />

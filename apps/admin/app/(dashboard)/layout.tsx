@@ -73,8 +73,8 @@ export default async function DashboardLayout({
           </div>
 
           {/* CONTENIDO PRINCIPAL (#F1F1F1) */}
-          <div className="flex-1 flex flex-col min-h-full md:h-full md:overflow-y-auto bg-[#F1F1F1]">
-            <main className="flex-1 px-4 sm:px-6 py-6 w-full max-w-full">
+          <div className="flex-1 flex flex-col min-h-full min-w-0 md:h-full md:overflow-y-auto bg-[#F1F1F1]">
+            <main className="flex-1 px-3 sm:px-6 py-4 sm:py-6 w-full max-w-full min-w-0">
               {children}
             </main>
           </div>
