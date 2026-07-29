@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET() {
     
     return NextResponse.json({ tours, categories });
   } catch (error) {
-    console.error("Error fetching tours:", error);
+    logger('error', 'Error fetching tours:', error);
     return NextResponse.json({ error: "Failed to fetch tours" }, { status: 500 });
   }
 }

@@ -18,6 +18,10 @@ import {
   SelectItem 
 } from '@/components/ui/select';
 
+import { useCartManager } from '@/hooks/use-cart';
+import { formatSpanishDate } from '@repo/ui/lib/date-utils';
+import { formatCurrency } from '@repo/ui/lib/currency';
+
 type Passenger = {
   firstName: string;
   lastName: string;
@@ -40,28 +44,27 @@ export function CheckoutForm() {
 
   const numPax = Math.max(1, parseInt(pax) || 1);
 
-  // Sincronizar item con el carrito global en localStorage para el badge del Header
+  const { remainingMinutes, updateCart } = useCartManager();
+
+  // Sincronizar item con el carrito global en localStorage con timestamp real
   useEffect(() => {
     if (tourTitle && tourSlug) {
-      const item = { tourTitle, tourSlug, date: dateStr, pax: numPax, price, total };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('incabound_cart', JSON.stringify(item));
-        window.dispatchEvent(new Event('storage'));
-      }
+      updateCart({
+        tourSlug,
+        tourTitle,
+        image: tourImage,
+        date: dateStr,
+        pax: numPax,
+        serviceType,
+        price: parseFloat(price) || 0,
+        totalPrice: parseFloat(total) || 0,
+      });
     }
-  }, [tourTitle, tourSlug, dateStr, numPax, price, total]);
+  }, [tourTitle, tourSlug, tourImage, dateStr, numPax, serviceType, price, total, updateCart]);
 
-  // Formato de fechas en español sin TitleCase exagerado
-  const dateObj = dateStr ? new Date(dateStr) : null;
-  const formattedStartDate = dateObj 
-    ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-    : 'Fecha por confirmar';
-
-  const formattedStartDateShort = dateObj
-    ? dateObj.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : 'Por confirmar';
-
-  // Fecha de fin (para tours de 1D / 1/2 Día la fecha de fin es el mismo día)
+  // Formato de fechas en español unificado (DRY)
+  const formattedStartDate = formatSpanishDate(dateStr, 'long');
+  const formattedStartDateShort = formatSpanishDate(dateStr, 'short');
   const formattedEndDate = formattedStartDate;
   const formattedEndDateShort = formattedStartDateShort;
 
@@ -176,7 +179,7 @@ export function CheckoutForm() {
 
       if (result.success && result.formToken) {
         setFormToken(result.formToken);
-        setReservationId(result.reservationId);
+        setReservationId(result.reservationId ?? null);
         setCurrentStep(3);
       } else {
         setStep2Error(result.error || "Ocurrió un error al registrar tu reserva. Intenta de nuevo.");
@@ -317,7 +320,11 @@ export function CheckoutForm() {
               {/* Inline Alert Banner */}
               <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-2.5 text-xs font-medium flex items-center justify-center gap-2 text-center">
                 <Info size={16} className="shrink-0 text-[#062918]" />
-                <span>Puedes seguir agregando tours al carrito, estos permanecerán durante 60 minutos.</span>
+                <span>
+                  {remainingMinutes > 0
+                    ? `Puedes seguir agregando tours al carrito, este tour permanecerá disponible durante los próximos ${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}.`
+                    : 'El tiempo de reserva de tu carrito ha expirado. Por favor selecciona tu tour nuevamente.'}
+                </span>
               </div>
 
               {/* CARD DE RESERVA EN 2 COLUMNAS */}
@@ -773,7 +780,7 @@ export function CheckoutForm() {
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-bold text-gray-900 text-sm leading-snug">{tourTitle}</h4>
                       <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
-                        US$ {parseFloat(total).toFixed(2)}
+                        {formatCurrency(total)}
                       </span>
                     </div>
 
@@ -802,13 +809,13 @@ export function CheckoutForm() {
                   {/* SUBTOTAL & TOTAL EN VERDE INCA BOUND */}
                   <div className="pt-2 flex items-center justify-between text-xs sm:text-sm">
                     <span className="text-gray-600 font-medium">Subtotal</span>
-                    <span className="font-bold text-gray-900">US$ {parseFloat(total).toFixed(2)}</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(total)}</span>
                   </div>
 
                   <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <span className="font-bold text-gray-900 text-sm sm:text-base">Total a pagar</span>
                     <span className="font-black text-lg sm:text-xl text-[#062918]">
-                      US$ {parseFloat(total).toFixed(2)}
+                      {formatCurrency(total)}
                     </span>
                   </div>
 

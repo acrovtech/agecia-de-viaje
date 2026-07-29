@@ -2,79 +2,37 @@
 
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Calendar, Users, ShieldCheck, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Calendar, Users, ShieldCheck, Trash2, ArrowRight, ShoppingBag, Clock } from 'lucide-react';
+import { useEffect } from 'react';
+import { useCartManager } from '@/hooks/use-cart';
+import { parseCartItemFromParams } from '@/lib/cart-utils';
 
 export function CarritoClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [cartItem, setCartItem] = useState<{
-    slug: string;
-    tourTitle: string;
-    date: string;
-    pax: number;
-    serviceType: string;
-    price: number;
-    total: number;
-  } | null>(null);
+  const { cartItem, remainingMinutes, updateCart, removeItem } = useCartManager();
 
   useEffect(() => {
-    // 1. Leer de query params si viene directo de tour-booking-card
-    const slug = searchParams.get('slug');
-    const tourTitle = searchParams.get('tourTitle');
-    const date = searchParams.get('date');
-    const pax = searchParams.get('pax');
-    const type = searchParams.get('type');
-    const price = searchParams.get('price');
-
-    if (slug && tourTitle && date && price) {
-      const newItem = {
-        slug,
-        tourTitle,
-        date,
-        pax: parseInt(pax || '1', 10),
-        serviceType: type || 'shared',
-        price: parseFloat(price),
-        total: parseFloat(price) * parseInt(pax || '1', 10),
-      };
-      setCartItem(newItem);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('incabound_cart', JSON.stringify(newItem));
-      }
-    } else if (typeof window !== 'undefined') {
-      // 2. O leer de localStorage si ya estaba guardado
-      const saved = localStorage.getItem('incabound_cart');
-      if (saved) {
-        try {
-          setCartItem(JSON.parse(saved));
-        } catch {
-          setCartItem(null);
-        }
-      }
+    // Si viene directo de la URL de un tour, registrar en el carrito
+    const itemFromUrl = parseCartItemFromParams(searchParams);
+    if (itemFromUrl && itemFromUrl.tourSlug) {
+      updateCart(itemFromUrl);
     }
-  }, [searchParams]);
-
-  const handleClearCart = () => {
-    setCartItem(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('incabound_cart');
-    }
-  };
+  }, [searchParams, updateCart]);
 
   const handleProceedToCheckout = () => {
     if (!cartItem) return;
     const query = new URLSearchParams({
-      slug: cartItem.slug,
+      slug: cartItem.tourSlug,
       tourTitle: cartItem.tourTitle,
-      date: cartItem.date,
+      date: cartItem.date || '',
       pax: cartItem.pax.toString(),
       type: cartItem.serviceType,
       price: cartItem.price.toString(),
-      total: cartItem.total.toString(),
+      total: cartItem.totalPrice.toString(),
     });
     router.push(`/checkout?${query.toString()}`);
   };
@@ -108,9 +66,9 @@ export function CarritoClient() {
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-400">
                 <ShoppingBag size={32} />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Tu carrito está vacío</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Tu carrito está vacío o ha expirado</h2>
               <p className="text-gray-500 max-w-md mx-auto mb-6">
-                Aún no has seleccionado ninguna expedición. Explora nuestro catálogo de tours y elige tu próxima aventura en los Andes.
+                Aún no has seleccionado ninguna expedición o transcurrieron más de 60 minutos desde tu selección. Explora nuestro catálogo de tours y elige tu próxima aventura.
               </p>
               <Link
                 href="/tours"
@@ -125,6 +83,17 @@ export function CarritoClient() {
               
               {/* Item Card (2 cols) */}
               <div className="lg:col-span-2 space-y-4">
+                
+                {/* Banner dinámico de expiración */}
+                <div className="bg-[#062918]/8 border border-[#062918]/20 text-[#062918] rounded-xl px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+                  <Clock size={16} className="shrink-0 text-[#062918]" />
+                  <span>
+                    {remainingMinutes > 0 
+                      ? `Este tour permanecerá reservado en tu carrito durante los próximos ${remainingMinutes} minuto${remainingMinutes === 1 ? '' : 's'}.`
+                      : 'Tu sesión de reserva ha expirado.'}
+                  </span>
+                </div>
+
                 <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-2xs relative overflow-hidden flex flex-col md:flex-row gap-6 items-start">
                   
                   {/* Text details */}
@@ -134,9 +103,9 @@ export function CarritoClient() {
                         {cartItem.serviceType === 'shared' ? 'Servicio Compartido' : 'Servicio Privado'}
                       </span>
                       <button
-                        onClick={handleClearCart}
+                        onClick={removeItem}
                         title="Eliminar del carrito"
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -157,7 +126,7 @@ export function CarritoClient() {
 
                     <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
                       <span className="text-xs text-gray-400">Subtotal tour</span>
-                      <span className="text-xl font-bold text-[#062918]">${cartItem.total} USD</span>
+                      <span className="text-xl font-bold text-[#062918]">${cartItem.totalPrice.toFixed(2)} USD</span>
                     </div>
                   </div>
                 </div>
@@ -170,8 +139,8 @@ export function CarritoClient() {
                     ← Explorar más tours
                   </Link>
                   <button
-                    onClick={handleClearCart}
-                    className="text-xs text-red-500 hover:underline"
+                    onClick={removeItem}
+                    className="text-xs text-red-500 hover:underline cursor-pointer"
                   >
                     Vaciar carrito
                   </button>
@@ -185,7 +154,7 @@ export function CarritoClient() {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span className="font-semibold text-gray-900">${cartItem.total} USD</span>
+                    <span className="font-semibold text-gray-900">${cartItem.totalPrice.toFixed(2)} USD</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Cargos por gestión</span>
@@ -193,13 +162,13 @@ export function CarritoClient() {
                   </div>
                   <div className="pt-3 border-t border-gray-100 flex justify-between text-base font-bold text-gray-900">
                     <span>Total a pagar</span>
-                    <span className="text-xl text-[#062918]">${cartItem.total} USD</span>
+                    <span className="text-xl text-[#062918]">${cartItem.totalPrice.toFixed(2)} USD</span>
                   </div>
                 </div>
 
                 <button
                   onClick={handleProceedToCheckout}
-                  className="w-full py-3.5 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   PROCEDER AL PAGO
                   <ArrowRight size={18} />

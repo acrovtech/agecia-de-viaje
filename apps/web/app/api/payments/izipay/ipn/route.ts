@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
 import { sendReservationConfirmationEmail } from '@/lib/email';
-import crypto from 'crypto';
+import { verifyIzipayHMAC, getIzipayHmacSecret } from '@/lib/izipay';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -11,30 +12,31 @@ export async function POST(req: Request) {
     const krAnswerRaw = body['kr-answer'];
     const krHash = body['kr-hash'];
 
-    if (!krAnswerRaw) {
+    if (!krAnswerRaw || !krHash) {
       return NextResponse.json({ error: 'Payload de Izipay inválido' }, { status: 400 });
     }
 
-    const answer = typeof krAnswerRaw === 'string' ? JSON.parse(krAnswerRaw) : krAnswerRaw;
-    
-    const orderId = answer.orderDetails?.orderId;
-    const orderStatus = answer.orderStatus; // Ej. 'PAID', 'AUTHORIZED'
-    const hmacKey = process.env.IZIPAY_HMAC_SHA256 || process.env.IZIPAY_TEST_PASSWORD || '';
+    const hmacKey = getIzipayHmacSecret();
 
-    // Validar firma HMAC-SHA256 si la llave existe
-    if (hmacKey && krHash) {
-      const calculatedHash = crypto
-        .createHmac('sha256', hmacKey)
-        .update(typeof krAnswerRaw === 'string' ? krAnswerRaw : JSON.stringify(krAnswerRaw))
-        .digest('hex');
-
-      if (calculatedHash !== krHash) {
-        console.warn("⚠️ Firma HMAC de Izipay no coincide en IPN.");
-      }
+    if (!hmacKey) {
+      logger('error', 'Izipay IPN Error: No se configuró la llave HMAC adecuada.');
+      return NextResponse.json({ error: 'Configuración de seguridad incompleta' }, { status: 500 });
     }
 
+    // Validar firma HMAC con comparación en tiempo constante
+    const isValidSignature = verifyIzipayHMAC(krAnswerRaw, krHash, hmacKey);
+
+    if (!isValidSignature) {
+      logger('warn', 'IZIPAY IPN RECHAZADO: Firma HMAC inválida.');
+      return NextResponse.json({ error: 'Firma HMAC de Izipay inválida' }, { status: 401 });
+    }
+
+    const answer = typeof krAnswerRaw === 'string' ? JSON.parse(krAnswerRaw) : krAnswerRaw;
+    const orderId = answer.orderDetails?.orderId;
+    const orderStatus = answer.orderStatus; // Ej. 'PAID', 'AUTHORIZED'
+
     if (orderId && (orderStatus === 'PAID' || orderStatus === 'AUTHORIZED')) {
-      console.log(`💳 [IZIPAY IPN] Notificación recibida para Reserva ID: ${orderId} - Estado: ${orderStatus}`);
+      logger('info', `IZIPAY IPN: Notificación válida recibida para Reserva ID: ${orderId} - Estado: ${orderStatus}`);
 
       // 1. Actualizar estado de la Reserva a PAID en PostgreSQL
       const updatedReservation = await prisma.reservation.update({
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ response: 'OK' }, { status: 200 });
   } catch (error: any) {
-    console.error("❌ Error en Webhook IPN de Izipay:", error);
+    logger('error', 'Error en Webhook IPN de Izipay:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

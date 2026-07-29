@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from './logger';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.EMAIL_FROM || 'reserva@incabound.com';
@@ -38,64 +39,59 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
           .content { padding: 32px 24px; }
           .greeting { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
           .message { font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
-          .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-          .card-title { font-size: 16px; font-weight: 700; color: #062918; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-          .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed #e2e8f0; }
-          .row:last-child { border-bottom: none; }
+          .details-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+          .details-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px border-dashed #cbd5e1; font-size: 14px; }
+          .details-row:last-child { border-bottom: none; }
           .label { color: #64748b; font-weight: 500; }
-          .value { color: #0f172a; font-weight: 600; text-align: right; }
-          .price-row { background: #062918; color: #ffffff; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; }
-          .price-row .value { color: #2dd4bf; }
-          .footer { background-color: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-          .btn { display: inline-block; background-color: #062918; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; margin-top: 16px; }
+          .value { color: #0f172a; font-weight: 700; }
+          .btn { display: inline-block; background-color: #062918; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 15px; text-align: center; margin-top: 16px; }
+          .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>INCA BOUND TOUR OPERATOR</h1>
-            <p>¡Tu reserva ha sido confirmada con éxito!</p>
+            <h1>Inca Bound Operator</h1>
+            <p>¡Reserva Confirmada Exitosamente!</p>
           </div>
           
           <div class="content">
-            <div class="greeting">¡Hola, ${data.customerName}! 👋</div>
+            <div class="greeting">¡Hola, ${data.customerName}!</div>
             <div class="message">
-              Nos complace confirmarte que tu expedición a <strong>${data.tourTitle}</strong> está completamente reservada. A continuación te presentamos el resumen de tu reserva:
+              Hemos recibido la confirmación de tu pago de forma 100% segura. Tu expedición a <strong>${data.tourTitle}</strong> está completamente reservada.
             </div>
-            
-            <div class="card">
-              <div class="card-title">Detalles de la Reserva</div>
-              
-              <div class="row">
-                <span class="label">Código de Reserva:</span>
-                <span class="value">${data.reservationId.slice(-8).toUpperCase()}</span>
+
+            <div class="details-card">
+              <div class="details-row">
+                <span class="label">Código de Reserva</span>
+                <span class="value">#${data.reservationId.slice(-8).toUpperCase()}</span>
               </div>
-              <div class="row">
-                <span class="label">Tour:</span>
+              <div class="details-row">
+                <span class="label">Tour Reservado</span>
                 <span class="value">${data.tourTitle}</span>
               </div>
-              <div class="row">
-                <span class="label">Fecha de Viaje:</span>
+              <div class="details-row">
+                <span class="label">Fecha del Tour</span>
                 <span class="value">${data.formattedDate}</span>
               </div>
-              <div class="row">
-                <span class="label">Pasajeros:</span>
+              <div class="details-row">
+                <span class="label">Número de Pasajeros</span>
                 <span class="value">${data.pax} ${data.pax === 1 ? 'Pasajero' : 'Pasajeros'}</span>
               </div>
               ${data.pickupHotel ? `
-              <div class="row">
-                <span class="label">Hotel de Recojo:</span>
+              <div class="details-row">
+                <span class="label">Lugar de Recojo</span>
                 <span class="value">${data.pickupHotel}</span>
-              </div>` : ''}
-
-              <div class="price-row">
-                <span>Total Pagado:</span>
-                <span class="value">$${data.totalPrice} USD</span>
+              </div>
+              ` : ''}
+              <div class="details-row">
+                <span class="label">Monto Total Pagado</span>
+                <span class="value" style="color: #062918; font-size: 16px;">US$ ${data.totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
-            <div class="message" style="font-size: 13px; color: #64748b;">
-              💡 <strong>Recomendaciones para tu viaje:</strong> Recuerda llevar tu documento de identidad o pasaporte original, ropa abrigadora en capas, protector solar y calzado cómodo con buena tracción.
+            <div class="message">
+              Nuestro equipo de operaciones en Cusco se pondrá en contacto contigo 24 horas antes del tour para confirmar los detalles exactos del horario de recojo.
             </div>
 
             <div style="text-align: center; margin-top: 24px;">
@@ -115,7 +111,7 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
     `;
 
     if (!resend) {
-      console.log(`📧 [MODO SIMULADO CORREO] Correo de confirmación generado para ${data.customerEmail} (Resend no configurado).`);
+      logger('info', `Correo de confirmación simulado para ${data.customerEmail} (Resend no configurado).`);
       return { success: true, simulated: true };
     }
 
@@ -126,10 +122,10 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
       html: htmlContent,
     });
 
-    console.log("✅ Correo de confirmación enviado exitosamente con Resend:", response);
+    logger('info', 'Correo de confirmación enviado exitosamente con Resend:', response);
     return { success: true, response };
   } catch (error: any) {
-    console.error("❌ Error enviando correo de confirmación:", error);
+    logger('error', 'Error enviando correo de confirmación:', error);
     return { success: false, error: error.message };
   }
 }

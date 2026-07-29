@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
-import crypto from 'crypto';
+import { verifyIzipayHMAC, getIzipayHmacSecret } from '@/lib/izipay';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -11,44 +12,43 @@ export async function POST(req: Request) {
     const krHash = params.get('kr-hash');
     
     if (!krAnswerStr || !krHash) {
-      return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+      return NextResponse.json({ error: 'Faltan parámetros requeridos (kr-answer / kr-hash)' }, { status: 400 });
     }
 
-    const hmacKey = process.env.IZIPAY_HMAC_KEY;
+    const hmacKey = getIzipayHmacSecret();
 
     if (!hmacKey) {
-      console.error('IziPay IPN: Llave HMAC no configurada');
-      return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
+      logger('error', 'Izipay Callback Error: Llave HMAC no configurada');
+      return NextResponse.json({ error: 'Configuración de seguridad incompleta' }, { status: 500 });
     }
 
-    // Validar firma
-    const calculatedHash = crypto.createHmac('sha256', hmacKey).update(krAnswerStr).digest('hex');
-    if (calculatedHash !== krHash) {
-      console.error('IziPay IPN: Firma inválida');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    // Validar firma HMAC con función unificada
+    const isValidSignature = verifyIzipayHMAC(krAnswerStr, krHash, hmacKey);
+    if (!isValidSignature) {
+      logger('warn', 'IZIPAY CALLBACK RECHAZADO: Firma HMAC inválida');
+      return NextResponse.json({ error: 'Firma HMAC inválida' }, { status: 401 });
     }
 
     // Procesar la respuesta
     const answer = JSON.parse(krAnswerStr);
-    const orderId = answer.orderDetails.orderId;
+    const orderId = answer.orderDetails?.orderId;
     const orderStatus = answer.orderStatus; // e.g., 'PAID', 'UNPAID', 'RUNNING'
 
-    console.log(`IziPay IPN Recibido. Orden: ${orderId}, Status: ${orderStatus}`);
+    logger('info', `IZIPAY CALLBACK: Petición recibida. Orden: ${orderId}, Estado: ${orderStatus}`);
 
     // Si el pago es exitoso, actualizar el estado de la reserva en la Base de Datos
-    if (orderStatus === 'PAID') {
+    if (orderId && orderStatus === 'PAID') {
       await prisma.reservation.update({
         where: { id: orderId },
         data: { status: 'PAID' }
       });
-      console.log(`Reserva ${orderId} actualizada a PAID.`);
+      logger('info', `Reserva ${orderId} actualizada a PAID.`);
     }
 
-    // IziPay requiere que devuelvas un 200 OK con texto para confirmar recepción
     return new NextResponse('OK', { status: 200 });
 
   } catch (error) {
-    console.error('Error procesando IPN de Izipay:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    logger('error', 'Error procesando callback de Izipay:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

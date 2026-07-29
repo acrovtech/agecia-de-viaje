@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
 import { sendReservationConfirmationEmail } from '@/lib/email';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, reservation: updatedReservation });
   } catch (error: any) {
-    console.error("Error en pago simulado:", error);
+    logger('error', "Error en pago simulado:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

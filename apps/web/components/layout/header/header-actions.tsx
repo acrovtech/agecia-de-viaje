@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ShoppingCart, Menu, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useCartManager } from '@/hooks/use-cart';
 
 interface HeaderActionsProps {
   isMobileMenuOpen: boolean;
@@ -10,25 +10,8 @@ interface HeaderActionsProps {
 }
 
 export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderActionsProps) {
-  const [cartCount, setCartCount] = useState<number>(0);
-
-  useEffect(() => {
-    const updateCartCount = () => {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('incabound_cart');
-        const urlParams = new URLSearchParams(window.location.search);
-        if (saved || urlParams.get('tourTitle') || urlParams.get('slug')) {
-          setCartCount(1);
-        } else {
-          setCartCount(0);
-        }
-      }
-    };
-
-    updateCartCount();
-    window.addEventListener('storage', updateCartCount);
-    return () => window.removeEventListener('storage', updateCartCount);
-  }, []);
+  const { cartItem } = useCartManager();
+  const cartCount = cartItem ? 1 : 0;
 
   const textColor = isMobileMenuOpen ? 'text-gray-900' : 'text-white';
   const hoverBg = isMobileMenuOpen ? 'hover:bg-gray-100' : 'hover:bg-white/10';
@@ -58,12 +41,16 @@ export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderAc
         <Menu 
           size={26} 
           strokeWidth={1.75} 
-          className={`absolute transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'}`} 
+          className={`transition-all duration-300 transform ${
+            isMobileMenuOpen ? 'opacity-0 scale-50 rotate-90 absolute' : 'opacity-100 scale-100 rotate-0'
+          }`}
         />
         <X 
           size={26} 
           strokeWidth={1.75} 
-          className={`absolute transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 rotate-0 scale-100 text-gray-900' : 'opacity-0 -rotate-90 scale-50'}`} 
+          className={`transition-all duration-300 transform ${
+            isMobileMenuOpen ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90 absolute'
+          }`}
         />
       </button>
     </div>

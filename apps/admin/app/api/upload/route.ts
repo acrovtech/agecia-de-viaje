@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { uploadToR2 } from '@/lib/r2';
+import { verifyAdminSession } from '@/lib/auth-check';
 
 export async function POST(request: Request) {
   try {
+    const isAuthenticated = await verifyAdminSession();
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { success: false, error: 'No autorizado. Se requiere sesión de administrador.' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const folder = (formData.get('folder') as string) || 'assets';

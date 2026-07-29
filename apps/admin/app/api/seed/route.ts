@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
+import { verifyAdminSession } from '@/lib/auth-check';
 
 export async function GET() {
   try {
+    const isAuthenticated = await verifyAdminSession();
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'No autorizado. Se requiere sesión de administrador.' },
+        { status: 401 }
+      );
+    }
+
     // 1. Hash passwords
     const masterPasswordHash = await bcrypt.hash('IncaBound2026!', 10);
     const clientPasswordHash = await bcrypt.hash('IncaBoundClient!', 10);

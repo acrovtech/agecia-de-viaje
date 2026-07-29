@@ -48,46 +48,51 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       }
     });
 
-    // 3. Izipay Form Token
+    // 3. Izipay Form Token (Sin token fallback silencioso)
     const shopId = process.env.IZIPAY_SHOP_ID;
     const testPassword = process.env.IZIPAY_TEST_PASSWORD;
 
-    let formToken = "DEMO_TEST_FORM_TOKEN";
-
-    if (shopId && testPassword) {
-      try {
-        const authHeader = `Basic ${Buffer.from(`${shopId}:${testPassword}`).toString('base64')}`;
-        const izipayResponse = await fetch("https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment", {
-          method: "POST",
-          headers: {
-            "Authorization": authHeader,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            amount: Math.round((data.totalPrice || 100) * 100),
-            currency: "USD",
-            orderId: reservation.id,
-            customer: {
-              email: data.customerEmail,
-              billingDetails: {
-                firstName: data.customerFirstName,
-                lastName: data.customerLastName,
-                phoneNumber: data.customerPhone,
-              }
-            }
-          })
-        });
-
-        const izipayData = await izipayResponse.json();
-        if (izipayData.status === "SUCCESS") {
-          formToken = izipayData.answer.formToken;
-        } else {
-          console.warn("Izipay API status non-success:", izipayData);
-        }
-      } catch (e) {
-        console.warn("Izipay API fetch failed, using fallback token:", e);
-      }
+    if (!shopId || !testPassword) {
+      console.error("❌ CRÍTICO: No se encontraron las credenciales de Izipay (IZIPAY_SHOP_ID o IZIPAY_TEST_PASSWORD).");
+      return {
+        success: false,
+        error: "Configuración de pasarela de pago incompleta en el servidor. Contacte con soporte."
+      };
     }
+
+    const authHeader = `Basic ${Buffer.from(`${shopId}:${testPassword}`).toString('base64')}`;
+    const izipayResponse = await fetch("https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment", {
+      method: "POST",
+      headers: {
+        "Authorization": authHeader,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        amount: Math.round((data.totalPrice || 100) * 100),
+        currency: "USD",
+        orderId: reservation.id,
+        customer: {
+          email: data.customerEmail,
+          billingDetails: {
+            firstName: data.customerFirstName,
+            lastName: data.customerLastName,
+            phoneNumber: data.customerPhone,
+          }
+        }
+      })
+    });
+
+    const izipayData = await izipayResponse.json();
+
+    if (izipayData.status !== "SUCCESS" || !izipayData.answer?.formToken) {
+      console.error("❌ CRÍTICO: Error obteniendo Form Token de Izipay:", izipayData);
+      return {
+        success: false,
+        error: izipayData._error?.message || "No se pudo iniciar la transacción con la pasarela de pago."
+      };
+    }
+
+    const formToken = izipayData.answer.formToken;
 
     await prisma.reservation.update({
       where: { id: reservation.id },
@@ -100,7 +105,7 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       formToken: formToken 
     };
   } catch (error: any) {
-    console.error("Error creating reservation:", error);
+    console.error("Error al crear reserva:", error);
     return { success: false, error: error?.message || "Error al crear la reserva" };
   }
 }

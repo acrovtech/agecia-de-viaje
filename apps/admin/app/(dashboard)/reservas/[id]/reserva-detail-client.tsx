@@ -18,29 +18,14 @@ type Passenger = {
   docNumber: string;
 };
 
+import { formatSpanishDate } from '@repo/ui/lib/date-utils';
+
 function formatSpanishDateNoDay(dateInput: Date | string): string {
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return 'Fecha por confirmar';
-
-  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-  const dayNum = d.getUTCDate();
-  const monthName = months[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-
-  return `${dayNum} de ${monthName} de ${year}`;
+  return formatSpanishDate(dateInput, 'long');
 }
 
 function formatSpanishDateShort(dateInput: Date | string): string {
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return 'N/A';
-
-  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  const dayNum = d.getUTCDate();
-  const monthName = months[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-
-  return `${dayNum} ${monthName} ${year}`;
+  return formatSpanishDate(dateInput, 'short');
 }
 
 function calculateEndDateNoDay(dateInput: Date | string, durationStr?: string | null): string {

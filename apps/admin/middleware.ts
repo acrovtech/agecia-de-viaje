@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyAdminToken } from '@/lib/jwt';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow static assets, images, API routes and the login page
+  // Permitir assets estáticos, login e imágenes
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/_next') ||
@@ -23,28 +24,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const rawValue = sessionCookie.value;
+  // Verificar la firma criptográfica (JWT HS256) y expiración de 8h del token de sesión
+  const validSession = await verifyAdminToken(sessionCookie.value);
 
-  // 1. Compatibilidad con tokens simples
-  if (rawValue === 'MASTER' || rawValue === 'CLIENT') {
-    return NextResponse.next();
-  }
-
-  // 2. Decodificar y validar token con timestamp de expiración (8 horas)
-  try {
-    const decodedJson = Buffer.from(rawValue, 'base64').toString('utf-8');
-    const payload = JSON.parse(decodedJson);
-
-    if (!payload.role || !payload.exp || Date.now() > payload.exp) {
-      // Sesión expirada
-      const loginUrl = new URL('/login?expired=1', request.url);
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('admin_session');
-      return response;
-    }
-  } catch {
-    // Cookie corrupta o alterada
-    const loginUrl = new URL('/login', request.url);
+  if (!validSession) {
+    // Firma inválida, token forjado o sesión expirada
+    const loginUrl = new URL('/login?expired=1', request.url);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete('admin_session');
     return response;
