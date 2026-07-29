@@ -245,12 +245,12 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <a
             href={`https://wa.me/${formatPhoneForWhatsapp(reserva.customerPhone)}?text=Hola%20${reserva.customerFirstName},%20te%20escribimos%20de%20Inca%20Bound%20sobre%20tu%20reserva%20de%20${encodeURIComponent(reserva.tour?.title || 'Tour')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-xs transition-all select-none"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3.5 py-2 h-9 sm:h-8 rounded-lg shadow-xs transition-all select-none cursor-pointer"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Contactar por WhatsApp</span>
