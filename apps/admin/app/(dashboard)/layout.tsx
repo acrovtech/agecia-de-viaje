@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   return (
     <TitleProvider>
       <InactivityTimer />
-      <div className="flex h-screen w-full overflow-hidden bg-[#EBEBEB] font-sans">
+      <div className="flex flex-col h-screen w-full overflow-hidden bg-[#EBEBEB] font-sans">
         
         {/* TOPBAR NEGRO SHOPIFY ADMIN (#0a0a0a) */}
         <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between bg-[#0a0a0a] text-white px-4 shrink-0 shadow-sm text-xs select-none">
@@ -64,8 +64,8 @@ export default async function DashboardLayout({
 
         </header>
 
-        {/* BODY CONTAINER (debajo del header fijo) */}
-        <div className="flex w-full h-full pt-14">
+        {/* BODY CONTAINER (Ajustado exactamente al alto remanente de la pantalla) */}
+        <div className="flex w-full flex-1 min-h-0 pt-14 overflow-hidden">
           
           {/* SIDEBAR NAVEGACIÓN POLARIS (#EBEBEB) */}
           <div className="hidden md:flex md:w-[240px] lg:w-[240px] md:flex-col h-full shrink-0 shadow-xs z-20">
@@ -74,7 +74,7 @@ export default async function DashboardLayout({
 
           {/* CONTENIDO PRINCIPAL (#F1F1F1) */}
           <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#F1F1F1]">
-            <main className="flex-1 px-6 py-6 w-full max-w-full">
+            <main className="flex-1 px-4 sm:px-6 py-6 w-full max-w-full">
               {children}
             </main>
           </div>

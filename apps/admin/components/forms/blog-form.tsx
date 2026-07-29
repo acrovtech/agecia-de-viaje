@@ -236,9 +236,9 @@ export function BlogForm({ initialData }: { initialData?: any }) {
     >
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
       
-      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS */}
+      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Alineada al fondo en Mobile y al centro del Topbar en Desktop) */}
       {(isDirty || !initialData?.id) && (
-        <div className="fixed top-2 left-2 right-2 md:left-1/2 md:-translate-x-1/2 md:right-auto z-[60] flex items-center justify-between gap-2 md:gap-8 md:min-w-[620px] bg-[#222222] text-white py-1.5 px-3 md:py-1 md:pr-1 md:pb-1 md:pl-3.5 rounded-xl shadow-2xl border border-white/15 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-4 left-3 right-3 md:bottom-auto md:top-2 md:left-1/2 md:-translate-x-1/2 md:right-auto z-[60] flex items-center justify-between gap-2 md:gap-8 md:min-w-[620px] bg-[#222222] text-white py-1.5 px-3 md:py-1 md:pr-1 md:pb-1 md:pl-3.5 rounded-xl shadow-2xl border border-white/15 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-2 overflow-hidden">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 fill-[#EEEEEE] shrink-0">
               <path d="M8 4a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75"></path>
