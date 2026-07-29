@@ -182,44 +182,60 @@ export default async function DashboardPage() {
           {recentReservations.length > 0 ? (
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Cliente</th>
-                  <th className="py-3 px-4">Tour Reservado</th>
-                  <th className="py-3 px-4">Fecha Viaje</th>
-                  <th className="py-3 px-4">Pasajeros</th>
-                  <th className="py-3 px-4 text-right">Monto</th>
-                  <th className="py-3 px-4 text-center">Estado</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4 text-left">CLIENTE</th>
+                  <th className="py-3 px-4 text-left">TOUR RESERVADO</th>
+                  <th className="py-3 px-4 text-center whitespace-nowrap">FECHA VIAJE</th>
+                  <th className="py-3 px-4 text-center">PASAJEROS</th>
+                  <th className="py-3 px-4 text-center whitespace-nowrap">MONTO</th>
+                  <th className="py-3 px-4 text-center">ESTADO</th>
+                  <th className="py-3 px-4 text-center">DETALLE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {recentReservations.map((res) => (
                   <tr key={res.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 text-left">
                       <div className="font-semibold text-[#2f2f2f]">{res.customerFirstName} {res.customerLastName}</div>
-                      <div className="text-[11px] text-slate-500">{res.customerEmail}</div>
+                      <div className="text-[11px] text-slate-400">{res.customerEmail}</div>
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-[#2f2f2f]">
-                      {res.tour?.title || 'Tour Inca Bound'}
+                    <td className="py-3.5 px-4 text-left font-bold text-[#2f2f2f] uppercase truncate">
+                      {res.tour?.title || 'TOUR INCA BOUND'}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      {new Date(res.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <td className="py-3.5 px-4 text-center text-slate-600 font-medium whitespace-nowrap">
+                      {new Date(res.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-medium">
+                    <td className="py-3.5 px-4 text-center font-semibold text-slate-700">
                       {res.pax} {res.pax === 1 ? 'Persona' : 'Personas'}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-[#2f2f2f]">
+                    <td className="py-3.5 px-4 text-center font-bold text-[#2f2f2f] whitespace-nowrap">
                       ${res.totalPrice.toFixed(2)} USD
                     </td>
-                    <td className="py-3.5 px-4 text-center">
-                      {res.status === 'PAID' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      {res.status === 'PAID' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 size={12} /> Pagado
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                      )}
+                      {res.status === 'PENDING' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock size={12} /> Pendiente
                         </span>
                       )}
+                      {res.status === 'CANCELLED' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                          <AlertCircle size={12} /> Cancelado
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <Link
+                        href={`/reservas/${res.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBEBEB] hover:bg-slate-900 hover:text-white text-[#2f2f2f] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <span>Ver Detalle</span>
+                        <ArrowRight size={12} />
+                      </Link>
                     </td>
                   </tr>
                 ))}
