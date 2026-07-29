@@ -57,8 +57,22 @@ export function CheckoutForm() {
     ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'Fecha por confirmar';
 
+  const formattedStartDateShort = dateObj
+    ? dateObj.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : 'Por confirmar';
+
   // Fecha de fin (para tours de 1D / 1/2 Día la fecha de fin es el mismo día)
   const formattedEndDate = formattedStartDate;
+  const formattedEndDateShort = formattedStartDateShort;
+
+  // Monograma de tour (ej: MP para Machu Picchu)
+  const tourInitials = tourTitle
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'IB';
 
   // Control del Stepper (Paso 1: Reserva | Paso 2: Pasajeros | Paso 3: Pago)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -569,7 +583,7 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 2: TITULAR DE CONTACTO (CON BOTÓN DE COPIAR PASAJERO 1 A TITULAR) */}
+              {/* SECCIÓN 2: TITULAR DE CONTACTO */}
               {/* ------------------------------------------------------------------------- */}
               <div className="space-y-4 pt-4 border-t border-gray-200/80">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
@@ -750,42 +764,117 @@ export function CheckoutForm() {
           )}
 
           {/* ========================================================================= */}
-          {/* PASO 3: PASARELA DE PAGO IZIPAY */}
+          {/* PASO 3: PASARELA DE PAGO IZIPAY EN 2 COLUMNAS (RESUMEN EN COL 1 + PAGO EN COL 2) */}
           {/* ========================================================================= */}
           {currentStep === 3 && (
             <div className="space-y-6">
               
-              <div className="text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-2">
-                  <ShieldCheck size={24} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">Pago 100% Seguro con Izipay</h2>
-                <p className="text-xs text-gray-500 max-w-md mx-auto">
-                  Ingresa los datos de tu tarjeta de crédito o débito a continuación. La transacción está encriptada con certificación PCI-DSS.
-                </p>
-              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* COLUMNA 1: RESUMEN DE RESERVAS (DISEÑO IDÉNTICO AL PLUGIN) */}
+                <div className="lg:col-span-6 border border-gray-200 rounded-2xl p-6 bg-white shadow-2xs space-y-5">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Resumen de reservas
+                  </h3>
 
-              {/* CONTENEDOR DEL FORMULARIO IZIPAY */}
-              <div className="max-w-md mx-auto bg-gray-50 p-6 rounded-2xl border border-gray-200/90 shadow-2xs min-h-[320px] flex items-center justify-center">
-                <div id="izipay-form-container" className="w-full">
-                  {!formToken && (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-3">
-                      <Loader2 size={28} className="animate-spin text-[#062918]" />
-                      <span className="text-xs font-semibold">Cargando pasarela de pago segura...</span>
+                  {/* ITEM DE TOUR */}
+                  <div className="flex items-start gap-3.5 p-4 rounded-xl bg-gray-50/80 border border-gray-100">
+                    
+                    {/* Monograma de Tour o Imagen Fallback */}
+                    <div className="w-14 h-14 rounded-xl bg-gray-200/80 shrink-0 flex items-center justify-center font-black text-gray-500 text-sm overflow-hidden relative border border-gray-200/50">
+                      {tourImage && tourImage !== 'null' && tourImage !== 'undefined' ? (
+                        <Image src={tourImage} alt={tourTitle} fill className="object-cover" unoptimized />
+                      ) : (
+                        <span className="tracking-wider">{tourInitials}</span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors inline-flex items-center gap-1.5"
-                >
-                  <ArrowLeft size={14} />
-                  Regresar a modificar datos de pasajeros
-                </button>
+                    {/* Detalles del Tour */}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2">{tourTitle}</h4>
+                        <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
+                          US$ {parseFloat(total).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500 pt-1">
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                          <span>Fecha inicio</span>
+                          <span className="font-semibold text-gray-800">{formattedStartDateShort}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                          <span>Fecha fin</span>
+                          <span className="font-semibold text-gray-800">{formattedEndDateShort}</span>
+                        </div>
+                        <div className="flex justify-between pt-0.5">
+                          <span>Pasajeros</span>
+                          <span className="font-semibold text-gray-800">{numPax}</span>
+                        </div>
+                        <div className="flex justify-between pt-0.5">
+                          <span>Servicio</span>
+                          <span className="font-semibold text-gray-800 capitalize">
+                            {serviceType === 'shared' ? 'Compartido' : 'Privado'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* SUBTOTAL & TOTAL LINEAS PUNTEADAS */}
+                  <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-gray-600 font-medium">Subtotal</span>
+                    <span className="font-bold text-gray-900">US$ {parseFloat(total).toFixed(2)}</span>
+                  </div>
+
+                  <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">Total a pagar</span>
+                    <span className="font-black text-lg sm:text-xl text-rose-500">
+                      US$ {parseFloat(total).toFixed(2)}
+                    </span>
+                  </div>
+
+                </div>
+
+                {/* COLUMNA 2: FORMULARIO DE PAGO IZIPAY */}
+                <div className="lg:col-span-6 space-y-4">
+                  
+                  <div className="space-y-1 text-center lg:text-left">
+                    <div className="flex items-center justify-center lg:justify-start gap-2 text-emerald-700 font-bold text-sm">
+                      <ShieldCheck size={18} />
+                      <span>Pago 100% Seguro con Izipay</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Ingresa los datos de tu tarjeta de crédito o débito. La transacción está protegida con cifrado bancario PCI-DSS.
+                    </p>
+                  </div>
+
+                  {/* CONTENEDOR DEL FORMULARIO IZIPAY */}
+                  <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-2xs min-h-[320px] flex items-center justify-center">
+                    <div id="izipay-form-container" className="w-full">
+                      {!formToken && (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-3">
+                          <Loader2 size={28} className="animate-spin text-[#062918]" />
+                          <span className="text-xs font-semibold">Cargando pasarela de pago segura...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 text-center lg:text-left">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ArrowLeft size={14} />
+                      Regresar a modificar datos de pasajeros
+                    </button>
+                  </div>
+
+                </div>
+
               </div>
 
             </div>
