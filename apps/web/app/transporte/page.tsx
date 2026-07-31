@@ -117,10 +117,14 @@ export default function TransportePage() {
             <div className="space-y-12">
               {/* Vehículo 1 */}
               <div className="flex flex-col md:flex-row gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
-                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden bg-gray-200">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    <span className="text-sm uppercase tracking-widest font-semibold">Mercedes-Benz Sprinter</span>
-                  </div>
+                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
+                  <Image 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-sprinter-cusco.png" 
+                    alt="Mercedes-Benz Sprinter Turística IncaBound"
+                    fill
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    unoptimized={true}
+                  />
                 </div>
                 <div className="w-full md:w-1/2 space-y-4">
                   <div className="inline-block px-3 py-1 bg-[#2dd4bf]/10 text-[#062918] font-bold text-xs rounded-full uppercase tracking-wider mb-2">
@@ -149,10 +153,14 @@ export default function TransportePage() {
 
               {/* Vehículo 2 */}
               <div className="flex flex-col md:flex-row-reverse gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
-                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden bg-gray-200">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    <span className="text-sm uppercase tracking-widest font-semibold">Toyota Hiace / Hyundai H1</span>
-                  </div>
+                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
+                  <Image 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-minivan-valle-sagrado.png" 
+                    alt="Minivan Ejecutiva Toyota Hiace IncaBound"
+                    fill
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    unoptimized={true}
+                  />
                 </div>
                 <div className="w-full md:w-1/2 space-y-4">
                   <div className="inline-block px-3 py-1 bg-[#2dd4bf]/10 text-[#062918] font-bold text-xs rounded-full uppercase tracking-wider mb-2">
@@ -178,10 +186,14 @@ export default function TransportePage() {
 
               {/* Vehículo 3 */}
               <div className="flex flex-col md:flex-row gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
-                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden bg-gray-200">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    <span className="text-sm uppercase tracking-widest font-semibold">SUV 4x4</span>
-                  </div>
+                <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
+                  <Image 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-suv-privado-andes.png" 
+                    alt="Camioneta SUV 4x4 Toyota Prado IncaBound"
+                    fill
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    unoptimized={true}
+                  />
                 </div>
                 <div className="w-full md:w-1/2 space-y-4">
                   <div className="inline-block px-3 py-1 bg-[#2dd4bf]/10 text-[#062918] font-bold text-xs rounded-full uppercase tracking-wider mb-2">

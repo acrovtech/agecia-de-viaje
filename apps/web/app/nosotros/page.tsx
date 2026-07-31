@@ -1,13 +1,12 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { AboutHero } from '@/components/about/about-hero';
-import { TeamSection } from '@/components/about/team-section';
 import { StatsCounter } from '@/components/about/stats-counter';
 import { CertificatesSection } from '@/components/about/certificates-section';
 
 export const metadata = {
   title: 'Nosotros | Inca Bound',
-  description: 'Conoce más sobre Inca Bound, nuestro equipo de expertos locales y nuestro compromiso con el turismo sostenible en Perú.',
+  description: 'Conoce más sobre Inca Bound, nuestra historia y nuestro compromiso con el turismo sostenible en Perú.',
 };
 
 export default function AboutPage() {
@@ -35,9 +34,6 @@ export default function AboutPage() {
 
         {/* Story Section */}
         <AboutHero />
-
-        {/* 2. Equipo (Tarjetas de Guías/Staff) */}
-        <TeamSection />
 
         {/* 3. Contador Animado (Años, Viajeros, etc.) */}
         <StatsCounter />
