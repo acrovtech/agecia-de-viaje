@@ -18,7 +18,7 @@ export function ContactForm() {
   };
 
   return (
-    <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-gray-100">
+    <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col justify-between">
       <h2 className="text-3xl md:text-4xl font-bold font-heading text-gray-900 tracking-tight mb-6">Envíanos un Mensaje</h2>
       <p className="text-gray-600 mb-8">
         ¿Tienes dudas sobre un tour o quieres un itinerario personalizado? Escríbenos y nuestro equipo te responderá a la brevedad.

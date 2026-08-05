@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export function ContactInfo() {
   return (
-    <div className="h-full flex flex-col justify-between space-y-8">
+    <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col justify-between space-y-8">
       <div>
         <h2 className="text-3xl md:text-4xl font-bold font-heading text-gray-900 tracking-tight mb-6">Información de Contacto</h2>
         <p className="text-gray-600 mb-8 leading-relaxed">
