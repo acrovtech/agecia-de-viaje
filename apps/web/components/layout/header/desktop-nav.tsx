@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import { DestinosMegamenu } from './destinos-megamenu';
 import { CaminatasMegamenu } from './caminatas-megamenu';
 import { PaquetesMegamenu } from './paquetes-megamenu';
+import { TransporteMegamenu } from './transporte-megamenu';
 
 type MenuTour = {
   id: string;
@@ -49,7 +50,14 @@ export function DesktopNav({ tours }: { tours: MenuTour[] }) {
         <span>Paquetes</span> <ChevronDown size={14} />
       </div>
 
-      <Link href="/transporte" className="hover:text-white transition-colors py-4">Solo Transporte</Link>
+      {/* Solo Transporte */}
+      <div 
+        className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors h-full py-4"
+        onMouseEnter={() => setActiveMenu('transporte')}
+      >
+        <span>Solo Transporte</span> <ChevronDown size={14} />
+      </div>
+
       <Link href="/blog" className="hover:text-white transition-colors py-4">Blogs</Link>
       <Link href="/nosotros" className="hover:text-white transition-colors py-4">Nosotros</Link>
       <Link href="/contacto" className="hover:text-white transition-colors py-4">Contáctanos</Link>
@@ -61,6 +69,7 @@ export function DesktopNav({ tours }: { tours: MenuTour[] }) {
             {activeMenu === 'destinos' && <DestinosMegamenu />}
             {activeMenu === 'caminatas' && <CaminatasMegamenu />}
             {activeMenu === 'paquetes' && <PaquetesMegamenu tours={tours} />}
+            {activeMenu === 'transporte' && <TransporteMegamenu />}
           </div>
         </div>
       )}

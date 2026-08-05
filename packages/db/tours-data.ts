@@ -10,6 +10,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 80.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours/tour-laguna-humantay.png",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours/tour-laguna-humantay.png",
     itineraries: [
       {
         order: 0,

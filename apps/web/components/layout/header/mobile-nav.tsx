@@ -20,9 +20,12 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </Link>
           <ChevronDown size={18} className="absolute right-6 text-gray-400 pointer-events-none" />
         </div>
-        <Link href="/transporte" className="relative py-5 border-b border-gray-100" onClick={onClose}>
-          Solo Transporte
-        </Link>
+        <div className="relative border-b border-gray-100 flex items-center justify-center">
+          <Link href="/transporte" className="py-5 w-full text-center" onClick={onClose}>
+            Solo Transporte
+          </Link>
+          <ChevronDown size={18} className="absolute right-6 text-gray-400 pointer-events-none" />
+        </div>
         <Link href="/blog" className="relative py-5 border-b border-gray-100" onClick={onClose}>
           Blogs
         </Link>
