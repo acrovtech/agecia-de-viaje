@@ -22,7 +22,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/paquete-lima-cusco.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-inca-bound.webp" 
             alt="Paquete Lima - Cusco" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
@@ -47,7 +47,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/paquete-lima-arequipa.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/experiencia-viajes-inca-bound.webp" 
             alt="Paquete Lima - Arequipa" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
@@ -72,7 +72,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/paquete-lima-ica.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/viajes-seguros-peru-inca-bound.webp" 
             alt="Paquete Lima - Ica" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
