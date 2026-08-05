@@ -21,7 +21,13 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       {/* Lima - Cusco */}
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
-          <Image src="/fallback.svg" alt="Lima-Cusco" fill className="object-cover" />
+          <Image 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp" 
+            alt="Paquete Lima - Cusco" 
+            fill 
+            className="object-cover transition-transform duration-500 hover:scale-105" 
+            unoptimized={true}
+          />
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Cusco</h3>
@@ -40,7 +46,13 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       {/* Lima - Arequipa */}
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
-          <Image src="/fallback.svg" alt="Lima-Arequipa" fill className="object-cover" />
+          <Image 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-arequipa.webp" 
+            alt="Paquete Lima - Arequipa" 
+            fill 
+            className="object-cover transition-transform duration-500 hover:scale-105" 
+            unoptimized={true}
+          />
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Arequipa</h3>
@@ -59,7 +71,13 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       {/* Lima - Ica */}
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
-          <Image src="/fallback.svg" alt="Lima-Ica" fill className="object-cover" />
+          <Image 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-ica.webp" 
+            alt="Paquete Lima - Ica" 
+            fill 
+            className="object-cover transition-transform duration-500 hover:scale-105" 
+            unoptimized={true}
+          />
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Ica</h3>
