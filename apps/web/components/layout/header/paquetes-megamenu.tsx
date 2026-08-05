@@ -22,7 +22,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours/tour-machu-picchu.png" 
             alt="Paquete Lima - Cusco" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
@@ -47,7 +47,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-arequipa.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-2.webp" 
             alt="Paquete Lima - Arequipa" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
@@ -72,7 +72,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
       <div>
         <div className="w-full h-40 bg-gray-600 rounded-xl mb-6 relative overflow-hidden shadow-lg">
           <Image 
-            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-ica.webp" 
+            src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-3.webp" 
             alt="Paquete Lima - Ica" 
             fill 
             className="object-cover transition-transform duration-500 hover:scale-105" 
