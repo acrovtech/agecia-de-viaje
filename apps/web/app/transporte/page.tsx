@@ -119,7 +119,7 @@ export default function TransportePage() {
               <div className="flex flex-col md:flex-row gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
                 <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
                   <Image 
-                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-sprinter-cusco.png" 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/flota/sprinter-cusco.webp" 
                     alt="Mercedes-Benz Sprinter Turística IncaBound"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-105"
@@ -155,7 +155,7 @@ export default function TransportePage() {
               <div className="flex flex-col md:flex-row-reverse gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
                 <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
                   <Image 
-                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-minivan-valle-sagrado.png" 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/flota/minivan-valle-sagrado.webp" 
                     alt="Minivan Ejecutiva Toyota Hiace IncaBound"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-105"
@@ -188,7 +188,7 @@ export default function TransportePage() {
               <div className="flex flex-col md:flex-row gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
                 <div className="w-full md:w-1/2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-sm">
                   <Image 
-                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-suv-privado-andes.png" 
+                    src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/flota/suv-privado-andes.webp" 
                     alt="Camioneta SUV 4x4 Toyota Prado IncaBound"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-105"
