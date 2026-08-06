@@ -93,7 +93,7 @@ export function DestinosMegamenu() {
           </div>
           <div className="grid grid-cols-3 gap-3 flex-1 pb-1">
             {[
-              { name: 'CUSCO', key: 'cusco', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp' },
+              { name: 'CUSCO', key: 'cusco', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp?v=noche' },
               { name: 'PUNO', key: 'puno', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-puno.webp' },
               { name: 'AREQUIPA', key: 'arequipa', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-arequipa.webp' },
               { name: 'ICA', key: 'ica', image: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-ica.webp' },
