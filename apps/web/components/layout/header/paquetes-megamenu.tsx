@@ -28,7 +28,6 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
-          <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Cusco</h3>
         <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -53,7 +52,6 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
-          <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Arequipa</h3>
         <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -78,7 +76,6 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
-          <div className="absolute inset-0 bg-black/20" />
         </div>
         <h3 className="font-bold text-lg uppercase tracking-wider mb-4 border-b border-white/20 pb-3">Lima - Ica</h3>
         <ul className="flex flex-col max-h-60 overflow-y-auto pr-2 custom-scrollbar">
