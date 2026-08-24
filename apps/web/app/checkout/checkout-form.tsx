@@ -124,6 +124,7 @@ export function CheckoutForm() {
   // Control del Stepper (Paso 1: Reserva | Paso 2: Pasajeros | Paso 3: Pago)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [termsAccepted, setTermsAccepted] = useState(true);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -199,41 +200,66 @@ export function CheckoutForm() {
     });
   };
 
-  // Validar y avanzar al Paso 3 (Inicio de Pago con Izipay)
+  // Validación y Envío del Formulario (Paso 2 -> Paso 3)
   const handleProceedToStep3 = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar titular de contacto
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      setStep2Error('Por favor completa todos los campos requeridos del titular de contacto.');
+    setStep2Error(null);
+    setPaymentError(null);
+
+    // 1. Validar datos de contacto del titular
+    if (!formData.firstName.trim()) {
+      setStep2Error("Por favor, ingresa los nombres del titular.");
+      return;
+    }
+    if (!formData.lastName.trim()) {
+      setStep2Error("Por favor, ingresa los apellidos del titular.");
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setStep2Error("Por favor, ingresa un correo electrónico válido.");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setStep2Error("Por favor, ingresa un número de teléfono de contacto.");
       return;
     }
 
-    // Validar al menos nombres y apellidos de cada pasajero
+    // 2. Validar cada pasajero
     for (let i = 0; i < passengers.length; i++) {
       const p = passengers[i];
-      if (!p?.firstName.trim() || !p?.lastName.trim() || !p?.documentNumber.trim()) {
-        setStep2Error(`Por favor completa los nombres, apellidos y número de documento del Pasajero #${i + 1}.`);
+      if (!p) continue;
+      if (!p.firstName.trim()) {
+        setStep2Error(`Por favor, ingresa el nombre del Pasajero ${i + 1}.`);
+        return;
+      }
+      if (!p.lastName.trim()) {
+        setStep2Error(`Por favor, ingresa el apellido del Pasajero ${i + 1}.`);
+        return;
+      }
+      if (!p.documentNumber.trim()) {
+        setStep2Error(`Por favor, ingresa el número de documento del Pasajero ${i + 1}.`);
         return;
       }
     }
 
+    // 3. Validar Términos y Condiciones
     if (!termsAccepted) {
-      setStep2Error('Debes aceptar los términos y condiciones para continuar con la reserva.');
+      setStep2Error("Debes aceptar los Términos y Condiciones para continuar.");
       return;
     }
 
-    setStep2Error(null);
     setIsLoading(true);
 
     try {
+      const firstItem = activeItems[0];
       const langInfo = `Idioma: ${formData.language}`;
       const notes = formData.requirements ? `Notas: ${formData.requirements}` : '';
       const cleanRequirements = [langInfo, notes].filter(Boolean).join(' | ');
 
       const result = await createReservationAndPaymentToken({
-        tourSlug,
-        tourTitle,
+        tourSlug: firstItem?.tourSlug || tourSlug,
+        tourTitle: firstItem?.tourTitle || tourTitle,
+        serviceType: firstItem?.serviceType || serviceType,
         customerFirstName: formData.firstName,
         customerLastName: formData.lastName,
         customerEmail: formData.email,
@@ -246,7 +272,7 @@ export function CheckoutForm() {
           docType: p.documentType || 'DNI',
           docNumber: p.documentNumber || ''
         })),
-        date: dateStr || new Date().toISOString(),
+        date: firstItem?.date || dateStr || new Date().toISOString(),
         pax: numPax,
         totalPrice: parseFloat(total),
       });
@@ -270,7 +296,7 @@ export function CheckoutForm() {
   useEffect(() => {
     if (currentStep === 3 && formToken) {
       const endpoint = process.env.NEXT_PUBLIC_IZIPAY_CLIENT_ENDPOINT || 'https://static.micuentaweb.pe';
-      const publicKey = process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || '';
+      const publicKey = process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY_TEST || process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || '';
 
       let isMounted = true;
 
@@ -283,11 +309,20 @@ export function CheckoutForm() {
             'kr-language': 'es-ES',
           })
           .then(() => {
+            // Manejador de errores del formulario embebido
+            KR.onError((err: { errorMessage?: string; detailedErrorMessage?: string; message?: string }) => {
+              if (!isMounted) return;
+              console.error("Izipay Embedded Form Error:", err);
+              const errorMsg = err?.errorMessage || err?.detailedErrorMessage || err?.message || 'Hubo un inconveniente con los datos ingresados en la pasarela.';
+              setPaymentError(errorMsg);
+            });
+
+            // Manejador del resultado de envío del pago
             return KR.onSubmit(paymentData => {
               if (paymentData.clientAnswer.orderStatus === 'PAID') {
-                window.location.href = `/api/checkout/callback?reservationId=${reservationId}&status=SUCCESS`;
+                window.location.href = `/reserva/${reservationId}/resultado`;
               } else {
-                alert("El pago no pudo ser procesado. Intenta con otra tarjeta.");
+                setPaymentError("El pago no pudo ser procesado o fue declinado por la entidad emisora. Por favor, verifica tu tarjeta o intenta con otra.");
               }
               return false;
             });
@@ -297,6 +332,9 @@ export function CheckoutForm() {
         })
         .catch(err => {
           console.error("Error cargando Izipay Form:", err);
+          if (isMounted) {
+            setPaymentError("No se pudo cargar el formulario seguro de Izipay. Por favor, recarga la página o verifica tu conexión.");
+          }
         });
 
       return () => {
@@ -765,10 +803,14 @@ export function CheckoutForm() {
                     <label className="block text-[#1a1a1a] font-semibold mb-1">Número de teléfono / WhatsApp *</label>
                     <input 
                       type="tel" 
+                      inputMode="numeric"
                       required
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+51 987 654 321"
+                      onChange={(e) => {
+                        const numericOnly = e.target.value.replace(/\D/g, '');
+                        setFormData({ ...formData, phone: numericOnly });
+                      }}
+                      placeholder="987654321"
                       className={inputBaseStyle}
                     />
                   </div>
@@ -1000,6 +1042,16 @@ export function CheckoutForm() {
                       Ingresa los datos de tu tarjeta de crédito o débito. La transacción está protegida con cifrado bancario PCI-DSS.
                     </p>
                   </div>
+
+                  {/* MENSAJE DE ERROR EN PASARELA DE PAGO */}
+                  {paymentError && (
+                    <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-rose-800 text-xs font-semibold flex items-start gap-2.5 animate-in fade-in duration-150">
+                      <AlertTriangle size={16} className="shrink-0 text-rose-600 mt-0.5" />
+                      <div className="flex-1 leading-relaxed">
+                        <p>{paymentError}</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* CONTENEDOR DEL FORMULARIO IZIPAY */}
                   <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-2xs min-h-[320px] flex items-center justify-center">

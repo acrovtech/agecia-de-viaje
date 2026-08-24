@@ -6,18 +6,18 @@ import crypto from 'crypto';
  */
 export function getIzipayHmacSecret(): string | null {
   const isProduction = process.env.NODE_ENV === 'production';
-  const prodHmac = process.env.IZIPAY_HMAC_SHA256 || process.env.IZIPAY_HMAC_KEY;
+  const prodHmac = process.env.IZIPAY_HMAC_TEST || process.env.IZIPAY_HMAC_SHA256 || process.env.IZIPAY_HMAC_KEY;
 
   if (isProduction) {
     if (!prodHmac) {
-      console.error('❌ CRÍTICO EN PRODUCCIÓN: No se configuró IZIPAY_HMAC_SHA256 para la validación de webhooks.');
+      console.error('❌ CRÍTICO EN PRODUCCIÓN: No se configuró IZIPAY_HMAC_SHA256 / IZIPAY_HMAC_TEST para la validación de webhooks.');
       return null;
     }
     return prodHmac;
   }
 
   // En entorno de desarrollo o staging se permite el uso de la clave de prueba de Izipay
-  return prodHmac || process.env.IZIPAY_TEST_PASSWORD || null;
+  return prodHmac || process.env.IZIPAY_PASSWORD_TEST || process.env.IZIPAY_TEST_PASSWORD || null;
 }
 
 /**

@@ -36,14 +36,9 @@ export async function POST(req: Request) {
 
     logger('info', `IZIPAY CALLBACK: Petición recibida. Orden: ${orderId}, Estado: ${orderStatus}`);
 
-    // Si el pago es exitoso, actualizar el estado de la reserva en la Base de Datos
-    if (orderId && orderStatus === 'PAID') {
-      await prisma.reservation.update({
-        where: { id: orderId },
-        data: { status: 'PAID' }
-      });
-      logger('info', `Reserva ${orderId} actualizada a PAID.`);
-    }
+    // NOTA DE SEGURIDAD: El callback no muta el estado de la reserva a PAID.
+    // La única autoridad para la transición a PAID es el Webhook IPN firmado de Izipay.
+    logger('info', `IZIPAY CALLBACK: Petición recibida para Orden: ${orderId}, Estado: ${orderStatus}. Sin mutación de BD.`);
 
     return new NextResponse('OK', { status: 200 });
 

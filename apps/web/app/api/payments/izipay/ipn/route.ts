@@ -36,40 +36,50 @@ export async function POST(req: Request) {
     const orderStatus = answer.orderStatus; // Ej. 'PAID', 'AUTHORIZED'
 
     if (orderId && (orderStatus === 'PAID' || orderStatus === 'AUTHORIZED')) {
-      logger('info', `IZIPAY IPN: Notificación válida recibida para Reserva ID: ${orderId} - Estado: ${orderStatus}`);
+      const transactionUuid = answer.transactions?.[0]?.uuid || 'IZIPAY_PAID';
 
-      // 1. Actualizar estado de la Reserva a PAID en PostgreSQL
-      const updatedReservation = await prisma.reservation.update({
-        where: { id: orderId },
+      // 1. Transición atómica e idempotente: solo muta si la reserva está actualmente en estado PENDING
+      const updateResult = await prisma.reservation.updateMany({
+        where: {
+          id: orderId,
+          status: 'PENDING'
+        },
         data: {
           status: 'PAID',
-          paymentReference: answer.transactions?.[0]?.uuid || 'IZIPAY_PAID'
+          paymentReference: transactionUuid
         }
       });
 
-      const tour = await prisma.tour.findUnique({
-        where: { id: updatedReservation.tourId }
-      });
+      // 2. Si count === 1, esta llamada realizó legítimamente la primera transición PENDING -> PAID
+      if (updateResult.count === 1) {
+        logger('info', `IZIPAY IPN: Transición PENDING -> PAID exitosa para Reserva ID: ${orderId} - Estado Izipay: ${orderStatus}`);
 
-      // 2. Disparar el envío del correo de confirmación de reserva al turista
-      if (updatedReservation) {
-        const formattedDate = new Date(updatedReservation.date).toLocaleDateString('es-ES', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
+        const updatedReservation = await prisma.reservation.findUnique({
+          where: { id: orderId },
+          include: { tour: true }
         });
 
-        await sendReservationConfirmationEmail({
-          reservationId: updatedReservation.id,
-          customerName: `${updatedReservation.customerFirstName} ${updatedReservation.customerLastName}`,
-          customerEmail: updatedReservation.customerEmail,
-          tourTitle: tour?.title || 'Tour Inca Bound',
-          formattedDate: formattedDate,
-          pax: updatedReservation.pax,
-          totalPrice: updatedReservation.totalPrice,
-          pickupHotel: updatedReservation.pickupHotel || undefined
-        });
+        if (updatedReservation) {
+          const formattedDate = new Date(updatedReservation.date).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+          await sendReservationConfirmationEmail({
+            reservationId: updatedReservation.id,
+            customerName: `${updatedReservation.customerFirstName} ${updatedReservation.customerLastName}`,
+            customerEmail: updatedReservation.customerEmail,
+            tourTitle: updatedReservation.tour?.title || 'Tour Inca Bound',
+            formattedDate: formattedDate,
+            pax: updatedReservation.pax,
+            totalPrice: updatedReservation.totalPrice,
+            pickupHotel: updatedReservation.pickupHotel || undefined
+          });
+        }
+      } else {
+        logger('info', `IZIPAY IPN: Notificación repetida o reserva ya procesada para Reserva ID: ${orderId} (count: ${updateResult.count})`);
       }
     }
 
