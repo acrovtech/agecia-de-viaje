@@ -46,10 +46,10 @@ export default async function BlogPage() {
         {/* Blog Grid */}
         <div className="container mx-auto px-4 py-20">
           {allArticles.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-gray-200 p-8 max-w-xl mx-auto shadow-sm">
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 p-8 max-w-xl mx-auto shadow-xs">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Próximamente nuevas historias</h3>
               <p className="text-gray-500 text-sm">
-                Aún no hay artículos publicados en el blog. Las guías y relatos creados desde el panel de administración aparecerán aquí automáticamente.
+                Estamos preparando guías detalladas y recomendaciones exclusivas para tu próximo viaje.
               </p>
             </div>
           ) : (

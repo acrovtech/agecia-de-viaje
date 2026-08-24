@@ -31,6 +31,27 @@ export function ArticlesCarousel({ articles }: { articles: ArticleItem[] }) {
     }
   };
 
+  if (articles.length === 0) {
+    return (
+      <section className="py-20 bg-[#F9FAFA] relative overflow-hidden">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <h2 className="section-title">Últimos Artículos</h2>
+            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+              Descubre guías, tips y relatos de viajes para preparar tu próxima gran aventura en los Andes.
+            </p>
+          </div>
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-100 p-8 max-w-xl mx-auto shadow-xs">
+            <p className="text-gray-700 font-semibold text-lg">Próximamente nuevas guías y artículos</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Estamos preparando las mejores recomendaciones y consejos para tu viaje a Perú.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-24 bg-[#F9FAFA] relative overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">

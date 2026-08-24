@@ -37,9 +37,9 @@ export async function RecommendedTours() {
         </div>
 
         {tours.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200 p-8 max-w-xl mx-auto shadow-sm">
-            <p className="text-gray-600 font-medium">Aún no se han publicado tours en la base de datos.</p>
-            <p className="text-xs text-gray-400 mt-1">Los paquetes creados desde el panel de administración aparecerán aquí automáticamente.</p>
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-100 p-8 max-w-xl mx-auto shadow-xs">
+            <p className="text-gray-700 font-semibold text-lg">Nuevas experiencias disponibles próximamente</p>
+            <p className="text-sm text-gray-500 mt-2">Estamos actualizando nuestro catálogo de tours para brindarte la mejor experiencia en Perú.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
