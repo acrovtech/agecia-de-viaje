@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { WhatsappButton } from '@/components/ui/whatsapp-button';
+import { ScrollToTopOnNavigation } from '@/components/common/scroll-to-top';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const poppins = Poppins({ 
@@ -33,6 +34,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://f.vimeocdn.com" />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
+        <ScrollToTopOnNavigation />
         {children}
         <WhatsappButton />
       </body>

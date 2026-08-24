@@ -55,7 +55,7 @@ export function TourCard({
   const formattedGroupSize = formatGroupSize(groupSize);
 
   return (
-    <Link href={`/tours/${slug}`} className="group block h-full select-none">
+    <Link href={`/tours/${slug}`} scroll={true} className="group block h-full select-none">
       <div className="bg-white rounded-[20px] transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-200 hover:border-[#062918] hover:shadow-md">
         {/* Top Image */}
         <div className="relative w-full h-[240px] sm:h-[260px] overflow-hidden bg-slate-100 flex items-center justify-center">
