@@ -8,14 +8,17 @@
     "generate": "prisma generate",
     "push": "prisma db push",
     "db:push:ci": "prisma db push --accept-data-loss",
-    "seed": "tsx seed-tours.ts && tsx seed-blogs.ts",
+    "seed": "tsx seed-tours.ts && tsx seed-blogs.ts && tsx seed-admin.ts",
+    "seed:admin": "tsx seed-admin.ts",
     "migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0"
+    "@prisma/client": "^5.13.0",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@types/bcryptjs": "^3.0.0",
     "prisma": "^5.13.0",
     "tsx": "^4.19.2",
     "typescript": "^5.4.5"
