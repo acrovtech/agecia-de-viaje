@@ -105,6 +105,9 @@ export function ArticlesCarousel({ articles }: { articles: ArticleItem[] }) {
                       {article.title}
                     </h3>
                   </div>
+
+                  <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-white opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-30 pointer-events-none rounded-tl-lg" />
+                  <div className="absolute bottom-4 right-4 w-8 h-8 border-b-[3px] border-r-[3px] border-white opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-30 pointer-events-none rounded-br-lg" />
                 </Link>
               </div>
             ))}

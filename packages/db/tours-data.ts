@@ -70,6 +70,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 80.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875465196-vinicunca-banner.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875465196-vinicunca-banner.webp",
     itineraries: [
       {
         order: 0,
@@ -132,6 +134,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 80.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-2.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-2.webp",
     itineraries: [
       {
         order: 0,
@@ -196,6 +200,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 80.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-3.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-3.webp",
     itineraries: [
       {
         order: 0,
@@ -259,6 +265,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 80.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-1.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/nacional-1.webp",
     itineraries: [
       {
         order: 0,
@@ -322,6 +330,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 60.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875478876-valle-sagrado-banner.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875478876-valle-sagrado-banner.webp",
     itineraries: [
       {
         order: 0,
@@ -379,6 +389,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 40.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp?v=noche",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/destino-cusco.webp?v=noche",
     itineraries: [
       {
         order: 0,
@@ -435,6 +447,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 250.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp",
     itineraries: [
       {
         order: 0,
@@ -497,6 +511,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 70.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875494469-queshuachaca-banner.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875494469-queshuachaca-banner.webp",
     itineraries: [
       {
         order: 0,
@@ -554,6 +570,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 90.0,
     hasPrivateService: true,
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875486698-waqrapukara-banner.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875486698-waqrapukara-banner.webp",
     itineraries: [
       {
         order: 0,
