@@ -14,9 +14,10 @@ interface ImageDropzoneProps {
   initialUrl?: string;
   folder?: string;
   buttonLayout?: 'horizontal' | 'vertical' | 'auto';
+  onChange?: (url: string | null) => void;
 }
 
-export function ImageDropzone({ label, labelPosition = 'top', name, className, initialUrl, folder, buttonLayout = 'horizontal' }: ImageDropzoneProps) {
+export function ImageDropzone({ label, labelPosition = 'top', name, className, initialUrl, folder, buttonLayout = 'horizontal', onChange }: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const isValidInitialUrl = Boolean(
     initialUrl && 
@@ -36,6 +37,18 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
   const [isUploading, setIsUploading] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const triggerFormDirty = (newUrl: string | null) => {
+    if (onChange) onChange(newUrl);
+    if (containerRef.current) {
+      const form = containerRef.current.closest('form');
+      if (form) {
+        form.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        form.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+      }
+    }
+  };
 
   // Sincronizar initialUrl si cambia dinámicamente
   useEffect(() => {
@@ -69,6 +82,7 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
       const data = await res.json();
       if (data.success && data.url) {
         setFilePreview(data.url);
+        triggerFormDirty(data.url);
       }
     } catch (e) {
       console.error("Error al subir la imagen a R2:", e);
@@ -101,10 +115,11 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
     setFilePreview(null);
     if (inputRef.current) inputRef.current.value = '';
     setShowDeleteConfirm(false);
+    triggerFormDirty(null);
   };
 
   return (
-    <div className={`flex flex-col flex-1 gap-1.5 w-full relative select-none ${className || ''}`}>
+    <div ref={containerRef} className={`flex flex-col flex-1 gap-1.5 w-full relative select-none ${className || ''}`}>
       {label && labelPosition === 'top' && <label className="text-xs font-semibold text-slate-700">{label}</label>}
       
       <div className="flex-1 min-h-[130px] h-full w-full relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50/60 shadow-2xs group">
@@ -298,7 +313,16 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
             {/* Footer */}
             <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setShowSeoPanel(false)} className="text-xs h-8 font-semibold rounded-[0.375rem]">Cancelar</Button>
-              <Button type="button" onClick={() => setShowSeoPanel(false)} className="px-6 text-xs h-8 font-bold bg-slate-900 text-white hover:bg-black rounded-[0.375rem]">Guardar Cambios</Button>
+              <Button 
+                type="button" 
+                onClick={() => {
+                  setShowSeoPanel(false);
+                  triggerFormDirty(filePreview);
+                }} 
+                className="px-6 text-xs h-8 font-bold bg-slate-900 text-white hover:bg-black rounded-[0.375rem]"
+              >
+                Guardar Cambios
+              </Button>
             </div>
           </div>
         </div>
