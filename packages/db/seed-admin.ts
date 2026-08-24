@@ -4,35 +4,61 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = (process.env.ADMIN_EMAIL || 'admin@incabound.com').trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || 'Admin2026*';
+  console.log('🔐 Iniciando creación/actualización de usuarios...');
 
-  console.log(`🔐 Creando/actualizando usuario administrador: ${email}`);
+  // 1. Usuario MASTER (Acceso total)
+  const masterEmail = (process.env.ADMIN_EMAIL || 'admin@incabound.com').trim().toLowerCase();
+  const masterPassword = process.env.ADMIN_PASSWORD || 'Admin2026*';
+  const masterPasswordHash = await bcrypt.hash(masterPassword, 10);
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.upsert({
-    where: { email },
+  const masterUser = await prisma.user.upsert({
+    where: { email: masterEmail },
     update: {
-      password: hashedPassword,
+      password: masterPasswordHash,
       role: 'MASTER'
     },
     create: {
-      email,
-      password: hashedPassword,
+      email: masterEmail,
+      password: masterPasswordHash,
       role: 'MASTER'
     }
   });
 
-  console.log('✅ Usuario Administrador listo:');
-  console.log(`   📧 Correo:     ${user.email}`);
-  console.log(`   🔑 Contraseña: ${password}`);
-  console.log(`   🛡️  Rol:        ${user.role}`);
+  // 2. Usuario CLIENT (Gestión para el cliente)
+  const clientEmail = (process.env.CLIENT_EMAIL || 'gestion@incabound.com').trim().toLowerCase();
+  const clientPassword = process.env.CLIENT_PASSWORD || 'Gestion2026*';
+  const clientPasswordHash = await bcrypt.hash(clientPassword, 10);
+
+  const clientUser = await prisma.user.upsert({
+    where: { email: clientEmail },
+    update: {
+      password: clientPasswordHash,
+      role: 'CLIENT'
+    },
+    create: {
+      email: clientEmail,
+      password: clientPasswordHash,
+      role: 'CLIENT'
+    }
+  });
+
+  console.log('==============================================');
+  console.log('✅ USUARIOS CREADOS / ACTUALIZADOS CON ÉXITO:');
+  console.log('==============================================');
+  console.log('1. Usuario MASTER (Administrador Principal):');
+  console.log(`   📧 Correo:     ${masterUser.email}`);
+  console.log(`   🔑 Contraseña: ${masterPassword}`);
+  console.log(`   🛡️  Rol:        ${masterUser.role}\n`);
+  console.log('2. Usuario CLIENT (Gestión de Cliente):');
+  console.log(`   📧 Correo:     ${clientUser.email}`);
+  console.log(`   🔑 Contraseña: ${clientPassword}`);
+  console.log(`   🛡️  Rol:        ${clientUser.role}`);
+  console.log('==============================================');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error creando admin:', e);
+    console.error('❌ Error creando usuarios:', e);
     process.exit(1);
   })
   .finally(async () => {
