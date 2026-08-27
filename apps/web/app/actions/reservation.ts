@@ -6,6 +6,9 @@ type CheckoutData = {
   tourSlug: string;
   tourTitle?: string;
   serviceType?: string;
+  vehicleId?: string;
+  vehicleCode?: string;
+  pickupTime?: string;
   customerFirstName: string;
   customerLastName: string;
   customerEmail: string;
@@ -25,8 +28,8 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       return { success: false, error: 'Tour no especificado.' };
     }
 
-    // 2. Buscar el tour legítimo en la base de datos (SIN FALLBACK a findFirst)
-    const tour = await prisma.tour.findFirst({
+    // 2. Buscar si es un tour o un traslado en la base de datos
+    let tour = await prisma.tour.findFirst({
       where: {
         OR: [
           { slug: data.tourSlug },
@@ -38,8 +41,27 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
       }
     });
 
+    let transfer = null;
     if (!tour) {
-      return { success: false, error: 'El tour seleccionado no existe en el sistema.' };
+      transfer = await prisma.transfer.findFirst({
+        where: {
+          OR: [
+            { slug: data.tourSlug },
+            { slug: data.tourSlug.toLowerCase() }
+          ]
+        },
+        include: {
+          vehiclePrices: {
+            include: {
+              vehicle: true
+            }
+          }
+        }
+      });
+    }
+
+    if (!tour && !transfer) {
+      return { success: false, error: 'El tour o traslado seleccionado no existe en el sistema.' };
     }
 
     // 3. Validar número de pasajeros (pax)
@@ -50,33 +72,52 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
 
     // 4. Calcular precio 100% autoritativo desde el Servidor (PostgreSQL)
     const isPrivate = data.serviceType === 'private';
-    let serverUnitPrice = 0;
+    let serverTotalPrice = 0;
+    let selectedVehicleTypeId: string | null = null;
 
-    if (isPrivate) {
-      if (!tour.hasPrivateService) {
-        return { success: false, error: 'Este tour no cuenta con servicio privado habilitado.' };
+    if (tour) {
+      let serverUnitPrice = 0;
+      if (isPrivate) {
+        if (!tour.hasPrivateService) {
+          return { success: false, error: 'Este tour no cuenta con servicio privado habilitado.' };
+        }
+
+        // Buscar la tarifa privada que coincida con la cantidad de pax
+        const matchingTier = tour.privatePricing?.find(p => p.pax === pax);
+        if (!matchingTier || matchingTier.price <= 0) {
+          return { 
+            success: false, 
+            error: `No existe una tarifa privada configurada para ${pax} ${pax === 1 ? 'pasajero' : 'pasajeros'}.` 
+          };
+        }
+
+        serverUnitPrice = matchingTier.price;
+      } else {
+        // Servicio Compartido / Grupal
+        if (tour.sharedPrice === null || tour.sharedPrice === undefined || tour.sharedPrice <= 0) {
+          return { success: false, error: 'Tarifa del tour compartido no configurada en el sistema.' };
+        }
+        serverUnitPrice = tour.sharedPrice;
       }
 
-      // Buscar exclusivamente la tarifa privada que coincida exactamente con la cantidad de pax
-      const matchingTier = tour.privatePricing?.find(p => p.pax === pax);
-      if (!matchingTier || matchingTier.price <= 0) {
-        return { 
-          success: false, 
-          error: `No existe una tarifa privada configurada para ${pax} ${pax === 1 ? 'pasajero' : 'pasajeros'}.` 
-        };
-      }
+      serverTotalPrice = Math.round(serverUnitPrice * pax * 100) / 100;
+    } else if (transfer) {
+      if (isPrivate) {
+        // En traslado privado el precio es por vehículo
+        const matchingVehiclePrice = transfer.vehiclePrices.find(vp => 
+          vp.vehicle.id === data.vehicleId || 
+          vp.vehicle.code === data.vehicleCode || 
+          vp.vehicleId === data.vehicleId
+        ) || transfer.vehiclePrices[0];
 
-      serverUnitPrice = matchingTier.price;
-    } else {
-      // Servicio Compartido / Grupal
-      if (tour.sharedPrice === null || tour.sharedPrice === undefined || tour.sharedPrice <= 0) {
-        return { success: false, error: 'Tarifa del tour compartido no configurada en el sistema.' };
+        selectedVehicleTypeId = matchingVehiclePrice?.vehicle.id || null;
+        const basePrice = matchingVehiclePrice?.price || 20;
+        serverTotalPrice = basePrice;
+      } else {
+        const sharedPrice = transfer.sharedPrice || 10;
+        serverTotalPrice = Math.round(sharedPrice * pax * 100) / 100;
       }
-      serverUnitPrice = tour.sharedPrice;
     }
-
-    // Monto total en dólares calculado exclusivamente en el backend
-    const serverTotalPrice = Math.round(serverUnitPrice * pax * 100) / 100;
 
     if (serverTotalPrice <= 0) {
       return { success: false, error: 'Error calculando el importe legítimo de la reserva.' };
@@ -96,7 +137,9 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
     // 5. Crear la reserva en la Base de Datos con el precio calculado en el servidor
     const reservation = await prisma.reservation.create({
       data: {
-        tourId: tour.id,
+        tourId: tour?.id || null,
+        transferId: transfer?.id || null,
+        serviceType: data.serviceType || (isPrivate ? 'private' : 'shared'),
         customerFirstName: data.customerFirstName,
         customerLastName: data.customerLastName,
         customerEmail: data.customerEmail,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAdminToken } from '@/lib/jwt';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Permitir assets estáticos, login e imágenes
@@ -37,6 +37,9 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+// Alias para compatibilidad hacia atrás
+export const middleware = proxy;
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],

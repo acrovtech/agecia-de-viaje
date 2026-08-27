@@ -38,7 +38,7 @@ export default async function DashboardLayout({
           
           {/* Izquierda: Logo Incabound & Mobile Drawer */}
           <div className="flex items-center gap-2.5">
-            <MobileSidebarDrawer />
+            <MobileSidebarDrawer isMaster={isMaster} />
 
             <Link href="/" className="flex items-center gap-2">
               <span className="font-extrabold text-base tracking-tight italic font-serif text-white">incabound</span>
@@ -69,7 +69,7 @@ export default async function DashboardLayout({
           
           {/* SIDEBAR NAVEGACIÓN POLARIS (#EBEBEB) */}
           <div className="hidden md:flex md:w-[240px] lg:w-[240px] md:flex-col h-full shrink-0 shadow-xs z-20">
-            <SidebarNav />
+            <SidebarNav isMaster={isMaster} />
           </div>
 
           {/* CONTENIDO PRINCIPAL (#F1F1F1) */}

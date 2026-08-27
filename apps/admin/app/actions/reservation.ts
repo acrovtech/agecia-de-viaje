@@ -2,9 +2,11 @@
 
 import { prisma } from '@repo/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
 
 export async function updateReservationStatus(reservationId: string, status: 'PENDING' | 'PAID' | 'CANCELLED') {
   try {
+    await requireMasterRole();
     await prisma.reservation.update({
       where: { id: reservationId },
       data: { status }
@@ -28,6 +30,7 @@ export async function updateReservationDetails(reservationId: string, data: {
   specialRequirements?: string;
 }) {
   try {
+    await requireAdminSession();
     await prisma.reservation.update({
       where: { id: reservationId },
       data
@@ -46,6 +49,7 @@ export async function updateReservationPassengersAction(
   passengers: Array<{ firstName?: string; lastName?: string; name?: string; docType: string; docNumber: string }>
 ) {
   try {
+    await requireAdminSession();
     await prisma.reservationPassenger.deleteMany({
       where: { reservationId }
     });
@@ -82,6 +86,7 @@ export async function updateReservationPassengersAction(
 
 export async function deleteReservationsAction(ids: string[]) {
   try {
+    await requireMasterRole();
     if (!ids || ids.length === 0) return { success: true };
     await prisma.reservation.deleteMany({
       where: {
@@ -99,6 +104,7 @@ export async function deleteReservationsAction(ids: string[]) {
 
 export async function getRecentNotificationsAction() {
   try {
+    await requireAdminSession();
     const reservations = await prisma.reservation.findMany({
       take: 8,
       orderBy: { createdAt: 'desc' },

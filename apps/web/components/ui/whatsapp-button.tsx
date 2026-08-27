@@ -22,7 +22,7 @@ const advisors = [
     name: 'Asesor 1',
     phone: '51974681666',
     role: 'Asesor de Ventas',
-    avatar: '/asesor-viajes-inca-bound.webp'
+    avatar: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/asesor-viajes-inca-bound.webp'
   },
   {
     name: 'Asesor 2',
@@ -67,8 +67,8 @@ export function WhatsappButton() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 rounded-xl transition-colors group border border-transparent hover:border-gray-200"
               >
-                <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-white shadow-sm flex items-center justify-center p-1 border border-gray-100">
-                  <Image src={advisor.avatar} alt={advisor.name} fill className="object-cover" />
+                <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-white shadow-sm flex items-center justify-center border border-gray-100">
+                  <Image src={advisor.avatar} alt={advisor.name} fill className="object-cover" unoptimized={true} />
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-bold text-gray-900 group-hover:text-[#00a884] transition-colors">{advisor.name}</p>

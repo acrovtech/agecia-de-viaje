@@ -16,7 +16,9 @@ export default async function EditTourPage({ params }: { params: Promise<{ id: s
       inclusions: { orderBy: { order: 'asc' } },
       exclusions: { orderBy: { order: 'asc' } },
       recommendations: { orderBy: { order: 'asc' } },
-      faqs: { orderBy: { order: 'asc' } }
+      faqs: { orderBy: { order: 'asc' } },
+      privatePricing: { orderBy: { pax: 'asc' } },
+      images: { orderBy: { order: 'asc' } }
     }
   });
 

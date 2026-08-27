@@ -66,9 +66,9 @@ function StatItem({ end, label, suffix = '' }: StatItemProps) {
 
 export function StatsCounter() {
   return (
-    <section className="py-20 bg-white border-y border-gray-100">
+    <section className="py-20 bg-[#F9FAFA] border-y border-gray-200/70">
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 w-full divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 w-full divide-y sm:divide-y-0 sm:divide-x divide-gray-200/80">
           <StatItem end={15} label="Años de Experiencia" suffix="+" />
           <StatItem end={5000} label="Viajeros Felices" suffix="+" />
           <StatItem end={50} label="Rutas Exclusivas" />

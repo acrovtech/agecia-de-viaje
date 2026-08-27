@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
   Home, 
   Map, 
+  Car,
   Tags,
   PenTool, 
   Calendar, 
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function SidebarNav() {
+export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
   const pathname = usePathname();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -42,7 +43,7 @@ export function SidebarNav() {
             </Link>
           </li>
 
-          {/* 2. Tours & Experiencias (Directo a /tours sin subtabs) */}
+          {/* 2. Tours & Experiencias */}
           <li>
             <Link
               href="/tours"
@@ -57,6 +58,24 @@ export function SidebarNav() {
               <span>Tours</span>
             </Link>
           </li>
+
+          {/* 3. Transportes / Traslados (Exclusivo para Master) */}
+          {isMaster && (
+            <li>
+              <Link
+                href="/transporte"
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                  pathname?.startsWith("/transporte")
+                    ? "bg-white text-[#303030] shadow-xs font-semibold"
+                    : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+                )}
+              >
+                <Car className="w-4 h-4 text-[#303030] shrink-0" />
+                <span>Transportes</span>
+              </Link>
+            </li>
+          )}
 
           {/* 3. Categorías (Tab independiente en el sidebar) */}
           <li>

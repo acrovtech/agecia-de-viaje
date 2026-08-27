@@ -441,17 +441,10 @@ export function CheckoutForm() {
 
               {/* LISTA DE TOURS EN EL CARRITO DE RESERVAS */}
               {activeItems.length === 0 ? (
-                <div className="text-center py-12 px-4 border border-dashed border-gray-300 rounded-2xl space-y-4">
+                <div className="text-center py-12 px-4 border border-dashed border-gray-300 rounded-2xl space-y-3">
                   <Compass size={48} className="mx-auto text-gray-300" />
                   <h3 className="text-base font-bold text-gray-800">Tu carrito de reservas está vacío</h3>
                   <p className="text-xs text-gray-500 max-w-sm mx-auto">Selecciona tus experiencias favoritas para proceder a la reserva y pago seguro.</p>
-                  <Link 
-                    href="/tours" 
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#062918] text-white rounded-xl text-xs font-bold hover:bg-[#0a4026] transition-colors"
-                  >
-                    <span>Explorar expediciones</span>
-                    <ArrowRight size={14} />
-                  </Link>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -577,7 +570,7 @@ export function CheckoutForm() {
 
                   {/* Resumen Total Acumulado si hay múltiples tours: 3 items compactos en 1 sola fila con la misma altura que el botón del tour */}
                   {activeItems.length > 1 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center pt-6 mt-6 border-t border-gray-200/90">
                       
                       {/* Card 1: Expediciones (Compacto Inline h-[42px]) */}
                       <div className="bg-white border border-gray-200/90 rounded-xl px-4 py-2.5 shadow-2xs flex items-center justify-between sm:justify-center gap-2 h-[42px]">

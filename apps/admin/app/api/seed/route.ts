@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
-import { verifyAdminSession } from '@/lib/auth-check';
+import { requireMasterRole } from '@/lib/auth-check';
 
 export async function GET() {
   try {
-    const isAuthenticated = await verifyAdminSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { error: 'No autorizado. Se requiere sesión de administrador.' },
-        { status: 401 }
-      );
-    }
+    await requireMasterRole();
 
     // 1. Hash passwords
     const masterPasswordHash = await bcrypt.hash('IncaBound2026!', 10);
@@ -49,7 +43,17 @@ export async function GET() {
       ]
     });
   } catch (error: any) {
-    console.error('Error seeding users:', error);
-    return NextResponse.json({ error: error.message || 'Ocurrió un error al crear los usuarios' }, { status: 500 });
+    const isUnauthorized = error?.message?.includes('No autorizado');
+    const isForbidden = error?.message?.includes('Permisos insuficientes');
+    const statusCode = isUnauthorized ? 401 : isForbidden ? 403 : 500;
+
+    if (!isUnauthorized && !isForbidden) {
+      console.error('Error seeding users:', error);
+    }
+
+    return NextResponse.json(
+      { error: error.message || 'Ocurrió un error al crear los usuarios' },
+      { status: statusCode }
+    );
   }
 }

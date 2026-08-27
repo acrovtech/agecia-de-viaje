@@ -10,11 +10,11 @@ export interface AdminSessionPayload {
  * Si ADMIN_SESSION_SECRET no existe en las variables de entorno, lanza un error crítico explícito.
  */
 function getJwtSecretKey(): Uint8Array {
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.JWT_SECRET;
   if (!secret || secret.trim() === '') {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(
-        '❌ CRÍTICO EN PRODUCCIÓN: La variable de entorno ADMIN_SESSION_SECRET no está configurada.'
+        '❌ CRÍTICO EN PRODUCCIÓN: La variable de entorno ADMIN_SESSION_SECRET o JWT_SECRET no está configurada.'
       );
     }
     // En desarrollo local (localhost), usar clave por defecto para evitar caídas

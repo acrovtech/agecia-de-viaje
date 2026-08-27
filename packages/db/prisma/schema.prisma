@@ -152,8 +152,17 @@ model BlogParagraph {
 
 model Reservation {
   id               String   @id @default(cuid())
-  tourId           String
-  tour             Tour     @relation(fields: [tourId], references: [id])
+  tourId           String?
+  tour             Tour?    @relation(fields: [tourId], references: [id])
+
+  transferId       String?
+  transfer         Transfer? @relation(fields: [transferId], references: [id])
+
+  vehicleTypeId    String?
+  vehicleType      VehicleType? @relation(fields: [vehicleTypeId], references: [id])
+
+  serviceType      String?  // 'shared' | 'private'
+  pickupTime       String?
   
   customerFirstName String
   customerLastName  String
@@ -178,6 +187,7 @@ model Reservation {
   @@index([status])
   @@index([createdAt])
   @@index([tourId])
+  @@index([transferId])
   @@index([customerEmail])
 }
 
@@ -202,6 +212,63 @@ enum ReservationStatus {
   CANCELLED
 }
 
+model Transfer {
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  origin            String   // ej. "Aeropuerto de Cusco"
+  destination       String   // ej. "Hotel / Centro Cusco / Est. Av Sol Inca Rail"
+  duration          String   // ej. "20-30 min"
+  tripType          String   @default("Solo ida") // "Solo ida", "Ida y vuelta"
+  description       String?  @db.Text
+  bannerImage       String?
+  
+  // Modalidades de servicio y precios
+  hasSharedService  Boolean  @default(false)
+  sharedPrice       Float?   // Precio por persona en compartido
+  
+  hasPrivateService Boolean  @default(true)
+  
+  // Tarifas privadas por vehículo
+  vehiclePrices     TransferVehiclePrice[]
+  reservations      Reservation[]
+
+  isActive          Boolean  @default(true)
+  order             Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model VehicleType {
+  id          String   @id @default(cuid())
+  code        String   @unique // ej. "sedan", "minivan", "benz-10", "benz-15"
+  name        String   // ej. "Sedan", "MiniVan", "Mercedes Benz 10pax", "Mercedes Benz 15pax"
+  subtitle    String?  // ej. "Sedan / SUV", "Minivan Ejecutiva"
+  maxPax      Int      // ej. 3, 6, 10, 15
+  maxLuggage  Int      // ej. 3, 6, 10, 15
+  image       String   // URL o path de la foto del vehículo
+  features    String[] // ["Chofer profesional", "A/C en todo el recorrido", "Privado — sin compartir"]
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  prices        TransferVehiclePrice[]
+  reservations  Reservation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TransferVehiclePrice {
+  id          String      @id @default(cuid())
+  transferId  String
+  transfer    Transfer    @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  vehicleId   String
+  vehicle     VehicleType @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  price       Float       // Precio total por vehículo en esta ruta
+
+  @@unique([transferId, vehicleId])
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -211,3 +278,4 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+

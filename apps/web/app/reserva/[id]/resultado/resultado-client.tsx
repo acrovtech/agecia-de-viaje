@@ -17,7 +17,8 @@ import { Footer } from '@/components/layout/footer';
 
 type ReservationData = {
   id: string;
-  tourId: string;
+  tourId?: string | null;
+  transferId?: string | null;
   tourTitle: string;
   tourSlug?: string;
   customerFirstName: string;

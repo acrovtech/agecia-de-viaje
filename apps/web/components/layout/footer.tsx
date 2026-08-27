@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, FileText, ShieldCheck, CreditCard, FileSignature, MapPin, Map, Navigation, Palmtree, Tent, Mountain, Compass, Info, HelpCircle, BookOpen, Mail, Phone } from 'lucide-react';
+import { User, FileText, ShieldCheck, CreditCard, FileSignature, MapPin, Map, Navigation, Palmtree, Tent, Mountain, Compass, Info, HelpCircle, BookOpen, Mail, Phone, Car } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -22,18 +22,18 @@ export function Footer() {
               <div className="w-20 h-20 bg-white p-1 rounded-md flex items-center justify-center">
                 <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/qr.webp" alt="QR Code" width={80} height={80} className="w-full h-full object-cover rounded-sm" unoptimized={true} />
               </div>
-              <a href="https://secure.micuentaweb.pe/vads-site/IZI_INCA_BOUND1" target="_blank" rel="noopener noreferrer" className="grid grid-cols-2 gap-2 w-24 hover:opacity-80 transition-opacity">
-                <div className="bg-white rounded overflow-hidden flex items-center justify-center h-8">
-                  <Image src="/mastercard.svg" alt="Mastercard" width={48} height={32} className="h-full w-full object-cover" />
+              <a href="https://secure.micuentaweb.pe/vads-site/IZI_INCA_BOUND1" target="_blank" rel="noopener noreferrer" className="grid grid-cols-2 gap-1.5 w-24 hover:opacity-85 transition-opacity">
+                <div className="bg-white rounded-md overflow-hidden flex items-center justify-center h-8 w-full shadow-2xs">
+                  <img src="/mastercard.svg" alt="Mastercard" className="w-full h-full object-cover" />
                 </div>
-                <div className="bg-white rounded overflow-hidden flex items-center justify-center h-8">
-                  <Image src="/visa.svg" alt="Visa" width={48} height={32} className="h-full w-full object-cover" />
+                <div className="bg-white rounded-md overflow-hidden flex items-center justify-center h-8 w-full shadow-2xs">
+                  <img src="/visa.svg" alt="Visa" className="w-full h-full object-cover" />
                 </div>
-                <div className="bg-white rounded overflow-hidden flex items-center justify-center h-8">
-                  <Image src="/amex.svg" alt="Amex" width={48} height={32} className="h-full w-full object-cover" />
+                <div className="bg-white rounded-md overflow-hidden flex items-center justify-center h-8 w-full shadow-2xs">
+                  <img src="/amex.svg" alt="Amex" className="w-full h-full object-cover" />
                 </div>
-                <div className="bg-white rounded overflow-hidden flex items-center justify-center h-8">
-                  <Image src="/discover.svg" alt="Discover" width={48} height={32} className="h-full w-full object-cover" />
+                <div className="bg-white rounded-md overflow-hidden flex items-center justify-center h-8 w-full shadow-2xs">
+                  <img src="/discover.svg" alt="Discover" className="w-full h-full object-cover" />
                 </div>
               </a>
             </div>
@@ -48,6 +48,7 @@ export function Footer() {
               <li><Link href="/terminos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><FileText size={16} /> Términos y condiciones</Link></li>
               <li><Link href="/privacidad" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><ShieldCheck size={16} /> Políticas de privacidad</Link></li>
               <li><Link href="/pagos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><CreditCard size={16} /> Políticas de pago</Link></li>
+              <li><Link href="/terminos#traslados" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Car size={16} /> Políticas de traslados</Link></li>
             </ul>
           </div>
 

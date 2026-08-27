@@ -35,6 +35,7 @@ export default async function ResultadoPage({ params }: ResultadoPageProps) {
     where: { id },
     include: {
       tour: true,
+      transfer: true,
       passengers: {
         orderBy: { createdAt: 'asc' }
       }
@@ -45,11 +46,15 @@ export default async function ResultadoPage({ params }: ResultadoPageProps) {
     notFound();
   }
 
+  const serviceTitle = reservation.tour?.title || 
+    (reservation.transfer ? `Traslado: ${reservation.transfer.origin} a ${reservation.transfer.destination}` : 'Servicio Inca Bound');
+
   const initialReservation = {
     id: reservation.id,
     tourId: reservation.tourId,
-    tourTitle: reservation.tour?.title || 'Tour Inca Bound',
-    tourSlug: reservation.tour?.slug,
+    transferId: reservation.transferId,
+    tourTitle: serviceTitle,
+    tourSlug: reservation.tour?.slug || reservation.transfer?.slug,
     customerFirstName: reservation.customerFirstName,
     customerLastName: reservation.customerLastName,
     customerEmail: reservation.customerEmail,

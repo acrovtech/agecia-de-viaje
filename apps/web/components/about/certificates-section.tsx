@@ -22,7 +22,7 @@ export function CertificatesSection() {
   }
 
   return (
-    <section className="py-24 bg-[#F9FAFA]">
+    <section className="py-24 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="section-title">Certificados y Reconocimientos</h2>

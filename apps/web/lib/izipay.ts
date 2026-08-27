@@ -6,11 +6,11 @@ import crypto from 'crypto';
  */
 export function getIzipayHmacSecret(): string | null {
   const isProduction = process.env.NODE_ENV === 'production';
-  const prodHmac = process.env.IZIPAY_HMAC_TEST || process.env.IZIPAY_HMAC_SHA256 || process.env.IZIPAY_HMAC_KEY;
+  const prodHmac = process.env.IZIPAY_HMAC_SHA256 || process.env.IZIPAY_HMAC_KEY || process.env.IZIPAY_HASH_KEY || process.env.IZIPAY_HMAC_PROD || process.env.IZIPAY_HMAC_TEST;
 
   if (isProduction) {
     if (!prodHmac) {
-      console.error('❌ CRÍTICO EN PRODUCCIÓN: No se configuró IZIPAY_HMAC_SHA256 / IZIPAY_HMAC_TEST para la validación de webhooks.');
+      console.error('❌ CRÍTICO EN PRODUCCIÓN: No se configuró IZIPAY_HMAC_SHA256 / IZIPAY_HASH_KEY para la validación de webhooks.');
       return null;
     }
     return prodHmac;

@@ -22,9 +22,16 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
   
   const days = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"];
 
+  const now = new Date();
+  const isCurrentMonth = currentMonth.getFullYear() === now.getFullYear() && currentMonth.getMonth() === now.getMonth();
+
   const handlePrevMonth = (e: React.MouseEvent) => {
     e.preventDefault();
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    const prev = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    if (prev.getFullYear() < now.getFullYear() || (prev.getFullYear() === now.getFullYear() && prev.getMonth() < now.getMonth())) {
+      return;
+    }
+    setCurrentMonth(prev);
   };
 
   const handleNextMonth = (e: React.MouseEvent) => {
@@ -34,7 +41,11 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
 
   const handleDateClick = (day: number, e: React.MouseEvent) => {
     e.preventDefault();
-    onSelect(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+    const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (dateObj < today) return;
+    onSelect(dateObj);
   };
 
   const isSelectedStart = (day: number) => {
@@ -58,13 +69,22 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
     <div className="p-3 bg-white border border-gray-200/80 rounded-xl w-full select-none shadow-2xs">
       {/* Header Mes */}
       <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
-        <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-500 cursor-pointer">
+        <button 
+          onClick={handlePrevMonth} 
+          disabled={isCurrentMonth}
+          className={`p-1 rounded-md transition-colors ${
+            isCurrentMonth 
+              ? 'opacity-30 cursor-not-allowed text-gray-300' 
+              : 'hover:bg-gray-100 text-gray-500 cursor-pointer'
+          }`}
+          title={isCurrentMonth ? 'No se pueden consultar meses pasados' : 'Mes anterior'}
+        >
           <ChevronLeft size={16} />
         </button>
         <h2 className="font-bold text-xs text-gray-800 capitalize tracking-tight">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h2>
-        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-500 cursor-pointer">
+        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-500 cursor-pointer" title="Mes siguiente">
           <ChevronRight size={16} />
         </button>
       </div>
@@ -88,21 +108,23 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
           const isStart = isSelectedStart(day);
           const inRange = isInRangeDay(day);
           const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-          const isPast = dateObj < new Date(new Date().setHours(0,0,0,0));
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const isPast = dateObj < today;
           
           return (
             <button
               key={day}
               disabled={isPast}
               onClick={(e) => handleDateClick(day, e)}
-              className={`h-7 sm:h-8 w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-7 sm:h-8 w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
                 isPast
-                  ? 'text-gray-300 cursor-not-allowed'
+                  ? 'text-gray-300 cursor-not-allowed opacity-40 select-none'
                   : isStart 
-                    ? 'bg-[#062918] text-white font-bold shadow-2xs' 
+                    ? 'bg-[#062918] text-white font-bold shadow-2xs cursor-pointer' 
                     : inRange
-                      ? 'bg-[#062918]/12 text-[#062918] border border-[#062918]/25 font-bold'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-[#062918]/12 text-[#062918] border border-[#062918]/25 font-bold cursor-pointer'
+                      : 'text-gray-700 hover:bg-gray-100 cursor-pointer'
               }`}
             >
               {day}

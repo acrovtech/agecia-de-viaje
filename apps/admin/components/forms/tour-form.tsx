@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Map, Tag, Save, AlertCircle, X, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Map, Tag, Save, AlertCircle, X, Loader2, ExternalLink, Copy, ArrowDownToLine } from 'lucide-react';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createTour, deleteTour } from '../../app/actions/tour';
@@ -50,10 +50,10 @@ function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElem
 
   return (
     <textarea
-      {...props}
       ref={textareaRef}
+      {...props}
       onInput={handleInput}
-      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed overflow-hidden resize-none transition-[height] duration-75 ${props.className || ''}`}
+      className={`w-full resize-none overflow-hidden rounded-md border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 ${props.className || ''}`}
     />
   );
 }
@@ -72,21 +72,19 @@ function SubmitSaveButton() {
   );
 }
 
-export function TourForm({ categories, initialData }: { categories: Category[], initialData?: any }) {
+export function TourForm({ categories, initialData }: { categories: Category[]; initialData?: any }) {
+  const [groupSize, setGroupSize] = useState<number>(initialData?.groupSize || 12);
+  const [status, setStatus] = useState<'Active' | 'Draft'>(initialData?.status || 'Active');
+  const [isFeatured, setIsFeatured] = useState<'Active' | 'Draft'>(initialData?.isFeatured ? 'Active' : 'Draft');
   const [title, setTitle] = useState(initialData?.title || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
-  const [groupSize, setGroupSize] = useState(parseInt(initialData?.groupSize) || 12);
-  const [status, setStatus] = useState<'Active' | 'Draft'>('Active');
-  const [isFeatured, setIsFeatured] = useState<'Active' | 'Draft'>(
-    initialData?.isFeatured ? 'Active' : 'Draft'
-  );
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(
-    initialData?.itineraries?.length
-      ? initialData.itineraries.map((i: any) => ({ id: i.id || Date.now() + Math.random(), title: i.title, content: i.content }))
+    initialData?.itinerary && initialData.itinerary.length > 0
+      ? initialData.itinerary.map((it: any) => ({ id: it.id || Date.now() + Math.random(), title: it.title, content: it.content }))
       : [{ id: Date.now(), title: '', content: '' }]
   );
   const [faqs, setFaqs] = useState<FaqItem[]>(
-    initialData?.faqs?.length
+    initialData?.faqs && initialData.faqs.length > 0
       ? initialData.faqs.map((f: any) => ({ id: f.id || Date.now() + Math.random(), question: f.question, answer: f.answer }))
       : [{ id: Date.now(), question: '', answer: '' }]
   );
@@ -96,6 +94,54 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
   const [hasPrivateService, setHasPrivateService] = useState<boolean>(
     Boolean(initialData?.hasPrivateService || initialData?.privatePricing?.length > 0)
   );
+
+  // Precios privados por Pax dinámicos
+  const [privatePrices, setPrivatePrices] = useState<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    if (initialData?.privatePricing && Array.isArray(initialData.privatePricing)) {
+      initialData.privatePricing.forEach((p: any) => {
+        if (p.pax && p.price !== undefined && p.price !== null) {
+          map[p.pax] = String(p.price);
+        }
+      });
+    }
+    return map;
+  });
+
+  const handlePrivatePriceChange = (pax: number, val: string) => {
+    setPrivatePrices(prev => ({ ...prev, [pax]: val }));
+    setIsDirty(true);
+  };
+
+  const copyPreviousPrice = (pax: number) => {
+    if (pax <= 1) return;
+    const prevPrice = privatePrices[pax - 1];
+    if (prevPrice !== undefined) {
+      setPrivatePrices(prev => ({ ...prev, [pax]: prevPrice }));
+      setIsDirty(true);
+    }
+  };
+
+  const fillRemainingPrices = () => {
+    let lastPaxWithPrice = 0;
+    let lastPrice = '';
+    for (let p = 1; p <= groupSize; p++) {
+      if (privatePrices[p] !== undefined && String(privatePrices[p]).trim() !== '') {
+        lastPaxWithPrice = p;
+        lastPrice = String(privatePrices[p]);
+      }
+    }
+    if (!lastPrice) return;
+
+    setPrivatePrices(prev => {
+      const updated = { ...prev };
+      for (let p = lastPaxWithPrice + 1; p <= groupSize; p++) {
+        updated[p] = lastPrice;
+      }
+      return updated;
+    });
+    setIsDirty(true);
+  };
 
   // Estado para el modal de confirmación de eliminación estilo Shopify
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -775,23 +821,52 @@ export function TourForm({ categories, initialData }: { categories: Category[], 
                   <button 
                     type="button" 
                     onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
-                    className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors"
+                    className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
                   >
                     Quitar privado
                   </button>
                 </div>
+
                 <div className="grid grid-cols-2 gap-2">
-                  {Array.from({ length: groupSize }).map((_, i) => (
-                    <Input 
-                      key={i} 
-                      name={`privatePrice_${i + 1}`} 
-                      type="number" 
-                      step="0.01" 
-                      defaultValue={initialData?.privatePricing?.find((p: any) => p.pax === i + 1)?.price}
-                      placeholder={`${i + 1} Pax $`} 
-                      className="text-center bg-slate-50 border-slate-200 text-xs h-8" 
-                    />
-                  ))}
+                  {Array.from({ length: groupSize }).map((_, i) => {
+                    const pax = i + 1;
+                    return (
+                      <div key={pax} className="relative flex items-center">
+                        <Input 
+                          name={`privatePrice_${pax}`} 
+                          type="number" 
+                          step="0.01" 
+                          value={privatePrices[pax] ?? ''}
+                          onChange={(e) => handlePrivatePriceChange(pax, e.target.value)}
+                          placeholder={`${pax} Pax $`} 
+                          className="text-left pl-2.5 pr-7 bg-slate-50 border-slate-200 text-xs h-8 font-medium focus:bg-white" 
+                        />
+                        {pax > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => copyPreviousPrice(pax)}
+                            title={`Copiar precio del Pax ${pax - 1}`}
+                            className="absolute right-1 p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Botón de Copiar Último Precio al Resto */}
+                <div className="pt-2.5 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={fillRemainingPrices}
+                    title="Copiar el último precio ingresado a todos los siguientes pax"
+                    className="w-full py-1.5 px-3 rounded-lg border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/50 text-[11px] font-medium text-slate-700 hover:text-emerald-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowDownToLine className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Copiar último precio al resto</span>
+                  </button>
                 </div>
               </div>
             ) : (

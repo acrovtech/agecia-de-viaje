@@ -2,8 +2,10 @@
 
 import { prisma } from '@repo/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
 
 export async function createCategory(name: string, slug: string) {
+  await requireAdminSession();
   if (!name || !slug) {
     return { error: 'Name and slug are required' };
   }
@@ -20,6 +22,7 @@ export async function createCategory(name: string, slug: string) {
 }
 
 export async function updateCategory(id: string, name: string, slug: string) {
+  await requireAdminSession();
   if (!id || !name || !slug) {
     return { error: 'All fields are required' };
   }
@@ -42,6 +45,7 @@ export async function deleteCategory(id: string) {
   }
 
   try {
+    await requireMasterRole();
     await prisma.category.delete({
       where: { id },
     });

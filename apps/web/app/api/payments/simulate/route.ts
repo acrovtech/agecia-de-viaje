@@ -19,9 +19,18 @@ export async function POST(req: Request) {
       }
     });
 
-    const tour = await prisma.tour.findUnique({
-      where: { id: updatedReservation.tourId }
-    });
+    let serviceTitle = 'Servicio Inca Bound';
+    if (updatedReservation.tourId) {
+      const tour = await prisma.tour.findUnique({
+        where: { id: updatedReservation.tourId }
+      });
+      if (tour) serviceTitle = tour.title;
+    } else if (updatedReservation.transferId) {
+      const transfer = await prisma.transfer.findUnique({
+        where: { id: updatedReservation.transferId }
+      });
+      if (transfer) serviceTitle = `Traslado: ${transfer.origin} a ${transfer.destination}`;
+    }
 
     if (updatedReservation) {
       const formattedDate = new Date(updatedReservation.date).toLocaleDateString('es-ES', {
@@ -35,7 +44,7 @@ export async function POST(req: Request) {
         reservationId: updatedReservation.id,
         customerName: `${updatedReservation.customerFirstName} ${updatedReservation.customerLastName}`,
         customerEmail: updatedReservation.customerEmail,
-        tourTitle: tour?.title || 'Tour Inca Bound',
+        tourTitle: serviceTitle,
         formattedDate: formattedDate,
         pax: updatedReservation.pax,
         totalPrice: updatedReservation.totalPrice,

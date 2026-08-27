@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PanelLeft } from 'lucide-react';
 import { SidebarNav } from './sidebar-nav';
 
-export function MobileSidebarDrawer() {
+export function MobileSidebarDrawer({ isMaster = true }: { isMaster?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
