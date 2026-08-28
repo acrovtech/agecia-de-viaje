@@ -22,6 +22,7 @@ export function Hero() {
           src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp" 
           alt="Inca Bound Hero" 
           fill 
+          sizes="100vw"
           priority 
           unoptimized={true}
           className="object-cover" 

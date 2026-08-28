@@ -64,6 +64,7 @@ export default async function BlogPage() {
                     src={article.bannerImage || '/fallback.svg'} 
                     alt={article.title} 
                     fill 
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover opacity-70 group-hover:opacity-40 transition-all duration-700 group-hover:scale-105 z-0"
                   />
                   

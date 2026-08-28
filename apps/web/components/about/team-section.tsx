@@ -41,6 +41,7 @@ export function TeamSection() {
                   src={member.image} 
                   alt={member.name} 
                   fill 
+                  sizes="(max-width: 768px) 160px, 192px"
                   className="object-cover group-hover:scale-110 transition-transform duration-500" 
                 />
               </div>

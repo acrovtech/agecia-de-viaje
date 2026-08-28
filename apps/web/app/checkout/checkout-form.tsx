@@ -468,7 +468,7 @@ export function CheckoutForm() {
                         {/* Imagen del Tour */}
                         <div className="md:col-span-4 min-h-[200px] md:min-h-[250px] relative overflow-hidden bg-slate-100 flex items-center justify-center border-r border-gray-100">
                           {item.image && item.image !== 'null' && item.image !== 'undefined' ? (
-                            <Image src={item.image} alt={item.tourTitle} fill className="object-cover" priority unoptimized={true} />
+                            <Image src={item.image} alt={item.tourTitle} fill sizes="(max-width: 768px) 100vw, 320px" className="object-cover" priority unoptimized={true} />
                           ) : (
                             <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center">
                               <Compass size={40} className="mb-2 text-slate-400" />

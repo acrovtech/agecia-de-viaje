@@ -222,7 +222,7 @@ export default async function TourPage({ params }: TourPageProps) {
               {/* Mapa de la Ruta si existe */}
               {formattedTour.mapImage ? (
                 <div className="w-full h-[250px] rounded-2xl overflow-hidden shadow-md relative border border-gray-200">
-                  <Image src={formattedTour.mapImage} alt={`Mapa de ${formattedTour.title}`} fill className="object-cover" />
+                  <Image src={formattedTour.mapImage} alt={`Mapa de ${formattedTour.title}`} fill sizes="(max-width: 1024px) 100vw, 380px" className="object-cover" />
                 </div>
               ) : (
                 <div className="w-full h-[250px] bg-gray-100 rounded-2xl flex flex-col items-center justify-center text-gray-400 border border-gray-200 relative overflow-hidden">

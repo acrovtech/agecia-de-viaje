@@ -11,7 +11,7 @@ export default function EsnnaPage() {
         {/* Hero Section */}
         <div className="relative h-[80dvh] min-h-[500px] w-full bg-gray-900 flex items-center justify-center">
           <div className="absolute inset-0">
-            <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/esnna-hero.webp" alt="ESNNA Inca Bound" fill className="object-cover" priority unoptimized={true} />
+            <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/esnna-hero.webp" alt="ESNNA Inca Bound" fill sizes="100vw" className="object-cover" priority unoptimized={true} />
             <div className="absolute inset-0 bg-black/40" />
           </div>
           <div className="relative z-10 text-center px-4 mt-16">
@@ -45,12 +45,12 @@ export default function EsnnaPage() {
               <div className="flex flex-col md:flex-row items-center justify-center gap-12">
                 {/* Imagen 1 */}
                 <div className="w-full md:w-[400px] h-auto aspect-[4/5] relative">
-                  <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/certificado-esnna-turismo-cusco.webp" alt="ESNNA Turismo Cusco" fill className="object-contain" unoptimized={true} />
+                  <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/certificado-esnna-turismo-cusco.webp" alt="ESNNA Turismo Cusco" fill sizes="(max-width: 768px) 100vw, 400px" className="object-contain" unoptimized={true} />
                 </div>
 
                 {/* Imagen 2 */}
                 <div className="w-full md:w-[400px] h-auto aspect-[4/5] relative">
-                  <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/codigo-conducta-esnna-inca-bound.webp" alt="Código de Conducta ESNNA" fill className="object-contain" unoptimized={true} />
+                  <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/codigo-conducta-esnna-inca-bound.webp" alt="Código de Conducta ESNNA" fill sizes="(max-width: 768px) 100vw, 400px" className="object-contain" unoptimized={true} />
                 </div>
               </div>
             </div>

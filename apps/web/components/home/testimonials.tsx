@@ -110,7 +110,7 @@ export function Testimonials() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 bg-gray-100 border border-gray-200">
-                          <Image src={testimonial.avatar} alt={testimonial.name} fill className="object-cover" />
+                          <Image src={testimonial.avatar} alt={testimonial.name} fill sizes="44px" className="object-cover" />
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 text-[15px] leading-tight">{testimonial.name}</p>

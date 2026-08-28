@@ -117,7 +117,7 @@ export function TourTabs({ tour }: { tour: any }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {tour.images.map((url: string, idx: number) => (
                     <div key={idx} className="relative h-64 rounded-xl overflow-hidden shadow-md">
-                      <Image src={url} alt={`Foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+                      <Image src={url} alt={`Foto ${idx + 1}`} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover hover:scale-105 transition-transform duration-500" />
                     </div>
                   ))}
                 </div>

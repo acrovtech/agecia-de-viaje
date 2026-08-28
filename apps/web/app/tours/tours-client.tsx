@@ -171,7 +171,7 @@ export function ToursCatalogClient() {
       
       <div className="relative pt-20 w-full bg-gray-900 flex flex-col justify-end min-h-[50dvh] md:min-h-[60dvh] mb-8">
         <div className="absolute inset-0">
-          <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp" alt="Tours en Perú" fill className="object-cover" priority unoptimized={true} />
+          <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp" alt="Tours en Perú" fill sizes="100vw" className="object-cover" priority unoptimized={true} />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-black/30" />
         </div>
 

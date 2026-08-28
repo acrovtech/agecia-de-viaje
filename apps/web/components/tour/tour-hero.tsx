@@ -9,7 +9,7 @@ export function TourHero({ tour }: { tour: any }) {
       {/* Background Image if uploaded */}
       {hasImage ? (
         <div className="absolute inset-0">
-          <Image src={tour.image} alt={tour.title} fill className="object-cover" priority />
+          <Image src={tour.image} alt={tour.title} fill sizes="100vw" className="object-cover" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-black/40" />
         </div>
       ) : (

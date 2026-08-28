@@ -25,6 +25,7 @@ export function AboutHero() {
                   src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-hiker-custom.webp" 
                   alt="Aventura en los Andes" 
                   fill 
+                  sizes="(max-width: 768px) 100vw, 300px"
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 
                   unoptimized={true}
                 />
@@ -36,6 +37,7 @@ export function AboutHero() {
                   src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-lake-custom.webp" 
                   alt="Naturaleza andina" 
                   fill 
+                  sizes="(max-width: 768px) 100vw, 300px"
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 
                   unoptimized={true}
                 />
@@ -47,6 +49,7 @@ export function AboutHero() {
                   src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/andes-llama-custom.webp" 
                   alt="Paisajes y colores" 
                   fill 
+                  sizes="(max-width: 768px) 100vw, 300px"
                   className="object-cover group-hover:scale-105 transition-transform duration-700" 
                   unoptimized={true}
                 />

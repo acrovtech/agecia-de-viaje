@@ -106,7 +106,7 @@ export function DestinosMegamenu() {
                 onClick={() => setDestinoView(regionObj.key as DestinoView)}
               >
                 {regionObj.image ? (
-                  <Image src={regionObj.image} alt={regionObj.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={true} />
+                  <Image src={regionObj.image} alt={regionObj.name} fill sizes="(max-width: 768px) 100vw, 280px" className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={true} />
                 ) : (
                   <div className="absolute inset-0 bg-gray-600 transition-transform duration-500 group-hover:scale-105" />
                 )}

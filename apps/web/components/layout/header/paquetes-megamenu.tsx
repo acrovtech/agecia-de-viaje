@@ -25,6 +25,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/custom-lima-cusco.webp" 
             alt="Paquete Lima - Cusco" 
             fill 
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
@@ -49,6 +50,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/custom-lima-arequipa.webp" 
             alt="Paquete Lima - Arequipa" 
             fill 
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
@@ -73,6 +75,7 @@ export function PaquetesMegamenu({ tours }: { tours: MenuTour[] }) {
             src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/paquetes/custom-lima-ica.webp" 
             alt="Paquete Lima - Ica" 
             fill 
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover transition-transform duration-500 hover:scale-105" 
             unoptimized={true}
           />
