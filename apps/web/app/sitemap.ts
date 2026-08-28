@@ -48,6 +48,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/privacidad`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/terminos`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/cookies`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/pagos`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/politicas-de-transporte`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
   ];
 
   // Rutas dinámicas desde la BD (Tours y Blog)
@@ -57,29 +87,52 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         select: {
           slug: true,
           updatedAt: true,
+          bannerImage: true,
+          cardImage: true,
+          images: {
+            select: { url: true },
+            take: 5,
+          },
         },
       }),
       prisma.blog.findMany({
         select: {
           slug: true,
           updatedAt: true,
+          bannerImage: true,
         },
       }),
     ]);
 
-    const tourRoutes: MetadataRoute.Sitemap = tours.map((tour) => ({
-      url: `${baseUrl}/tours/${tour.slug}`,
-      lastModified: tour.updatedAt || new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.85,
-    }));
+    const tourRoutes: MetadataRoute.Sitemap = tours.map((tour) => {
+      const images = [
+        tour.bannerImage,
+        tour.cardImage,
+        ...(tour.images?.map((img) => img.url) || []),
+      ].filter((img): img is string => Boolean(img && (img.startsWith('http') || img.startsWith('/'))));
 
-    const blogRoutes: MetadataRoute.Sitemap = blogs.map((blog) => ({
-      url: `${baseUrl}/blog/${blog.slug}`,
-      lastModified: blog.updatedAt || new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.75,
-    }));
+      return {
+        url: `${baseUrl}/tours/${tour.slug}`,
+        lastModified: tour.updatedAt || new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.85,
+        ...(images.length > 0 ? { images: Array.from(new Set(images)) } : {}),
+      };
+    });
+
+    const blogRoutes: MetadataRoute.Sitemap = blogs.map((blog) => {
+      const images = [blog.bannerImage].filter(
+        (img): img is string => Boolean(img && (img.startsWith('http') || img.startsWith('/')))
+      );
+
+      return {
+        url: `${baseUrl}/blog/${blog.slug}`,
+        lastModified: blog.updatedAt || new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.75,
+        ...(images.length > 0 ? { images: Array.from(new Set(images)) } : {}),
+      };
+    });
 
     return [...staticRoutes, ...tourRoutes, ...blogRoutes];
   } catch (error) {

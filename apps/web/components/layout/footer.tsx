@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, FileText, ShieldCheck, CreditCard, FileSignature, MapPin, Map, Navigation, Palmtree, Tent, Mountain, Compass, Info, HelpCircle, BookOpen, Mail, Phone, Car } from 'lucide-react';
+import { User, FileText, ShieldCheck, CreditCard, FileSignature, MapPin, Map, Navigation, Palmtree, Tent, Mountain, Compass, Info, HelpCircle, BookOpen, Mail, Phone, Car, Cookie } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -47,8 +47,9 @@ export function Footer() {
               <li><Link href="/contacto" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><User size={16} /> Contáctenos en</Link></li>
               <li><Link href="/terminos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><FileText size={16} /> Términos y condiciones</Link></li>
               <li><Link href="/privacidad" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><ShieldCheck size={16} /> Políticas de privacidad</Link></li>
+              <li><Link href="/cookies" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Cookie size={16} /> Políticas de cookies</Link></li>
               <li><Link href="/pagos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><CreditCard size={16} /> Políticas de pago</Link></li>
-              <li><Link href="/terminos#traslados" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Car size={16} /> Políticas de traslados</Link></li>
+              <li><Link href="/politicas-de-transporte" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Car size={16} /> Políticas de traslados</Link></li>
             </ul>
           </div>
 

@@ -26,18 +26,26 @@ export default async function BlogPage() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <div className="relative h-[80dvh] min-h-[500px] w-full bg-gray-900 flex items-center justify-center">
+        {/* Hero Section Normalizado */}
+        <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-[url('https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/blogs-hero-inca-bound.webp')] bg-cover bg-center opacity-50" />
-            <div className="absolute inset-0 bg-black/40" />
+            <Image 
+              src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/blogs-hero-inca-bound.webp" 
+              alt="Blog del Viajero Inca Bound" 
+              fill 
+              sizes="100vw" 
+              className="object-cover" 
+              priority 
+              unoptimized={true} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
           </div>
           
-          <div className="relative z-10 text-center px-4 mt-16">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-heading text-white mb-6 drop-shadow-lg leading-tight tracking-tight">
+          <div className="relative z-10 text-center px-4 mt-16 max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-heading text-white mb-4 drop-shadow-lg leading-tight tracking-tight">
               Blog del Viajero
             </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
+            <p className="text-base md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
               Inspírate con nuestras historias, guías completas y los mejores tips para organizar tu expedición a la tierra de los Incas.
             </p>
           </div>

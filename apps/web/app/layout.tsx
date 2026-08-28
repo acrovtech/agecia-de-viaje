@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { WhatsappButton } from '@/components/ui/whatsapp-button';
+import { CookieBanner } from '@/components/ui/cookie-banner';
 import { ScrollToTopOnNavigation } from '@/components/common/scroll-to-top';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -65,6 +66,7 @@ export default function RootLayout({
         <ScrollToTopOnNavigation />
         {children}
         <WhatsappButton />
+        <CookieBanner />
       </body>
     </html>
   );

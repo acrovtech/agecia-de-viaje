@@ -1,7 +1,8 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { ShieldCheck, Lock, Eye, FileText, UserCheck, Server, AlertCircle } from 'lucide-react';
+import { Lock, Eye, FileText, UserCheck, Server, AlertCircle } from 'lucide-react';
 import { Metadata } from 'next';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Políticas de Privacidad | Inca Bound Tour Operator',
@@ -11,19 +12,29 @@ export const metadata: Metadata = {
 export default function PrivacidadPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFA]">
-      <Header variant="dark" />
+      <Header />
 
       <main className="flex-1">
-        {/* Banner de Encabezado */}
-        <div className="bg-[#062918] text-white pt-28 pb-16">
-          <div className="container mx-auto px-4 lg:px-8 text-center max-w-3xl">
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/10 text-emerald-300 mb-4 backdrop-blur-sm">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <h1 className="text-3xl md:text-5xl font-bold font-heading mb-4 tracking-tight">
+        {/* Hero Section Normalizado con Fondo Fotográfico */}
+        <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0">
+            <Image 
+              src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/viajes-seguros-peru-inca-bound.webp" 
+              alt="Políticas de Privacidad Inca Bound" 
+              fill 
+              sizes="100vw" 
+              className="object-cover" 
+              priority 
+              unoptimized={true} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/40" />
+          </div>
+
+          <div className="relative z-10 text-center px-4 mt-16 max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-5xl font-bold font-heading text-white mb-4 tracking-tight drop-shadow-lg leading-tight">
               Políticas de Privacidad
             </h1>
-            <p className="text-emerald-100 text-base md:text-lg opacity-90 leading-relaxed">
+            <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
               Compromiso de protección de datos personales y transparencia en el tratamiento de información de nuestros viajeros (Ley N° 29733 - Perú).
             </p>
           </div>

@@ -2,6 +2,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ContactForm } from '@/components/contact/contact-form';
 import { ContactInfo } from '@/components/contact/contact-info';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'Contacto | Inca Bound',
@@ -14,19 +15,26 @@ export default function ContactPage() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <div className="relative h-[80dvh] min-h-[500px] w-full bg-gray-900 flex items-center justify-center">
+        {/* Hero Section Normalizado */}
+        <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
-            {/* Background Image */}
-            <div className="absolute inset-0 bg-[url('https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-cusco-contacto.webp')] bg-cover bg-center opacity-70" />
-            <div className="absolute inset-0 bg-black/40" />
+            <Image 
+              src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-cusco-contacto.webp" 
+              alt="Contacto Inca Bound" 
+              fill 
+              sizes="100vw" 
+              className="object-cover" 
+              priority 
+              unoptimized={true} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
           </div>
           
-          <div className="relative z-10 text-center px-4 mt-16">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-heading text-white mb-6 drop-shadow-lg leading-tight tracking-tight">
+          <div className="relative z-10 text-center px-4 mt-16 max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-heading text-white mb-4 drop-shadow-lg leading-tight tracking-tight">
               Contáctanos
             </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
+            <p className="text-base md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
               ¿Listo para vivir la mejor experiencia en los Andes? Estamos a un mensaje de distancia.
             </p>
           </div>

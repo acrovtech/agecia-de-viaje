@@ -18,10 +18,10 @@ function ToursSkeleton() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <div className="relative pt-20 w-full bg-gray-900 flex flex-col justify-end min-h-[50dvh] mb-8">
-        <div className="container mx-auto px-4 lg:px-8 pb-16">
-          <div className="h-10 w-64 bg-white/20 rounded-xl animate-pulse mb-4" />
-          <div className="h-4 w-96 bg-white/10 rounded-lg animate-pulse" />
+      <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center mb-8">
+        <div className="container mx-auto px-4 lg:px-8 text-center max-w-3xl">
+          <div className="h-12 w-80 bg-white/20 rounded-xl animate-pulse mx-auto mb-4" />
+          <div className="h-4 w-96 bg-white/10 rounded-lg animate-pulse mx-auto" />
         </div>
       </div>
       <main className="container mx-auto px-4 lg:px-8 pb-16 flex-1">

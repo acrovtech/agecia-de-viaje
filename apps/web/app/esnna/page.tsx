@@ -8,14 +8,14 @@ export default function EsnnaPage() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <div className="relative h-[80dvh] min-h-[500px] w-full bg-gray-900 flex items-center justify-center">
+        {/* Hero Section Normalizado */}
+        <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
             <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/esnna-hero.webp" alt="ESNNA Inca Bound" fill sizes="100vw" className="object-cover" priority unoptimized={true} />
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
           </div>
-          <div className="relative z-10 text-center px-4 mt-16">
-            <h1 className="text-3xl md:text-5xl font-bold text-white font-heading tracking-tight drop-shadow-md">
+          <div className="relative z-10 text-center px-4 mt-16 max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white font-heading tracking-tight drop-shadow-lg leading-tight">
               Comprometidos con la Erradicación de la ESNNA
             </h1>
           </div>

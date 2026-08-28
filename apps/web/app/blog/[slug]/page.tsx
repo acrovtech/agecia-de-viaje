@@ -75,8 +75,67 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
     (blog.bannerImage.startsWith('http') || blog.bannerImage.startsWith('/uploads') || blog.bannerImage.startsWith('/blogs'))
   );
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'BlogPosting',
+        '@id': `https://incabound.com/blog/${blog.slug}#post`,
+        headline: blog.title,
+        description: blog.metaDescription || blog.paragraphs?.[0]?.content?.slice(0, 160) || blog.title,
+        image: hasBanner ? [blog.bannerImage] : ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/blogs-hero-inca-bound.webp'],
+        datePublished: blog.createdAt.toISOString(),
+        dateModified: blog.updatedAt.toISOString(),
+        author: {
+          '@type': 'Organization',
+          name: 'Inca Bound',
+          url: 'https://incabound.com',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Inca Bound',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://incabound.com/logo.svg',
+          },
+        },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `https://incabound.com/blog/${blog.slug}`,
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Inicio',
+            item: 'https://incabound.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Blog',
+            item: 'https://incabound.com/blog',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: blog.title,
+            item: `https://incabound.com/blog/${blog.slug}`,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
 
       <main className="flex-1">
