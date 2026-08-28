@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Install pnpm directly via npm
-RUN npm install -g pnpm@11.10.0
+RUN npm install -g pnpm@12.0.0
 
 # Dependencies stage
 FROM base AS deps

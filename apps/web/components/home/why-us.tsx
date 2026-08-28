@@ -34,7 +34,7 @@ export function WhyUs() {
                 Si buscas vivir la mejor experiencia de tu vida y disfrutar de unas <strong>vacaciones inolvidables en Perú</strong>, con <strong>Inca Bound</strong> tendrás la oportunidad de conocer muy de cerca la cultura, la más fina gastronomía y todas las comodidades para hacer de tu viaje una experiencia maravillosa.
               </p>
               <p>
-                Con más de 20 años de experiencia y un selecto equipo de profesionales comprometidos, garantizamos una atención personalizada. Al viajar con nosotros, contribuyes al desarrollo de las comunidades locales y te sumas a un <strong>turismo responsable y ecológico</strong>, protegiendo nuestro planeta.
+                Con más de 15 años de experiencia y un selecto equipo de profesionales comprometidos, garantizamos una atención personalizada. Al viajar con nosotros, contribuyes al desarrollo de las comunidades locales y te sumas a un <strong>turismo responsable y ecológico</strong>, protegiendo nuestro planeta.
               </p>
             </div>
           </div>
