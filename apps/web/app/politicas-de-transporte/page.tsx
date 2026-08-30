@@ -20,7 +20,7 @@ export default function PoliticasTransportePage() {
         <div className="relative h-[60dvh] min-h-[460px] md:min-h-[500px] w-full bg-gray-900 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
             <Image 
-              src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-hero.webp" 
+              src="/assets/heros/hero-politicas-transporte.png" 
               alt="Políticas de Transporte y Traslados Inca Bound" 
               fill 
               sizes="100vw" 

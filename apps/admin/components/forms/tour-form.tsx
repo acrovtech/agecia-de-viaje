@@ -72,12 +72,28 @@ function SubmitSaveButton() {
   );
 }
 
+const getStorefrontUrl = (path: string = '') => {
+  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `https://incabound.com${path}`;
+  }
+  return `http://localhost:3000${path}`;
+};
+
 export function TourForm({ categories, initialData }: { categories: Category[]; initialData?: any }) {
   const [groupSize, setGroupSize] = useState<number>(initialData?.groupSize || 12);
-  const [status, setStatus] = useState<'Active' | 'Draft'>(initialData?.status || 'Active');
-  const [isFeatured, setIsFeatured] = useState<'Active' | 'Draft'>(initialData?.isFeatured ? 'Active' : 'Draft');
+  const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
+  const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
   const [title, setTitle] = useState(initialData?.title || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
+  const [galleryImages, setGalleryImages] = useState<(string | null)[]>([
+    initialData?.images?.[0]?.url || null,
+    initialData?.images?.[1]?.url || null,
+    initialData?.images?.[2]?.url || null,
+    initialData?.images?.[3]?.url || null,
+  ]);
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(
     initialData?.itinerary && initialData.itinerary.length > 0
       ? initialData.itinerary.map((it: any) => ({ id: it.id || Date.now() + Math.random(), title: it.title, content: it.content }))
@@ -107,6 +123,42 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
     }
     return map;
   });
+
+  // Subida múltiple para la galería (hasta 4 fotos a la vez)
+  const handleMultipleGalleryUpload = async (files: File[]) => {
+    const filesToUpload = files.slice(0, 4);
+    setIsDirty(true);
+
+    const uploadPromises = filesToUpload.map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', `tours/${slug || 'nuevo'}`);
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        return data.success && data.url ? data.url : null;
+      } catch (e) {
+        console.error('Error al subir imagen de galería:', e);
+        return null;
+      }
+    });
+
+    const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean);
+
+    setGalleryImages((prev) => {
+      const next = [...prev];
+      let uploadedIdx = 0;
+      for (let i = 0; i < next.length && uploadedIdx < uploadedUrls.length; i++) {
+        if (!next[i]) {
+          next[i] = uploadedUrls[uploadedIdx++];
+        }
+      }
+      for (let i = 0; i < next.length && uploadedIdx < uploadedUrls.length; i++) {
+        next[i] = uploadedUrls[uploadedIdx++];
+      }
+      return next;
+    });
+  };
 
   const handlePrivatePriceChange = (pax: number, val: string) => {
     setPrivatePrices(prev => ({ ...prev, [pax]: val }));
@@ -338,8 +390,8 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
       className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none"
     >
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
-      <input type="hidden" name="status" value={status} />
-      <input type="hidden" name="isFeatured" value={isFeatured === 'Active' ? 'true' : 'false'} />
+      <input type="hidden" name="status" value={status === 'Activo' ? 'Active' : 'Draft'} />
+      <input type="hidden" name="isFeatured" value={isFeatured === 'Activo' ? 'true' : 'false'} />
       
       {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Integrada al topbar) */}
       {(isDirty || !initialData?.id) && (
@@ -390,7 +442,7 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
         {initialData?.id && (
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <a 
-              href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/tours/${slug || initialData.slug}`}
+              href={getStorefrontUrl(`/tours/${slug || initialData.slug}`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all select-none"
@@ -463,12 +515,32 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
 
               {/* Row 2: Galería de 4 Fotos */}
               <div className="pt-4 border-t border-slate-100">
-                <Label className="text-xs font-semibold text-slate-700 mb-3 block">Galería (4 Fotos)</Label>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-xs font-semibold text-slate-700">Galería (Hasta 4 Fotos)</Label>
+                  <span className="text-[11px] text-slate-400">Puedes seleccionar hasta 4 fotos a la vez</span>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <ImageDropzone name="galleryImage_1" label="Foto Galería 1" labelPosition="bottom" initialUrl={initialData?.images?.[0]?.url} folder={`tours/${slug || 'nuevo'}`} />
-                  <ImageDropzone name="galleryImage_2" label="Foto Galería 2" labelPosition="bottom" initialUrl={initialData?.images?.[1]?.url} folder={`tours/${slug || 'nuevo'}`} />
-                  <ImageDropzone name="galleryImage_3" label="Foto Galería 3" labelPosition="bottom" initialUrl={initialData?.images?.[2]?.url} folder={`tours/${slug || 'nuevo'}`} />
-                  <ImageDropzone name="galleryImage_4" label="Foto Galería 4" labelPosition="bottom" initialUrl={initialData?.images?.[3]?.url} folder={`tours/${slug || 'nuevo'}`} />
+                  {galleryImages.map((imgUrl, idx) => (
+                    <ImageDropzone 
+                      key={idx}
+                      name={`galleryImage_${idx + 1}`} 
+                      label={`Foto Galería ${idx + 1}`} 
+                      labelPosition="bottom" 
+                      initialUrl={imgUrl || undefined} 
+                      folder={`tours/${slug || 'nuevo'}`} 
+                      actionStyle="corner"
+                      multiple={true}
+                      onMultipleFiles={handleMultipleGalleryUpload}
+                      onChange={(newUrl) => {
+                        setGalleryImages((prev) => {
+                          const next = [...prev];
+                          next[idx] = newUrl;
+                          return next;
+                        });
+                        setIsDirty(true);
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -688,8 +760,8 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Active">Activo</SelectItem>
-                <SelectItem value="Draft">Desactivado</SelectItem>
+                <SelectItem value="Activo">Activo</SelectItem>
+                <SelectItem value="Desactivado">Desactivado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -702,8 +774,8 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Active">Activo</SelectItem>
-                <SelectItem value="Draft">Desactivado</SelectItem>
+                <SelectItem value="Activo">Activo</SelectItem>
+                <SelectItem value="Desactivado">Desactivado</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-[10px] text-slate-400">Desactivado por defecto. Máximo 6 tours destacados en el Home.</p>
@@ -967,7 +1039,7 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
             {/* Body Modal */}
             <div className="p-5">
               <p className="text-xs text-slate-600 leading-relaxed">
-                Si eliminas <strong className="font-semibold text-slate-900">{initialData?.title || title}</strong>, esto no se puede deshacer. Cualquier archivo multimedia que solo use este producto también se eliminará.
+                Si eliminas <strong className="font-semibold text-slate-900">{initialData?.title || title}</strong>, esta acción no se puede deshacer. Se quitará el tour de la web y todos sus datos e itinerarios asociados se eliminarán permanentemente.
               </p>
             </div>
 
@@ -983,13 +1055,13 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                 Cancelar
               </Button>
               <Button 
-                type="button"
+                type="button" 
                 disabled={isDeleting}
                 onClick={handleDeleteTour}
                 className="bg-[#D82C0D] hover:bg-[#BC250B] text-white font-medium text-xs h-8 px-3.5 rounded-lg shadow-xs transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />}
-                <span>{isDeleting ? 'Eliminando...' : 'Eliminar producto'}</span>
+                <span>{isDeleting ? 'Eliminando...' : 'Eliminar tour'}</span>
               </Button>
             </div>
 

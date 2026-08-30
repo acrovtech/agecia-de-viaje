@@ -54,9 +54,19 @@ function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElem
   );
 }
 
+const getStorefrontUrl = (path: string = '') => {
+  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `https://incabound.com${path}`;
+  }
+  return `http://localhost:3000${path}`;
+};
+
 export function BlogForm({ initialData }: { initialData?: any }) {
   const [title, setTitle] = useState(initialData?.title || '');
-  const [status, setStatus] = useState<'Active' | 'Draft'>('Active');
+  const [status, setStatus] = useState<'Activo' | 'Borrador'>(initialData?.status === 'Draft' ? 'Borrador' : 'Activo');
   const [bannerImage, setBannerImage] = useState(initialData?.bannerImage || '');
   const [metaTitle, setMetaTitle] = useState(initialData?.metaTitle || '');
   const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || '');
@@ -235,6 +245,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
       className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none font-sans"
     >
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      <input type="hidden" name="status" value={status === 'Activo' ? 'Active' : 'Draft'} />
       
       {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Integrada al topbar) */}
       {(isDirty || !initialData?.id) && (
@@ -243,7 +254,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 fill-[#EEEEEE] shrink-0">
               <path d="M8 4a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75"></path>
               <path d="M8 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2"></path>
-              <path fillRule="evenodd" d="M1.5 6.25a4.75 4.75 0 0 1 4.75-4.75h3.5a4.75 4.75 0 0 1 4.75 4.75v2.5a4.75 4.75 0 0 1-4.573 4.747l-1.335 1.714a.75.75 0 0 1-1.189-.007l-1.3-1.706a4.75 4.75 0 0 1-4.603-4.748zm4.75-3.25a3.25 3.25 0 0 0-3.25 3.25v2.5a3.25 3.25 0 0 0 3.25 3.25h.226c.234 0 .455.11.597.296l.934 1.225.96-1.232a.75.75 0 0 1 .591-.289h.192a3.25 3.25 0 0 0 3.25-3.25z"></path>
+              <path fillRule="evenodd" d="M1.5 6.25a4.75 4.75 0 0 1 4.75-4.75h3.5a4.75 4.75 0 0 1 4.75 4.75v2.5a4.75 4.75 0 0 1-4.573 4.747l-1.335 1.714a.75.75 0 0 1-1.189-.007l-1.3-1.706a4.75 4.75 0 0 1-4.603-4.748zm4.75-3.25a3.25 3.25 0 0 0-3.25 3.25v2.5a3.25 3.25 0 0 0 3.25 3.25h.226c.234 0 .455.11.597.296l.934 1.225.96-1.232a.75.75 0 0 1 .591-.289h.192a3.25 3.25 0 0 0 3.25-3.25v-2.5a3.25 3.25 0 0 0-3.25-3.25z"></path>
             </svg>
             <h2 className="text-[11px] md:text-[12px] leading-[16px] font-[450] text-[#EEEEEE] tracking-tight truncate">
               {initialData?.id ? 'Cambios no guardados' : 'Blog no guardado'}
@@ -285,7 +296,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
         {initialData?.id && (
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <a 
-              href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${slug || initialData.slug}`}
+              href={getStorefrontUrl(`/blog/${slug || initialData.slug}`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all select-none"
@@ -402,7 +413,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
         ========================================== */}
         <div className="space-y-6">
           
-          {/* Card 1: Estado (Activo / Desactivado) */}
+          {/* Card 1: Estado (Activo / Borrador) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
             <Label className="text-xs font-semibold text-slate-700">Estado</Label>
             <Select value={status} onValueChange={(v: any) => { setStatus(v); setIsDirty(true); }}>
@@ -410,8 +421,8 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Active">Activo</SelectItem>
-                <SelectItem value="Draft">Borrador</SelectItem>
+                <SelectItem value="Activo">Activo</SelectItem>
+                <SelectItem value="Borrador">Borrador</SelectItem>
               </SelectContent>
             </Select>
           </div>

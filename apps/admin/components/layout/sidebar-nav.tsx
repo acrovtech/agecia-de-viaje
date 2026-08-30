@@ -15,9 +15,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const getStorefrontUrl = (path: string = '') => {
+  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `https://incabound.com${path}`;
+  }
+  return `http://localhost:3000${path}`;
+};
+
 export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
   const pathname = usePathname();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = getStorefrontUrl();
 
   return (
     <div className="flex flex-col h-full bg-[#EBEBEB] text-[#303030] border-none select-none text-[13px]">
@@ -137,7 +147,7 @@ export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
           <ul className="space-y-1 font-medium">
             <li>
               <a 
-                href="http://localhost:3000" 
+                href={siteUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-between px-3 py-2 rounded-lg text-[#303030] hover:bg-slate-200/70 hover:text-black transition-colors text-[13px]"

@@ -129,7 +129,7 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
         </div>
 
         <a
-          href="http://localhost:3000/transporte"
+          href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'https://incabound.com/transporte' : (process.env.NEXT_PUBLIC_SITE_URL ? `${process.env.NEXT_PUBLIC_SITE_URL}/transporte` : 'http://localhost:3000/transporte')}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1 font-medium transition-colors"

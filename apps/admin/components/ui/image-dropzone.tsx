@@ -14,17 +14,32 @@ interface ImageDropzoneProps {
   initialUrl?: string;
   folder?: string;
   buttonLayout?: 'horizontal' | 'vertical' | 'auto';
+  actionStyle?: 'full' | 'corner';
+  multiple?: boolean;
+  onMultipleFiles?: (files: File[]) => void;
   onChange?: (url: string | null) => void;
 }
 
-export function ImageDropzone({ label, labelPosition = 'top', name, className, initialUrl, folder, buttonLayout = 'horizontal', onChange }: ImageDropzoneProps) {
+export function ImageDropzone({ 
+  label, 
+  labelPosition = 'top', 
+  name, 
+  className, 
+  initialUrl, 
+  folder, 
+  buttonLayout = 'horizontal', 
+  actionStyle = 'full',
+  multiple = false,
+  onMultipleFiles,
+  onChange 
+}: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const isValidInitialUrl = Boolean(
     initialUrl && 
     typeof initialUrl === 'string' && 
     initialUrl.trim() !== '' && 
     !initialUrl.includes('default-') && 
-    (initialUrl.startsWith('http') || initialUrl.startsWith('/uploads') || initialUrl.startsWith('data:image') || initialUrl.startsWith('/salkantay') || initialUrl.startsWith('/blogs') || initialUrl.startsWith('/tours'))
+    (initialUrl.startsWith('http') || initialUrl.startsWith('/uploads') || initialUrl.startsWith('data:image') || initialUrl.startsWith('/salkantay') || initialUrl.startsWith('/blogs') || initialUrl.startsWith('/tours') || initialUrl.startsWith('/assets'))
   );
   const [filePreview, setFilePreview] = useState<string | null>(isValidInitialUrl ? (initialUrl || null) : null);
   
@@ -99,15 +114,23 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (multiple && onMultipleFiles && e.dataTransfer.files.length > 1) {
+        onMultipleFiles(Array.from(e.dataTransfer.files));
+      } else if (e.dataTransfer.files[0]) {
+        processFile(e.dataTransfer.files[0]);
+      }
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      if (multiple && onMultipleFiles && e.target.files.length > 1) {
+        onMultipleFiles(Array.from(e.target.files));
+      } else if (e.target.files[0]) {
+        processFile(e.target.files[0]);
+      }
     }
   };
 
@@ -146,6 +169,7 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
               type="file" 
               className="hidden" 
               accept="image/png, image/jpeg, image/webp" 
+              multiple={multiple}
               onChange={handleChange}
             />
           </div>
@@ -167,8 +191,30 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
               </div>
             )}
             
-            {/* Overlay animado de acciones (Ajustes SEO + Eliminar con confirmación) */}
-            {!isUploading && (
+            {/* Overlay de acciones */}
+            {!isUploading && actionStyle === 'corner' ? (
+              /* Botones redondos limpios en la esquina superior */
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button 
+                  type="button" 
+                  onClick={() => setShowSeoPanel(true)} 
+                  title="Ajustes SEO"
+                  className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-transform hover:scale-110 cursor-pointer border border-slate-200"
+                >
+                  <Settings2 className="w-3.5 h-3.5 text-slate-700" />
+                </button>
+                
+                <button 
+                  type="button" 
+                  onClick={() => setShowDeleteConfirm(true)} 
+                  title="Eliminar foto"
+                  className="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 text-white" />
+                </button>
+              </div>
+            ) : !isUploading ? (
+              /* Overlay completo con texto explícito (para imágenes clave) */
               <div className={`absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-300 flex ${
                 buttonLayout === 'vertical' ? 'flex-col items-center justify-center gap-1.5' : 'flex-row items-center justify-center gap-2'
               } z-10 p-2`}>
@@ -198,10 +244,10 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
                   <span>Eliminar</span>
                 </Button>
               </div>
-            )}
+            ) : null}
 
             {altText && (
-              <div className="absolute top-2 right-2 bg-emerald-500/90 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-md z-10">
+              <div className={`absolute ${actionStyle === 'corner' ? 'top-2 left-2' : 'top-2 right-2'} bg-emerald-500/90 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-md z-10`}>
                 <CheckCircle2 className="w-3 h-3" /> SEO Ok
               </div>
             )}
@@ -254,7 +300,7 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
         </div>
       )}
 
-      {/* Modal / Panel de Ajustes SEO (Estilo WordPress Media Library) */}
+      {/* Modal / Panel de Ajustes SEO (Altura Optimizada y Alineada) */}
       {showSeoPanel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white text-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -271,37 +317,37 @@ export function ImageDropzone({ label, labelPosition = 'top', name, className, i
             </div>
 
             {/* Body */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Image Preview (Left) */}
-              <div className="flex flex-col gap-3">
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-square flex items-center justify-center">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Image Preview (Left) - Altura Proporcionada */}
+              <div className="flex flex-col gap-2.5">
+                <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 h-[190px] flex items-center justify-center relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={filePreview!} alt="Preview" className="w-full h-full object-contain" />
+                  <img src={filePreview!} alt="Preview" className="w-full h-full object-cover" />
                 </div>
-                <div className="text-xs text-slate-500 space-y-1">
-                  <p><strong>Archivo:</strong> {imageTitle || 'imagen'}.webp</p>
+                <div className="text-[11px] text-slate-500 space-y-0.5 bg-slate-50/80 p-2.5 rounded-lg border border-slate-100">
+                  <p className="truncate"><strong>Archivo:</strong> {imageTitle || 'imagen'}.webp</p>
                   <p><strong>Optimización:</strong> Escalado automático R2</p>
                 </div>
               </div>
 
               {/* Form Fields (Right) */}
-              <div className="space-y-4">
-                <div className="grid gap-1.5">
+              <div className="space-y-3.5">
+                <div className="grid gap-1">
                   <Label className="text-xs font-semibold text-slate-700">Texto Alternativo (Alt Text) <span className="text-rose-500">*</span></Label>
                   <Input value={altText} onChange={(e) => setAltText(e.target.value)} placeholder="Ej. Turistas en Laguna Humantay" className="text-xs h-8 bg-white border-slate-300" />
                   <p className="text-[10px] text-slate-400 leading-tight">Describe la imagen para SEO en Google Images.</p>
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1">
                   <Label className="text-xs font-semibold text-slate-700">Título</Label>
                   <Input value={imageTitle} onChange={(e) => setImageTitle(e.target.value)} placeholder="Título interno" className="text-xs h-8 bg-white border-slate-300" />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1">
                   <Label className="text-xs font-semibold text-slate-700">Descripción</Label>
                   <textarea 
                     rows={3}
-                    className="flex w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400"
+                    className="flex w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 resize-none"
                     value={imageDesc} 
                     onChange={(e) => setImageDesc(e.target.value)} 
                     placeholder="Descripción adicional opcional..."
