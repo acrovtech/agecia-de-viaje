@@ -1,19 +1,43 @@
 'use server';
 
-import { prisma } from '@repo/db';
+import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+
+const TourInputSchema = z.object({
+  title: z.string().min(2, 'El título del tour es obligatorio (mínimo 2 caracteres)'),
+  slug: z.string().min(2, 'El slug es obligatorio').regex(/^[a-z0-9-]+$/, 'El slug solo debe contener letras minúsculas, números y guiones'),
+  description: z.string().default(''),
+  duration: z.string().default(''),
+  altitude: z.string().default(''),
+  groupSize: z.string().default('12'),
+  difficulty: z.string().default('Fácil'),
+});
 
 export async function createTour(formData: FormData) {
   await requireAdminSession();
-  const id = formData.get('id') as string;
-  const title = (formData.get('title') as string)?.trim();
-  const slug = (formData.get('slug') as string)?.trim()?.toLowerCase();
-  
-  if (!title || !slug) {
-    throw new Error('Title and slug are required');
+  const id = (formData.get('id') as string)?.trim() || undefined;
+  const rawTitle = (formData.get('title') as string)?.trim() || '';
+  const rawSlug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
+
+  const validatedFields = TourInputSchema.safeParse({
+    title: rawTitle,
+    slug: rawSlug,
+    description: (formData.get('description') as string) || '',
+    duration: (formData.get('duration') as string) || '',
+    altitude: (formData.get('altitude') as string) || '',
+    groupSize: (formData.get('groupSize') as string) || '12',
+    difficulty: (formData.get('difficulty') as string) || 'Fácil',
+  });
+
+  if (!validatedFields.success) {
+    const errorMsg = validatedFields.error.issues[0]?.message || 'Datos de tour inválidos';
+    throw new Error(errorMsg);
   }
+
+  const { title, slug } = validatedFields.data;
 
   // Text content
   const description = formData.get('description') as string || '';
@@ -22,7 +46,7 @@ export async function createTour(formData: FormData) {
   const recommendations = formData.get('recommendations') as string || '';
   
   // Dynamic Itinerary
-  const itinerary = [];
+  const itinerary: { title: string; content: string; order: number }[] = [];
   const itineraryCount = parseInt(formData.get('itineraryCount') as string) || 50;
   for (let i = 0; i < itineraryCount; i++) {
     const dayTitle = (formData.get(`itinerary_title_${i}`) as string)?.trim();
@@ -37,7 +61,7 @@ export async function createTour(formData: FormData) {
   }
 
   // Dynamic FAQs
-  const faqs = [];
+  const faqs: { question: string; answer: string; order: number }[] = [];
   const faqsCount = parseInt(formData.get('faqsCount') as string) || 50;
   for (let i = 0; i < faqsCount; i++) {
     const question = (formData.get(`faq_question_${i}`) as string)?.trim();
@@ -134,76 +158,83 @@ export async function createTour(formData: FormData) {
     metaDescription,
   };
 
-  if (id) {
-    // Update existing Tour
-    await prisma.tour.update({
-      where: { id },
-      data: {
-        ...tourData,
-        itineraries: { 
-          deleteMany: {}, 
-          create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
-        },
-        inclusions: { 
-          deleteMany: {}, 
-          create: inclusions ? inclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
-        },
-        exclusions: { 
-          deleteMany: {}, 
-          create: exclusions ? exclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
-        },
-        recommendations: { 
-          deleteMany: {}, 
-          create: recommendations ? recommendations.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
-        },
-        faqs: { 
-          deleteMany: {}, 
-          create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) 
-        },
-        privatePricing: { 
-          deleteMany: {}, 
-          create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) 
-        },
-        images: { 
-          deleteMany: {}, 
-          create: galleryImages.map((url, order) => ({ url, order })) 
-        },
-        categories: { 
-          set: categoryIds.map(catId => ({ id: catId })) 
-        }
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (id) {
+        // Update existing Tour con transacción atómica
+        await tx.tour.update({
+          where: { id },
+          data: {
+            ...tourData,
+            itineraries: { 
+              deleteMany: {}, 
+              create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
+            },
+            inclusions: { 
+              deleteMany: {}, 
+              create: inclusions ? inclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
+            },
+            exclusions: { 
+              deleteMany: {}, 
+              create: exclusions ? exclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
+            },
+            recommendations: { 
+              deleteMany: {}, 
+              create: recommendations ? recommendations.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) : [] 
+            },
+            faqs: { 
+              deleteMany: {}, 
+              create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) 
+            },
+            privatePricing: { 
+              deleteMany: {}, 
+              create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) 
+            },
+            images: { 
+              deleteMany: {}, 
+              create: galleryImages.map((url, order) => ({ url, order })) 
+            },
+            categories: { 
+              set: categoryIds.map(catId => ({ id: catId })) 
+            }
+          }
+        });
+      } else {
+        // Create new Tour con transacción atómica
+        await tx.tour.create({
+          data: {
+            ...tourData,
+            itineraries: itinerary.length > 0 ? { 
+              create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
+            } : undefined,
+            inclusions: inclusions ? { 
+              create: inclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
+            } : undefined,
+            exclusions: exclusions ? { 
+              create: exclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
+            } : undefined,
+            recommendations: recommendations ? { 
+              create: recommendations.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
+            } : undefined,
+            faqs: faqs.length > 0 ? { 
+              create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) 
+            } : undefined,
+            privatePricing: privatePricing.length > 0 ? { 
+              create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) 
+            } : undefined,
+            images: galleryImages.length > 0 ? { 
+              create: galleryImages.map((url, order) => ({ url, order })) 
+            } : undefined,
+            categories: categoryIds.length > 0 ? { 
+              connect: categoryIds.map(catId => ({ id: catId })) 
+            } : undefined
+          },
+        });
       }
     });
-  } else {
-    // Create new Tour
-    await prisma.tour.create({
-      data: {
-        ...tourData,
-        itineraries: itinerary.length > 0 ? { 
-          create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
-        } : undefined,
-        inclusions: inclusions ? { 
-          create: inclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
-        } : undefined,
-        exclusions: exclusions ? { 
-          create: exclusions.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
-        } : undefined,
-        recommendations: recommendations ? { 
-          create: recommendations.split('\n').map(s => s.trim()).filter(Boolean).map((content, index) => ({ content, order: index })) 
-        } : undefined,
-        faqs: faqs.length > 0 ? { 
-          create: faqs.map((item, index) => ({ question: item.question, answer: item.answer, order: index })) 
-        } : undefined,
-        privatePricing: privatePricing.length > 0 ? { 
-          create: privatePricing.map(p => ({ pax: p.pax, price: p.price })) 
-        } : undefined,
-        images: galleryImages.length > 0 ? { 
-          create: galleryImages.map((url, order) => ({ url, order })) 
-        } : undefined,
-        categories: categoryIds.length > 0 ? { 
-          connect: categoryIds.map(catId => ({ id: catId })) 
-        } : undefined
-      },
-    });
+  } catch (error: any) {
+    console.error("Error guardando el tour:", error);
+    throw new Error(handlePrismaError(error));
   }
 
   revalidatePath('/tours');
@@ -220,15 +251,17 @@ export async function createTour(formData: FormData) {
 export async function deleteTour(id: string) {
   try {
     await requireMasterRole();
-    await prisma.tour.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      await tx.tour.delete({
+        where: { id }
+      });
     });
     revalidatePath('/tours');
     revalidatePath('/(dashboard)/tours', 'page');
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting tour:", error);
-    return { success: false, error: "No se pudo eliminar el tour." };
+    return { success: false, error: handlePrismaError(error) };
   }
 }

@@ -46,6 +46,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -63,10 +65,12 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://f.vimeocdn.com" />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
-        <ScrollToTopOnNavigation />
-        {children}
-        <WhatsappButton />
-        <CookieBanner />
+        <NuqsAdapter>
+          <ScrollToTopOnNavigation />
+          {children}
+          <WhatsappButton />
+          <CookieBanner />
+        </NuqsAdapter>
       </body>
     </html>
   );

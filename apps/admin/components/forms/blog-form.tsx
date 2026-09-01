@@ -11,58 +11,8 @@ import { createBlog, updateBlog, deleteBlog } from '../../app/actions/blog';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-function SubmitSaveButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="px-3 md:px-3.5 py-1 rounded-lg bg-[#008060] hover:bg-[#006e52] text-white font-[600] text-[11px] md:text-[12px] leading-[16px] transition-colors shadow-xs disabled:opacity-50 flex items-center gap-1.5"
-    >
-      {pending ? 'Guardando...' : 'Guardar'}
-    </button>
-  );
-}
-
-function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const adjustHeight = () => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustHeight();
-  }, [props.value, props.defaultValue]);
-
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    adjustHeight();
-    if (props.onInput) props.onInput(e);
-  };
-
-  return (
-    <textarea
-      {...props}
-      ref={textareaRef}
-      onInput={handleInput}
-      className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400 leading-relaxed overflow-hidden resize-none transition-[height] duration-75 ${props.className || ''}`}
-    />
-  );
-}
-
-const getStorefrontUrl = (path: string = '') => {
-  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
-    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `https://incabound.com${path}`;
-  }
-  return `http://localhost:3000${path}`;
-};
+import { SubmitSaveButton, AutoResizeTextarea, getStorefrontUrl } from './shared/form-utils';
+import { analyzeSeo } from './shared/seo-analysis';
 
 export function BlogForm({ initialData }: { initialData?: any }) {
   const [title, setTitle] = useState(initialData?.title || '');
@@ -142,100 +92,13 @@ export function BlogForm({ initialData }: { initialData?: any }) {
     setIsDirty(true);
   };
 
-  // Algoritmo de Inteligencia SEO estilo Yoast / RankMath (Google NLP Tokenization)
-  const getSeoAnalysis = () => {
-    let score = 0;
-    const results: { text: string; type: 'good' | 'bad' }[] = [];
-    const focusKeyphrase = keywords.split(',')[0] || title;
-    
-    if (!focusKeyphrase.trim()) {
-      return {
-        level: 'Pendiente',
-        status: 'Sin clave',
-        color: 'text-slate-400',
-        badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200',
-        results: [{ text: 'Ingresa palabras clave para activar el análisis SEO', type: 'bad' as const }]
-      };
-    }
-
-    const STOP_WORDS = new Set(['tour', 'tours', 'de', 'del', 'el', 'la', 'los', 'las', 'en', 'para', 'por', 'un', 'una', 'y', 'a', 'con', 'dia', 'dias', 'full', 'day', 'guia']);
-
-    const normalizeText = (text: string) => 
-      text.toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s]/g, '');
-
-    const keyphraseNormalized = normalizeText(focusKeyphrase);
-    const keyphraseTokens = keyphraseNormalized.split(/\s+/).filter(t => t.length > 0);
-    const coreKeyTokens = keyphraseTokens.filter(t => !STOP_WORDS.has(t) && t.length > 1);
-    const targetTokens = coreKeyTokens.length > 0 ? coreKeyTokens : keyphraseTokens;
-
-    const titleNormalized = normalizeText(title);
-    const descNormalized = normalizeText(metaDescription);
-    const slugNormalized = normalizeText(slug);
-
-    // 1. Análisis en el Título
-    const titleMatchCount = targetTokens.filter(t => titleNormalized.includes(t)).length;
-    const isTitleMatched = targetTokens.length > 0 && titleMatchCount >= Math.ceil(targetTokens.length * 0.7);
-
-    if (isTitleMatched) {
-      results.push({ text: 'Palabra clave presente en el Título del artículo', type: 'good' });
-      score += 2;
-    } else {
-      results.push({ text: 'Falta la palabra clave o sus términos principales en el Título', type: 'bad' });
-    }
-
-    // 2. Análisis en la Meta Descripción
-    const descMatchCount = targetTokens.filter(t => descNormalized.includes(t)).length;
-    const isDescMatched = targetTokens.length > 0 && descMatchCount >= Math.ceil(targetTokens.length * 0.7);
-
-    if (isDescMatched) {
-      results.push({ text: 'Palabra clave presente en la Meta Descripción', type: 'good' });
-      score += 2;
-    } else {
-      results.push({ text: 'Falta la palabra clave o sus términos principales en la Meta Descripción', type: 'bad' });
-    }
-
-    // 3. Análisis en el Slug / URL
-    const isSlugMatched = targetTokens.length > 0 && targetTokens.some(t => slugNormalized.includes(t));
-    if (isSlugMatched) {
-      results.push({ text: 'Términos clave presentes en la URL (Slug)', type: 'good' });
-      score += 1;
-    }
-
-    // 4. Longitud de la Meta Descripción (Yoast Standard: 110 - 160 caracteres)
-    if (metaDescription.length >= 110 && metaDescription.length <= 160) {
-      results.push({ text: `Longitud de Meta Descripción óptima (${metaDescription.length}/160)`, type: 'good' });
-      score += 2;
-    } else if (metaDescription.length > 160) {
-      results.push({ text: `Meta Descripción muy larga (${metaDescription.length}/160). Google la recortará`, type: 'bad' });
-    } else if (metaDescription.length > 0) {
-      results.push({ text: `Meta Descripción corta (${metaDescription.length}/160). Ideal: 110-160`, type: 'bad' });
-    } else {
-      results.push({ text: 'Falta ingresar la Meta Descripción', type: 'bad' });
-    }
-
-    const badCount = results.filter(r => r.type === 'bad').length;
-
-    let level: 'Bajo' | 'Aceptable' | 'Excelente' = 'Bajo';
-    let badgeClass = 'bg-rose-50 text-rose-600 border border-rose-200';
-    let color = 'text-rose-600';
-
-    if (score >= 5 && badCount === 0) {
-      level = 'Excelente';
-      badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      color = 'text-emerald-600';
-    } else if (score >= 3 || (score >= 2 && badCount <= 1)) {
-      level = 'Aceptable';
-      badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
-      color = 'text-amber-600';
-    }
-
-    return { level, status: level, color, badgeClass, results };
-  };
-
-  const seoAnalysis = getSeoAnalysis();
+  const seoAnalysis = analyzeSeo({
+    title,
+    metaTitle,
+    metaDescription,
+    slug,
+    focusKeyphrase: keywords.split(',')[0] || title,
+  });
 
   return (
     <form 

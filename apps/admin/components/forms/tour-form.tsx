@@ -28,59 +28,8 @@ interface FaqItem {
   answer: string;
 }
 
-function AutoResizeTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const adjustHeight = () => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustHeight();
-  }, [props.value, props.defaultValue]);
-
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    adjustHeight();
-    if (props.onInput) props.onInput(e);
-  };
-
-  return (
-    <textarea
-      ref={textareaRef}
-      {...props}
-      onInput={handleInput}
-      className={`w-full resize-none overflow-hidden rounded-md border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 ${props.className || ''}`}
-    />
-  );
-}
-
-function SubmitSaveButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button 
-      type="submit" 
-      disabled={pending}
-      className="px-3.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-[#1a1a1a] font-[550] text-[12px] leading-[16px] shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-75 cursor-pointer select-none"
-    >
-      {pending && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-800" />}
-      <span>{pending ? 'Guardando...' : 'Guardar'}</span>
-    </button>
-  );
-}
-
-const getStorefrontUrl = (path: string = '') => {
-  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
-    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `https://incabound.com${path}`;
-  }
-  return `http://localhost:3000${path}`;
-};
+import { AutoResizeTextarea, SubmitSaveButton, getStorefrontUrl } from './shared/form-utils';
+import { analyzeSeo } from './shared/seo-analysis';
 
 export function TourForm({ categories, initialData }: { categories: Category[]; initialData?: any }) {
   const [groupSize, setGroupSize] = useState<number>(initialData?.groupSize || 12);
@@ -239,106 +188,13 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
     });
   };
 
-  // Algoritmo de Inteligencia SEO estilo Yoast / RankMath (Google NLP Tokenization)
-  const getSeoAnalysis = () => {
-    let score = 0;
-    const results: { text: string; type: 'good' | 'bad' }[] = [];
-    
-    if (!focusKeyphrase.trim()) {
-      return {
-        level: 'Pendiente',
-        status: 'Sin clave',
-        color: 'text-slate-400',
-        badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200',
-        results: [{ text: 'Ingresa una palabra clave para activar el análisis SEO', type: 'bad' as const }]
-      };
-    }
-
-    const STOP_WORDS = new Set(['tour', 'tours', 'de', 'del', 'el', 'la', 'los', 'las', 'en', 'para', 'por', 'un', 'una', 'y', 'a', 'con', 'dia', 'dias', 'full', 'day']);
-
-    const normalizeText = (text: string) => 
-      text.toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s]/g, '');
-
-    const keyphraseNormalized = normalizeText(focusKeyphrase);
-    const keyphraseTokens = keyphraseNormalized.split(/\s+/).filter(t => t.length > 0);
-    const coreKeyTokens = keyphraseTokens.filter(t => !STOP_WORDS.has(t) && t.length > 1);
-    const targetTokens = coreKeyTokens.length > 0 ? coreKeyTokens : keyphraseTokens;
-
-    const titleNormalized = normalizeText(title);
-    const descNormalized = normalizeText(metaDescription);
-    const slugNormalized = normalizeText(slug);
-
-    // 1. Análisis en el Título (Flexible Word Overlap estilo Yoast)
-    const titleMatchCount = targetTokens.filter(t => titleNormalized.includes(t)).length;
-    const isTitleMatched = targetTokens.length > 0 && titleMatchCount >= Math.ceil(targetTokens.length * 0.7);
-
-    if (isTitleMatched) {
-      results.push({ text: 'Palabra clave presente en el Título del tour', type: 'good' });
-      score += 2;
-    } else {
-      results.push({ text: 'Falta la palabra clave o sus términos principales en el Título', type: 'bad' });
-    }
-
-    // 2. Análisis en la Meta Descripción
-    const descMatchCount = targetTokens.filter(t => descNormalized.includes(t)).length;
-    const isDescMatched = targetTokens.length > 0 && descMatchCount >= Math.ceil(targetTokens.length * 0.7);
-
-    if (isDescMatched) {
-      results.push({ text: 'Palabra clave presente en la Meta Descripción', type: 'good' });
-      score += 2;
-    } else {
-      results.push({ text: 'Falta la palabra clave o sus términos principales en la Meta Descripción', type: 'bad' });
-    }
-
-    // 3. Análisis en la URL / Slug
-    const isSlugMatched = targetTokens.length > 0 && targetTokens.some(t => slugNormalized.includes(t));
-    if (isSlugMatched) {
-      results.push({ text: 'Términos clave presentes en la URL (Slug)', type: 'good' });
-      score += 1;
-    }
-
-    // 4. Longitud de la Meta Descripción (Yoast Standard: 110 - 160 caracteres)
-    if (metaDescription.length >= 110 && metaDescription.length <= 160) {
-      results.push({ text: `Longitud de Meta Descripción óptima (${metaDescription.length}/160)`, type: 'good' });
-      score += 2;
-    } else if (metaDescription.length > 160) {
-      results.push({ text: `Meta Descripción muy larga (${metaDescription.length}/160). Google la recortará`, type: 'bad' });
-    } else if (metaDescription.length > 0) {
-      results.push({ text: `Meta Descripción corta (${metaDescription.length}/160). Ideal: 110-160`, type: 'bad' });
-    } else {
-      results.push({ text: 'Falta ingresar la Meta Descripción', type: 'bad' });
-    }
-
-    // 5. Longitud del Título (Yoast Standard: 25 - 60 caracteres)
-    if (title.length >= 25 && title.length <= 60) {
-      results.push({ text: 'Longitud del Título ideal para resultados de Google', type: 'good' });
-      score += 1;
-    }
-
-    const badCount = results.filter(r => r.type === 'bad').length;
-
-    // Evaluación Final Estilo Yoast / RankMath (Requiere 0 observaciones rojas para ser Excelente)
-    let level: 'Bajo' | 'Aceptable' | 'Excelente' = 'Bajo';
-    let badgeClass = 'bg-rose-50 text-rose-600 border border-rose-200';
-    let color = 'text-rose-600';
-
-    if (score >= 5 && badCount === 0) {
-      level = 'Excelente';
-      badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      color = 'text-emerald-600';
-    } else if (score >= 3 || (score >= 2 && badCount <= 1)) {
-      level = 'Aceptable';
-      badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
-      color = 'text-amber-600';
-    }
-
-    return { level, status: level, color, badgeClass, results };
-  };
-
-  const seoAnalysis = getSeoAnalysis();
+  const seoAnalysis = analyzeSeo({
+    title,
+    metaTitle: `${title} - Incabound`,
+    metaDescription,
+    slug,
+    focusKeyphrase,
+  });
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;

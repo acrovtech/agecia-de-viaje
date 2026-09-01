@@ -9,6 +9,7 @@ export default async function ReservasPage() {
   let reservas: ReservationWithTour[] = [];
   try {
     reservas = await prisma.reservation.findMany({
+      take: 100,
       orderBy: { createdAt: 'desc' },
       include: { tour: true }
     });

@@ -43,6 +43,13 @@ const config: Config = {
           DEFAULT: "var(--card)",
           foreground: "var(--card-foreground)",
         },
+        brand: {
+          teal: "#004255",
+          dark: "#0D0D0D",
+          green: "#133D20",
+          shopify: "#008060",
+          shopifyDark: "#006e52",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "-apple-system", "BlinkMacSystemFont", "San Francisco", "Segoe UI", "Roboto", "Helvetica Neue", "sans-serif"],

@@ -1,32 +1,46 @@
 'use server';
 
-import { prisma } from '@repo/db';
+import { prisma, handlePrismaError } from '@repo/db';
+import { z } from 'zod';
 
-type CheckoutData = {
-  tourSlug: string;
-  tourTitle?: string;
-  serviceType?: string;
-  vehicleId?: string;
-  vehicleCode?: string;
-  pickupTime?: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerEmail: string;
-  customerPhone: string;
-  pickupHotel?: string;
-  specialRequirements?: string;
-  passengers?: Array<{ firstName?: string; lastName?: string; name?: string; docType?: string; docNumber?: string }>;
-  date: string;
-  pax: number;
-  totalPrice?: number; // Informativo desde el frontend, NUNCA utilizado como autoridad de cobro
-};
+const PassengerSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  name: z.string().optional(),
+  docType: z.string().optional().default('DNI'),
+  docNumber: z.string().optional().default(''),
+});
 
-export async function createReservationAndPaymentToken(data: CheckoutData) {
+const CheckoutDataSchema = z.object({
+  tourSlug: z.string().min(1, 'El slug del tour es requerido'),
+  tourTitle: z.string().optional(),
+  serviceType: z.enum(['shared', 'private']).optional().default('shared'),
+  vehicleId: z.string().optional(),
+  vehicleCode: z.string().optional(),
+  pickupTime: z.string().optional(),
+  customerFirstName: z.string().min(1, 'El nombre del titular es requerido'),
+  customerLastName: z.string().min(1, 'El apellido del titular es requerido'),
+  customerEmail: z.string().email('El correo electrónico ingresado no es válido'),
+  customerPhone: z.string().min(5, 'El teléfono ingresado es muy corto'),
+  pickupHotel: z.string().optional(),
+  specialRequirements: z.string().optional(),
+  passengers: z.array(PassengerSchema).optional(),
+  date: z.string().min(1, 'La fecha de reserva es requerida'),
+  pax: z.coerce.number().int().min(1, 'Debe registrar al menos 1 pasajero'),
+  totalPrice: z.number().optional(),
+});
+
+export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
+
+export async function createReservationAndPaymentToken(rawData: unknown) {
   try {
-    // 1. Validar que se haya especificado un tourSlug
-    if (!data.tourSlug || typeof data.tourSlug !== 'string' || data.tourSlug.trim() === '') {
-      return { success: false, error: 'Tour no especificado.' };
+    // 1. Validación estricta de entrada con Zod
+    const parsed = CheckoutDataSchema.safeParse(rawData);
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message || 'Datos de reserva inválidos';
+      return { success: false, error: firstError };
     }
+    const data = parsed.data;
 
     // 2. Buscar si es un tour o un traslado en la base de datos
     let tour = await prisma.tour.findFirst({
@@ -226,6 +240,6 @@ export async function createReservationAndPaymentToken(data: CheckoutData) {
     };
   } catch (error: any) {
     console.error("Error al crear reserva:", error);
-    return { success: false, error: error?.message || "Error al crear la reserva" };
+    return { success: false, error: handlePrismaError(error) };
   }
 }

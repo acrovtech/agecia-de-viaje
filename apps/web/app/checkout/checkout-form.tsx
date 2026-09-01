@@ -21,7 +21,9 @@ import {
 import { useCartManager } from '@/hooks/use-cart';
 import { formatSpanishDate } from '@repo/ui/lib/date-utils';
 import { formatCurrency } from '@repo/ui/lib/currency';
-import { Calendar as CalendarUI } from '@/components/ui/calendar';
+import { CheckoutPassengerFields } from './components/checkout-passenger-fields';
+import { CheckoutModalEdit } from './components/checkout-modal-edit';
+import { CONTACT_CONFIG } from '@/lib/contact-config';
 
 type Passenger = {
   firstName: string;
@@ -640,98 +642,15 @@ export function CheckoutForm() {
               </div>
 
               {/* ------------------------------------------------------------------------- */}
-              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS */}
+              {/* SECCIÓN 1: INFORMACIÓN DE LOS PASAJEROS (MODULAR) */}
               {/* ------------------------------------------------------------------------- */}
-              <div className="space-y-4">
-                <div className="border-b border-gray-200 pb-2">
-                  <h3 className="text-[1rem] font-bold text-gray-900">
-                    1. Información de los pasajeros ({maxPax})
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Encabezados de Columna */}
-                  <div className="hidden sm:grid sm:grid-cols-[48px_repeat(4,1fr)] gap-3 px-1 text-xs font-semibold text-gray-500">
-                    <div>Pas.</div>
-                    <div>Nombres *</div>
-                    <div>Apellidos *</div>
-                    <div>Tipo doc *</div>
-                    <div>Nro doc *</div>
-                  </div>
-
-                  {/* Filas de Pasajeros Inline */}
-                  {passengers.map((paxItem, idx) => (
-                    <div 
-                      key={idx} 
-                      className="grid grid-cols-1 sm:grid-cols-[48px_repeat(4,1fr)] gap-3 items-center p-3.5 sm:p-0 bg-gray-50/50 rounded-lg border border-gray-200/80 sm:bg-transparent sm:border-0"
-                    >
-                      {/* Label Pas. X */}
-                      <div className="text-xs font-bold text-gray-600 flex items-center justify-between sm:justify-start">
-                        <span>Pas. {idx + 1}</span>
-                        <span className="sm:hidden text-[10px] text-gray-400 font-semibold">Pasajero #{idx + 1}</span>
-                      </div>
-
-                      {/* Nombres */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nombres *</label>
-                        <input 
-                          type="text"
-                          required
-                          value={paxItem.firstName}
-                          onChange={(e) => handlePassengerChange(idx, 'firstName', e.target.value)}
-                          placeholder="Nombres"
-                          className={inputBaseStyle}
-                        />
-                      </div>
-
-                      {/* Apellidos */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Apellidos *</label>
-                        <input 
-                          type="text"
-                          required
-                          value={paxItem.lastName}
-                          onChange={(e) => handlePassengerChange(idx, 'lastName', e.target.value)}
-                          placeholder="Apellidos"
-                          className={inputBaseStyle}
-                        />
-                      </div>
-
-                      {/* Tipo Documento (Radix UI Select) */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Tipo doc *</label>
-                        <Select 
-                          value={paxItem.documentType} 
-                          onValueChange={(val) => val && handlePassengerChange(idx, 'documentType', val)}
-                        >
-                          <SelectTrigger className="w-full h-[38px]">
-                            <span>{paxItem.documentType || 'DNI'}</span>
-                          </SelectTrigger>
-                          <SelectContent alignItemWithTrigger={false} side="bottom" className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
-                            <SelectItem value="DNI">DNI</SelectItem>
-                            <SelectItem value="Pasaporte">Pasaporte</SelectItem>
-                            <SelectItem value="Carnet Extranjería">Carnet Extranjería</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Nro Documento */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1 sm:hidden">Nro doc *</label>
-                        <input 
-                          type="text"
-                          required
-                          value={paxItem.documentNumber}
-                          onChange={(e) => handlePassengerChange(idx, 'documentNumber', e.target.value)}
-                          placeholder="74288119"
-                          className={`${inputBaseStyle} font-mono`}
-                        />
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <CheckoutPassengerFields
+                passengers={passengers}
+                onPassengerChange={handlePassengerChange}
+                copiedPax1={copiedPax1}
+                onCopyPax1ToContact={copyPax1ToContact}
+                inputBaseStyle={inputBaseStyle}
+              />
 
               {/* ------------------------------------------------------------------------- */}
               {/* SECCIÓN 2: TITULAR DE CONTACTO */}
@@ -1081,138 +1000,32 @@ export function CheckoutForm() {
 
       </div>
 
-      {/* MODAL INTERACTIVO DE EDITAR RESERVA - DISEÑO RESPONSIVE Y BOTONES EN GRIS */}
-      {isEditModalOpen && (() => {
-        const hasPrivateService = Boolean(privatePriceStr && parseFloat(privatePriceStr) > 0) || (editingTour?.serviceType === 'private');
-        const durationDays = (editingTour?.tourTitle || tourTitle).toLowerCase().includes('2 días') || (editingTour?.tourTitle || tourTitle).toLowerCase().includes('2d') ? 2 : 1;
+      {/* MODAL MODULAR DE EDICIÓN RÁPIDA */}
+      <CheckoutModalEdit
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        modalDate={modalDate}
+        setModalDate={setModalDate}
+        modalPax={modalPax}
+        setModalPax={setModalPax}
+        modalServiceType={modalServiceType}
+        setModalServiceType={setModalServiceType}
+        onSave={handleUpdateReservation}
+        tourTitle={editingTour?.tourTitle || tourTitle}
+        pricePerPax={modalServiceType === 'private' ? parseFloat(privatePriceStr || price) : parseFloat(price)}
+      />
 
-        return (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setIsEditModalOpen(false);
-            }}
-          >
-            <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-[420px] w-[95vw] shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 ease-out border border-gray-100">
-              
-              {/* Header Modal */}
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight font-heading">Editar reserva</h3>
-                <button 
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)} 
-                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-
-              {/* 1. Tipo de Servicio (TABS SEGMENTADAS) */}
-              {hasPrivateService && (
-              <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Tipo de Servicio
-                </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100/90 rounded-xl border border-gray-200/50">
-                  <button
-                    type="button"
-                    onClick={() => setModalServiceType('shared')}
-                    className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      modalServiceType === 'shared'
-                        ? 'bg-white text-gray-900 font-bold shadow-2xs border border-gray-200/80'
-                        : 'text-gray-500 hover:text-gray-800 font-semibold'
-                    }`}
-                  >
-                    <span className="text-xs">Compartido</span>
-                    <span className="text-[11px] font-bold text-[#062918]">
-                      (${parseFloat(price).toFixed(0)})
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setModalServiceType('private')}
-                    className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      modalServiceType === 'private'
-                        ? 'bg-white text-gray-900 font-bold shadow-2xs border border-gray-200/80'
-                        : 'text-gray-500 hover:text-gray-800 font-semibold'
-                    }`}
-                  >
-                    <span className="text-xs">Privado</span>
-                    <span className="text-[11px] font-bold text-[#062918]">
-                      (${parseFloat(privatePriceStr || price).toFixed(0)})
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 2. Fecha del Tour (CALENDARIO RESPONSIVE Y DÍA 2 DESTACADO) */}
-            <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                Fecha del Tour
-              </label>
-              <CalendarUI 
-                selectedDate={modalDate}
-                durationDays={durationDays}
-                onSelect={(d) => setModalDate(d)}
-              />
-            </div>
-
-            {/* 3. Pasajeros (SELECTOR CON BOTONES EN GRIS IDÉNTICOS A LA REFERENCIA) */}
-            <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                Pasajeros
-              </label>
-              <div className="flex items-center justify-between border border-gray-200/90 rounded-xl p-1.5 bg-white w-full shadow-2xs">
-                <button
-                  type="button"
-                  disabled={modalPax <= 1}
-                  onClick={() => setModalPax(Math.max(1, modalPax - 1))}
-                  className="w-9 h-9 rounded-lg bg-gray-100/90 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center transition-colors disabled:opacity-40 cursor-pointer shrink-0"
-                >
-                  <Minus size={16} className="stroke-[2.5]" />
-                </button>
-
-                <span className="text-xs sm:text-sm font-bold text-gray-900 text-center px-2">
-                  {modalPax} {modalPax === 1 ? 'Pasajero' : 'Pasajeros'}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setModalPax(modalPax + 1)}
-                  className="w-9 h-9 rounded-lg bg-gray-100/90 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                >
-                  <Plus size={16} className="stroke-[2.5]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Acciones Modal */}
-            <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="py-2.5 px-4 border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <X size={14} />
-                <span>Cancelar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleUpdateReservation}
-                className="py-2.5 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCw size={14} />
-                <span>Actualizar</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-        );
-      })()}
+      {/* ENLACE DE ASISTENCIA DIRECTA WHATSAPP */}
+      <div className="pt-4 text-center">
+        <a
+          href={CONTACT_CONFIG.getWhatsappUrl('Hola, necesito asistencia con mi reserva en IncaBound.')}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-500 hover:text-[#062918] transition-colors inline-flex items-center gap-1.5"
+        >
+          ¿Dudas o problemas con el pago? Contáctanos por WhatsApp al {CONTACT_CONFIG.displayPhone}
+        </a>
+      </div>
 
     </div>
   );

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { prisma, INITIAL_TRANSFERS, INITIAL_VEHICLES } from '@repo/db';
 import { TransporteClient } from '@/components/transporte/transporte-client';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Traslados y Transporte Turístico en Cusco y Perú | IncaBound',

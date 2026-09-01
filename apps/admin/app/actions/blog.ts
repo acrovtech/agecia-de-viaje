@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@repo/db';
+import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -71,19 +71,26 @@ export async function createBlog(formData: FormData) {
   const { title, slug, bannerImage, metaTitle, metaDescription, keywords } = parsed.data;
   const paragraphs = extractParagraphs(formData);
 
-  await prisma.blog.create({
-    data: {
-      title,
-      slug,
-      bannerImage,
-      metaTitle,
-      metaDescription,
-      keywords,
-      paragraphs: {
-        create: paragraphs
-      }
-    },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.blog.create({
+        data: {
+          title,
+          slug,
+          bannerImage,
+          metaTitle,
+          metaDescription,
+          keywords,
+          paragraphs: {
+            create: paragraphs
+          }
+        },
+      });
+    });
+  } catch (error: any) {
+    console.error("Error creando blog:", error);
+    throw new Error(handlePrismaError(error));
+  }
 
   revalidatePath('/blogs');
   revalidatePath('/blog');
@@ -116,21 +123,28 @@ export async function updateBlog(formData: FormData) {
   const { title, slug, bannerImage, metaTitle, metaDescription, keywords } = parsed.data;
   const paragraphs = extractParagraphs(formData);
 
-  await prisma.blog.update({
-    where: { id },
-    data: {
-      title,
-      slug,
-      bannerImage,
-      metaTitle,
-      metaDescription,
-      keywords,
-      paragraphs: {
-        deleteMany: {},
-        create: paragraphs
-      }
-    },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.blog.update({
+        where: { id },
+        data: {
+          title,
+          slug,
+          bannerImage,
+          metaTitle,
+          metaDescription,
+          keywords,
+          paragraphs: {
+            deleteMany: {},
+            create: paragraphs
+          }
+        },
+      });
+    });
+  } catch (error: any) {
+    console.error("Error actualizando blog:", error);
+    throw new Error(handlePrismaError(error));
+  }
 
   revalidatePath('/blogs');
   revalidatePath('/blog');
@@ -141,15 +155,17 @@ export async function updateBlog(formData: FormData) {
 export async function deleteBlog(id: string) {
   try {
     await requireMasterRole();
-    await prisma.blog.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      await tx.blog.delete({
+        where: { id }
+      });
     });
     revalidatePath('/blogs');
     revalidatePath('/blog');
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting blog:", error);
-    return { success: false, error: "No se pudo eliminar la publicación." };
+    return { success: false, error: handlePrismaError(error) };
   }
 }

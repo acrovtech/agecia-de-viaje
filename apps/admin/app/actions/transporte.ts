@@ -1,16 +1,33 @@
 'use server';
 
-import { prisma } from '@repo/db';
+import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+
+const TransferInputSchema = z.object({
+  title: z.string().min(2, 'El título es requerido'),
+  slug: z.string().min(2, 'El slug es requerido').regex(/^[a-z0-9-]+$/, 'Slug inválido'),
+  origin: z.string().min(2, 'El origen es requerido'),
+  destination: z.string().min(2, 'El destino es requerido'),
+  duration: z.string().default('20-30 min'),
+  tripType: z.string().default('Solo ida'),
+  description: z.string().default(''),
+  bannerImage: z.string().default(''),
+  hasSharedService: z.boolean().default(false),
+  sharedPrice: z.number().nullable().optional(),
+  hasPrivateService: z.boolean().default(true),
+  order: z.number().int().default(0),
+});
 
 export async function createTransfer(formData: FormData) {
   await requireAdminSession();
-  const title = (formData.get('title') as string)?.trim();
-  const slug = (formData.get('slug') as string)?.trim()?.toLowerCase();
-  const origin = (formData.get('origin') as string)?.trim();
-  const destination = (formData.get('destination') as string)?.trim();
+
+  const title = (formData.get('title') as string)?.trim() || '';
+  const slug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
+  const origin = (formData.get('origin') as string)?.trim() || '';
+  const destination = (formData.get('destination') as string)?.trim() || '';
   const duration = (formData.get('duration') as string)?.trim() || '20-30 min';
   const tripType = (formData.get('tripType') as string)?.trim() || 'Solo ida';
   const description = (formData.get('description') as string)?.trim() || '';
@@ -21,12 +38,26 @@ export async function createTransfer(formData: FormData) {
   const sharedPrice = sharedPriceRaw ? parseFloat(sharedPriceRaw) : null;
 
   const hasPrivateService = formData.get('hasPrivateService') === 'on' || formData.get('hasPrivateService') === 'true';
-
   const orderRaw = formData.get('order') as string;
   const order = orderRaw ? parseInt(orderRaw, 10) : 0;
 
-  if (!title || !slug || !origin || !destination) {
-    throw new Error('Título, slug, origen y destino son requeridos.');
+  const parsed = TransferInputSchema.safeParse({
+    title,
+    slug,
+    origin,
+    destination,
+    duration,
+    tripType,
+    description,
+    bannerImage,
+    hasSharedService,
+    sharedPrice,
+    hasPrivateService,
+    order,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || 'Datos de traslado inválidos');
   }
 
   // Mapeo dinámico y robusto de vehículos de la base de datos
@@ -56,28 +87,22 @@ export async function createTransfer(formData: FormData) {
     }
   }
 
-  await prisma.transfer.create({
-    data: {
-      title,
-      slug,
-      origin,
-      destination,
-      duration,
-      tripType,
-      description,
-      bannerImage,
-      hasSharedService,
-      sharedPrice,
-      hasPrivateService,
-      order,
-      vehiclePrices: {
-        create: vehiclePricesToCreate.map((vp) => ({
-          vehicleId: vp.vehicleId,
-          price: vp.price,
-        })),
+  try {
+    await prisma.transfer.create({
+      data: {
+        ...parsed.data,
+        vehiclePrices: {
+          create: vehiclePricesToCreate.map((vp) => ({
+            vehicleId: vp.vehicleId,
+            price: vp.price,
+          })),
+        },
       },
-    },
-  });
+    });
+  } catch (error: any) {
+    console.error("Error creando traslado:", error);
+    throw new Error(handlePrismaError(error));
+  }
 
   revalidatePath('/transporte');
   revalidatePath('/(dashboard)/transporte', 'page');
@@ -89,10 +114,10 @@ export async function updateTransfer(formData: FormData) {
   const id = formData.get('id') as string;
   if (!id) throw new Error('ID es requerido.');
 
-  const title = (formData.get('title') as string)?.trim();
-  const slug = (formData.get('slug') as string)?.trim()?.toLowerCase();
-  const origin = (formData.get('origin') as string)?.trim();
-  const destination = (formData.get('destination') as string)?.trim();
+  const title = (formData.get('title') as string)?.trim() || '';
+  const slug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
+  const origin = (formData.get('origin') as string)?.trim() || '';
+  const destination = (formData.get('destination') as string)?.trim() || '';
   const duration = (formData.get('duration') as string)?.trim() || '20-30 min';
   const tripType = (formData.get('tripType') as string)?.trim() || 'Solo ida';
   const description = (formData.get('description') as string)?.trim() || '';
@@ -103,12 +128,26 @@ export async function updateTransfer(formData: FormData) {
   const sharedPrice = sharedPriceRaw ? parseFloat(sharedPriceRaw) : null;
 
   const hasPrivateService = formData.get('hasPrivateService') === 'on' || formData.get('hasPrivateService') === 'true';
-
   const orderRaw = formData.get('order') as string;
   const order = orderRaw ? parseInt(orderRaw, 10) : 0;
 
-  if (!title || !slug || !origin || !destination) {
-    throw new Error('Título, slug, origen y destino son requeridos.');
+  const parsed = TransferInputSchema.safeParse({
+    title,
+    slug,
+    origin,
+    destination,
+    duration,
+    tripType,
+    description,
+    bannerImage,
+    hasSharedService,
+    sharedPrice,
+    hasPrivateService,
+    order,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || 'Datos de traslado inválidos');
   }
 
   // Mapeo dinámico y robusto de vehículos de la base de datos
@@ -138,34 +177,30 @@ export async function updateTransfer(formData: FormData) {
     }
   }
 
-  // Eliminar precios previos y actualizar ruta con los nuevos precios
-  await prisma.transferVehiclePrice.deleteMany({
-    where: { transferId: id },
-  });
+  try {
+    // Transacción atómica: delete precios previos + update ruta
+    await prisma.$transaction(async (tx) => {
+      await tx.transferVehiclePrice.deleteMany({
+        where: { transferId: id },
+      });
 
-  await prisma.transfer.update({
-    where: { id },
-    data: {
-      title,
-      slug,
-      origin,
-      destination,
-      duration,
-      tripType,
-      description,
-      bannerImage,
-      hasSharedService,
-      sharedPrice,
-      hasPrivateService,
-      order,
-      vehiclePrices: {
-        create: vehiclePricesToCreate.map((vp) => ({
-          vehicleId: vp.vehicleId,
-          price: vp.price,
-        })),
-      },
-    },
-  });
+      await tx.transfer.update({
+        where: { id },
+        data: {
+          ...parsed.data,
+          vehiclePrices: {
+            create: vehiclePricesToCreate.map((vp) => ({
+              vehicleId: vp.vehicleId,
+              price: vp.price,
+            })),
+          },
+        },
+      });
+    });
+  } catch (error: any) {
+    console.error("Error actualizando traslado:", error);
+    throw new Error(handlePrismaError(error));
+  }
 
   revalidatePath('/transporte');
   revalidatePath('/(dashboard)/transporte', 'page');
@@ -182,8 +217,9 @@ export async function deleteTransfer(id: string) {
     revalidatePath('/transporte');
     revalidatePath('/(dashboard)/transporte', 'page');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (error: any) {
+    console.error("Error eliminando traslado:", error);
+    return { success: false, error: handlePrismaError(error) };
   }
 }
 
@@ -202,18 +238,26 @@ export async function toggleTransferStatus(id: string, currentStatus: boolean) {
   }
 }
 
-export async function createVehicleType(data: {
-  code: string;
-  name: string;
-  subtitle?: string;
-  maxPax: number;
-  maxLuggage: number;
-  image: string;
-  features: string[];
-  order?: number;
-}) {
+const VehicleTypeInputSchema = z.object({
+  code: z.string().min(2, 'El código del vehículo es requerido'),
+  name: z.string().min(2, 'El nombre es requerido'),
+  subtitle: z.string().optional(),
+  maxPax: z.coerce.number().int().min(1, 'Capacidad mínima de 1 pasajero'),
+  maxLuggage: z.coerce.number().int().min(0, 'Capacidad de equipaje inválida'),
+  image: z.string().min(1, 'La imagen es requerida'),
+  features: z.array(z.string()).default([]),
+  order: z.coerce.number().int().default(0),
+});
+
+export async function createVehicleType(rawData: unknown) {
   try {
     await requireAdminSession();
+    const parsed = VehicleTypeInputSchema.safeParse(rawData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Datos de vehículo inválidos' };
+    }
+
+    const data = parsed.data;
     const vehicle = await prisma.vehicleType.create({
       data: {
         code: data.code.trim().toLowerCase(),
@@ -223,54 +267,52 @@ export async function createVehicleType(data: {
         maxLuggage: data.maxLuggage,
         image: data.image.trim(),
         features: data.features,
-        order: data.order || 0,
+        order: data.order,
       },
     });
     revalidatePath('/transporte');
     revalidatePath('/(dashboard)/transporte', 'page');
     return { success: true, vehicle };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    return { success: false, error: handlePrismaError(err) };
   }
 }
 
-export async function updateVehicleType(
-  id: string,
-  data: {
-    name: string;
-    subtitle?: string;
-    maxPax: number;
-    maxLuggage: number;
-    image: string;
-    features: string[];
-    order?: number;
-  }
-) {
+export async function updateVehicleType(id: string, rawData: unknown) {
   try {
     await requireAdminSession();
+    if (!id) return { success: false, error: 'ID es requerido' };
+
+    const parsed = VehicleTypeInputSchema.partial().safeParse(rawData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Datos de vehículo inválidos' };
+    }
+
+    const data = parsed.data;
     const vehicle = await prisma.vehicleType.update({
       where: { id },
       data: {
-        name: data.name.trim(),
-        subtitle: data.subtitle?.trim() || null,
-        maxPax: data.maxPax,
-        maxLuggage: data.maxLuggage,
-        image: data.image.trim(),
-        features: data.features,
-        order: data.order || 0,
+        ...(data.name && { name: data.name.trim() }),
+        ...(data.subtitle !== undefined && { subtitle: data.subtitle?.trim() || null }),
+        ...(data.maxPax !== undefined && { maxPax: data.maxPax }),
+        ...(data.maxLuggage !== undefined && { maxLuggage: data.maxLuggage }),
+        ...(data.image && { image: data.image.trim() }),
+        ...(data.features && { features: data.features }),
+        ...(data.order !== undefined && { order: data.order }),
       },
     });
     revalidatePath('/transporte');
     revalidatePath('/(dashboard)/transporte', 'page');
     return { success: true, vehicle };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    return { success: false, error: handlePrismaError(err) };
   }
 }
 
 export async function deleteVehicleType(id: string) {
   try {
     await requireMasterRole();
+    if (!id) return { success: false, error: 'ID es requerido' };
     await prisma.vehicleType.delete({
       where: { id },
     });
@@ -278,6 +320,6 @@ export async function deleteVehicleType(id: string) {
     revalidatePath('/(dashboard)/transporte', 'page');
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    return { success: false, error: handlePrismaError(err) };
   }
 }

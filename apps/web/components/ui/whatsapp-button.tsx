@@ -17,16 +17,18 @@ const WhatsappIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+import { CONTACT_CONFIG } from '@/lib/contact-config';
+
 const advisors = [
   {
-    name: 'Asesor 1',
-    phone: '51974681666',
-    role: 'Asesor de Ventas',
+    name: 'Asistencia y Operaciones',
+    phone: CONTACT_CONFIG.whatsappOperations,
+    role: 'Asesor 24/7',
     avatar: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/asesor-viajes-inca-bound.webp'
   },
   {
-    name: 'Asesor 2',
-    phone: '51984772299',
+    name: 'Reservas y Cotizaciones',
+    phone: CONTACT_CONFIG.whatsappNumber,
     role: 'Asesor de Ventas',
     avatar: '/logo.svg' 
   }

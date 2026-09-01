@@ -17,12 +17,28 @@ export type ReservationEmailData = {
   reservationId: string;
 };
 
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Envía un correo electrónico HTML de confirmación de reserva al cliente usando Resend.
  * Si las credenciales de Resend o GoDaddy/SMTP no están configuradas aún, opera con un fallback seguro.
  */
 export async function sendReservationConfirmationEmail(data: ReservationEmailData) {
   try {
+    const safeCustomerName = escapeHtml(data.customerName);
+    const safeTourTitle = escapeHtml(data.tourTitle);
+    const safeHotel = escapeHtml(data.pickupHotel);
+    const safeResCode = escapeHtml(data.reservationId.slice(-8).toUpperCase());
+    const safeDate = escapeHtml(data.formattedDate);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="es">
@@ -56,32 +72,32 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
           </div>
           
           <div class="content">
-            <div class="greeting">¡Hola, ${data.customerName}!</div>
+            <div class="greeting">¡Hola, ${safeCustomerName}!</div>
             <div class="message">
-              Hemos recibido la confirmación de tu pago de forma 100% segura. Tu expedición a <strong>${data.tourTitle}</strong> está completamente reservada.
+              Hemos recibido la confirmación de tu pago de forma 100% segura. Tu expedición a <strong>${safeTourTitle}</strong> está completamente reservada.
             </div>
 
             <div class="details-card">
               <div class="details-row">
                 <span class="label">Código de Reserva</span>
-                <span class="value">#${data.reservationId.slice(-8).toUpperCase()}</span>
+                <span class="value">#${safeResCode}</span>
               </div>
               <div class="details-row">
                 <span class="label">Tour Reservado</span>
-                <span class="value">${data.tourTitle}</span>
+                <span class="value">${safeTourTitle}</span>
               </div>
               <div class="details-row">
                 <span class="label">Fecha del Tour</span>
-                <span class="value">${data.formattedDate}</span>
+                <span class="value">${safeDate}</span>
               </div>
               <div class="details-row">
                 <span class="label">Número de Pasajeros</span>
                 <span class="value">${data.pax} ${data.pax === 1 ? 'Pasajero' : 'Pasajeros'}</span>
               </div>
-              ${data.pickupHotel ? `
+              ${safeHotel ? `
               <div class="details-row">
                 <span class="label">Lugar de Recojo</span>
-                <span class="value">${data.pickupHotel}</span>
+                <span class="value">${safeHotel}</span>
               </div>
               ` : ''}
               <div class="details-row">
@@ -95,12 +111,10 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
             </div>
 
             <div style="text-align: center; margin-top: 24px;">
-              <a href="https://wa.me/51987654321?text=Hola,%20tengo%20una%20consulta%20sobre%20mi%20reserva%20${data.reservationId.slice(-8).toUpperCase()}" class="btn">
+              <a href="https://wa.me/51984772299?text=Hola,%20tengo%20una%20consulta%20sobre%20mi%20reserva%20${encodeURIComponent(safeResCode)}" class="btn">
                 📲 Contactar Soporte por WhatsApp
               </a>
             </div>
-          </div>
-          
           <div class="footer">
             <p>Inca Bound Tour Operator - Cusco, Perú</p>
             <p>Este es un correo automático de confirmación. Para cualquier modificación contacta a nuestro equipo.</p>

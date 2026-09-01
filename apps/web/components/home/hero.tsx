@@ -92,14 +92,6 @@ export function Hero() {
           <Image src="/ta-2024.svg" alt="Tripadvisor 2024" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
         </a>
       </div>
-
-      {/* Floating WhatsApp Button */}
-      <a href="https://wa.me/51984772299" target="_blank" rel="noopener noreferrer" aria-label="Contactar a Inca Bound por WhatsApp" className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-          <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1" />
-        </svg>
-      </a>
     </section>
   );
 }

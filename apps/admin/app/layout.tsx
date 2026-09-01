@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Panel de administración de tours y reservas",
 };
 
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={cn("font-sans bg-[#F1F1F1]", inter.variable)} suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen font-sans bg-[#F1F1F1] text-slate-900`} suppressHydrationWarning>
-        {children}
+        <NuqsAdapter>
+          {children}
+        </NuqsAdapter>
       </body>
     </html>
   );

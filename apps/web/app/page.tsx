@@ -12,8 +12,7 @@ const FaqSection = nextDynamic(() => import('@/components/home/faq-section').the
 const LatestArticles = nextDynamic(() => import('@/components/home/latest-articles').then(mod => mod.LatestArticles), { ssr: true });
 const Testimonials = nextDynamic(() => import('@/components/home/testimonials').then(mod => mod.Testimonials), { ssr: true });
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default function Home() {
   return (

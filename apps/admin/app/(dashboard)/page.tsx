@@ -1,29 +1,94 @@
 import { prisma } from '@repo/db';
-import { ArrowUpRight, ArrowRight, CheckCircle2, Clock, Map, BookOpen, AlertCircle, Plus } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, CheckCircle2, Clock, Map as MapIcon, BookOpen, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { KpiSparkline } from '@/components/dashboard/kpi-sparkline';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  // Cargar datos reales desde Prisma
-  const toursCount = await prisma.tour.count();
-  const blogsCount = await prisma.blog.count();
-  
-  const allReservations = await prisma.reservation.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { tour: true }
-  });
+  // Rango de fechas: Últimos 7 días
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const paidReservations = allReservations.filter(res => res.status === 'PAID');
-  const pendingReservations = allReservations.filter(res => res.status === 'PENDING');
+  // Cargar métricas agregadas directamente desde Postgres con Prisma
+  const [
+    toursCount,
+    blogsCount,
+    totalCount,
+    paidStats,
+    pendingCount,
+    recentReservations,
+    weeklyPaidReservations
+  ] = await Promise.all([
+    prisma.tour.count(),
+    prisma.blog.count(),
+    prisma.reservation.count(),
+    prisma.reservation.aggregate({
+      where: { status: 'PAID' },
+      _sum: {
+        totalPrice: true,
+        pax: true,
+      },
+      _count: {
+        id: true,
+      }
+    }),
+    prisma.reservation.count({
+      where: { status: 'PENDING' }
+    }),
+    prisma.reservation.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { tour: true }
+    }),
+    prisma.reservation.findMany({
+      where: {
+        status: 'PAID',
+        createdAt: { gte: sevenDaysAgo }
+      },
+      select: {
+        totalPrice: true,
+        pax: true,
+        createdAt: true,
+      }
+    })
+  ]);
 
-  const totalRevenue = paidReservations.reduce((sum, res) => sum + res.totalPrice, 0);
-  const totalPax = paidReservations.reduce((sum, res) => sum + res.pax, 0);
-  const paidCount = paidReservations.length;
-  const totalCount = allReservations.length;
+  const paidCount = paidStats._count.id || 0;
+  const totalRevenue = paidStats._sum.totalPrice || 0;
+  const totalPax = paidStats._sum.pax || 0;
   const avgTicket = paidCount > 0 ? totalRevenue / paidCount : 0;
+  const pendingReservationsCount = pendingCount;
 
-  const recentReservations = allReservations.slice(0, 5);
+  // Generar puntos diarios reales de los últimos 7 días
+  const revenueSparklineData: { label: string; value: number }[] = [];
+  const paidSparklineData: { label: string; value: number }[] = [];
+  const paxSparklineData: { label: string; value: number }[] = [];
+  const aovSparklineData: { label: string; value: number }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+    // Filtrar reservas que coincidan con este día
+    const dayReservations = weeklyPaidReservations.filter(
+      (r) => new Date(r.createdAt).toISOString().slice(0, 10) === dateStr
+    );
+
+    const dayRevenue = dayReservations.reduce((sum, r) => sum + r.totalPrice, 0);
+    const dayPaidCount = dayReservations.length;
+    const dayPax = dayReservations.reduce((sum, r) => sum + r.pax, 0);
+    const dayAov = dayPaidCount > 0 ? dayRevenue / dayPaidCount : 0;
+
+    revenueSparklineData.push({ label, value: dayRevenue });
+    paidSparklineData.push({ label, value: dayPaidCount });
+    paxSparklineData.push({ label, value: dayPax });
+    aovSparklineData.push({ label, value: dayAov });
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-6">
@@ -50,79 +115,117 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards Estilo Shopify Polaris (Sin Iconos Recargados, Enfocados en Métricas Financieras) */}
+      {/* KPI Cards con Sparklines Integrados y Tooltips en Hover */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         
         {/* KPI 1: Ventas Totales */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ventas Totales</span>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-              USD
-            </span>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ventas Totales</span>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                USD
+              </span>
+            </div>
+            <div className="mt-3 mb-1">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                ${totalRevenue.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              De {paidCount} {paidCount === 1 ? 'reserva pagada' : 'reservas pagadas'}
+            </p>
           </div>
-          <div className="mt-3 mb-1">
-            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-              ${totalRevenue.toFixed(2)}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 font-normal">
-            De {paidCount} {paidCount === 1 ? 'reserva pagada' : 'reservas pagadas'}
-          </p>
+          {/* Sparkline de datos reales de BD */}
+          <KpiSparkline
+            color="#008060"
+            gradientId="sparkline-rev"
+            data={revenueSparklineData}
+            prefix="$"
+            decimals={0}
+          />
         </div>
 
         {/* KPI 2: Reservas Confirmadas */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reservas Pagadas</span>
-            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
-              {totalCount} Totales
-            </span>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reservas Pagadas</span>
+              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+                {totalCount} Totales
+              </span>
+            </div>
+            <div className="mt-3 mb-1">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                {paidCount}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              {pendingReservationsCount} pendientes de cobro
+            </p>
           </div>
-          <div className="mt-3 mb-1">
-            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-              {paidCount}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 font-normal">
-            {pendingReservations.length} pendientes de cobro
-          </p>
+          {/* Sparkline de datos reales de BD */}
+          <KpiSparkline
+            color="#0284c7"
+            gradientId="sparkline-paid"
+            data={paidSparklineData}
+            decimals={0}
+          />
         </div>
 
         {/* KPI 3: Pasajeros Totales (Pax) */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pasajeros Confirmados</span>
-            <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
-              Pax
-            </span>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pasajeros Confirmados</span>
+              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
+                Pax
+              </span>
+            </div>
+            <div className="mt-3 mb-1">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                {totalPax}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Viajeros listos para operación
+            </p>
           </div>
-          <div className="mt-3 mb-1">
-            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-              {totalPax}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 font-normal">
-            Viajeros listos para operática
-          </p>
+          {/* Sparkline de datos reales de BD */}
+          <KpiSparkline
+            color="#8b5cf6"
+            gradientId="sparkline-pax"
+            data={paxSparklineData}
+            decimals={0}
+          />
         </div>
 
         {/* KPI 4: Ticket Promedio (AOV) */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ticket Promedio</span>
-            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
-              AOV
-            </span>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ticket Promedio</span>
+              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                AOV
+              </span>
+            </div>
+            <div className="mt-3 mb-1">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                ${avgTicket.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Promedio de ingreso por reserva
+            </p>
           </div>
-          <div className="mt-3 mb-1">
-            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-              ${avgTicket.toFixed(2)}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 font-normal">
-            Promedio de ingreso por reserva
-          </p>
+          {/* Sparkline de datos reales de BD */}
+          <KpiSparkline
+            color="#d97706"
+            gradientId="sparkline-avg"
+            data={aovSparklineData}
+            prefix="$"
+            decimals={0}
+          />
         </div>
 
       </div>
@@ -143,7 +246,7 @@ export default async function DashboardPage() {
         <div className="p-4 sm:p-5 flex items-center justify-between">
           <div>
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">Reservas Por Cobrar</span>
-            <span className="text-lg font-bold text-[#2f2f2f]">{pendingReservations.length} {pendingReservations.length === 1 ? 'Reserva' : 'Reservas'}</span>
+            <span className="text-lg font-bold text-[#2f2f2f]">{pendingReservationsCount} {pendingReservationsCount === 1 ? 'Reserva' : 'Reservas'}</span>
           </div>
           <Link href="/reservas" className="text-xs font-semibold text-[#008060] hover:text-[#006e52] hover:underline flex items-center gap-1 shrink-0">
             Revisar <ArrowRight size={13} />

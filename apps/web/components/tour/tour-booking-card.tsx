@@ -1,25 +1,74 @@
 'use client';
 
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Calendar } from '../ui/calendar';
 import { useRouter } from 'next/navigation';
 
-export function TourBookingCard({ tourTitle, slug, price, privatePrice, image }: { tourTitle: string, slug: string, price: number, privatePrice?: number | null, image?: string | null }) {
+export interface TourPrivatePricingItem {
+  pax: number;
+  price: number;
+}
+
+export function TourBookingCard({ 
+  tourTitle, 
+  slug, 
+  price, 
+  hasSharedService = true,
+  hasPrivateService = false,
+  privatePricing = [], 
+  image 
+}: { 
+  tourTitle: string;
+  slug: string;
+  price: number;
+  hasSharedService?: boolean;
+  hasPrivateService?: boolean;
+  privatePricing?: TourPrivatePricingItem[];
+  image?: string | null;
+}) {
   const [pax, setPax] = useState(1);
-  const [serviceType, setServiceType] = useState<'shared' | 'private'>('shared');
+  const initialService = hasSharedService ? 'shared' : (hasPrivateService ? 'private' : 'shared');
+  const [serviceType, setServiceType] = useState<'shared' | 'private'>(initialService);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
 
-  const currentPrice = serviceType === 'private' && privatePrice ? privatePrice : price;
+  // Función reactiva para obtener el precio por pasajero según el servicio y la cantidad de pax configurada en el Admin
+  const getPriceForPax = (targetPax: number, type: 'shared' | 'private'): number => {
+    if (type === 'shared') return price;
+    if (!privatePricing || privatePricing.length === 0) return price;
+
+    // 1. Buscar coincidencia exacta de pax
+    const exactMatch = privatePricing.find((p) => p.pax === targetPax);
+    if (exactMatch && exactMatch.price > 0) {
+      return exactMatch.price;
+    }
+
+    // 2. Si el número de pasajeros supera el tramo configurado más alto, aplicar la tarifa del tramo superior
+    const sorted = [...privatePricing].sort((a, b) => a.pax - b.pax);
+    const highestTier = sorted[sorted.length - 1];
+    if (highestTier && targetPax >= highestTier.pax) {
+      return highestTier.price;
+    }
+
+    // 3. Fallback al primer tramo disponible
+    return sorted[0]?.price || price;
+  };
+
+  const currentPrice = getPriceForPax(pax, serviceType);
 
   const handleBooking = () => {
     if (!selectedDate) {
       setError('Por favor, selecciona una fecha de viaje.');
       return;
     }
+    if (isNavigating) return;
+
     setError(null);
+    setIsNavigating(true);
+
     const dateStr = selectedDate.toISOString();
     const query = new URLSearchParams({
       slug,
@@ -34,27 +83,35 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice, image }:
     router.push(`/checkout?${query.toString()}`);
   };
 
+  const canSwitchService = hasPrivateService && (privatePricing.length > 0 || hasSharedService);
+
   return (
     <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 relative overflow-hidden">
 
-      {privatePrice && (
+      {canSwitchService && (
         <div className="flex rounded-xl bg-gray-100 p-1 mb-6 border border-gray-100">
-          <button 
-            onClick={() => setServiceType('shared')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors border ${
-              serviceType === 'shared' ? 'bg-white text-gray-900 border-gray-200' : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-          >
-            Compartido
-          </button>
-          <button 
-            onClick={() => setServiceType('private')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors border ${
-              serviceType === 'private' ? 'bg-white text-gray-900 border-gray-200' : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-          >
-            Privado
-          </button>
+          {hasSharedService && (
+            <button 
+              type="button"
+              onClick={() => setServiceType('shared')}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors border cursor-pointer ${
+                serviceType === 'shared' ? 'bg-white text-gray-900 border-gray-200 shadow-2xs' : 'text-gray-500 border-transparent hover:text-gray-700'
+              }`}
+            >
+              Compartido
+            </button>
+          )}
+          {hasPrivateService && (
+            <button 
+              type="button"
+              onClick={() => setServiceType('private')}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors border cursor-pointer ${
+                serviceType === 'private' ? 'bg-white text-gray-900 border-gray-200 shadow-2xs' : 'text-gray-500 border-transparent hover:text-gray-700'
+              }`}
+            >
+              Privado
+            </button>
+          )}
         </div>
       )}
 
@@ -88,15 +145,17 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice, image }:
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Viajeros</label>
           <div className="flex items-center justify-between border border-gray-200 rounded-lg p-1 bg-white">
             <button 
+              type="button"
               onClick={() => setPax(Math.max(1, pax - 1))}
-              className="w-10 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-600 font-medium transition-colors"
+              className="w-10 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-600 font-medium transition-colors cursor-pointer"
             >
               -
             </button>
             <span className="text-gray-900 font-medium text-sm">{pax} {pax === 1 ? 'Persona' : 'Personas'}</span>
             <button 
+              type="button"
               onClick={() => setPax(pax + 1)}
-              className="w-10 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-600 font-medium transition-colors"
+              className="w-10 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-600 font-medium transition-colors cursor-pointer"
             >
               +
             </button>
@@ -126,11 +185,21 @@ export function TourBookingCard({ tourTitle, slug, price, privatePrice, image }:
         </div>
       </div>
 
+      {/* Botón de Reserva con Estado Deshabilitado, Previsión de Doble Clic y Spinner */}
       <button 
+        type="button"
         onClick={handleBooking}
-        className="w-full bg-[#062918] hover:bg-brand-teal text-white font-semibold text-base py-3 rounded-xl transition-colors duration-300 flex items-center justify-center gap-2"
+        disabled={!selectedDate || isNavigating}
+        className="w-full bg-[#062918] hover:bg-[#0a4026] text-white font-semibold text-base py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-md disabled:shadow-none"
       >
-        RESERVAR AHORA
+        {isNavigating ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin text-white" />
+            <span>Procesando reserva...</span>
+          </>
+        ) : (
+          <span>{selectedDate ? 'RESERVAR AHORA' : 'SELECCIONA UNA FECHA'}</span>
+        )}
       </button>
 
       <div className="mt-4 flex flex-col gap-3">

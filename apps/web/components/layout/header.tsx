@@ -23,12 +23,21 @@ export function Header({ variant = 'transparent' }: HeaderProps) {
   const [tours, setTours] = useState<MenuTour[]>([]);
 
   useEffect(() => {
-    fetch('/api/tours/menu')
+    const controller = new AbortController();
+    fetch('/api/tours/menu', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setTours(data);
       })
-      .catch(console.error);
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('Error cargando menú de tours:', err);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const isDark = variant === 'dark';

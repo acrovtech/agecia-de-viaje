@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   CartItem, 
   getStoredCartList,
-  getStoredCart, 
   saveCart, 
   removeCartItemBySlug,
-  clearCart, 
+  clearCart as clearStorageCart, 
   getCartRemainingMinutes, 
   CART_UPDATED_EVENT 
 } from '@/lib/cart-utils';
+import { useCartStore } from '@/store/use-cart-store';
+
+export { useCartStore };
 
 export function useCartManager() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -58,8 +60,8 @@ export function useCartManager() {
     refreshCart();
   }, [refreshCart]);
 
-  const removeItem = useCallback(() => {
-    clearCart();
+  const clearAllCart = useCallback(() => {
+    clearStorageCart();
     refreshCart();
   }, [refreshCart]);
 
@@ -71,7 +73,8 @@ export function useCartManager() {
     isLoaded,
     updateCart,
     removeItemBySlug,
-    removeItem,
+    clearAllCart,
+    removeItem: clearAllCart,
     refreshCart,
   };
 }

@@ -9,7 +9,7 @@ export const metadata = {
   description: 'Descubre historias, guías y consejos para tu próxima aventura en los Andes y Machu Picchu.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export default async function BlogPage() {
   let allArticles: any[] = [];

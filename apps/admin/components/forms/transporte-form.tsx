@@ -24,8 +24,9 @@ import {
 } from 'lucide-react';
 import { createTransfer, updateTransfer, deleteTransfer } from '../../app/actions/transporte';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
+import { SubmitSaveButton } from './shared/form-utils';
 
-interface VehicleTypeItem {
+export interface VehicleTypeItem {
   id: string;
   code: string;
   name: string;
@@ -36,23 +37,9 @@ interface VehicleTypeItem {
   features: string[];
 }
 
-interface TransferFormProps {
+export interface TransferFormProps {
   vehicles: VehicleTypeItem[];
   initialData?: any;
-}
-
-function SubmitSaveButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="px-3.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-[#1a1a1a] font-[550] text-[12px] leading-[16px] shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-75 cursor-pointer select-none"
-    >
-      {pending && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-800" />}
-      <span>{pending ? 'Guardando...' : 'Guardar'}</span>
-    </button>
-  );
 }
 
 export function TransporteForm({ vehicles, initialData }: TransferFormProps) {

@@ -4,17 +4,27 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { createAdminToken } from '@/lib/jwt';
 
 const EIGHT_HOURS_IN_SECONDS = 60 * 60 * 8; // 8 Horas de sesión laboral segura
 
-export async function loginAction(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+const LoginSchema = z.object({
+  email: z.string().email('Ingrese un correo electrónico válido').min(1, 'El correo es requerido'),
+  password: z.string().min(1, 'La contraseña es requerida'),
+});
 
-  if (!email || !password) {
-    return { error: 'Por favor complete todos los campos' };
+export async function loginAction(prevState: any, formData: FormData) {
+  const parsed = LoginSchema.safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Credenciales inválidas' };
   }
+
+  const { email, password } = parsed.data;
 
   // 1. Check if user exists in DB
   const user = await prisma.user.findUnique({

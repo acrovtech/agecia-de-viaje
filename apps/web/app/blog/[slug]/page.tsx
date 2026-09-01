@@ -2,28 +2,20 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { BlogSidebar } from '@/components/blog/blog-sidebar';
-import { prisma } from '@repo/db';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import { getBlogBySlug } from '@/lib/queries/blog';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> | { slug: string } }): Promise<Metadata> {
   const resolvedParams = await Promise.resolve(params);
   const rawSlug = resolvedParams?.slug || '';
-  const decodedSlug = decodeURIComponent(rawSlug).trim();
+  if (!rawSlug) {
+    return { title: 'Blog no encontrado - Inca Bound' };
+  }
 
-  const blog = await prisma.blog.findFirst({
-    where: {
-      OR: [
-        { slug: decodedSlug },
-        { slug: decodedSlug.toLowerCase() },
-        { slug: rawSlug },
-        { slug: rawSlug.toLowerCase() }
-      ]
-    },
-    include: { paragraphs: true }
-  });
+  const blog = await getBlogBySlug(rawSlug);
 
   if (!blog) {
     return { title: 'Blog no encontrado - Inca Bound' };
@@ -44,22 +36,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function SingleBlogPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const resolvedParams = await Promise.resolve(params);
   const rawSlug = resolvedParams?.slug || '';
-  const decodedSlug = decodeURIComponent(rawSlug).trim();
-  if (!rawSlug && !decodedSlug) notFound();
+  if (!rawSlug) notFound();
 
-  const blog = await prisma.blog.findFirst({
-    where: {
-      OR: [
-        { slug: decodedSlug },
-        { slug: decodedSlug.toLowerCase() },
-        { slug: rawSlug },
-        { slug: rawSlug.toLowerCase() }
-      ]
-    },
-    include: {
-      paragraphs: { orderBy: { order: 'asc' } },
-    },
-  });
+  const blog = await getBlogBySlug(rawSlug);
 
   if (!blog) notFound();
 

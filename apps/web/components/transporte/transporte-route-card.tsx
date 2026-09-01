@@ -17,6 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
+import { CONTACT_CONFIG } from '@/lib/contact-config';
 
 export interface VehicleOption {
   id: string;
@@ -144,8 +145,7 @@ export function TransporteRouteCard({ transfer }: RouteCardProps) {
       `*Total Estimado:* $${currentTotal} USD\n\n` +
       `¡Hola IncaBound! Quisiera coordinar este traslado.`;
 
-    const whatsappNumber = '51984000000';
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(CONTACT_CONFIG.getWhatsappUrl(text, CONTACT_CONFIG.whatsappNumber), '_blank');
   };
 
   return (

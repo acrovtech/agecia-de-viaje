@@ -1,4 +1,3 @@
-import { prisma } from '@repo/db';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -7,6 +6,9 @@ import { TourTabs } from '@/components/tour/tour-nav';
 import { TourBookingCard } from '@/components/tour/tour-booking-card';
 import { MapPin, Clock, Mountain, Users, BarChart } from 'lucide-react';
 import Image from 'next/image';
+import { getTourBySlug } from '@/lib/queries/tour';
+
+export const revalidate = 3600;
 
 interface TourPageProps {
   params: Promise<{
@@ -21,14 +23,7 @@ export async function generateMetadata({ params }: TourPageProps) {
     return { title: 'Tour no encontrado - Inca Bound' };
   }
 
-  const tour = await prisma.tour.findFirst({
-    where: {
-      OR: [
-        { slug },
-        { slug: slug.toLowerCase() }
-      ]
-    }
-  });
+  const tour = await getTourBySlug(slug);
 
   if (!tour) {
     return {
@@ -91,24 +86,8 @@ export default async function TourPage({ params }: TourPageProps) {
     notFound();
   }
 
-  // Buscar el tour en la base de datos de Prisma
-  const tour = await prisma.tour.findFirst({
-    where: {
-      OR: [
-        { slug },
-        { slug: slug.toLowerCase() }
-      ]
-    },
-    include: {
-      itineraries: { orderBy: { order: 'asc' } },
-      inclusions: { orderBy: { order: 'asc' } },
-      exclusions: { orderBy: { order: 'asc' } },
-      recommendations: { orderBy: { order: 'asc' } },
-      faqs: { orderBy: { order: 'asc' } },
-      images: { orderBy: { order: 'asc' } },
-      privatePricing: { orderBy: { pax: 'asc' } }
-    }
-  });
+  // Buscar el tour deduplicado con React.cache()
+  const tour = await getTourBySlug(slug);
 
   if (!tour) {
     notFound();
@@ -125,6 +104,9 @@ export default async function TourPage({ params }: TourPageProps) {
     title: tour.title,
     image: heroImage,
     price: tour.sharedPrice || 0,
+    hasSharedService: tour.hasSharedService,
+    hasPrivateService: tour.hasPrivateService,
+    privatePricing: tour.privatePricing?.map(p => ({ pax: p.pax, price: p.price })) || [],
     privatePrice: tour.privatePricing?.[0]?.price || null,
     duration: tour.duration || 'Por consultar',
     difficulty: tour.difficulty || 'Moderada',
@@ -314,7 +296,9 @@ export default async function TourPage({ params }: TourPageProps) {
                 tourTitle={formattedTour.title}
                 slug={formattedTour.slug}
                 price={formattedTour.price} 
-                privatePrice={formattedTour.privatePrice} 
+                hasSharedService={formattedTour.hasSharedService}
+                hasPrivateService={formattedTour.hasPrivateService}
+                privatePricing={formattedTour.privatePricing}
                 image={formattedTour.image}
               />
             </div>
