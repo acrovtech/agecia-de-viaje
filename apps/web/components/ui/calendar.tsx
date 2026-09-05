@@ -92,7 +92,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
       {/* Cabecera Días */}
       <div className="grid grid-cols-7 gap-1 mb-1 text-center">
         {days.map(day => (
-          <div key={day} className="text-[10px] font-bold text-gray-400 py-0.5">
+          <div key={day} className="text-[10px] font-bold text-gray-400 py-0.5 flex items-center justify-center">
             {day}
           </div>
         ))}
@@ -101,7 +101,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
       {/* Grilla Días del Mes */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-          <div key={`empty-${i}`} />
+          <div key={`empty-${i}`} className="aspect-square w-full" />
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1;
@@ -117,7 +117,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
               key={day}
               disabled={isPast}
               onClick={(e) => handleDateClick(day, e)}
-              className={`h-7 sm:h-8 w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
+              className={`aspect-square w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
                 isPast
                   ? 'text-gray-300 cursor-not-allowed opacity-40 select-none'
                   : isStart 
