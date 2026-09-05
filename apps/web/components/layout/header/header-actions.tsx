@@ -12,11 +12,11 @@ interface HeaderActionsProps {
 export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderActionsProps) {
   const { cartCount } = useCartManager();
 
-  const textColor = isMobileMenuOpen ? 'text-gray-900' : 'text-white';
-  const hoverBg = isMobileMenuOpen ? 'hover:bg-gray-100' : 'hover:bg-white/10';
+  const textColor = isMobileMenuOpen ? 'text-[#303030]' : 'text-white';
+  const hoverBg = isMobileMenuOpen ? 'hover:bg-gray-100 text-[#303030]' : 'hover:bg-white/10';
 
   return (
-    <div className={`flex items-center gap-5 text-sm z-50 transition-colors ${textColor}`}>
+    <div className={`flex items-center gap-4 text-sm z-50 transition-colors duration-300 ${textColor}`}>
       {/* Shopping Cart Icon with Badge */}
       <Link 
         href="/checkout" 
@@ -33,7 +33,7 @@ export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderAc
 
       {/* Mobile Menu Toggle Button */}
       <button 
-        className={`lg:hidden transition-transform active:scale-95 p-1 relative w-9 h-9 flex items-center justify-center rounded-lg ${hoverBg}`}
+        className={`lg:hidden transition-all active:scale-95 p-1 relative w-9 h-9 flex items-center justify-center rounded-lg ${hoverBg} cursor-pointer`}
         onClick={onToggleMobileMenu}
         aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
       >
@@ -41,14 +41,14 @@ export function HeaderActions({ isMobileMenuOpen, onToggleMobileMenu }: HeaderAc
           size={26} 
           strokeWidth={1.75} 
           className={`transition-all duration-300 transform ${
-            isMobileMenuOpen ? 'opacity-0 scale-50 rotate-90 absolute' : 'opacity-100 scale-100 rotate-0'
+            isMobileMenuOpen ? 'opacity-0 scale-50 rotate-90 absolute pointer-events-none' : 'opacity-100 scale-100 rotate-0'
           }`}
         />
         <X 
           size={26} 
           strokeWidth={1.75} 
           className={`transition-all duration-300 transform ${
-            isMobileMenuOpen ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90 absolute'
+            isMobileMenuOpen ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90 absolute pointer-events-none'
           }`}
         />
       </button>

@@ -4,11 +4,26 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get('slug');
+
+    if (slug) {
+      const tour = await prisma.tour.findUnique({
+        where: { slug },
+        include: {
+          categories: true,
+          privatePricing: { orderBy: { pax: 'asc' } },
+        }
+      });
+      return NextResponse.json({ tour });
+    }
+
     const tours = await prisma.tour.findMany({
       include: {
-        categories: true
+        categories: true,
+        privatePricing: { orderBy: { pax: 'asc' } },
       },
       orderBy: { createdAt: 'desc' }
     });

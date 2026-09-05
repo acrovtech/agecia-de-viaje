@@ -47,9 +47,12 @@ function FilterDropdown({
   return (
     <div className="relative w-full md:w-auto" ref={ref}>
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full min-w-[180px] flex justify-between md:justify-center items-center gap-2 px-4 md:px-5 py-2.5 border rounded-xl text-xs md:text-sm font-medium transition-colors ${
-          isOpen || hasSelection ? 'border-[#062918] text-[#062918] bg-gray-50' : 'border-gray-200 text-gray-700 hover:border-[#062918] hover:text-[#062918] bg-white shadow-sm'
+        className={`w-full md:w-auto md:min-w-[170px] flex justify-between items-center gap-2 px-4 py-2.5 border rounded-xl text-xs md:text-sm font-medium transition-all ${
+          isOpen || hasSelection 
+            ? 'border-[#062918] text-[#062918] bg-gray-50 shadow-xs ring-1 ring-[#062918]/10' 
+            : 'border-gray-200 text-gray-700 hover:border-[#062918] hover:text-[#062918] bg-white shadow-2xs'
         }`}
       >
         <span className="truncate">{hasSelection ? selectedOption : title}</span>
@@ -57,15 +60,16 @@ function FilterDropdown({
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-full min-w-[180px] bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50">
-          <div className="flex flex-col">
+        <div className="absolute top-full left-0 mt-1.5 w-full md:w-auto md:min-w-[190px] bg-white border border-gray-200/80 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-100">
+          <div className="flex flex-col max-h-60 overflow-y-auto">
             <button 
+              type="button"
               onClick={() => {
                 onChange(null);
                 setIsOpen(false);
               }}
-              className={`text-left px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
-                selectedOption === null ? 'font-bold text-[#062918] bg-gray-50/50' : 'text-gray-600'
+              className={`text-left px-4 py-2 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
+                selectedOption === null ? 'font-bold text-[#062918] bg-gray-50/70' : 'text-gray-600'
               }`}
             >
               Todos
@@ -73,13 +77,14 @@ function FilterDropdown({
 
             {options.map(opt => (
               <button 
+                type="button"
                 key={opt}
                 onClick={() => {
                   onChange(opt);
                   setIsOpen(false);
                 }}
-                className={`text-left px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
-                  selectedOption === opt ? 'font-bold text-[#062918] bg-gray-50/50' : 'text-gray-600'
+                className={`text-left px-4 py-2 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
+                  selectedOption === opt ? 'font-bold text-[#062918] bg-gray-50/70' : 'text-gray-600'
                 }`}
               >
                 {opt}
@@ -189,12 +194,12 @@ export function ToursCatalogClient() {
       <main className="flex-1 pb-16">
         <section className="container mx-auto px-4 lg:px-8">
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 md:p-4 rounded-2xl border border-gray-200 shadow-sm w-full">
-            <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-5 md:p-4 rounded-2xl border border-gray-200 shadow-sm w-full">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-3 w-full md:w-auto">
               <span className="text-sm font-bold text-gray-900 text-center md:text-left w-full md:w-auto pb-3 md:pb-0 border-b border-gray-100 md:border-none">
                 Filtrar por:
               </span>
-              <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 w-full md:w-auto">
+              <div className="grid grid-cols-1 md:flex md:flex-wrap items-center gap-2.5 w-full md:w-auto">
                 <FilterDropdown 
                   title="Destino" 
                   options={destinoOptions} 
@@ -226,12 +231,15 @@ export function ToursCatalogClient() {
               </div>
             </div>
             
-            <button 
-              onClick={clearFilters}
-              className="text-sm font-medium text-gray-500 hover:text-[#062918] underline transition-colors whitespace-nowrap"
-            >
-              Limpiar filtros
-            </button>
+            <div className="flex justify-center md:justify-end pt-2 md:pt-0 border-t border-gray-100 md:border-none">
+              <button 
+                type="button"
+                onClick={clearFilters}
+                className="text-sm font-medium text-gray-500 hover:text-[#062918] underline transition-colors whitespace-nowrap cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            </div>
           </div>
 
           <div className="mb-6 text-center md:text-left">

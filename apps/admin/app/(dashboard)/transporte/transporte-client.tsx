@@ -19,6 +19,7 @@ import {
   Settings
 } from 'lucide-react';
 import { deleteTransfer, toggleTransferStatus } from '../../actions/transporte';
+import { getStorefrontUrl } from '@/lib/site-config';
 
 interface TransferItem {
   id: string;
@@ -129,7 +130,7 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
         </div>
 
         <a
-          href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'https://incabound.com/transporte' : (process.env.NEXT_PUBLIC_SITE_URL ? `${process.env.NEXT_PUBLIC_SITE_URL}/transporte` : 'http://localhost:3000/transporte')}
+          href={getStorefrontUrl('/transporte')}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1 font-medium transition-colors"

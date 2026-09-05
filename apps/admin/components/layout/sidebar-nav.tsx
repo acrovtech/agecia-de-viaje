@@ -14,16 +14,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const getStorefrontUrl = (path: string = '') => {
-  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')) {
-    return `${process.env.NEXT_PUBLIC_SITE_URL}${path}`;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `https://incabound.com${path}`;
-  }
-  return `http://localhost:3000${path}`;
-};
+import { getStorefrontUrl } from '@/lib/site-config';
 
 export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
   const pathname = usePathname();

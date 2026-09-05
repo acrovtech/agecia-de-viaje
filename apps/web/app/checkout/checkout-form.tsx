@@ -98,11 +98,10 @@ export function CheckoutForm() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateReservation = () => {
+  const handleUpdateReservation = (updatedPricePerPax: number) => {
     if (!modalDate || !editingTour) return;
-    const itemPrice = editingTour.price || parseFloat(price) || 0;
-    const newPricePerPax = modalServiceType === 'private' && privatePriceStr ? (parseFloat(privatePriceStr) || itemPrice) : itemPrice;
-    const newTotal = newPricePerPax * modalPax;
+    const finalPricePerPax = updatedPricePerPax > 0 ? updatedPricePerPax : (editingTour.price || parseFloat(price) || 0);
+    const newTotal = finalPricePerPax * modalPax;
     const newDateStr = modalDate.toISOString();
 
     updateCart({
@@ -110,7 +109,7 @@ export function CheckoutForm() {
       date: newDateStr,
       pax: modalPax,
       serviceType: modalServiceType,
-      price: newPricePerPax,
+      price: finalPricePerPax,
       totalPrice: newTotal,
     });
 
@@ -1012,7 +1011,8 @@ export function CheckoutForm() {
         setModalServiceType={setModalServiceType}
         onSave={handleUpdateReservation}
         tourTitle={editingTour?.tourTitle || tourTitle}
-        pricePerPax={modalServiceType === 'private' ? parseFloat(privatePriceStr || price) : parseFloat(price)}
+        tourSlug={editingTour?.tourSlug || tourSlug}
+        initialPrice={editingTour?.price || parseFloat(price) || 0}
       />
 
       {/* ENLACE DE ASISTENCIA DIRECTA WHATSAPP */}

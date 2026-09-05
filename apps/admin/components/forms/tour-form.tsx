@@ -17,13 +17,13 @@ type Category = {
 };
 
 interface ItineraryItem {
-  id: number;
+  id: string | number;
   title: string;
   content: string;
 }
 
 interface FaqItem {
-  id: number;
+  id: string | number;
   question: string;
   answer: string;
 }
@@ -43,14 +43,24 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
     initialData?.images?.[2]?.url || null,
     initialData?.images?.[3]?.url || null,
   ]);
+  const initialItineraryList = initialData?.itineraries || initialData?.itinerary || [];
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(
-    initialData?.itinerary && initialData.itinerary.length > 0
-      ? initialData.itinerary.map((it: any) => ({ id: it.id || Date.now() + Math.random(), title: it.title, content: it.content }))
+    initialItineraryList.length > 0
+      ? initialItineraryList.map((it: any, idx: number) => ({ 
+          id: it.id || Date.now() + idx + Math.random(), 
+          title: it.title || '', 
+          content: it.content || '' 
+        }))
       : [{ id: Date.now(), title: '', content: '' }]
   );
+  const initialFaqsList = initialData?.faqs || initialData?.faq || [];
   const [faqs, setFaqs] = useState<FaqItem[]>(
-    initialData?.faqs && initialData.faqs.length > 0
-      ? initialData.faqs.map((f: any) => ({ id: f.id || Date.now() + Math.random(), question: f.question, answer: f.answer }))
+    initialFaqsList.length > 0
+      ? initialFaqsList.map((f: any, idx: number) => ({ 
+          id: f.id || Date.now() + idx + Math.random(), 
+          question: f.question || '', 
+          answer: f.answer || '' 
+        }))
       : [{ id: Date.now(), question: '', answer: '' }]
   );
   const [description, setDescription] = useState(initialData?.description || '');
@@ -221,7 +231,7 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
     setIsDirty(true);
   };
 
-  const removeItineraryDay = (idToRemove: number) => {
+  const removeItineraryDay = (idToRemove: string | number) => {
     setItinerary(itinerary.filter((d: ItineraryItem) => d.id !== idToRemove));
     setIsDirty(true);
   };
@@ -233,7 +243,7 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
     setIsDirty(true);
   };
 
-  const removeFaq = (idToRemove: number) => {
+  const removeFaq = (idToRemove: string | number) => {
     setFaqs(faqs.filter((d: FaqItem) => d.id !== idToRemove));
     setIsDirty(true);
   };
@@ -453,6 +463,11 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                               name={`itinerary_title_${index}`} 
                               placeholder="Ej. Recepción en Cusco e Inka Jungle Tour" 
                               defaultValue={day.title}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setItinerary(prev => prev.map((item, idx) => idx === index ? { ...item, title: val } : item));
+                                setIsDirty(true);
+                              }}
                               className="bg-white border-slate-300 h-8 text-xs"
                             />
                           </div>
@@ -464,6 +479,11 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                               rows={3} 
                               placeholder="Detalla lo que incluye este día..."
                               defaultValue={day.content}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setItinerary(prev => prev.map((item, idx) => idx === index ? { ...item, content: val } : item));
+                                setIsDirty(true);
+                              }}
                             />
                           </div>
                         </div>
@@ -567,6 +587,11 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                               name={`faq_question_${index}`} 
                               placeholder="Ej. ¿A qué hora empieza el tour?" 
                               defaultValue={faq.question}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setFaqs(prev => prev.map((item, idx) => idx === index ? { ...item, question: val } : item));
+                                setIsDirty(true);
+                              }}
                               className="bg-white border-slate-300 h-8 text-xs"
                             />
                           </div>
@@ -578,6 +603,11 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
                               rows={2} 
                               placeholder="Respuesta detallada..."
                               defaultValue={faq.answer}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setFaqs(prev => prev.map((item, idx) => idx === index ? { ...item, answer: val } : item));
+                                setIsDirty(true);
+                              }}
                             />
                           </div>
                         </div>
