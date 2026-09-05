@@ -123,7 +123,7 @@ export function CheckoutModalEdit({
       }}
     >
       <div
-        className={`bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto transition-all duration-250 ease-out ${
+        className={`bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto transition-all duration-250 ease-out ${
           isAnimating
             ? 'scale-100 opacity-100 translate-y-0'
             : 'scale-95 opacity-0 translate-y-3'
@@ -138,8 +138,7 @@ export function CheckoutModalEdit({
           <X size={16} />
         </button>
 
-        <h3 className="text-base font-bold text-gray-900 mb-1">Modificar Reserva</h3>
-        <p className="text-xs text-gray-500 mb-4">{tourTitle}</p>
+        <h3 className="text-base font-bold text-gray-900 mb-4">Modificar Reserva</h3>
 
         <div className="space-y-4">
           {/* Fecha */}
@@ -147,12 +146,10 @@ export function CheckoutModalEdit({
             <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
               <Calendar size={14} className="text-[#062918]" /> Fecha del Tour
             </label>
-            <div className="border border-gray-200 rounded-xl p-2 flex justify-center bg-gray-50/50">
-              <CalendarUI
-                selectedDate={modalDate}
-                onSelect={(d) => setModalDate(d)}
-              />
-            </div>
+            <CalendarUI
+              selectedDate={modalDate}
+              onSelect={(d) => setModalDate(d)}
+            />
           </div>
 
           {/* Cantidad de Pasajeros y Tipo de Servicio */}

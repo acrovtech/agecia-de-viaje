@@ -7,9 +7,10 @@ interface CalendarProps {
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
   durationDays?: number; // p. ej. 2 para tour de 2 días
+  className?: string;
 }
 
-export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarProps) {
+export function Calendar({ selectedDate, onSelect, durationDays = 1, className = '' }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(selectedDate || new Date());
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
@@ -66,7 +67,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
   };
 
   return (
-    <div className="p-3 bg-white border border-gray-200/80 rounded-xl w-full select-none shadow-2xs">
+    <div className={`p-3 bg-white border border-gray-200/80 rounded-xl w-full select-none shadow-2xs ${className}`}>
       {/* Header Mes */}
       <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
         <button 
@@ -92,7 +93,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
       {/* Cabecera Días */}
       <div className="grid grid-cols-7 gap-1 mb-1 text-center">
         {days.map(day => (
-          <div key={day} className="text-[10px] font-bold text-gray-400 py-0.5 flex items-center justify-center">
+          <div key={day} className="text-[10px] font-bold text-gray-400 py-0.5 flex items-center justify-center max-w-[34px] sm:max-w-[36px] mx-auto w-full">
             {day}
           </div>
         ))}
@@ -101,7 +102,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
       {/* Grilla Días del Mes */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-square w-full" />
+          <div key={`empty-${i}`} className="aspect-square w-full max-w-[34px] sm:max-w-[36px] mx-auto" />
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1;
@@ -117,7 +118,7 @@ export function Calendar({ selectedDate, onSelect, durationDays = 1 }: CalendarP
               key={day}
               disabled={isPast}
               onClick={(e) => handleDateClick(day, e)}
-              className={`aspect-square w-full rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
+              className={`aspect-square w-full max-w-[34px] sm:max-w-[36px] mx-auto rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
                 isPast
                   ? 'text-gray-300 cursor-not-allowed opacity-40 select-none'
                   : isStart 
