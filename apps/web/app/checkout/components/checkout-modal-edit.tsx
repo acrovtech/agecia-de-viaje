@@ -227,7 +227,7 @@ export function CheckoutModalEdit({
             onClick={handleSave}
             className="w-full py-3 bg-[#062918] hover:bg-[#0c4028] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
           >
-            <Check size={14} /> Guardar Cambios
+            <Check size={14} /> Actualizar Datos
           </button>
         </div>
       </div>
