@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, MapPin, Car, Phone, Mail } from 'lucide-react';
+import { ChevronDown, MapPin, Car } from 'lucide-react';
 
 const DESTINOS = [
   { name: 'Cusco', href: '/tours?destino=cusco' },
@@ -37,8 +37,8 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   return (
     <div 
-      className={`fixed inset-0 w-full h-full bg-white z-40 lg:hidden flex flex-col pt-24 pb-8 overflow-y-auto transition-all duration-600 ease-[cubic-bezier(0.77,0,0.175,1)] ${
-        isOpen ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
+      className={`fixed inset-0 w-full h-full bg-white z-40 lg:hidden flex flex-col pt-20 pb-6 overflow-y-auto transition-[clip-path,-webkit-clip-path] duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${
+        isOpen ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
       style={{
         clipPath: isOpen 
@@ -50,14 +50,12 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       }}
     >
       <nav 
-        className={`flex-1 flex flex-col justify-start text-[#404040] font-bold text-center uppercase tracking-wider text-[13px] transition-all duration-500 delay-100 ${
-          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
+        className="flex-1 flex flex-col justify-center text-[#404040] font-bold text-center uppercase tracking-widest text-[14px] sm:text-[15px]"
       >
         {/* Inicio */}
         <Link 
           href="/" 
-          className="relative py-4.5 border-b border-gray-100 flex items-center justify-center uppercase tracking-wider hover:text-[#062918] transition-colors" 
+          className="relative py-5 border-b border-gray-100 flex items-center justify-center uppercase tracking-widest hover:text-[#062918] transition-colors" 
           onClick={onClose}
         >
           INICIO
@@ -68,7 +66,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <button
             type="button"
             onClick={() => setIsDestinosOpen(!isDestinosOpen)}
-            className={`relative py-4.5 px-6 w-full flex items-center justify-center uppercase tracking-wider transition-colors cursor-pointer ${
+            className={`relative py-5 px-6 w-full flex items-center justify-center uppercase tracking-widest transition-colors cursor-pointer ${
               isDestinosOpen ? 'text-[#008060]' : 'hover:text-[#062918]'
             }`}
           >
@@ -87,7 +85,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             }`}
           >
             <div className="overflow-hidden">
-              <div className="bg-[#fbfcfc] py-4 px-6 flex flex-col items-center justify-center gap-3 border-t border-gray-100">
+              <div className="bg-[#fbfcfc] py-4 px-6 flex flex-col items-center justify-center gap-3.5 border-t border-gray-100">
                 {DESTINOS.map((d) => (
                   <Link
                     key={d.name}
@@ -108,7 +106,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <button
             type="button"
             onClick={() => setIsTransporteOpen(!isTransporteOpen)}
-            className={`relative py-4.5 px-6 w-full flex items-center justify-center uppercase tracking-wider transition-colors cursor-pointer ${
+            className={`relative py-5 px-6 w-full flex items-center justify-center uppercase tracking-widest transition-colors cursor-pointer ${
               isTransporteOpen ? 'text-[#008060]' : 'hover:text-[#062918]'
             }`}
           >
@@ -127,7 +125,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             }`}
           >
             <div className="overflow-hidden">
-              <div className="bg-[#fbfcfc] py-4 px-6 flex flex-col items-center justify-center gap-3 border-t border-gray-100">
+              <div className="bg-[#fbfcfc] py-4 px-6 flex flex-col items-center justify-center gap-3.5 border-t border-gray-100">
                 {TRASLADOS.map((t) => (
                   <Link
                     key={t.name}
@@ -146,7 +144,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         {/* Blogs */}
         <Link 
           href="/blog" 
-          className="relative py-4.5 border-b border-gray-100 uppercase tracking-wider hover:text-[#062918] transition-colors" 
+          className="relative py-5 border-b border-gray-100 uppercase tracking-widest hover:text-[#062918] transition-colors" 
           onClick={onClose}
         >
           BLOGS
@@ -155,7 +153,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         {/* Nosotros */}
         <Link 
           href="/nosotros" 
-          className="relative py-4.5 border-b border-gray-100 uppercase tracking-wider hover:text-[#062918] transition-colors" 
+          className="relative py-5 border-b border-gray-100 uppercase tracking-widest hover:text-[#062918] transition-colors" 
           onClick={onClose}
         >
           NOSOTROS
@@ -164,7 +162,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         {/* Contacto */}
         <Link 
           href="/contacto" 
-          className="relative py-4.5 border-b border-gray-100 uppercase tracking-wider hover:text-[#062918] transition-colors" 
+          className="relative py-5 border-b border-gray-100 uppercase tracking-widest hover:text-[#062918] transition-colors" 
           onClick={onClose}
         >
           CONTACTO
@@ -172,7 +170,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       </nav>
 
       {/* Footer del menú mobile */}
-      <div className="mt-8 px-6 text-center">
+      <div className="mt-4 px-6 text-center">
         <p className="text-xs text-gray-400 font-medium">Inca Bound &bull; Cusco, Perú</p>
       </div>
     </div>
