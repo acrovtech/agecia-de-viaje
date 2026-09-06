@@ -10,7 +10,7 @@ RUN npm install -g pnpm@12.0.0
 FROM base AS deps
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/admin/package.json ./apps/admin/
 COPY packages/db/package.json ./packages/db/
