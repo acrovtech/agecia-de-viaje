@@ -35,7 +35,7 @@ export async function BlogSidebar({ currentSlug }: { currentSlug?: string }) {
               <Link href={`/blog/${post.slug}`} key={post.id} className="group flex gap-4 items-center">
                 <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200/80">
                   {hasThumb ? (
-                    <Image src={post.bannerImage} alt={post.title} fill sizes="80px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <Image src={post.bannerImage} alt={post.title} fill sizes="(max-width: 640px) 160px, 80px" quality={85} className="object-cover group-hover:scale-110 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">
                       Blog

@@ -94,8 +94,8 @@ export function ArticlesCarousel({ articles }: { articles: ArticleItem[] }) {
                     src={article.bannerImage} 
                     alt={article.title} 
                     fill 
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    unoptimized={true}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 440px"
+                    quality={85}
                     className="object-cover opacity-75 group-hover/card:opacity-40 transition-all duration-700 group-hover/card:scale-105 z-0"
                   />
                   

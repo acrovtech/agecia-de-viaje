@@ -122,7 +122,7 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
         <div className="relative h-[45dvh] md:h-[60dvh] min-h-[360px] w-full bg-slate-950 flex items-end justify-center overflow-hidden">
           {hasBanner ? (
             <div className="absolute inset-0">
-              <Image src={blog.bannerImage} alt={blog.title} fill sizes="100vw" className="object-cover opacity-75" priority />
+              <Image src={blog.bannerImage} alt={blog.title} fill sizes="100vw" quality={85} className="object-cover opacity-75" priority />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/30" />
             </div>
           ) : (
@@ -179,8 +179,9 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
                                 src={p.image!} 
                                 alt={p.subtitle || blog.title} 
                                 fill 
+                                quality={85}
                                 className="object-cover" 
-                                sizes="(max-width: 768px) 100vw, 40vw"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 450px"
                               />
                             </div>
                           </>
@@ -192,8 +193,9 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
                                 src={p.image!} 
                                 alt={p.subtitle || blog.title} 
                                 fill 
+                                quality={85}
                                 className="object-cover" 
-                                sizes="(max-width: 768px) 100vw, 40vw"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 450px"
                               />
                             </div>
 

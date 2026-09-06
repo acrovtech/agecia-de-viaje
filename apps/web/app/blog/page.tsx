@@ -72,7 +72,8 @@ export default async function BlogPage() {
                     src={article.bannerImage || '/fallback.svg'} 
                     alt={article.title} 
                     fill 
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 440px"
+                    quality={85}
                     className="object-cover opacity-70 group-hover:opacity-40 transition-all duration-700 group-hover:scale-105 z-0"
                   />
                   
