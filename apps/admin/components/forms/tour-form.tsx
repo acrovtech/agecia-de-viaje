@@ -31,7 +31,15 @@ interface FaqItem {
 import { AutoResizeTextarea, SubmitSaveButton, getStorefrontUrl } from './shared/form-utils';
 import { analyzeSeo } from './shared/seo-analysis';
 
-export function TourForm({ categories, initialData }: { categories: Category[]; initialData?: any }) {
+export function TourForm({ 
+  categories, 
+  initialData,
+  showCategories = true
+}: { 
+  categories: Category[]; 
+  initialData?: any;
+  showCategories?: boolean;
+}) {
   const [groupSize, setGroupSize] = useState<number>(initialData?.groupSize || 12);
   const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
   const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
@@ -728,30 +736,37 @@ export function TourForm({ categories, initialData }: { categories: Category[]; 
             </div>
           </div>
 
-          {/* Card 4: Categorización */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
-            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Categorización</h3>
-            <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {categories.length === 0 ? (
-                <p className="text-[11px] text-slate-400">Sin categorías.</p>
-              ) : (
-                categories.map(cat => (
-                  <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
-                    <input 
-                      type="checkbox" 
-                      id={`cat_${cat.id}`} 
-                      name="categories" 
-                      value={cat.id} 
-                      defaultChecked={initialData?.categories?.some((c: any) => c.id === cat.id)}
-                      onChange={() => setIsDirty(true)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
-                    />
-                    <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
-                  </div>
-                ))
-              )}
+          {/* Card 4: Categorización (Oculto para el usuario de gestión) */}
+          {showCategories ? (
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
+              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Categorización</h3>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+                {categories.length === 0 ? (
+                  <p className="text-[11px] text-slate-400">Sin categorías.</p>
+                ) : (
+                  categories.map(cat => (
+                    <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                      <input 
+                        type="checkbox" 
+                        id={`cat_${cat.id}`} 
+                        name="categories" 
+                        value={cat.id} 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.id === cat.id)}
+                        onChange={() => setIsDirty(true)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                      />
+                      <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            // Preservar categorías existentes si el usuario no tiene permisos para modificarlas
+            initialData?.categories?.map((c: any) => (
+              <input key={c.id} type="hidden" name="categories" value={c.id} />
+            ))
+          )}
 
           {/* Card 4: Precios */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs px-4 py-3.5 space-y-3">
