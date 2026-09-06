@@ -37,17 +37,11 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   return (
     <div 
-      className={`fixed inset-0 w-full h-full bg-white z-40 lg:hidden flex flex-col pt-20 pb-6 overflow-y-auto transition-[clip-path,-webkit-clip-path] duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${
-        isOpen ? 'pointer-events-auto' : 'pointer-events-none'
+      className={`fixed inset-0 w-full h-full bg-white z-40 lg:hidden flex flex-col pt-20 pb-6 overflow-y-auto transition-all duration-300 ease-out ${
+        isOpen 
+          ? 'opacity-100 translate-y-0 pointer-events-auto' 
+          : 'opacity-0 -translate-y-4 pointer-events-none'
       }`}
-      style={{
-        clipPath: isOpen 
-          ? 'circle(160% at calc(100% - 32px) 36px)' 
-          : 'circle(0% at calc(100% - 32px) 36px)',
-        WebkitClipPath: isOpen 
-          ? 'circle(160% at calc(100% - 32px) 36px)' 
-          : 'circle(0% at calc(100% - 32px) 36px)',
-      }}
     >
       <nav 
         className="flex-1 flex flex-col justify-start pt-6 sm:pt-10 text-[#404040] font-bold text-center uppercase tracking-widest text-[14px] sm:text-[15px]"
