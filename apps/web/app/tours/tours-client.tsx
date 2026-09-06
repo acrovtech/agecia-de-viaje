@@ -60,15 +60,15 @@ function FilterDropdown({
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-full md:w-auto md:min-w-[190px] bg-white border border-gray-200/80 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-100">
-          <div className="flex flex-col max-h-96 sm:max-h-[420px] overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1.5 w-full md:w-auto md:min-w-[210px] bg-white border border-gray-200/80 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-100">
+          <div className="flex flex-col max-h-[520px] overflow-y-auto [scrollbar-width:thin]">
             <button 
               type="button"
               onClick={() => {
                 onChange(null);
                 setIsOpen(false);
               }}
-              className={`text-left px-4 py-2 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
+              className={`text-left px-4 py-2.5 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
                 selectedOption === null ? 'font-bold text-[#062918] bg-gray-50/70' : 'text-gray-600'
               }`}
             >
@@ -83,7 +83,7 @@ function FilterDropdown({
                   onChange(opt);
                   setIsOpen(false);
                 }}
-                className={`text-left px-4 py-2 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
+                className={`text-left px-4 py-2.5 text-xs md:text-sm transition-colors hover:bg-gray-50 ${
                   selectedOption === opt ? 'font-bold text-[#062918] bg-gray-50/70' : 'text-gray-600'
                 }`}
               >
@@ -133,12 +133,12 @@ export function ToursCatalogClient() {
   };
 
   // Opciones dinámicas extraídas del Admin (Base de datos)
-  const rawRegions = tours.map(t => t.region).filter(Boolean);
-  const destinoOptions = Array.from(new Set(['Cusco', ...rawRegions]));
-  const categoryOptions = Array.from(new Set(categories.map(c => c.name).filter(Boolean)));
-  const durationOptions = Array.from(new Set(tours.map(t => t.duration).filter(Boolean)));
-  const rawDifficulties = tours.map(t => t.difficulty).filter(Boolean);
-  const difficultyOptions = Array.from(new Set(['Fácil', 'Moderado', 'Desafiante', ...rawDifficulties]));
+  const rawRegions = tours.map(t => t.region?.trim()).filter(Boolean);
+  const destinoOptions = Array.from(new Set(rawRegions.length > 0 ? ['Cusco', ...rawRegions] : ['Cusco']));
+  const categoryOptions = Array.from(new Set(categories.map(c => c.name?.trim()).filter(Boolean)));
+  const durationOptions = Array.from(new Set(tours.map(t => t.duration?.trim()).filter(Boolean)));
+  const rawDifficulties = tours.map(t => t.difficulty?.trim()).filter(Boolean);
+  const difficultyOptions = Array.from(new Set(rawDifficulties.length > 0 ? rawDifficulties : ['Fácil', 'Moderado', 'Desafiante']));
 
   // Lógica de filtrado case-insensitive conectada 100% a la BD
   const filteredTours = tours.filter(tour => {
