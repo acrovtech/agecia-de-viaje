@@ -31,7 +31,7 @@ export function Hero() {
         {/* Vimeo Video Layer: Fades in smoothly ONLY when iframe onLoad fires */}
         {showIframe && (
           <iframe 
-            src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963" 
+            src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963&dnt=1" 
             title="Video de presentación Inca Bound"
             onLoad={() => setIsVideoReady(true)}
             className={`w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-1000 ${
