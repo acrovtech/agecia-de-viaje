@@ -41,13 +41,28 @@ export function WhatsappButton() {
 
   const getDirectWhatsappUrl = (phone: string, msg: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+    const encoded = encodeURIComponent(msg);
+    if (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      return `whatsapp://send?phone=${cleanPhone}&text=${encoded}`;
+    }
+    return `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encoded}`;
   };
 
   const handleAdvisorClick = (phone: string, msg: string, e: React.MouseEvent) => {
     e.preventDefault();
-    const url = getDirectWhatsappUrl(phone, msg);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const cleanPhone = phone.replace(/\D/g, '');
+    const encoded = encodeURIComponent(msg);
+    
+    const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Abre directamente la app de WhatsApp en el móvil sin intermediarios
+      window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encoded}`;
+    } else {
+      // En PC/Desktop abre directamente WhatsApp Web sin pasar por la landing page de confirmación
+      window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encoded}`, '_blank', 'noopener,noreferrer');
+    }
+
     setIsOpen(false);
   };
 
