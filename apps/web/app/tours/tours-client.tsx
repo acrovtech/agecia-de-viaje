@@ -61,7 +61,7 @@ function FilterDropdown({
       
       {isOpen && (
         <div className="absolute top-full left-0 mt-1.5 w-full md:w-auto md:min-w-[190px] bg-white border border-gray-200/80 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-100">
-          <div className="flex flex-col max-h-60 overflow-y-auto">
+          <div className="flex flex-col max-h-96 sm:max-h-[420px] overflow-y-auto">
             <button 
               type="button"
               onClick={() => {
