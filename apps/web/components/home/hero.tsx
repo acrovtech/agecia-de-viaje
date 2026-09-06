@@ -84,12 +84,12 @@ export function Hero() {
       </div>
 
       {/* Bottom Badges */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:-translate-x-0 lg:right-8 z-30 flex items-center justify-center gap-3 md:gap-5 scale-[0.9] sm:scale-100 md:scale-110 lg:scale-[1.35] lg:origin-bottom-right w-full lg:w-auto">
-        <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/wta-2024.webp" alt="World Travel Awards 2024" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" unoptimized={true} />
-        <a href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" target="_blank" rel="noopener noreferrer" aria-label="Ver opiniones y reconocimientos de Inca Bound en TripAdvisor" className="flex items-center gap-3 md:gap-5 p-2">
-          <Image src="/ta-2022.svg" alt="Tripadvisor 2022" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
-          <Image src="/ta-2023.svg" alt="Tripadvisor 2023" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
-          <Image src="/ta-2024.svg" alt="Tripadvisor 2024" width={120} height={120} className="w-24 md:w-32 h-auto drop-shadow-lg" />
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:-translate-x-0 lg:right-8 z-30 flex items-center justify-center gap-2 sm:gap-3 md:gap-5 lg:scale-[1.35] lg:origin-bottom-right w-full lg:w-auto px-2">
+        <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/wta-2024.webp" alt="World Travel Awards 2024" width={120} height={120} className="w-[5.4rem] md:w-32 h-auto drop-shadow-lg" unoptimized={true} />
+        <a href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" target="_blank" rel="noopener noreferrer" aria-label="Ver opiniones y reconocimientos de Inca Bound en TripAdvisor" className="flex items-center gap-2 sm:gap-3 md:gap-5">
+          <Image src="/ta-2022.svg" alt="Tripadvisor 2022" width={120} height={120} className="w-[5.4rem] md:w-32 h-auto drop-shadow-lg" />
+          <Image src="/ta-2023.svg" alt="Tripadvisor 2023" width={120} height={120} className="w-[5.4rem] md:w-32 h-auto drop-shadow-lg" />
+          <Image src="/ta-2024.svg" alt="Tripadvisor 2024" width={120} height={120} className="w-[5.4rem] md:w-32 h-auto drop-shadow-lg" />
         </a>
       </div>
     </section>
