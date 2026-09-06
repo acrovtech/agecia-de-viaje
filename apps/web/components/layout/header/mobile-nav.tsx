@@ -50,7 +50,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       }}
     >
       <nav 
-        className="flex-1 flex flex-col justify-center text-[#404040] font-bold text-center uppercase tracking-widest text-[14px] sm:text-[15px]"
+        className="flex-1 flex flex-col justify-start pt-6 sm:pt-10 text-[#404040] font-bold text-center uppercase tracking-widest text-[14px] sm:text-[15px]"
       >
         {/* Inicio */}
         <Link 
@@ -170,7 +170,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       </nav>
 
       {/* Footer del menú mobile */}
-      <div className="mt-4 px-6 text-center">
+      <div className="mt-auto pt-6 pb-2 px-6 text-center">
         <p className="text-xs text-gray-400 font-medium">Inca Bound &bull; Cusco, Perú</p>
       </div>
     </div>
