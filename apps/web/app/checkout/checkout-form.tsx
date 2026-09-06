@@ -646,8 +646,6 @@ export function CheckoutForm() {
               <CheckoutPassengerFields
                 passengers={passengers}
                 onPassengerChange={handlePassengerChange}
-                copiedPax1={copiedPax1}
-                onCopyPax1ToContact={copyPax1ToContact}
                 inputBaseStyle={inputBaseStyle}
               />
 

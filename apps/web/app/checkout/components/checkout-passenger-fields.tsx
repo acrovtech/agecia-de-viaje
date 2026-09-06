@@ -1,6 +1,4 @@
-'use client';
-
-import { UserCheck, Users, Copy, Check } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 
 export type Passenger = {
@@ -13,16 +11,12 @@ export type Passenger = {
 interface CheckoutPassengerFieldsProps {
   passengers: Passenger[];
   onPassengerChange: (index: number, field: keyof Passenger, value: string) => void;
-  copiedPax1: boolean;
-  onCopyPax1ToContact: (e: React.MouseEvent) => void;
   inputBaseStyle: string;
 }
 
 export function CheckoutPassengerFields({
   passengers,
   onPassengerChange,
-  copiedPax1,
-  onCopyPax1ToContact,
   inputBaseStyle,
 }: CheckoutPassengerFieldsProps) {
   return (
@@ -31,21 +25,6 @@ export function CheckoutPassengerFields({
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
           <Users size={16} className="text-[#062918]" /> Lista de Pasajeros ({passengers.length})
         </h3>
-        <button
-          type="button"
-          onClick={onCopyPax1ToContact}
-          className="text-[11px] font-semibold text-[#062918] hover:text-[#0c4028] hover:underline flex items-center gap-1 cursor-pointer"
-        >
-          {copiedPax1 ? (
-            <>
-              <Check size={12} className="text-emerald-600" /> Copiado al Titular
-            </>
-          ) : (
-            <>
-              <Copy size={12} /> Usar Pasajero 1 como Titular
-            </>
-          )}
-        </button>
       </div>
 
       <div className="space-y-6 divide-y divide-gray-100">
