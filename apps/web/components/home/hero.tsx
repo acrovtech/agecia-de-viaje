@@ -8,9 +8,20 @@ export function Hero() {
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    // Defer heavy video iframe DOM insertion to prioritize initial FCP/LCP
-    const timer = setTimeout(() => setShowIframe(true), 400);
-    return () => clearTimeout(timer);
+    // Load heavy Vimeo iframe only when browser is idle after initial page load & paint
+    const loadIframe = () => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => setShowIframe(true), { timeout: 2500 });
+      } else {
+        setTimeout(() => setShowIframe(true), 1500);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      loadIframe();
+    } else {
+      window.addEventListener('load', loadIframe, { once: true });
+    }
   }, []);
 
   return (
@@ -33,6 +44,7 @@ export function Hero() {
           <iframe 
             src="https://player.vimeo.com/video/1109193500?muted=1&autoplay=1&loop=1&background=1&quality=720p&app_id=122963&dnt=1" 
             title="Video de presentación Inca Bound"
+            loading="lazy"
             onLoad={() => setIsVideoReady(true)}
             className={`w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-1000 ${
               isVideoReady ? 'opacity-100' : 'opacity-0'

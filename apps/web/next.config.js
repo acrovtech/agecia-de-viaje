@@ -5,7 +5,13 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@base-ui/react',
+      'clsx',
+      'tailwind-merge',
+      'zod',
+    ],
   },
   images: {
     formats: ['image/avif', 'image/webp'],
