@@ -1,6 +1,5 @@
 import { Bell, Menu } from 'lucide-react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { Button } from '@/components/ui/button';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { UserNavDropdown } from '@/components/layout/user-nav-dropdown';
@@ -9,20 +8,19 @@ import { NotificationsDropdown } from '@/components/layout/notifications-dropdow
 import { TitleProvider } from '@/components/ui/title-context';
 import { InactivityTimer } from '@/components/inactivity-timer';
 import { getRecentNotificationsAction } from '@/app/actions/reservation';
+import { verifyAdminSession } from '@/lib/auth-check';
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const sessionRole = cookieStore.get('admin_session')?.value || 'MASTER';
-  
-  const isMaster = sessionRole === 'MASTER';
-  const userInitials = isMaster ? 'AD' : 'CL';
-  const userName = isMaster ? 'Adriano Admin' : 'Cliente Operador';
-  const userEmail = isMaster ? 'master@incabound.com' : 'cliente@incabound.com';
-  const userRole = isMaster ? 'Administrador Master' : 'Operador Cliente';
+  const session = await verifyAdminSession();
+  const isMaster = session ? session.role === 'MASTER' : true;
+  const userEmail = session?.email || (isMaster ? 'admin@incabound.com' : 'gestion@incabound.com');
+  const userInitials = isMaster ? 'AD' : 'GE';
+  const userName = isMaster ? 'Adriano Admin' : 'Gestión Inca Bound';
+  const userRole = isMaster ? 'Administrador Master' : 'Gestor de Contenidos';
 
   // Cargar notificaciones iniciales desde el servidor
   const notifRes = await getRecentNotificationsAction();
@@ -38,7 +36,7 @@ export default async function DashboardLayout({
           
           {/* Izquierda: Logo Incabound & Mobile Drawer */}
           <div className="flex items-center gap-2.5">
-            <MobileSidebarDrawer isMaster={isMaster} />
+            <MobileSidebarDrawer isMaster={isMaster} userEmail={userEmail} />
 
             <Link href="/" className="flex items-center gap-2">
               <span className="font-extrabold text-base tracking-tight italic font-serif text-white">incabound</span>
@@ -69,7 +67,7 @@ export default async function DashboardLayout({
           
           {/* SIDEBAR NAVEGACIÓN POLARIS (#EBEBEB) */}
           <div className="hidden md:flex md:w-[240px] lg:w-[240px] md:flex-col h-full shrink-0 shadow-xs z-20">
-            <SidebarNav isMaster={isMaster} />
+            <SidebarNav isMaster={isMaster} userEmail={userEmail} />
           </div>
 
           {/* CONTENIDO PRINCIPAL (#F1F1F1) */}

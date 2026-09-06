@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { PanelLeft } from 'lucide-react';
 import { SidebarNav } from './sidebar-nav';
 
-export function MobileSidebarDrawer({ isMaster = true }: { isMaster?: boolean }) {
+export function MobileSidebarDrawer({ 
+  isMaster = true, 
+  userEmail 
+}: { 
+  isMaster?: boolean; 
+  userEmail?: string; 
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -34,7 +40,7 @@ export function MobileSidebarDrawer({ isMaster = true }: { isMaster?: boolean })
         }`}
       >
         <div className="flex-1 overflow-y-auto [&_a]:py-3 [&_span]:text-[15px] md:[&_span]:text-xs [&_svg]:w-5 [&_svg]:h-5" onClick={() => setIsOpen(false)}>
-          <SidebarNav />
+          <SidebarNav isMaster={isMaster} userEmail={userEmail} />
         </div>
       </div>
     </>

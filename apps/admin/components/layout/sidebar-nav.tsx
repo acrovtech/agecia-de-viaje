@@ -16,9 +16,18 @@ import {
 import { cn } from '@/lib/utils';
 import { getStorefrontUrl } from '@/lib/site-config';
 
-export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
+export function SidebarNav({ 
+  isMaster = true, 
+  userEmail 
+}: { 
+  isMaster?: boolean; 
+  userEmail?: string; 
+}) {
   const pathname = usePathname();
   const siteUrl = getStorefrontUrl();
+
+  const isGestionUser = userEmail?.trim().toLowerCase() === 'gestion@incabound.com';
+  const showCategories = !isGestionUser;
 
   return (
     <div className="flex flex-col h-full bg-[#EBEBEB] text-[#303030] border-none select-none text-[13px]">
@@ -78,21 +87,23 @@ export function SidebarNav({ isMaster = true }: { isMaster?: boolean }) {
             </li>
           )}
 
-          {/* 3. Categorías (Tab independiente en el sidebar) */}
-          <li>
-            <Link
-              href="/categories"
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
-                pathname === "/categories"
-                  ? "bg-white text-[#303030] shadow-xs font-semibold"
-                  : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
-              )}
-            >
-              <Tags className="w-4 h-4 text-[#303030] shrink-0" />
-              <span>Categorías</span>
-            </Link>
-          </li>
+          {/* 4. Categorías (Tab independiente en el sidebar, oculto para gestion@incabound.com) */}
+          {showCategories && (
+            <li>
+              <Link
+                href="/categories"
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                  pathname === "/categories"
+                    ? "bg-white text-[#303030] shadow-xs font-semibold"
+                    : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+                )}
+              >
+                <Tags className="w-4 h-4 text-[#303030] shrink-0" />
+                <span>Categorías</span>
+              </Link>
+            </li>
+          )}
 
           {/* 4. Blogs */}
           <li>
