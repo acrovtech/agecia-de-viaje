@@ -10,7 +10,7 @@ export const CONTACT_CONFIG = {
   address: 'Cusco, Perú',
   getWhatsappUrl(message: string = '', number: string = '51984772299') {
     const cleanNumber = number.replace(/\D/g, '');
-    if (!message) return `https://wa.me/${cleanNumber}`;
-    return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+    if (!message) return `https://api.whatsapp.com/send?phone=${cleanNumber}`;
+    return `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
   }
 };

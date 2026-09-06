@@ -24,22 +24,31 @@ const advisors = [
     name: 'Asistencia y Operaciones',
     phone: CONTACT_CONFIG.whatsappOperations,
     role: 'Asesor 24/7',
-    avatar: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/asesor-viajes-inca-bound.webp'
+    avatar: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/asesor-viajes-inca-bound.webp',
+    defaultMessage: 'Hola Inca Bound, necesito asistencia de operaciones sobre mi viaje/tour.'
   },
   {
     name: 'Reservas y Cotizaciones',
     phone: CONTACT_CONFIG.whatsappNumber,
     role: 'Asesor de Ventas',
-    avatar: '/logo.svg' 
+    avatar: '/logo.svg',
+    defaultMessage: 'Hola Inca Bound, deseo más información y cotización sobre los tours.'
   }
 ];
 
 export function WhatsappButton() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const getWhatsappUrl = (phone: string) => {
-    const message = encodeURIComponent('Hola Inca Bound, deseo más información sobre los tours.');
-    return `https://wa.me/${phone}?text=${message}`;
+  const getDirectWhatsappUrl = (phone: string, msg: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+  };
+
+  const handleAdvisorClick = (phone: string, msg: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = getDirectWhatsappUrl(phone, msg);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setIsOpen(false);
   };
 
   return (
@@ -54,7 +63,7 @@ export function WhatsappButton() {
             </div>
             <button 
               onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 p-1 rounded-full transition-colors"
+              className="text-white hover:bg-white/20 p-1 rounded-full transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -64,10 +73,11 @@ export function WhatsappButton() {
             {advisors.map((advisor, idx) => (
               <a
                 key={idx}
-                href={getWhatsappUrl(advisor.phone)}
+                href={getDirectWhatsappUrl(advisor.phone, advisor.defaultMessage)}
+                onClick={(e) => handleAdvisorClick(advisor.phone, advisor.defaultMessage, e)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 rounded-xl transition-colors group border border-transparent hover:border-gray-200"
+                className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 rounded-xl transition-colors group border border-transparent hover:border-gray-200 cursor-pointer"
               >
                 <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-white shadow-sm flex items-center justify-center border border-gray-100">
                   <Image src={advisor.avatar} alt={advisor.name} fill sizes="40px" className="object-cover" unoptimized={true} />
