@@ -5,6 +5,7 @@ import { Reservation, Tour } from '@repo/db';
 import Link from 'next/link';
 import { Search, Calendar, CheckCircle2, Clock, XCircle, ArrowRight, Trash2 } from 'lucide-react';
 import { deleteReservationsAction } from '@/app/actions/reservation';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 
 type ReservationWithTour = Reservation & { tour: Tour | null };
 
@@ -14,6 +15,7 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const filteredReservas = reservas.filter((reserva) => {
     const matchesStatus = filterStatus === 'ALL' || reserva.status === filterStatus;
@@ -46,15 +48,16 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar las ${selectedIds.length} reservas seleccionadas?`)) {
-      return;
-    }
+    setIsConfirmOpen(true);
+  };
 
+  const executeBulkDelete = () => {
     startTransition(async () => {
       const res = await deleteReservationsAction(selectedIds);
       if (res.success) {
         setReservas(prev => prev.filter(r => !selectedIds.includes(r.id)));
         setSelectedIds([]);
+        setIsConfirmOpen(false);
       } else {
         alert(res.error || 'Ocurrió un error al eliminar las reservas.');
       }
@@ -310,6 +313,17 @@ export function ReservasClient({ initialReservas }: { initialReservas: Reservati
         </>
       )}
 
+      {/* Modal de confirmación para eliminar reservas */}
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={executeBulkDelete}
+        isLoading={isPending}
+        title={`¿Eliminar ${selectedIds.length} reservas seleccionadas?`}
+        description="Esta acción es irreversible y eliminará permanentemente los registros de las reservas seleccionadas."
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

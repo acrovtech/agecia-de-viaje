@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Edit, Trash2, Search, Tags, Tag } from 'lucide-react';
 import { createCategory, updateCategory, deleteCategory } from '../../actions/category';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -28,6 +29,16 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'single' | 'bulk';
+    id?: string;
+    name?: string;
+    count?: number;
+  }>({ isOpen: false, type: 'bulk' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Auto-generate slug
   const handleNameChange = (val: string) => {
@@ -62,16 +73,17 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    if (!name || !slug) return;
 
+    setIsSubmitting(true);
     try {
       if (editingCat) {
         const res = await updateCategory(editingCat.id, name, slug);
         if (res.success && res.category) {
-          setCategories(categories.map(c => c.id === editingCat.id ? res.category : c));
+          setCategories(categories.map(c => c.id === editingCat.id ? res.category! : c));
           setIsModalOpen(false);
         } else {
-          alert(res.error);
+          alert(res.error || "Error al actualizar");
         }
       } else {
         const res = await createCategory(name, slug);
@@ -79,7 +91,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
           setCategories([res.category, ...categories]);
           setIsModalOpen(false);
         } else {
-          alert(res.error);
+          alert(res.error || "Error al crear");
         }
       }
     } catch (err) {
@@ -89,15 +101,46 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("¿Seguro que deseas eliminar esta categoría? Esto podría afectar a los tours enlazados.")) {
-      const res = await deleteCategory(id);
-      if (res.success) {
-        setCategories(categories.filter(c => c.id !== id));
-        setSelectedIds(prev => prev.filter(i => i !== id));
-      } else {
-        alert(res.error);
+  const promptDelete = (id: string, name: string) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'single',
+      id,
+      name,
+    });
+  };
+
+  const promptBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmModal({
+      isOpen: true,
+      type: 'bulk',
+      count: selectedIds.length,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      if (confirmModal.type === 'bulk') {
+        for (const id of selectedIds) {
+          await deleteCategory(id);
+        }
+        setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
+        setSelectedIds([]);
+      } else if (confirmModal.type === 'single' && confirmModal.id) {
+        const id = confirmModal.id;
+        const res = await deleteCategory(id);
+        if (res.success) {
+          setCategories((prev) => prev.filter((c) => c.id !== id));
+          setSelectedIds((prev) => prev.filter((i) => i !== id));
+        } else {
+          alert(res.error);
+        }
       }
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -120,17 +163,6 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (confirm(`¿Deseas eliminar las ${selectedIds.length} categorías seleccionadas?`)) {
-      for (const id of selectedIds) {
-        await deleteCategory(id);
-      }
-      setCategories(prev => prev.filter(c => !selectedIds.includes(c.id)));
-      setSelectedIds([]);
-    }
   };
 
   return (
@@ -199,7 +231,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                         <span className="font-semibold text-slate-900">{selectedIds.length} seleccionadas</span>
                         <div className="h-4 w-[1px] bg-slate-300" />
                         <button
-                          onClick={handleBulkDelete}
+                          onClick={promptBulkDelete}
                           className="text-red-600 hover:text-red-700 font-semibold text-xs flex items-center gap-1 hover:underline cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -265,7 +297,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(cat.id)}
+                            onClick={() => promptDelete(cat.id, cat.name)}
                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="Eliminar categoría"
                           >
@@ -329,6 +361,21 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
         </DialogContent>
       </Dialog>
 
+      {/* MODAL DE CONFIRMACIÓN PARA ELIMINAR CATEGORÍAS */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title={
+          confirmModal.type === 'bulk'
+            ? `¿Eliminar ${confirmModal.count || selectedIds.length} categorías seleccionadas?`
+            : `¿Eliminar la categoría "${confirmModal.name}"?`
+        }
+        description="Esta acción eliminará la categoría. Podría afectar a los tours asociados."
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

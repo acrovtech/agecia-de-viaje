@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Tour } from '@repo/db';
 import { deleteTour } from '../../actions/tour';
 import { Plus, Trash2, Edit, Map, MapPin, Search, Clock, Image as ImageIcon } from 'lucide-react';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 
 function TourThumbnail({ src }: { src?: string; title?: string }) {
   const [hasError, setHasError] = useState(false);
@@ -36,19 +37,53 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'single' | 'bulk';
+    id?: string;
+    title?: string;
+    count?: number;
+  }>({ isOpen: false, type: 'bulk' });
 
-  const handleDelete = (id: string, title: string) => {
-    if (confirm(`¿Está seguro de que desea eliminar el tour "${title}"? Esta acción no se puede deshacer.`)) {
+  const promptDelete = (id: string, title: string) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'single',
+      id,
+      title,
+    });
+  };
+
+  const promptBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmModal({
+      isOpen: true,
+      type: 'bulk',
+      count: selectedIds.length,
+    });
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmModal.type === 'bulk') {
+      startTransition(async () => {
+        for (const id of selectedIds) {
+          await deleteTour(id);
+        }
+        setTours((prev) => prev.filter((t) => !selectedIds.includes(t.id)));
+        setSelectedIds([]);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      });
+    } else if (confirmModal.type === 'single' && confirmModal.id) {
+      const id = confirmModal.id;
       setDeletingId(id);
       startTransition(async () => {
         const res = await deleteTour(id);
         if (res.success) {
-          setTours(tours.filter(t => t.id !== id));
-          setSelectedIds(prev => prev.filter(item => item !== id));
-        } else {
-          alert("Error al eliminar el tour.");
+          setTours((prev) => prev.filter((t) => t.id !== id));
+          setSelectedIds((prev) => prev.filter((item) => item !== id));
         }
         setDeletingId(null);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
       });
     }
   };
@@ -69,19 +104,6 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    if (confirm(`¿Deseas eliminar los ${selectedIds.length} tours seleccionados? Esta acción no se puede deshacer.`)) {
-      startTransition(async () => {
-        for (const id of selectedIds) {
-          await deleteTour(id);
-        }
-        setTours(prev => prev.filter(t => !selectedIds.includes(t.id)));
-        setSelectedIds([]);
-      });
-    }
   };
 
   const handleBulkActivate = () => {
@@ -170,7 +192,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                             </button>
                             <button
                               type="button"
-                              onClick={handleBulkDelete}
+                              onClick={promptBulkDelete}
                               disabled={isPending}
                               className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50"
                             >
@@ -312,6 +334,21 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
         </>
       )}
 
+      {/* Modal de confirmación para eliminar */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmAction}
+        isLoading={isPending}
+        title={
+          confirmModal.type === 'bulk'
+            ? `¿Eliminar ${confirmModal.count || selectedIds.length} tours seleccionados?`
+            : `¿Eliminar "${confirmModal.title}"?`
+        }
+        description="Esta acción es irreversible y eliminará permanentemente la información de los tours seleccionados."
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

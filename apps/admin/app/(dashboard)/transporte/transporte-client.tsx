@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { deleteTransfer, toggleTransferStatus } from '../../actions/transporte';
 import { getStorefrontUrl } from '@/lib/site-config';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 
 interface TransferItem {
   id: string;
@@ -52,18 +53,32 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
   const [transfers, setTransfers] = useState(initialTransfers);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    id?: string;
+    title?: string;
+  }>({ isOpen: false });
 
-  const handleDelete = (id: string, title: string) => {
-    if (confirm(`¿Está seguro de eliminar la ruta "${title}"?`)) {
-      startTransition(async () => {
-        const res = await deleteTransfer(id);
-        if (res.success) {
-          setTransfers((prev) => prev.filter((t) => t.id !== id));
-        } else {
-          alert('Error al eliminar el traslado: ' + (res.error || ''));
-        }
-      });
-    }
+  const promptDelete = (id: string, title: string) => {
+    setDeleteModal({
+      isOpen: true,
+      id,
+      title,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    const id = deleteModal.id;
+    startTransition(async () => {
+      const res = await deleteTransfer(id);
+      if (res.success) {
+        setTransfers((prev) => prev.filter((t) => t.id !== id));
+        setDeleteModal({ isOpen: false });
+      } else {
+        alert('Error al eliminar el traslado: ' + (res.error || ''));
+      }
+    });
   };
 
   const handleToggleStatus = (id: string, currentStatus: boolean) => {
@@ -270,9 +285,9 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
 
                           <button
                             type="button"
-                            onClick={() => handleDelete(transfer.id, transfer.title)}
+                            onClick={() => promptDelete(transfer.id, transfer.title)}
                             disabled={isPending}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
                             title="Eliminar ruta"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -288,6 +303,17 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
         )}
       </div>
 
+      {/* Modal de confirmación para eliminar transporte */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        isLoading={isPending}
+        title={`¿Eliminar la ruta "${deleteModal.title}"?`}
+        description="Esta acción es irreversible y eliminará permanentemente la ruta y sus precios de vehículos asociados."
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }
