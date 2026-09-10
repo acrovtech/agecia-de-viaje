@@ -10,6 +10,7 @@ import {
   Plus,
   Compass,
   Car,
+  XCircle,
   AlertCircle,
   RotateCcw,
 } from 'lucide-react';
@@ -415,96 +416,111 @@ export function DashboardClient({
 
         {recentReservations.length > 0 ? (
           <>
-            {/* VISTA DESKTOP: TABLA COMPLETA NORMALIZADA */}
+            {/* VISTA DESKTOP: TABLA COMPLETA NORMALIZADA SEGÚN TAB DE RESERVAS */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
+                <colgroup>
+                  <col className="w-[20%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[6%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[6%]" />
+                </colgroup>
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4 text-left">CLIENTE</th>
-                    <th className="py-3 px-4 text-left">SERVICIO RESERVADO</th>
-                    <th className="py-3 px-4 text-center whitespace-nowrap">FECHA VIAJE</th>
-                    <th className="py-3 px-4 text-center">PAX</th>
-                    <th className="py-3 px-4 text-center whitespace-nowrap">MONTO</th>
-                    <th className="py-3 px-4 text-center">TIPO</th>
-                    <th className="py-3 px-4 text-center">ESTADO</th>
-                    <th className="py-3 px-4 text-center">ACCIONES</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                    <th className="px-4 py-3 text-left">Cliente</th>
+                    <th className="px-4 py-3 text-left">Servicio Reservado</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Viaje</th>
+                    <th className="px-4 py-3 text-center">PAX</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">Total</th>
+                    <th className="px-4 py-3 text-center">Tipo</th>
+                    <th className="px-4 py-3 text-center">Estado</th>
+                    <th className="px-4 py-3 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentReservations.map((res) => (
-                    <tr key={res.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 text-left">
-                        <div className="font-semibold text-[#2f2f2f]">
-                          {res.customerFirstName} {res.customerLastName}
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-mono">
-                          {res.customerEmail}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-left font-bold text-[#2f2f2f] uppercase truncate max-w-[280px]">
-                        {res.tour?.title || res.transfer?.title || 'RESERVA INCA BOUND'}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-slate-600 font-medium whitespace-nowrap">
-                        {new Date(res.date).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-semibold text-slate-700">
-                        {res.pax}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-[#2f2f2f] whitespace-nowrap">
-                        ${res.totalPrice.toFixed(2)} USD
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {res.tour ? (
-                          <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-                            <Compass size={12} className="shrink-0 text-teal-600" />
-                            <span>Tour</span>
-                          </span>
-                        ) : res.transfer ? (
-                          <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                            <Car size={12} className="shrink-0 text-sky-600" />
-                            <span>Traslado</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                            <span>General</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {res.status === 'PAID' && (
-                          <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 size={12} /> <span>Pagado</span>
-                          </span>
-                        )}
-                        {res.status === 'PENDING' && (
-                          <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock size={12} /> <span>Pendiente</span>
-                          </span>
-                        )}
-                        {res.status === 'CANCELLED' && (
-                          <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                            <AlertCircle size={12} /> <span>Cancelado</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center">
-                          <Link
-                            href={`/reservas/${res.id}`}
-                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
-                            title="Ver detalle"
-                          >
-                            <span>Ver detalle</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                  {recentReservations.map((res) => {
+                    const serviceTitle = res.tour ? res.tour.title : res.transfer ? res.transfer.title : 'RESERVA INCA BOUND';
+                    return (
+                      <tr key={res.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-4 py-3 text-left">
+                          <div className="font-semibold text-slate-900 truncate">
+                            {res.customerFirstName} {res.customerLastName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono truncate">
+                            {res.customerEmail}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-left font-semibold text-slate-900">
+                          <div className="font-bold text-slate-900 uppercase line-clamp-1 text-xs" title={serviceTitle}>
+                            {serviceTitle}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold">
+                          {new Date(res.date).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-center font-semibold text-slate-700">
+                          {res.pax}
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap">
+                          ${res.totalPrice.toFixed(2)} USD
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {res.tour ? (
+                            <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                              <Compass size={12} className="shrink-0 text-teal-600" />
+                              <span>Tour</span>
+                            </span>
+                          ) : res.transfer ? (
+                            <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                              <Car size={12} className="shrink-0 text-sky-600" />
+                              <span>Traslado</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                              <span>General</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {res.status === 'PAID' && (
+                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 size={12} /> <span>Pagado</span>
+                            </span>
+                          )}
+                          {res.status === 'PENDING' && (
+                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Clock size={12} /> <span>Pendiente</span>
+                            </span>
+                          )}
+                          {res.status === 'CANCELLED' && (
+                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <XCircle size={12} /> <span>Cancelado</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center">
+                            <Link
+                              href={`/reservas/${res.id}`}
+                              className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                              title="Ver detalle"
+                            >
+                              <span>Ver detalle</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
