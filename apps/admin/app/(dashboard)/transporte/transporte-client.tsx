@@ -252,10 +252,10 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
                         <button
                           type="button"
                           onClick={() => handleToggleStatus(transfer.id, transfer.isActive)}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide transition-colors ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
                             transfer.isActive
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200/80'
                           }`}
                         >
                           {transfer.isActive ? (
@@ -274,20 +274,21 @@ export function TransporteClient({ initialTransfers }: { initialTransfers: Trans
 
                       {/* Acciones */}
                       <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Link
                             href={`/transporte/${transfer.id}`}
-                            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
                             title="Editar ruta"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Editar</span>
                           </Link>
 
                           <button
                             type="button"
                             onClick={() => promptDelete(transfer.id, transfer.title)}
                             disabled={isPending}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
                             title="Eliminar ruta"
                           >
                             <Trash2 className="w-4 h-4" />

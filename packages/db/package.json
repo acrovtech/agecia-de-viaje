@@ -11,6 +11,7 @@
     "seed": "tsx seed-tours.ts && tsx seed-blogs.ts && tsx seed-admin.ts && tsx seed-transfers.ts",
     "seed:transfers": "tsx seed-transfers.ts",
     "seed:admin": "tsx seed-admin.ts",
+    "seed:reservas": "tsx seed-reservas.ts",
     "migrate": "prisma migrate dev"
   },
   "dependencies": {

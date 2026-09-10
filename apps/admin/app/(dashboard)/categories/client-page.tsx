@@ -40,22 +40,22 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
   }>({ isOpen: false, type: 'bulk' });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Auto-generate slug
+  // Auto-generate slug function
+  const generateSlug = (val: string) => {
+    return val
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  };
+
   const handleNameChange = (val: string) => {
     setName(val);
-    if (!editingCat) {
-      setSlug(
-        val
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, '-')
-          .replace(/[^\w-]+/g, '')
-          .replace(/--+/g, '-')
-          .replace(/^-+/, '')
-          .replace(/-+$/, '')
-      );
-    }
+    setSlug(generateSlug(val));
   };
 
   const handleOpenModal = (cat?: Category) => {
@@ -73,12 +73,14 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !slug) return;
+    const cleanName = name.trim();
+    const cleanSlug = (slug || generateSlug(cleanName)).trim();
+    if (!cleanName || !cleanSlug) return;
 
     setIsSubmitting(true);
     try {
       if (editingCat) {
-        const res = await updateCategory(editingCat.id, name, slug);
+        const res = await updateCategory(editingCat.id, cleanName, cleanSlug);
         if (res.success && res.category) {
           setCategories(categories.map(c => c.id === editingCat.id ? res.category! : c));
           setIsModalOpen(false);
@@ -222,20 +224,25 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                   <tr className="bg-slate-100/90 border-b border-slate-200 text-[#2f2f2f] text-xs font-medium animate-in fade-in duration-150">
                     <th colSpan={5} className="px-4 py-2.5">
                       <div className="flex items-center gap-4">
-                        <input 
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={toggleSelectAll}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
-                        />
-                        <span className="font-semibold text-slate-900">{selectedIds.length} seleccionadas</span>
-                        <div className="h-4 w-[1px] bg-slate-300" />
+                        <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
+                          <input 
+                            type="checkbox"
+                            checked={isAllSelected}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
+                          />
+                          <span className="font-semibold text-slate-900 text-xs">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
+                          </span>
+                        </div>
                         <button
+                          type="button"
                           onClick={promptBulkDelete}
-                          className="text-red-600 hover:text-red-700 font-semibold text-xs flex items-center gap-1 hover:underline cursor-pointer"
+                          disabled={isDeleting}
+                          className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          Eliminar seleccionadas
+                          <span>{isDeleting ? 'Borrando...' : 'Borrar seleccionadas'}</span>
                         </button>
                       </div>
                     </th>
@@ -247,13 +254,13 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                         type="checkbox"
                         checked={isAllSelected}
                         onChange={toggleSelectAll}
-                        className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                        className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
                       />
                     </th>
                     <th className="px-4 py-3">Nombre de Categoría</th>
                     <th className="px-4 py-3">Slug (URL)</th>
                     <th className="px-4 py-3">Fecha de Creación</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
+                    <th className="px-4 py-3 text-center">Acciones</th>
                   </tr>
                 )}
               </thead>
@@ -263,14 +270,14 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                   return (
                     <tr 
                       key={cat.id}
-                      className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}
+                      className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-slate-50' : ''}`}
                     >
                       <td className="px-4 py-3 text-center">
                         <input 
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectCat(cat.id)}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
                         />
                       </td>
                       <td className="px-4 py-3 font-semibold text-[#2f2f2f] truncate">
@@ -280,28 +287,23 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[11px] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600">
+                        <span className="font-mono text-[11px] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-slate-600">
                           /{cat.slug}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-500">
                         {format(new Date(cat.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center">
                           <button
+                            type="button"
                             onClick={() => handleOpenModal(cat)}
-                            className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
                             title="Editar categoría"
                           >
                             <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => promptDelete(cat.id, cat.name)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            title="Eliminar categoría"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Editar</span>
                           </button>
                         </div>
                       </td>
@@ -316,48 +318,47 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
 
       {/* MODAL EDITAR / CREAR CATEGORÍA */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-[#2f2f2f]">
-              {editingCat ? 'Editar Categoría' : 'Nueva Categoría'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleSave} className="space-y-4 py-2">
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl p-5 gap-0">
+          <form onSubmit={handleSave} className="space-y-4">
+            <DialogHeader className="pb-1">
+              <DialogTitle className="text-base font-bold text-slate-900">
+                {editingCat ? 'Editar Categoría' : 'Nueva Categoría'}
+              </DialogTitle>
+            </DialogHeader>
+            
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-xs font-semibold text-[#2f2f2f]">Nombre *</Label>
+              <Label htmlFor="name" className="text-xs font-semibold text-slate-700">
+                Nombre de la Categoría *
+              </Label>
               <Input 
                 id="name" 
                 placeholder="Ej. Turismo de Aventura" 
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 required
-                className="text-xs"
+                autoFocus
+                className="text-xs h-9 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-slate-900"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="slug" className="text-xs font-semibold text-[#2f2f2f]">Slug (URL) *</Label>
-              <Input 
-                id="slug" 
-                placeholder="turismo-de-aventura" 
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                required
-                className="text-xs font-mono"
-              />
-              <p className="text-[11px] text-slate-400">Identificador amigable que aparecerá en la URL.</p>
             </div>
             
-            <DialogFooter className="pt-3">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="text-xs">
+            <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-xs px-3.5 py-1.5 h-8 font-semibold text-slate-700 hover:bg-slate-50 border-slate-200"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-[#008060] hover:bg-[#006e52] text-white font-semibold text-xs">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || !name.trim()} 
+                className="bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white font-semibold text-xs px-3.5 py-1.5 h-8 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+              >
                 {isSubmitting ? 'Guardando...' : 'Guardar Categoría'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-
         </DialogContent>
       </Dialog>
 

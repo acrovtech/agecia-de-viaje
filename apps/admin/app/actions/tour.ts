@@ -265,3 +265,83 @@ export async function deleteTour(id: string) {
     return { success: false, error: handlePrismaError(error) };
   }
 }
+
+export async function setToursFeaturedStatus(tourIds: string[], isFeatured: boolean) {
+  try {
+    await requireAdminSession();
+    if (!tourIds.length) return { success: true };
+
+    if (isFeatured) {
+      // Contar cuántos tours destacados hay actualmente excluyendo los seleccionados
+      const currentOtherFeatured = await prisma.tour.count({
+        where: {
+          isFeatured: true,
+          id: { notIn: tourIds },
+        },
+      });
+
+      if (currentOtherFeatured + tourIds.length > 6) {
+        return {
+          success: false,
+          error: `No puedes superar el límite de 6 tours recomendados. Actualmente hay ${currentOtherFeatured} tours en el Home y seleccionaste ${tourIds.length}.`,
+        };
+      }
+    }
+
+    await prisma.tour.updateMany({
+      where: { id: { in: tourIds } },
+      data: { isFeatured },
+    });
+
+    revalidatePath('/tours');
+    revalidatePath('/(dashboard)/tours', 'page');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating featured status:", error);
+    return { success: false, error: handlePrismaError(error) };
+  }
+}
+
+export async function toggleTourFeaturedStatus(id: string) {
+  try {
+    await requireAdminSession();
+    const tour = await prisma.tour.findUnique({
+      where: { id },
+      select: { id: true, isFeatured: true, title: true },
+    });
+
+    if (!tour) {
+      return { success: false, error: 'Tour no encontrado.' };
+    }
+
+    const nextStatus = !tour.isFeatured;
+
+    if (nextStatus) {
+      const currentCount = await prisma.tour.count({
+        where: { isFeatured: true },
+      });
+
+      if (currentCount >= 6) {
+        return {
+          success: false,
+          error: 'Ya tienes 6 tours recomendados en el Home (límite máximo). Desmarca uno para agregar este.',
+        };
+      }
+    }
+
+    await prisma.tour.update({
+      where: { id },
+      data: { isFeatured: nextStatus },
+    });
+
+    revalidatePath('/tours');
+    revalidatePath('/(dashboard)/tours', 'page');
+    revalidatePath('/');
+    return { success: true, isFeatured: nextStatus };
+  } catch (error: any) {
+    console.error("Error toggling featured status:", error);
+    return { success: false, error: handlePrismaError(error) };
+  }
+}
+

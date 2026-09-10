@@ -301,7 +301,7 @@ export function BlogsClient({ initialBlogs }: { initialBlogs: Blog[] }) {
 
                   {/* Fila Detalle: Badge Activo + Botón Editar */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                       Activo
                     </span>
 

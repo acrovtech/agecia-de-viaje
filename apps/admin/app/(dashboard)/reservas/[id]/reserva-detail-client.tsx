@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Reservation, Tour } from '@repo/db';
+import { Reservation, Tour, Transfer, VehicleType } from '@repo/db';
 import { updateReservationStatus, updateReservationDetails, updateReservationPassengersAction } from '../../../actions/reservation';
 import Link from 'next/link';
 import { 
@@ -11,7 +11,12 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
 type ReservationPassenger = { id?: string; firstName: string; lastName: string; docType: string; docNumber: string };
-type ReservationWithTour = Reservation & { tour: Tour | null; passengers?: ReservationPassenger[] };
+type ReservationWithTour = Reservation & { 
+  tour: Tour | null; 
+  transfer?: Transfer | null;
+  vehicleType?: VehicleType | null;
+  passengers?: ReservationPassenger[];
+};
 
 type Passenger = {
   firstName: string;
@@ -214,6 +219,21 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
     return 'Servicio Compartido';
   };
 
+  const getHotelLabel = () => {
+    if (reserva.transfer) {
+      const origin = (reserva.transfer.origin || '').toLowerCase();
+      const destination = (reserva.transfer.destination || '').toLowerCase();
+      if (origin.includes('aeropuerto') || origin.includes('estación') || origin.includes('estacion')) {
+        return 'Hotel de Llegada / Destino';
+      }
+      if (destination.includes('aeropuerto') || destination.includes('estación') || destination.includes('estacion')) {
+        return 'Hotel de Recojo / Partida';
+      }
+      return 'Hotel o Dirección de Destino';
+    }
+    return 'Hotel de Recojo en Cusco';
+  };
+
   const cleanNotes = getCleanSpecialRequirements(reserva.specialRequirements);
   const pricePerPax = reserva.totalPrice / Math.max(reserva.pax, 1);
 
@@ -300,35 +320,70 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
         {/* COLUMNA IZQUIERDA (8 COLS) */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* CARD 1: EXPEDICIÓN RESERVADA (Limpio como Datos del Titular, sin sub-tarjetas) */}
+          {/* CARD 1: SERVICIO RESERVADO (EXPEDICIÓN O TRASLADO) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-semibold text-xs text-slate-800">Expedición Reservada</h3>
-              <span className="text-[10px] font-bold text-[#062918] bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200/60">
-                {getServiceType()}
+              <h3 className="font-semibold text-xs text-slate-800">
+                {reserva.transfer ? 'Traslado / Transfer Reservado' : 'Expedición Reservada'}
+              </h3>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
+                reserva.transfer 
+                  ? 'text-indigo-800 bg-indigo-50 border-indigo-200/60' 
+                  : 'text-[#062918] bg-emerald-50 border-emerald-200/60'
+              }`}>
+                {reserva.transfer 
+                  ? (reserva.vehicleType?.name || 'Servicio Privado') 
+                  : getServiceType()}
               </span>
             </div>
 
-            <h2 className="text-lg font-bold text-slate-900">{reserva.tour?.title || 'Tour Inca Bound'}</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              {reserva.tour?.title || reserva.transfer?.title || 'Reserva Inca Bound'}
+            </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Hotel de Recojo</span>
-                <span className="font-bold text-slate-900 text-xs">{reserva.pickupHotel || 'No especificado'}</span>
+            {reserva.transfer ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Ruta del Traslado</span>
+                  <span className="font-bold text-slate-900 text-xs">
+                    {reserva.transfer.origin} ➔ {reserva.transfer.destination}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Vehículo Asignado</span>
+                  <span className="font-bold text-slate-900 text-xs">
+                    {reserva.vehicleType?.name || 'Vehículo Privado'} ({reserva.vehicleType?.subtitle || 'Capacidad completa'})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Fecha del Servicio</span>
+                  <span className="font-bold text-slate-900 text-xs capitalize">{formatSpanishDateNoDay(reserva.date)}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Hora de Recojo / Vuelo</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.pickupTime || 'Por coordinar con el pasajero'}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Idioma del Servicio</span>
-                <span className="font-bold text-slate-900 text-xs">Español / Inglés (Bilingüe)</span>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Duración Estimada</span>
+                  <span className="font-bold text-slate-900 text-xs">{reserva.tour?.duration || '1 Día'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Idioma del Servicio</span>
+                  <span className="font-bold text-slate-900 text-xs">Español / Inglés (Bilingüe)</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Fecha de Inicio</span>
+                  <span className="font-bold text-slate-900 text-xs capitalize">{formatSpanishDateNoDay(reserva.date)}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium text-[11px]">Fecha de Fin</span>
+                  <span className="font-bold text-slate-900 text-xs capitalize">{calculateEndDateNoDay(reserva.date, reserva.tour?.duration)}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Fecha de Inicio</span>
-                <span className="font-bold text-slate-900 text-xs capitalize">{formatSpanishDateNoDay(reserva.date)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium text-[11px]">Fecha de Fin</span>
-                <span className="font-bold text-slate-900 text-xs capitalize">{calculateEndDateNoDay(reserva.date, reserva.tour?.duration)}</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* CARD 2: DATOS DEL TITULAR (Con Botón Editar) */}
@@ -389,7 +444,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Hotel de Recojo en Cusco</label>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">{getHotelLabel()}</label>
                   <input
                     type="text"
                     value={titularData.hotel}
@@ -413,7 +468,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
                   <span className="font-bold text-slate-900 text-xs">{reserva.customerPhone}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium text-[11px]">Hotel de Recojo en Cusco</span>
+                  <span className="text-slate-400 block font-medium text-[11px]">{getHotelLabel()}</span>
                   <span className="font-bold text-slate-900 text-xs">{reserva.pickupHotel || 'No especificado'}</span>
                 </div>
               </div>
@@ -525,19 +580,19 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-semibold text-xs text-slate-800">Estado de la Reserva</h3>
               {reserva.status === 'PAID' && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                   <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                   Pagado
                 </span>
               )}
               {reserva.status === 'PENDING' && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
                   <Clock className="w-3 h-3 text-amber-600 shrink-0" />
                   Pendiente
                 </span>
               )}
               {reserva.status === 'CANCELLED' && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
                   <XCircle className="w-3 h-3 text-rose-600 shrink-0" />
                   Cancelado
                 </span>
