@@ -13,7 +13,7 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
     key: 'SUPERADMIN',
     label: 'Super Admin (Root)',
     shortDescription: 'Control total de la infraestructura, seguridad avanzada y acceso exclusivo al visor de Logs de Auditoría forense.',
-    badgeClass: 'bg-rose-950 text-rose-200 border-rose-800',
+    badgeClass: 'bg-purple-50 text-purple-700 border border-purple-200/80',
     permissions: [
       'Acceso exclusivo a la bitácora de Logs de Auditoría',
       'Gestión y revocación de cualquier usuario y rol',
@@ -25,7 +25,7 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
     key: 'MASTER',
     label: 'Administrador Master',
     shortDescription: 'Acceso total y sin restricciones a todos los módulos, gestión de usuarios, transporte privado y configuraciones críticas.',
-    badgeClass: 'bg-neutral-900 text-white border-neutral-700',
+    badgeClass: 'bg-slate-900 text-white border border-slate-800',
     permissions: [
       'Gestión integral de usuarios y roles',
       'Configuración de transportes y tarifas privadas',
@@ -39,7 +39,7 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
     key: 'OPERATOR',
     label: 'Operador de Reservas',
     shortDescription: 'Gestión operativa de reservas, manifiesto de pasajeros, cobros, estados de pago y consulta de transportes y tours.',
-    badgeClass: 'bg-blue-600 text-white border-blue-700',
+    badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200/80',
     permissions: [
       'Visualización y filtrado de reservas',
       'Modificación de estados de pago (PENDING / PAID / CANCELLED)',
@@ -52,7 +52,7 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
     key: 'CONTENT_CREATOR',
     label: 'Gestor de Contenidos',
     shortDescription: 'Creación, edición y publicación de paquetes turísticos, itinerarios, galerías, blogs y menús de navegación.',
-    badgeClass: 'bg-emerald-600 text-white border-emerald-700',
+    badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
     permissions: [
       'Creación y edición de Tours',
       'Gestión de itinerarios, inclusiones y precios',
