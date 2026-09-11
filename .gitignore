@@ -47,3 +47,6 @@ media/
 .agents/
 .system_generated/
 *.log
+opencode.json
+opencode.*.json
+!opencode.example.json
