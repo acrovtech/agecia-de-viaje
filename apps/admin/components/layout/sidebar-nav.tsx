@@ -12,7 +12,8 @@ import {
   Store, 
   Users, 
   Terminal,
-  ExternalLink 
+  ExternalLink,
+  Mail 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStorefrontUrl } from '@/lib/site-config';
@@ -156,6 +157,24 @@ export function SidebarNav({
               >
                 <PenTool className="w-4 h-4 text-[#303030] shrink-0" />
                 <span>Blogs</span>
+              </Link>
+            </li>
+          )}
+
+          {/* 7. Email Marketing (Para Equipo de Marketing y Master) */}
+          {(isMasterUser || isContentCreator) && (
+            <li>
+              <Link
+                href="/marketing"
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                  pathname?.startsWith("/marketing")
+                    ? "bg-white text-[#303030] shadow-xs font-semibold"
+                    : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+                )}
+              >
+                <Mail className="w-4 h-4 text-[#303030] shrink-0" />
+                <span>Email Marketing</span>
               </Link>
             </li>
           )}

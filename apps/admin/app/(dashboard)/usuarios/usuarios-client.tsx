@@ -102,7 +102,7 @@ export function UsuariosClient({
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Estadísticas agregadas
+  // Estadísticas agregadas de equipo
   const metrics = useMemo(() => {
     const total = users.length;
     const active = users.filter((u) => u.isActive && (!u.lockedUntil || new Date(u.lockedUntil) < new Date())).length;
@@ -152,7 +152,7 @@ export function UsuariosClient({
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
 
-  // Lógica de Selección por Checkboxes (Igual a Reservas y Tours)
+  // Lógica de Selección por Checkboxes
   const isAllSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
 
   const toggleSelectAll = () => {
@@ -247,7 +247,7 @@ export function UsuariosClient({
     });
   };
 
-  // Cambio de estado activo/inactivo
+  // Cambio de estado activo/inactivo (1 Clic directo)
   const handleToggleStatus = (user: AdminUserItem) => {
     startTransition(async () => {
       const res = await toggleUserStatusAction(user.id);
@@ -282,16 +282,6 @@ export function UsuariosClient({
     });
   };
 
-  // Eliminación individual
-  const promptDelete = (id: string, name: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'single',
-      id,
-      name,
-    });
-  };
-
   // Eliminación en lote
   const promptBulkDelete = () => {
     if (selectedIds.length === 0) return;
@@ -302,7 +292,7 @@ export function UsuariosClient({
     });
   };
 
-  // Ejecución de eliminación (Single o Bulk)
+  // Ejecución de eliminación en lote
   const handleConfirmAction = () => {
     startTransition(async () => {
       if (confirmModal.type === 'bulk') {
@@ -322,22 +312,6 @@ export function UsuariosClient({
           });
         }
         setConfirmModal({ isOpen: false, type: 'single' });
-      } else if (confirmModal.id) {
-        const res = await deleteUserAction(confirmModal.id);
-        if (res.success) {
-          setUsers((prev) => prev.filter((u) => u.id !== confirmModal.id));
-          setSelectedIds((prev) => prev.filter((id) => id !== confirmModal.id));
-          setFeedback({
-            type: 'success',
-            message: 'Usuario eliminado permanentemente del sistema.',
-          });
-        } else {
-          setFeedback({
-            type: 'error',
-            message: res.error || 'No se pudo eliminar el usuario.',
-          });
-        }
-        setConfirmModal({ isOpen: false, type: 'single' });
       }
     });
   };
@@ -352,7 +326,7 @@ export function UsuariosClient({
     return (email || 'US').slice(0, 2).toUpperCase();
   };
 
-  // Icono según rol con colores consistentes a sus badges outline
+  // Icono según rol
   const getRoleIcon = (role: Role) => {
     switch (role) {
       case 'SUPERADMIN':
@@ -450,7 +424,7 @@ export function UsuariosClient({
           </div>
         </div>
 
-        {/* KPI 2: Equipo de Marketing & Contenidos */}
+        {/* KPI 2: Equipo de Marketing */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -467,7 +441,7 @@ export function UsuariosClient({
               </span>
             </div>
             <p className="text-xs text-slate-500 font-normal">
-              Gestión de tours, blogs y catálogo web
+              Email marketing, tours y contenidos
             </p>
           </div>
         </div>
@@ -480,7 +454,7 @@ export function UsuariosClient({
                 Operadores
               </span>
               <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                {metrics.operators} operativos
+                {metrics.operators} activos
               </span>
             </div>
             <div className="mt-2.5 mb-0.5">
@@ -489,7 +463,7 @@ export function UsuariosClient({
               </span>
             </div>
             <p className="text-xs text-slate-500 font-normal">
-              Manifiesto de clientes, pagos y traslados
+              Gestión de reservas y traslados
             </p>
           </div>
         </div>
@@ -528,10 +502,10 @@ export function UsuariosClient({
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-slate-500" />
             <span className="text-xs font-semibold text-slate-700">
-              Jerarquía de Roles y Privilegios del Sistema
+              Jerarquía de Roles y Privilegios del Equipo
             </span>
-            <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60 hidden sm:inline-block">
-              {isSuperAdmin ? '4 niveles de acceso' : '3 niveles de acceso'}
+            <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60 hidden sm:inline-block">
+              3 roles de equipo
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -551,9 +525,9 @@ export function UsuariosClient({
           }`}
         >
           <div className="overflow-hidden">
-            <div className={`p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3`}>
+            <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-3 gap-3">
               {Object.values(ROLE_DEFINITIONS)
-                .filter((def) => isSuperAdmin || def.key !== 'SUPERADMIN')
+                .filter((def) => def.key !== 'SUPERADMIN')
                 .map((def) => (
                   <div 
                     key={def.key} 
@@ -610,10 +584,9 @@ export function UsuariosClient({
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">
                     {roleFilter === 'ALL' && 'Todos los roles'}
-                    {roleFilter === 'SUPERADMIN' && 'Super Admin'}
                     {roleFilter === 'MASTER' && 'Admin Master'}
                     {roleFilter === 'OPERATOR' && 'Operador'}
-                    {roleFilter === 'CONTENT_CREATOR' && 'Marketing / Contenidos'}
+                    {roleFilter === 'CONTENT_CREATOR' && 'Marketing'}
                   </span>
                 </div>
               </SelectTrigger>
@@ -630,14 +603,6 @@ export function UsuariosClient({
                     <span className="text-[11px] text-slate-400 font-normal">({users.length})</span>
                   </div>
                 </SelectItem>
-                {isSuperAdmin && (
-                  <SelectItem value="SUPERADMIN" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-purple-700 font-semibold">Super Admin</span>
-                      <span className="text-[11px] text-slate-400 font-normal">({metrics.superAdmins})</span>
-                    </div>
-                  </SelectItem>
-                )}
                 <SelectItem value="MASTER" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
                     <span className="text-slate-800 font-semibold">Master Admin</span>
@@ -652,7 +617,7 @@ export function UsuariosClient({
                 </SelectItem>
                 <SelectItem value="CONTENT_CREATOR" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-emerald-700 font-semibold">Marketing / Contenidos</span>
+                    <span className="text-emerald-700 font-semibold">Equipo de Marketing</span>
                     <span className="text-[11px] text-slate-400 font-normal">({metrics.creators})</span>
                   </div>
                 </SelectItem>
@@ -722,7 +687,7 @@ export function UsuariosClient({
         </div>
       </div>
 
-      {/* 5. TABLA DE USUARIOS (Diseño Idéntico a Reservas y Tours con Checkboxes y Barra de Acciones en Lote) */}
+      {/* 5. TABLA DE USUARIOS (Con Checkboxes fijos, Estado interactivo de 1 clic y botón Editar rectangular) */}
       {filteredUsers.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200/90 p-12 text-center text-slate-400 shadow-2xs">
           <Users className="w-8 h-8 text-slate-300 mx-auto mb-2.5" />
@@ -735,46 +700,44 @@ export function UsuariosClient({
             <table className="w-full text-left text-xs table-fixed">
               <colgroup>
                 <col className="w-[5%]" />
-                <col className="w-[30%]" />
-                <col className="w-[19%]" />
+                <col className="w-[32%]" />
+                <col className="w-[20%]" />
+                <col className="w-[16%]" />
                 <col className="w-[17%]" />
-                <col className="w-[17%]" />
-                <col className="w-[12%]" />
+                <col className="w-[10%]" />
               </colgroup>
               <thead>
                 {selectedIds.length > 0 ? (
-                  /* Barra de Acciones en Lote (Bulk Actions) normalizada */
+                  /* Barra de Acciones en Lote con Checkbox fijado en Columna 1 para evitar desplazamiento */
                   <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                    <th colSpan={6} className="px-4 py-2.5 text-left">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
-                          <input 
-                            type="checkbox" 
-                            checked={isAllSelected}
-                            onChange={toggleSelectAll}
-                            className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
-                          />
-                          <span className="font-semibold text-slate-900 text-xs">
-                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionado' : 'seleccionados'}
-                          </span>
-                        </div>
+                    <th className="px-4 py-2.5 text-center w-10">
+                      <input 
+                        type="checkbox" 
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                      />
+                    </th>
+                    <th colSpan={5} className="px-3 py-2.5 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900 text-xs">
+                          {selectedIds.length} {selectedIds.length === 1 ? 'seleccionado' : 'seleccionados'}
+                        </span>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={promptBulkDelete}
-                            disabled={isPending}
-                            className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Trash2 size={13} />
-                            <span>{isPending ? 'Borrando...' : 'Eliminar seleccionados'}</span>
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={promptBulkDelete}
+                          disabled={isPending}
+                          className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                          <span>{isPending ? 'Borrando...' : 'Eliminar seleccionados'}</span>
+                        </button>
                       </div>
                     </th>
                   </tr>
                 ) : (
-                  /* Encabezado Regular con Checkbox Maestro */
+                  /* Encabezado Regular */
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
                     <th className="px-4 py-3 text-center w-10">
                       <input 
@@ -786,9 +749,9 @@ export function UsuariosClient({
                     </th>
                     <th className="px-4 py-3 text-left">Usuario</th>
                     <th className="px-4 py-3 text-left">Rol Asignado</th>
-                    <th className="px-4 py-3 text-left">Estado</th>
+                    <th className="px-4 py-3 text-center">Estado</th>
                     <th className="px-4 py-3 text-left">Último Acceso</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
+                    <th className="px-4 py-3 text-center">Acciones</th>
                   </tr>
                 )}
               </thead>
@@ -805,7 +768,7 @@ export function UsuariosClient({
                         isSelected ? 'bg-slate-50/90' : 'hover:bg-slate-50/80'
                       }`}
                     >
-                      {/* Checkbox por fila */}
+                      {/* Checkbox por fila fijado y alineado */}
                       <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <input 
                           type="checkbox" 
@@ -840,23 +803,41 @@ export function UsuariosClient({
                         </span>
                       </td>
 
-                      {/* 3. Columna Estado */}
-                      <td className="px-4 py-3">
+                      {/* 3. Columna Estado Interactiva (1 Clic directo al estilo Recomendados de Tours) */}
+                      <td className="px-4 py-3 text-center">
                         {isLocked ? (
-                          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                          <button
+                            type="button"
+                            onClick={() => handleUnlock(user)}
+                            disabled={isPending}
+                            title="Cuenta bloqueada. Clic para desbloquear"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors shadow-2xs cursor-pointer"
+                          >
                             <Lock className="w-3 h-3 text-rose-600 shrink-0" />
-                            <span>Bloqueado ({user.failedLoginAttempts} intentos)</span>
-                          </div>
+                            <span>Desbloquear ({user.failedLoginAttempts})</span>
+                          </button>
                         ) : user.isActive ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={isPending}
+                            title="Cuenta activa. Clic para suspender acceso"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-200/90 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             <span>Activo</span>
-                          </div>
+                          </button>
                         ) : (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={isPending}
+                            title="Cuenta inactiva. Clic para reactivar acceso"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200/80 text-slate-600 border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+                          >
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                             <span>Inactivo</span>
-                          </div>
+                          </button>
                         )}
                       </td>
 
@@ -883,60 +864,19 @@ export function UsuariosClient({
                         )}
                       </td>
 
-                      {/* 5. Columna Acciones */}
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          
-                          {/* Desbloquear cuenta si está bloqueada */}
-                          {isLocked && (
-                            <button
-                              type="button"
-                              onClick={() => handleUnlock(user)}
-                              disabled={isPending}
-                              title="Desbloquear cuenta de usuario"
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200/80 transition-colors shadow-2xs cursor-pointer"
-                            >
-                              <Unlock className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {/* Activar / Desactivar */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStatus(user)}
-                            disabled={isPending}
-                            title={user.isActive ? 'Desactivar cuenta' : 'Activar cuenta'}
-                            className={`p-1.5 rounded-lg border transition-colors shadow-2xs cursor-pointer ${
-                              user.isActive 
-                                ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200' 
-                                : 'text-emerald-700 hover:bg-emerald-50 border-emerald-200'
-                            }`}
-                          >
-                            {user.isActive ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          </button>
-
-                          {/* Editar */}
+                      {/* 5. Columna Acciones (Botón rectangular Editar normalizado según Tours) */}
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center">
                           <button
                             type="button"
                             onClick={() => openEditModal(user)}
                             disabled={isPending}
-                            title="Editar usuario y rol"
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+                            title="Editar usuario"
+                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Editar</span>
                           </button>
-
-                          {/* Eliminar */}
-                          <button
-                            type="button"
-                            onClick={() => promptDelete(user.id, user.name || user.email)}
-                            disabled={isPending}
-                            title="Eliminar usuario permanentemente"
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200/60 transition-colors shadow-2xs cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-
                         </div>
                       </td>
                     </tr>
@@ -948,18 +888,13 @@ export function UsuariosClient({
         </div>
       )}
 
-      {/* 6. MODAL DE CREACIÓN Y EDICIÓN DE USUARIOS */}
+      {/* 6. MODAL DE CREACIÓN Y EDICIÓN DE USUARIOS (Sin icono en header, roles limpios y espacio correcto en footer) */}
       <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
           <DialogHeader className="text-left border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
-                {editingUser ? <Edit3 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-              </div>
-              <DialogTitle className="text-base font-bold text-slate-900">
-                {editingUser ? `Editar Usuario: ${editingUser.name || editingUser.email}` : 'Registrar Nuevo Colaborador'}
-              </DialogTitle>
-            </div>
+            <DialogTitle className="text-base font-bold text-slate-900">
+              {editingUser ? `Editar Usuario: ${editingUser.name || editingUser.email}` : 'Registrar Nuevo Colaborador'}
+            </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               {editingUser
                 ? 'Actualiza los datos de acceso, asigna un rol diferente o resetea la contraseña.'
@@ -1031,12 +966,12 @@ export function UsuariosClient({
               </div>
             </div>
 
-            {/* Selección de Rol con Tarjetas (Oculta SuperAdmin si no es SuperAdmin) */}
+            {/* Selección de Rol con Botones Limpios y Concisos (Sin texto redundante) */}
             <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-semibold text-slate-700">Rol Administrativo</label>
-              <div className={`grid grid-cols-1 ${isSuperAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2`}>
+              <label className="text-xs font-semibold text-slate-700">Rol Asignado</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {Object.values(ROLE_DEFINITIONS)
-                  .filter((def) => isSuperAdmin || def.key !== 'SUPERADMIN')
+                  .filter((def) => def.key !== 'SUPERADMIN')
                   .map((def) => {
                     const isSelected = formRole === def.key;
                     return (
@@ -1044,21 +979,17 @@ export function UsuariosClient({
                         key={def.key}
                         type="button"
                         onClick={() => setFormRole(def.key)}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer flex items-center justify-between gap-1.5 shadow-2xs ${
                           isSelected
-                            ? 'border-slate-900 bg-slate-900/5 ring-1 ring-slate-900 shadow-xs'
-                            : 'border-slate-200 bg-[#FAFAFA] hover:bg-slate-50'
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-600'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between w-full mb-1">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${def.badgeClass}`}>
-                            {def.label}
-                          </span>
+                        <div className="flex items-center gap-1.5 truncate">
                           {getRoleIcon(def.key)}
+                          <span className="truncate">{def.label}</span>
                         </div>
-                        <p className="text-[10.5px] text-slate-500 leading-snug line-clamp-2 mt-1">
-                          {def.shortDescription}
-                        </p>
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                       </button>
                     );
                   })}
@@ -1084,19 +1015,20 @@ export function UsuariosClient({
               </label>
             </div>
 
-            <DialogFooter className="mt-6 pt-3 border-t border-slate-100 flex justify-end gap-2 bg-transparent -mx-0 -mb-0 p-0">
+            {/* Footer con margen y respiración visual impecable */}
+            <DialogFooter className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setIsFormModalOpen(false)}
                 disabled={isPending}
-                className="h-8 px-3.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                className="h-9 px-4 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isPending}
-                className="h-8 px-4 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors border border-[#006e52] cursor-pointer inline-flex items-center gap-1.5"
+                className="h-9 px-4 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors border border-[#006e52] cursor-pointer inline-flex items-center gap-1.5"
               >
                 {isPending && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
                 <span>{editingUser ? 'Guardar Cambios' : 'Crear Usuario'}</span>
@@ -1107,26 +1039,14 @@ export function UsuariosClient({
         </DialogContent>
       </Dialog>
 
-      {/* 7. MODAL DE CONFIRMACIÓN DE ELIMINACIÓN (Single o Bulk con ConfirmModal oficial) */}
+      {/* 7. MODAL DE CONFIRMACIÓN DE ELIMINACIÓN EN LOTE (Con ConfirmModal oficial) */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, type: 'single' })}
         onConfirm={handleConfirmAction}
-        title={
-          confirmModal.type === 'bulk'
-            ? '¿Eliminar usuarios seleccionados definitivamente?'
-            : '¿Eliminar usuario definitivamente?'
-        }
-        description={
-          confirmModal.type === 'bulk'
-            ? `Esta acción revocará inmediatamente todas las sesiones y eliminará de forma irreversible a los ${confirmModal.count} usuarios seleccionados. El registro de auditoría mantendrá la traza completa.`
-            : `Esta acción revocará inmediatamente todos los tokens y eliminará de forma irreversible al usuario "${confirmModal.name}". Todas las acciones previas se mantendrán en el registro de auditoría.`
-        }
-        confirmText={
-          confirmModal.type === 'bulk'
-            ? `Eliminar (${confirmModal.count})`
-            : 'Eliminar Usuario'
-        }
+        title="¿Eliminar usuarios seleccionados definitivamente?"
+        description={`Esta acción revocará inmediatamente todas las sesiones y eliminará de forma irreversible a los ${confirmModal.count} usuarios seleccionados. El registro de auditoría mantendrá la traza completa.`}
+        confirmText={`Eliminar (${confirmModal.count})`}
         cancelText="Cancelar"
         isLoading={isPending}
         variant="danger"
