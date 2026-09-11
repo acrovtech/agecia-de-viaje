@@ -198,7 +198,13 @@ model Reservation {
   status           ReservationStatus @default(PENDING)
   paymentReference String? // Izipay transaction ID or token
   marketingCode    String? // Código de atribución marketing/WhatsApp (ej: MK1)
-  source           String?   @default("WEB") // "WEB" | "MANUAL" | "WHATSAPP"
+  source           String?   @default("WEB") // "WEB" | "MANUAL" | "WHATSAPP" | "ECOMMERCE"
+
+  // Campos de Cupones y Descuento
+  couponId         String?
+  coupon           Coupon?           @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  discountAmount   Float?            @default(0)
+  originalPrice    Float?
 
   assignedOperatorId String?
   assignedOperator   User?             @relation("OperatorReservations", fields: [assignedOperatorId], references: [id], onDelete: SetNull)
@@ -215,7 +221,35 @@ model Reservation {
   @@index([transferId])
   @@index([customerEmail])
   @@index([marketingCode])
+  @@index([couponId])
   @@index([assignedOperatorId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model Coupon {
+  id            String       @id @default(cuid())
+  code          String       @unique // Siempre mayúsculas, ej: CUMPLE10
+  description   String?
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Float        // Valor (% o USD)
+  minSpend      Float?       @default(0)
+  maxDiscount   Float?       // Opcional tope para porcentual
+  expiresAt     DateTime?
+  usageLimit    Int?         // Límite de usos totales (opcional)
+  timesUsed     Int          @default(0) // "Usos Realizados"
+  isActive      Boolean      @default(true)
+  createdBy     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  reservations  Reservation[]
+
+  @@index([code])
+  @@index([isActive])
 }
 
 model MarketingCampaignLog {

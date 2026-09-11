@@ -54,13 +54,15 @@ interface ReservasClientProps {
   availableTours?: { id: string; title: string; sharedPrice: number }[];
   availableTransfers?: { id: string; title: string; sharedPrice: number }[];
   availableVehicles?: { id: string; name: string; code: string }[];
+  availableCoupons?: { id: string; code: string; discountType: string; discountValue: number }[];
 }
 
 export function ReservasClient({ 
   initialReservas,
   availableTours = [],
   availableTransfers = [],
-  availableVehicles = []
+  availableVehicles = [],
+  availableCoupons = []
 }: ReservasClientProps) {
   const [reservas, setReservas] = useState<ReservationWithRelations[]>(initialReservas);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
@@ -1032,21 +1034,59 @@ export function ReservasClient({
               </div>
             </div>
 
-            {/* 5. ATRIBUCIÓN MARKETING / CÓDIGO WHATSAPP */}
-            <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 space-y-1.5">
-              <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Código WhatsApp / Marketing (Atribución)</span>
-              </label>
+            {/* 5. ATRIBUCIÓN MARKETING / CÓDIGO WHATSAPP / CUPÓN */}
+            <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Código WhatsApp / Cupón de Marketing (Atribución)</span>
+                </label>
+                {availableCoupons.length > 0 && (
+                  <span className="text-[10.5px] font-semibold text-amber-800">
+                    {availableCoupons.length} cupones activos
+                  </span>
+                )}
+              </div>
+
               <input
                 type="text"
-                placeholder="Ej: MK1, MK2, PROMO-VERANO..."
+                placeholder="Ej: MK1, CUMPLE10, HUMANTAY20..."
                 value={manualMarketingCode}
-                onChange={(e) => setManualMarketingCode(e.target.value.toUpperCase())}
-                className="w-full h-8 px-3 bg-white border border-amber-300 rounded-lg text-xs font-bold tracking-wider text-amber-950 placeholder:text-amber-400 placeholder:font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase"
+                onChange={(e) => {
+                  const code = e.target.value.toUpperCase();
+                  setManualMarketingCode(code);
+                  // Si coincide con cupón, informar al operador
+                  const match = availableCoupons.find(c => c.code === code);
+                  if (match && manualPrice > 0) {
+                    // Descuento sugerido opcional
+                  }
+                }}
+                className="w-full h-8 px-3 bg-white border border-amber-300 rounded-lg text-xs font-bold tracking-wider text-amber-950 placeholder:text-amber-400 placeholder:font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase font-mono"
               />
+
+              {/* Chips de cupones rápidos */}
+              {availableCoupons.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-amber-700 font-semibold">Sugeridos:</span>
+                  {availableCoupons.slice(0, 4).map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setManualMarketingCode(c.code)}
+                      className={`px-2 py-0.5 rounded text-[10.5px] font-mono font-bold transition-all cursor-pointer border ${
+                        manualMarketingCode === c.code 
+                          ? 'bg-amber-600 text-white border-amber-700 shadow-2xs' 
+                          : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-300'
+                      }`}
+                    >
+                      {c.code} ({c.discountValue}{c.discountType === 'PERCENTAGE' ? '%' : '$'})
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <p className="text-[11px] text-amber-800 leading-snug">
-                Si el cliente te contactó por WhatsApp con un código de promoción enviado por el equipo de Marketing (ej: <strong>MK1</strong>), colócalo aquí para validar la atribución y que conste en el reporte de rendimiento comercial.
+                Si el cliente te contactó por WhatsApp con un código de campaña (ej: <strong>MK1</strong>) o un cupón de atracción (ej: <strong>CUMPLE10</strong>), regístralo aquí para sumar <strong>+1 uso realizado</strong> y validar la atribución de Marketing.
               </p>
             </div>
 

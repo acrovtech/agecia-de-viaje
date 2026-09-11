@@ -88,6 +88,7 @@ export interface MarketingContact {
 
 interface MarketingClientProps {
   initialContacts: MarketingContact[];
+  availableCoupons?: { id: string; code: string; discountType: string; discountValue: number; description?: string }[];
 }
 
 const PRESET_FLYERS = [
@@ -109,7 +110,7 @@ const PRESET_FLYERS = [
   },
 ];
 
-export function MarketingClient({ initialContacts }: MarketingClientProps) {
+export function MarketingClient({ initialContacts, availableCoupons = [] }: MarketingClientProps) {
   const [contacts, setContacts] = useState<MarketingContact[]>(initialContacts);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -164,6 +165,24 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
         matchesFilter = c.hasAttributedBooking;
       } else if (filterType === 'PAID') {
         matchesFilter = c.lastStatus === 'PAID';
+      } else if (filterType === 'CROSS_SELL_HUMANTAY') {
+        // Venta Cruzada: Pasajero que hizo Machu Picchu o Cusco, pero aún NO Humantay
+        const hasMachuOrCusco = c.reservations.some(r => {
+          const t = r.title.toLowerCase();
+          return t.includes('machu') || t.includes('cusco') || t.includes('valle');
+        });
+        const hasHumantay = c.reservations.some(r => r.title.toLowerCase().includes('humantay'));
+        matchesFilter = hasMachuOrCusco && !hasHumantay;
+      } else if (filterType === 'CROSS_SELL_VINICUNCA') {
+        // Venta Cruzada: Pasajero que hizo algún tour pero aún NO Montaña de 7 Colores
+        const hasVinicunca = c.reservations.some(r => {
+          const t = r.title.toLowerCase();
+          return t.includes('vinicunca') || t.includes('colores');
+        });
+        matchesFilter = c.reservations.length > 0 && !hasVinicunca;
+      } else if (filterType === 'ANNUAL_LOYALTY') {
+        // Fidelización / Reenganche Anual: Clientes con gasto acumulado > $150 USD o recurrentes
+        matchesFilter = c.totalSpent >= 150 || c.reservationsCount >= 2;
       }
 
       return matchesQuery && matchesFilter;
@@ -525,30 +544,38 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Select value={filterType} onValueChange={(val) => setFilterType(val ?? 'ALL')}>
-              <SelectTrigger className="h-8 w-[200px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
+              <SelectTrigger className="h-8 w-[240px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
                 <div className="flex items-center gap-1.5 truncate">
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>
+                  <span className="truncate">
                     {filterType === 'ALL' && 'Todos los clientes'}
+                    {filterType === 'CROSS_SELL_HUMANTAY' && '🎯 Venta Cruzada: Humantay'}
+                    {filterType === 'CROSS_SELL_VINICUNCA' && '🌈 Venta Cruzada: 7 Colores'}
+                    {filterType === 'ANNUAL_LOYALTY' && '👑 Fidelización (VIP / Antiguos)'}
+                    {filterType === 'RECURRENT' && 'Clientes recurrentes (+1)'}
                     {filterType === 'PHONE' && 'Solo con WhatsApp'}
-                    {filterType === 'RECURRENT' && 'Clientes recurrentes'}
-                    {filterType === 'ATTRIBUTED' && 'Con código de atribución'}
                     {filterType === 'PAID' && 'Con pagos confirmados'}
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent className="w-[200px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50">
+              <SelectContent className="w-[240px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50">
                 <SelectItem value="ALL" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   Todos los clientes ({contacts.length})
                 </SelectItem>
-                <SelectItem value="PHONE" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  Solo con WhatsApp ({metrics.withPhone})
+                <SelectItem value="CROSS_SELL_HUMANTAY" className="text-xs font-semibold text-emerald-800 cursor-pointer py-1.5 px-2 rounded-lg">
+                  🎯 Venta Cruzada: Ofrecer Humantay
+                </SelectItem>
+                <SelectItem value="CROSS_SELL_VINICUNCA" className="text-xs font-semibold text-teal-800 cursor-pointer py-1.5 px-2 rounded-lg">
+                  🌈 Venta Cruzada: Ofrecer 7 Colores
+                </SelectItem>
+                <SelectItem value="ANNUAL_LOYALTY" className="text-xs font-semibold text-amber-800 cursor-pointer py-1.5 px-2 rounded-lg">
+                  👑 Fidelización (VIP / Reenganche)
                 </SelectItem>
                 <SelectItem value="RECURRENT" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   Clientes recurrentes ({metrics.recurrent})
                 </SelectItem>
-                <SelectItem value="ATTRIBUTED" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  Con atribución MK ({metrics.attributedCount})
+                <SelectItem value="PHONE" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
+                  Solo con WhatsApp ({metrics.withPhone})
                 </SelectItem>
                 <SelectItem value="PAID" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   Con pagos confirmados
@@ -1026,6 +1053,48 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
                     className="w-full h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
+
+                {/* Selector de Cupones Comerciales Activos */}
+                {availableCoupons.length > 0 && (
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/80 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-purple-600" />
+                        <span>Vincular Cupón Comercial Activo</span>
+                      </label>
+                      <span className="text-[10.5px] text-purple-700 font-semibold">
+                        {availableCoupons.length} disponibles
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {availableCoupons.map((coupon) => (
+                        <button
+                          key={coupon.id}
+                          type="button"
+                          onClick={() => {
+                            setComposeMarketingCode(coupon.code);
+                            if (!composeSubject || composeSubject.includes('Descuento') || composeSubject.includes('¡')) {
+                              setComposeSubject(`¡Regalo Exclusivo! Usa tu cupón ${coupon.code} en tu próximo viaje`);
+                            }
+                            if (!composeMessage || composeMessage.length < 30) {
+                              setComposeMessage(`¡Hola! Por ser cliente preferente, queremos obsequiarte un beneficio único: utiliza tu cupón ${coupon.code} y obtén ${coupon.discountValue}${coupon.discountType === 'PERCENTAGE' ? '%' : ' USD'} de descuento en tu próxima experiencia.`);
+                            }
+                          }}
+                          className={`px-2 py-1 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer border ${
+                            composeMarketingCode === coupon.code
+                              ? 'bg-purple-700 text-white border-purple-800 shadow-2xs'
+                              : 'bg-white hover:bg-purple-100 text-purple-900 border-purple-200'
+                          }`}
+                        >
+                          {coupon.code} ({coupon.discountValue}{coupon.discountType === 'PERCENTAGE' ? '%' : '$'})
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10.5px] text-purple-800">
+                      Al hacer clic en un cupón, se actualiza el código de campaña y el botón rastreable de WhatsApp.
+                    </p>
+                  </div>
+                )}
 
                 {/* Código de Atribución */}
                 <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl space-y-1.5">

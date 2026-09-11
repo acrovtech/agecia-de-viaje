@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { createReservationAndPaymentToken } from '../actions/reservation';
+import { validateCouponAction } from '../actions/coupon';
 import KRGlue from '@lyracom/embedded-form-glue';
 import { 
   Select, 
@@ -126,6 +127,56 @@ export function CheckoutForm() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // Estados de Cupón Comercial de Descuento
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountType: 'PERCENTAGE' | 'FIXED';
+    discountValue: number;
+    discountAmount: number;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalPayableTotal = Math.max(0, grandTotal - discountAmount);
+
+  const handleApplyCoupon = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!couponInput.trim()) return;
+
+    setCouponLoading(true);
+    setCouponError(null);
+    setCouponSuccess(null);
+
+    try {
+      const res = await validateCouponAction(couponInput, grandTotal);
+      if (res.valid && res.code && res.discountAmount !== undefined) {
+        setAppliedCoupon({
+          code: res.code,
+          discountType: res.discountType || 'PERCENTAGE',
+          discountValue: res.discountValue || 0,
+          discountAmount: res.discountAmount,
+        });
+        setCouponSuccess(`¡Cupón [${res.code}] aplicado! Descuento de -$${res.discountAmount.toFixed(2)} USD.`);
+      } else {
+        setCouponError(res.error || 'Cupón inválido.');
+      }
+    } catch {
+      setCouponError('Error de conexión al validar cupón.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponSuccess(null);
+    setCouponError(null);
+  };
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -288,7 +339,8 @@ export function CheckoutForm() {
         })),
         date: firstActiveItem?.date || dateStr || new Date().toISOString(),
         pax: numPax,
-        totalPrice: grandTotal,
+        totalPrice: finalPayableTotal,
+        couponCode: appliedCoupon?.code,
       });
 
       if (result.success && result.formToken) {
@@ -823,6 +875,75 @@ export function CheckoutForm() {
                 </div>
               </div>
 
+              {/* SECCIÓN DE CUPÓN DE DESCUENTO COMERCIAL */}
+              <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Tag size={15} className="text-[#062918]" />
+                    <span>¿Tienes un cupón de descuento?</span>
+                  </label>
+                  {appliedCoupon && (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      Cupón Activo
+                    </span>
+                  )}
+                </div>
+
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="font-mono font-bold text-emerald-900 tracking-wider">
+                          {appliedCoupon.code}
+                        </span>
+                        <span className="text-emerald-700 ml-1.5 font-medium">
+                          ({appliedCoupon.discountValue}{appliedCoupon.discountType === 'PERCENTAGE' ? '%' : ' USD'} de descuento: -${appliedCoupon.discountAmount.toFixed(2)} USD)
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-slate-400 hover:text-rose-600 text-xs font-semibold px-2 py-1 rounded transition-colors cursor-pointer"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                      placeholder="Ingresa tu código (ej: CUMPLE10)"
+                      className="flex-1 h-9 px-3 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold tracking-wider text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#062918] uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="h-9 px-4 bg-[#062918] hover:bg-[#0a4026] text-white font-bold text-xs rounded-lg transition-all disabled:opacity-50 cursor-pointer shrink-0"
+                    >
+                      {couponLoading ? 'Verificando...' : 'Aplicar'}
+                    </button>
+                  </div>
+                )}
+
+                {couponError && (
+                  <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1">
+                    <AlertTriangle size={13} />
+                    <span>{couponError}</span>
+                  </p>
+                )}
+                {couponSuccess && (
+                  <p className="text-emerald-700 text-[11px] font-semibold flex items-center gap-1">
+                    <Check size={13} />
+                    <span>{couponSuccess}</span>
+                  </p>
+                )}
+              </div>
+
               {/* TÉRMINOS Y CONDICIONES (CON MENSAJE DE ERROR RED LABEL DEBAJO) */}
               <div className="space-y-2 pt-2">
                 <div className="flex items-start gap-2.5 text-xs text-gray-600">
@@ -937,16 +1058,26 @@ export function CheckoutForm() {
                     })}
                   </div>
 
-                  {/* SUBTOTAL & TOTAL EN VERDE INCA BOUND */}
+                  {/* SUBTOTAL & TOTAL CON CUPÓN */}
                   <div className="pt-2 flex items-center justify-between text-xs sm:text-sm">
                     <span className="text-gray-600 font-medium">Subtotal ({activeItems.length} {activeItems.length === 1 ? 'tour' : 'tours'})</span>
                     <span className="font-bold text-gray-900">{formatCurrency(grandTotal)}</span>
                   </div>
 
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-emerald-700 font-semibold pt-1">
+                      <span className="flex items-center gap-1.5">
+                        <Tag size={13} className="text-emerald-600" />
+                        <span>Cupón [{appliedCoupon.code}]</span>
+                      </span>
+                      <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
+
                   <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <span className="font-bold text-gray-900 text-sm sm:text-base">Total a pagar</span>
                     <span className="font-black text-lg sm:text-xl text-[#062918]">
-                      {formatCurrency(grandTotal)}
+                      {formatCurrency(finalPayableTotal)}
                     </span>
                   </div>
 

@@ -81,3 +81,47 @@ export const SharedUpdateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+/**
+ * Esquemas Zod para Gestión de Cupones Comerciales
+ */
+export const SharedDiscountTypeSchema = z.enum(['PERCENTAGE', 'FIXED']);
+export type SharedDiscountType = z.infer<typeof SharedDiscountTypeSchema>;
+
+export const SharedCreateCouponSchema = z.object({
+  code: z
+    .string()
+    .min(3, 'El código debe tener al menos 3 caracteres')
+    .max(20, 'El código no puede exceder 20 caracteres')
+    .trim()
+    .transform((val) => val.toUpperCase())
+    .refine((val) => /^[A-Z0-9_-]+$/.test(val), 'El código solo puede contener letras mayúsculas, números y guiones'),
+  description: z.string().optional().nullable(),
+  discountType: SharedDiscountTypeSchema.default('PERCENTAGE'),
+  discountValue: z.coerce.number().positive('El valor del descuento debe ser mayor a 0'),
+  minSpend: z.coerce.number().min(0, 'El gasto mínimo no puede ser negativo').default(0),
+  maxDiscount: z.coerce.number().min(0).optional().nullable(),
+  expiresAt: z.string().optional().nullable(),
+  usageLimit: z.coerce.number().int().positive('El límite debe ser un número entero mayor a 0').optional().nullable(),
+  isActive: z.boolean().default(true),
+});
+
+export const SharedUpdateCouponSchema = z.object({
+  id: z.string().min(1, 'ID de cupón requerido'),
+  code: z
+    .string()
+    .min(3, 'El código debe tener al menos 3 caracteres')
+    .max(20, 'El código no puede exceder 20 caracteres')
+    .trim()
+    .transform((val) => val.toUpperCase())
+    .refine((val) => /^[A-Z0-9_-]+$/.test(val), 'El código solo puede contener letras mayúsculas, números y guiones')
+    .optional(),
+  description: z.string().optional().nullable(),
+  discountType: SharedDiscountTypeSchema.optional(),
+  discountValue: z.coerce.number().positive('El valor del descuento debe ser mayor a 0').optional(),
+  minSpend: z.coerce.number().min(0).optional().nullable(),
+  maxDiscount: z.coerce.number().min(0).optional().nullable(),
+  expiresAt: z.string().optional().nullable(),
+  usageLimit: z.coerce.number().int().positive().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+

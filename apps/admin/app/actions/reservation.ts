@@ -212,6 +212,22 @@ export async function createManualReservationAction(rawData: unknown) {
     const cleanCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     const cleanMarketingCode = d.marketingCode ? d.marketingCode.trim().toUpperCase() : null;
 
+    // Buscar si el código corresponde a un cupón comercial activo
+    let matchedCouponId: string | null = null;
+    if (cleanMarketingCode) {
+      const coupon = await (prisma as any).coupon.findUnique({
+        where: { code: cleanMarketingCode },
+      });
+      if (coupon && coupon.isActive) {
+        matchedCouponId = coupon.id;
+        // Incrementar usos realizados del cupón
+        await (prisma as any).coupon.update({
+          where: { id: coupon.id },
+          data: { timesUsed: { increment: 1 } },
+        });
+      }
+    }
+
     const newReserva = await (prisma.reservation as any).create({
       data: {
         code: cleanCode,
@@ -229,6 +245,7 @@ export async function createManualReservationAction(rawData: unknown) {
         specialRequirements: d.specialRequirements?.trim() || null,
         marketingCode: cleanMarketingCode,
         source: cleanMarketingCode ? 'WHATSAPP' : 'MANUAL',
+        couponId: matchedCouponId,
         tourId: d.type === 'TOUR' ? d.tourId || undefined : undefined,
         transferId: d.type === 'TRANSFER' ? d.transferId || undefined : undefined,
         vehicleTypeId: d.type === 'TRANSFER' ? d.vehicleTypeId || undefined : undefined,
@@ -252,6 +269,7 @@ export async function createManualReservationAction(rawData: unknown) {
     });
 
     revalidatePath('/reservas');
+    revalidatePath('/cupones');
     revalidatePath('/marketing');
     revalidatePath('/');
     return { success: true, reservation: newReserva };

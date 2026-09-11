@@ -15,9 +15,10 @@ export default async function MarketingPage() {
 
   let reservations: any[] = [];
   let campaignLogs: any[] = [];
+  let coupons: any[] = [];
 
   try {
-    const [dbReservations, dbLogs] = await Promise.all([
+    const [dbReservations, dbLogs, dbCoupons] = await Promise.all([
       prisma.reservation.findMany({
         include: {
           tour: { select: { title: true, slug: true } },
@@ -29,10 +30,16 @@ export default async function MarketingPage() {
       (prisma as any).marketingCampaignLog.findMany({
         orderBy: { createdAt: 'desc' },
       }),
+      (prisma as any).coupon.findMany({
+        where: { isActive: true },
+        select: { id: true, code: true, discountType: true, discountValue: true, description: true },
+        orderBy: { code: 'asc' },
+      }),
     ]);
 
     reservations = dbReservations;
     campaignLogs = dbLogs;
+    coupons = dbCoupons;
   } catch (error) {
     console.error('Error al obtener datos para marketing:', error);
   }
@@ -149,5 +156,5 @@ export default async function MarketingPage() {
 
   const contacts = Array.from(contactsMap.values());
 
-  return <MarketingClient initialContacts={contacts} />;
+  return <MarketingClient initialContacts={contacts} availableCoupons={coupons} />;
 }

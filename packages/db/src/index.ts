@@ -22,6 +22,30 @@ export const Role = {
   MARKETING: 'MARKETING',
 } as const;
 
+// Enums y tipos de Cupones Comerciales
+export type DiscountType = 'PERCENTAGE' | 'FIXED';
+export const DiscountType = {
+  PERCENTAGE: 'PERCENTAGE',
+  FIXED: 'FIXED',
+} as const;
+
+export interface CouponItem {
+  id: string;
+  code: string;
+  description?: string | null;
+  discountType: DiscountType;
+  discountValue: number;
+  minSpend?: number | null;
+  maxDiscount?: number | null;
+  expiresAt?: Date | string | null;
+  usageLimit?: number | null;
+  timesUsed: number;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdAt: Date | string;
+  updatedAt?: Date | string;
+}
+
 // Tipo extendido de Reserva con soporte para atribución de marketing
 export interface MarketingCampaignLogItem {
   id: string;

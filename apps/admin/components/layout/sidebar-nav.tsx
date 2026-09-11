@@ -43,6 +43,7 @@ export function SidebarNav({
   const showCategories = isMasterUser || isContentCreator;
   const showBlogs = isMasterUser || isContentCreator;
   const showEmailMarketing = isMasterUser || isMarketing;
+  const showCupones = isMasterUser || isMarketing;
   const showReservas = isMasterUser || isOperator;
   const showUsuarios = isMasterUser;
   const showLogs = isSuperAdmin;
@@ -177,6 +178,24 @@ export function SidebarNav({
               >
                 <Mail className="w-4 h-4 text-[#303030] shrink-0" />
                 <span>Email Marketing</span>
+              </Link>
+            </li>
+          )}
+
+          {/* 8. Cupones de Descuento (Exclusivo para Marketing y Master) */}
+          {showCupones && (
+            <li>
+              <Link
+                href="/cupones"
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-[13px] font-medium",
+                  pathname?.startsWith("/cupones")
+                    ? "bg-white text-[#303030] shadow-xs font-semibold"
+                    : "text-[#303030] hover:bg-slate-200/70 hover:text-black"
+                )}
+              >
+                <Tags className="w-4 h-4 text-[#303030] shrink-0" />
+                <span>Cupones</span>
               </Link>
             </li>
           )}

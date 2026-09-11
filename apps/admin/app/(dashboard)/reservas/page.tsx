@@ -16,9 +16,10 @@ export default async function ReservasPage() {
   let availableTours: { id: string; title: string; sharedPrice: number }[] = [];
   let availableTransfers: { id: string; title: string; sharedPrice: number }[] = [];
   let availableVehicles: { id: string; name: string; code: string }[] = [];
+  let availableCoupons: { id: string; code: string; discountType: string; discountValue: number }[] = [];
 
   try {
-    const [dbReservas, dbTours, dbTransfers, dbVehicles] = await Promise.all([
+    const [dbReservas, dbTours, dbTransfers, dbVehicles, dbCoupons] = await Promise.all([
       prisma.reservation.findMany({
         take: 100,
         orderBy: { createdAt: 'desc' },
@@ -39,6 +40,11 @@ export default async function ReservasPage() {
       prisma.vehicleType.findMany({
         select: { id: true, name: true, code: true },
         orderBy: { order: 'asc' }
+      }),
+      (prisma as any).coupon.findMany({
+        where: { isActive: true },
+        select: { id: true, code: true, discountType: true, discountValue: true },
+        orderBy: { code: 'asc' }
       })
     ]);
 
@@ -46,6 +52,7 @@ export default async function ReservasPage() {
     availableTours = dbTours;
     availableTransfers = dbTransfers;
     availableVehicles = dbVehicles;
+    availableCoupons = dbCoupons;
   } catch (error) {
     console.error("Error fetching reservas:", error);
   }
@@ -56,6 +63,7 @@ export default async function ReservasPage() {
       availableTours={availableTours}
       availableTransfers={availableTransfers}
       availableVehicles={availableVehicles}
+      availableCoupons={availableCoupons}
     />
   );
 }

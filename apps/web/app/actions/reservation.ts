@@ -47,6 +47,7 @@ const CheckoutDataSchema = z.object({
   specialRequirements: z.string().optional(),
   passengers: z.array(PassengerSchema).optional(),
   totalPrice: z.number().optional(),
+  couponCode: z.string().optional(),
 });
 
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
@@ -207,6 +208,49 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     }
 
     grandTotalPrice = Math.round(grandTotalPrice * 100) / 100;
+    const originalPrice = grandTotalPrice;
+    let discountAmount = 0;
+    let appliedCouponId: string | null = null;
+    let appliedMarketingCode: string | null = null;
+
+    // Validación autoritativa de cupón de descuento en servidor
+    if (data.couponCode) {
+      const cleanCouponCode = data.couponCode.trim().toUpperCase();
+      const coupon = await (prisma as any).coupon.findUnique({
+        where: { code: cleanCouponCode },
+      });
+
+      const now = new Date();
+      if (
+        coupon &&
+        coupon.isActive &&
+        (!coupon.expiresAt || new Date(coupon.expiresAt) >= now) &&
+        (!coupon.usageLimit || coupon.timesUsed < coupon.usageLimit) &&
+        (!coupon.minSpend || grandTotalPrice >= coupon.minSpend)
+      ) {
+        appliedCouponId = coupon.id;
+        appliedMarketingCode = coupon.code;
+
+        if (coupon.discountType === 'PERCENTAGE') {
+          discountAmount = (grandTotalPrice * coupon.discountValue) / 100;
+          if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
+            discountAmount = coupon.maxDiscount;
+          }
+        } else {
+          discountAmount = coupon.discountValue;
+        }
+
+        discountAmount = Math.min(discountAmount, grandTotalPrice);
+        discountAmount = Math.round(discountAmount * 100) / 100;
+        grandTotalPrice = Math.max(0, Math.round((grandTotalPrice - discountAmount) * 100) / 100);
+
+        // Incrementar usos realizados del cupón automáticamente en BD
+        await (prisma as any).coupon.update({
+          where: { id: coupon.id },
+          data: { timesUsed: { increment: 1 } },
+        });
+      }
+    }
 
     // Helper para separar nombre en firstName y lastName si viene consolidado
     const splitName = (p: { firstName?: string; lastName?: string; name?: string }): { firstName: string; lastName: string } => {
@@ -224,7 +268,7 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     const reservationCode = `IB-${Date.now().toString(36).toUpperCase()}`;
 
     // 4. Crear la reserva en la Base de Datos con todos sus ReservationItems
-    const reservation = await prisma.reservation.create({
+    const reservation = await (prisma.reservation as any).create({
       data: {
         code: reservationCode,
         customerFirstName: data.customerFirstName,
@@ -236,6 +280,11 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
         date: firstItem?.date || new Date(),
         pax: maxPax,
         totalPrice: grandTotalPrice,
+        originalPrice: discountAmount > 0 ? originalPrice : null,
+        discountAmount: discountAmount > 0 ? discountAmount : 0,
+        couponId: appliedCouponId,
+        marketingCode: appliedMarketingCode,
+        source: appliedCouponId ? 'ECOMMERCE' : 'WEB',
         currency: 'USD',
         status: 'PENDING',
         // Campos de compatibilidad directa hacia atrás
