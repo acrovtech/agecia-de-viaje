@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@repo/db';
+import { prisma, Role } from '@repo/db';
 import bcrypt from 'bcryptjs';
 import { requireMasterRole } from '@/lib/auth-check';
 
@@ -8,38 +8,58 @@ export async function GET() {
     await requireMasterRole();
 
     // 1. Hash passwords
-    const masterPasswordHash = await bcrypt.hash('IncaBound2026!', 10);
-    const clientPasswordHash = await bcrypt.hash('IncaBoundClient!', 10);
+    const masterPasswordHash = await bcrypt.hash('MasterSecure2026*!', 10);
+    const operatorPasswordHash = await bcrypt.hash('OperatorSecure2026*!', 10);
+    const contentPasswordHash = await bcrypt.hash('Gestion2026*', 10);
 
     // 2. Insert MASTER user if not exists
-    let masterUser = await prisma.user.findUnique({ where: { email: 'admin@incabound.com' } });
+    let masterUser = await prisma.user.findUnique({ where: { email: 'admin@agenciadeviajes.com' } });
     if (!masterUser) {
       masterUser = await prisma.user.create({
         data: {
-          email: 'admin@incabound.com',
+          name: 'Master Admin',
+          email: 'admin@agenciadeviajes.com',
           password: masterPasswordHash,
-          role: 'MASTER'
+          role: Role.MASTER,
+          isActive: true,
         }
       });
     }
 
-    // 3. Insert CLIENT user if not exists
-    let clientUser = await prisma.user.findUnique({ where: { email: 'gestion@incabound.com' } });
-    if (!clientUser) {
-      clientUser = await prisma.user.create({
+    // 3. Insert OPERATOR user if not exists
+    let operatorUser = await prisma.user.findUnique({ where: { email: 'operaciones@agenciadeviajes.com' } });
+    if (!operatorUser) {
+      operatorUser = await prisma.user.create({
         data: {
-          email: 'gestion@incabound.com',
-          password: clientPasswordHash,
-          role: 'CLIENT'
+          name: 'Operaciones Agencia',
+          email: 'operaciones@agenciadeviajes.com',
+          password: operatorPasswordHash,
+          role: Role.OPERATOR,
+          isActive: true,
+        }
+      });
+    }
+
+    // 4. Insert CONTENT_CREATOR user if not exists
+    let contentUser = await prisma.user.findUnique({ where: { email: 'gestion@agenciadeviajes.com' } });
+    if (!contentUser) {
+      contentUser = await prisma.user.create({
+        data: {
+          name: 'Gestión de Contenidos',
+          email: 'gestion@agenciadeviajes.com',
+          password: contentPasswordHash,
+          role: Role.CONTENT_CREATOR,
+          isActive: true,
         }
       });
     }
 
     return NextResponse.json({
-      message: 'Usuarios iniciales creados exitosamente.',
+      message: 'Usuarios y roles administrativos inicializados exitosamente.',
       users: [
         { email: masterUser.email, role: masterUser.role },
-        { email: clientUser.email, role: clientUser.role }
+        { email: operatorUser.email, role: operatorUser.role },
+        { email: contentUser.email, role: contentUser.role }
       ]
     });
   } catch (error: any) {

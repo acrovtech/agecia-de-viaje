@@ -183,7 +183,7 @@ export function ToursCatalogClient() {
 
         <div className="relative z-10 text-center px-4 mt-16 max-w-3xl mx-auto">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-heading text-white mb-4 drop-shadow-lg leading-tight tracking-tight">
-            Explora el Perú con Inca Bound
+            Explora el Perú
           </h1>
           <p className="text-base md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
             Desde caminatas desafiantes en los Andes hasta tours culturales de un día. Encuentra tu próxima aventura.

@@ -5,7 +5,7 @@ import { ContactInfo } from '@/components/contact/contact-info';
 import Image from 'next/image';
 
 export const metadata = {
-  title: 'Contacto | Inca Bound',
+  title: 'Contacto | Agencia de Viajes',
   description: 'Contáctanos para organizar tu viaje a Perú, Cusco y Machu Picchu.',
 };
 
@@ -20,7 +20,7 @@ export default function ContactPage() {
           <div className="absolute inset-0">
             <Image 
               src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/agencia-viajes-cusco-contacto.webp" 
-              alt="Contacto Inca Bound" 
+              alt="Contacto Agencia de Viajes" 
               fill 
               sizes="100vw" 
               className="object-cover" 
@@ -57,7 +57,7 @@ export default function ContactPage() {
               allowFullScreen 
               loading="lazy" 
               referrerPolicy="no-referrer-when-downgrade"
-              title="Ubicación Inca Bound"
+              title="Ubicación de la Agencia"
             ></iframe>
           </div>
         </div>

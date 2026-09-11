@@ -25,14 +25,14 @@ const advisors = [
     phone: CONTACT_CONFIG.whatsappOperations,
     role: 'Asesor 24/7',
     avatar: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/asesor-viajes-inca-bound.webp',
-    defaultMessage: 'Hola Inca Bound, necesito asistencia de operaciones sobre mi viaje/tour.'
+    defaultMessage: 'Hola, necesito asistencia de operaciones sobre mi viaje/tour.'
   },
   {
     name: 'Reservas y Cotizaciones',
     phone: CONTACT_CONFIG.whatsappNumber,
     role: 'Asesor de Ventas',
     avatar: '/logo.svg',
-    defaultMessage: 'Hola Inca Bound, deseo más información y cotización sobre los tours.'
+    defaultMessage: 'Hola, deseo más información y cotización sobre los tours.'
   }
 ];
 

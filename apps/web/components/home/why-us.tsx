@@ -26,12 +26,12 @@ export function WhyUs() {
           {/* Text Content */}
           <div className="text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 text-[#062918] leading-tight">
-              ¿Por qué viajar con <span className="text-[#0d9488]">Inca Bound</span>?
+              ¿Por qué viajar con <span className="text-[#0d9488]">nosotros</span>?
             </h2>
             
             <div className="space-y-6 text-base md:text-lg leading-relaxed text-gray-600">
               <p>
-                Si buscas vivir la mejor experiencia de tu vida y disfrutar de unas <strong>vacaciones inolvidables en Perú</strong>, con <strong>Inca Bound</strong> tendrás la oportunidad de conocer muy de cerca la cultura, la más fina gastronomía y todas las comodidades para hacer de tu viaje una experiencia maravillosa.
+                Si buscas vivir la mejor experiencia de tu vida y disfrutar de unas <strong>vacaciones inolvidables en Perú</strong>, con <strong>nuestra agencia</strong> tendrás la oportunidad de conocer muy de cerca la cultura, la más fina gastronomía y todas las comodidades para hacer de tu viaje una experiencia maravillosa.
               </p>
               <p>
                 Con más de 15 años de experiencia y un selecto equipo de profesionales comprometidos, garantizamos una atención personalizada. Al viajar con nosotros, contribuyes al desarrollo de las comunidades locales y te sumas a un <strong>turismo responsable y ecológico</strong>, protegiendo nuestro planeta.
@@ -51,7 +51,7 @@ export function WhyUs() {
               >
                 <Image 
                   src={src} 
-                  alt={`Experiencia Inca Bound ${idx + 1}`} 
+                  alt={`Experiencia de viaje ${idx + 1}`} 
                   fill 
                   className="object-cover"
                   priority={idx === 0}

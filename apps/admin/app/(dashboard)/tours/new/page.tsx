@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewTourPage() {
   const session = await verifyAdminSession();
-  const isGestionUser = session?.email?.trim().toLowerCase() === 'gestion@incabound.com';
+  const isGestionUser = session?.role === 'CONTENT_CREATOR' || session?.email?.trim().toLowerCase() === 'gestion@agenciadeviajes.com';
   const showCategories = !isGestionUser;
 
   const categories = await prisma.category.findMany({

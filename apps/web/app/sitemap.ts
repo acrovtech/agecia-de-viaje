@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@repo/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://incabound.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agenciadeviajes.com';
 
   // Rutas estáticas principales
   const staticRoutes: MetadataRoute.Sitemap = [

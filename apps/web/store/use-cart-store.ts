@@ -98,7 +98,7 @@ export const useCartStore = create<CartStore>()(
       },
     }),
     {
-      name: 'incabound_cart_v2',
+      name: 'travel_cart_v2',
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : {
         getItem: () => null,
         setItem: () => {},

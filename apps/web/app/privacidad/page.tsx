@@ -144,7 +144,7 @@ export default function PrivacidadPage() {
                 </h2>
               </div>
               <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-                El titular de los datos personales puede ejercer en cualquier momento sus derechos de Acceso, Rectificación, Cancelación y Oposición previstos en la Ley N° 29733, mediante comunicación escrita enviada a nuestro correo electrónico oficial: <a href="mailto:incabound@gmail.com" className="text-[#062918] font-bold underline">incabound@gmail.com</a>.
+                El titular de los datos personales puede ejercer en cualquier momento sus derechos de Acceso, Rectificación, Cancelación y Oposición previstos en la Ley N° 29733, mediante comunicación escrita enviada a nuestro correo electrónico oficial: <a href="mailto:contacto@agenciadeviajes.com" className="text-[#062918] font-bold underline">contacto@agenciadeviajes.com</a>.
               </p>
             </section>
 
@@ -152,7 +152,7 @@ export default function PrivacidadPage() {
             <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-200/80 flex items-start gap-3 text-amber-900 text-xs md:text-sm">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <p>
-                Inca Bound se reserva el derecho de actualizar sus políticas de privacidad para cumplir con nuevas regulaciones gubernamentales o mejoras operativas. Las modificaciones serán publicadas oportunamente en esta misma sección.
+                La Agencia se reserva el derecho de actualizar sus políticas de privacidad para cumplir con nuevas regulaciones gubernamentales o mejoras operativas. Las modificaciones serán publicadas oportunamente en esta misma sección.
               </p>
             </div>
 

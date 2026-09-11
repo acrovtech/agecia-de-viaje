@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: ResultadoPageProps) {
   const id = resolvedParams?.id || '';
 
   return {
-    title: `Estado de Reserva #${id.slice(-8).toUpperCase()} - Inca Bound`,
-    description: 'Comprobante y estado oficial de tu reserva con Inca Bound.',
+    title: `Estado de Reserva #${id.slice(-8).toUpperCase()} - Agencia de Viajes`,
+    description: 'Comprobante y estado oficial de tu reserva.',
     robots: {
       index: false,
       follow: false,
@@ -47,7 +47,7 @@ export default async function ResultadoPage({ params }: ResultadoPageProps) {
   }
 
   const serviceTitle = reservation.tour?.title || 
-    (reservation.transfer ? `Traslado: ${reservation.transfer.origin} a ${reservation.transfer.destination}` : 'Servicio Inca Bound');
+    (reservation.transfer ? `Traslado: ${reservation.transfer.origin} a ${reservation.transfer.destination}` : 'Servicio Reservado');
 
   const initialReservation = {
     id: reservation.id,

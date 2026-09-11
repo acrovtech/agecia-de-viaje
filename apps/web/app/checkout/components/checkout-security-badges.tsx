@@ -5,7 +5,7 @@ export function CheckoutSecurityBadges() {
     <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 sm:p-5 mt-6">
       <div className="flex items-center gap-2.5 text-emerald-900 font-bold text-xs uppercase tracking-wider mb-3">
         <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
-        <span>Garantía y Seguridad IncaBound</span>
+        <span>Garantía y Seguridad Oficial</span>
       </div>
       <ul className="space-y-2 text-xs text-gray-700">
         <li className="flex items-start gap-2">

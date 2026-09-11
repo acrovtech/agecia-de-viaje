@@ -7,7 +7,7 @@ describe('Admin JWT Lifecycle & Security', () => {
   it('debe crear un token JWT válido y verificar su payload con éxito', async () => {
     const payload = {
       role: 'MASTER',
-      email: 'admin@incabound.com',
+      email: 'admin@agenciadeviajes.com',
     };
 
     const token = await createAdminToken(payload);
@@ -17,13 +17,13 @@ describe('Admin JWT Lifecycle & Security', () => {
     const verified = await verifyAdminToken(token);
     expect(verified).not.toBeNull();
     expect(verified?.role).toBe('MASTER');
-    expect(verified?.email).toBe('admin@incabound.com');
+    expect(verified?.email).toBe('admin@agenciadeviajes.com');
   });
 
   it('debe rechazar un token adulterado o con firma forjada', async () => {
     const payload = {
       role: 'CLIENT',
-      email: 'operator@incabound.com',
+      email: 'operator@agenciadeviajes.com',
     };
 
     const token = await createAdminToken(payload);

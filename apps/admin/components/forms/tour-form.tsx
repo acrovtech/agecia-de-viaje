@@ -208,7 +208,7 @@ export function TourForm({
 
   const seoAnalysis = analyzeSeo({
     title,
-    metaTitle: `${title} - Incabound`,
+    metaTitle: `${title} - Agencia de Viajes`,
     metaDescription,
     slug,
     focusKeyphrase,
@@ -866,7 +866,7 @@ export function TourForm({
             </div>
             
             <input type="hidden" name="slug" value={slug} />
-            <input type="hidden" name="metaTitle" value={`${title} - Incabound`} />
+            <input type="hidden" name="metaTitle" value={`${title} - Agencia de Viajes`} />
 
             <div className="space-y-3">
               <div className="space-y-1">

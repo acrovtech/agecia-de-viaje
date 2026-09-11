@@ -37,7 +37,7 @@ export function SocialResponsibility() {
             Responsabilidad Social
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto text-center">
-            Nuestra responsabilidad social no es una opción, es el núcleo de Inca Bound. Conoce cómo tu viaje genera un impacto positivo en Perú.
+            Nuestra responsabilidad social no es una opción, es el núcleo de nuestra misión. Conoce cómo tu viaje genera un impacto positivo en Perú.
           </p>
         </div>
 

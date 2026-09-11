@@ -44,6 +44,7 @@ model Tour {
 
   categories      Category[]
   reservations    Reservation[]
+  reservationItems ReservationItem[]
 
   // Relational Fields
   images          TourImage[]
@@ -62,6 +63,8 @@ model TourImage {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourItineraryDay {
@@ -71,6 +74,8 @@ model TourItineraryDay {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourInclusion {
@@ -79,6 +84,8 @@ model TourInclusion {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourExclusion {
@@ -87,6 +94,8 @@ model TourExclusion {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourRecommendation {
@@ -95,6 +104,8 @@ model TourRecommendation {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourFaq {
@@ -104,6 +115,8 @@ model TourFaq {
   order     Int      @default(0)
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model TourPrivatePricing {
@@ -112,6 +125,8 @@ model TourPrivatePricing {
   price     Float
   tourId    String
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
 }
 
 model Category {
@@ -148,10 +163,13 @@ model BlogParagraph {
   subtitle String?
   content  String  @db.Text
   image    String?
+
+  @@index([blogId])
 }
 
 model Reservation {
   id               String   @id @default(cuid())
+  code             String?  @unique
   tourId           String?
   tour             Tour?    @relation(fields: [tourId], references: [id])
 
@@ -172,6 +190,7 @@ model Reservation {
   date             DateTime
   pax              Int
   totalPrice       Float
+  currency         String   @default("USD")
   
   pickupHotel      String?
   specialRequirements String? @db.Text
@@ -179,9 +198,13 @@ model Reservation {
   status           ReservationStatus @default(PENDING)
   paymentReference String? // Izipay transaction ID or token
 
+  assignedOperatorId String?
+  assignedOperator   User?             @relation("OperatorReservations", fields: [assignedOperatorId], references: [id], onDelete: SetNull)
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  items            ReservationItem[]
   passengers       ReservationPassenger[]
 
   @@index([status])
@@ -189,6 +212,37 @@ model Reservation {
   @@index([tourId])
   @@index([transferId])
   @@index([customerEmail])
+  @@index([assignedOperatorId])
+}
+
+model ReservationItem {
+  id               String       @id @default(cuid())
+  reservationId    String
+  reservation      Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  tourId           String?
+  tour             Tour?        @relation(fields: [tourId], references: [id])
+
+  transferId       String?
+  transfer         Transfer?    @relation(fields: [transferId], references: [id])
+
+  vehicleTypeId    String?
+  vehicleType      VehicleType? @relation(fields: [vehicleTypeId], references: [id])
+
+  serviceType      String       @default("shared") // 'shared' | 'private'
+  date             DateTime
+  pax              Int
+  unitPrice        Float
+  totalPrice       Float
+
+  pickupHotel      String?
+  pickupTime       String?
+
+  createdAt        DateTime     @default(now())
+
+  @@index([reservationId])
+  @@index([tourId])
+  @@index([transferId])
 }
 
 model ReservationPassenger {
@@ -232,6 +286,7 @@ model Transfer {
   // Tarifas privadas por vehículo
   vehiclePrices     TransferVehiclePrice[]
   reservations      Reservation[]
+  reservationItems  ReservationItem[]
 
   isActive          Boolean  @default(true)
   order             Int      @default(0)
@@ -251,8 +306,9 @@ model VehicleType {
   order       Int      @default(0)
   isActive    Boolean  @default(true)
 
-  prices        TransferVehiclePrice[]
-  reservations  Reservation[]
+  prices            TransferVehiclePrice[]
+  reservations      Reservation[]
+  reservationItems  ReservationItem[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -267,15 +323,93 @@ model TransferVehiclePrice {
   price       Float       // Precio total por vehículo en esta ruta
 
   @@unique([transferId, vehicleId])
+  @@index([transferId])
+  @@index([vehicleId])
+}
+
+enum Role {
+  SUPERADMIN
+  MASTER
+  OPERATOR
+  CONTENT_CREATOR
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      String   @default("CLIENT") // MASTER or CLIENT
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  password            String               // Hashed with bcrypt (cost factor >= 10) or Argon2
+  role                Role                 @default(OPERATOR)
+  isActive            Boolean              @default(true)
   
+  // Defensas contra ataques de fuerza bruta y ataques de diccionario
+  failedLoginAttempts Int                  @default(0)
+  lockedUntil         DateTime?
+  
+  // Seguridad de sesiones, revocación de JWTs e invalidación tras cambio de credenciales
+  tokenVersion        Int                  @default(1)
+  passwordChangedAt   DateTime?
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+
+  // Trazabilidad, auditoría forense, sesiones y asignaciones
+  auditLogs           AdminAuditLog[]
+  sessions            AdminSession[]
+  passwordResetTokens PasswordResetToken[]
+  assignedReservations Reservation[]        @relation("OperatorReservations")
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model AdminSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  isRevoked    Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique // SHA-256 hash del token entregado (nunca en texto plano)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // USER_LOGIN, FAILED_LOGIN, ROLE_CHANGE, USER_CREATE, PASSWORD_RESET, etc.
+  entity    String   // User, Reservation, Tour, Transfer, Setting
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
 }
 

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function CategoriesPage() {
   const session = await verifyAdminSession();
-  if (session?.email?.trim().toLowerCase() === 'gestion@incabound.com') {
+  if (session?.role === 'CONTENT_CREATOR' || session?.email?.trim().toLowerCase() === 'gestion@agenciadeviajes.com') {
     redirect('/');
   }
 

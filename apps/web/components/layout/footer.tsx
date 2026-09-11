@@ -11,7 +11,7 @@ export function Footer() {
           {/* Column 1: Logo & Info */}
           <div className="flex flex-col items-center lg:col-span-3">
             <Link href="/" className="inline-block mb-4">
-              <Image src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/logo-footer.webp" alt="Inca Bound Logo" width={160} height={160} className="w-32 md:w-40 h-auto object-contain" unoptimized={true} />
+              <Image src="/logo.svg" alt="Logo" width={160} height={160} className="w-28 md:w-32 h-auto object-contain" unoptimized={true} />
             </Link>
             <div className="text-center mb-6">
               <p className="font-bold tracking-widest text-sm uppercase">Tour Operator</p>
@@ -39,34 +39,32 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 2: Nuestra Empresa */}
-          <div className="lg:col-span-2">
-            <h3 className="font-bold text-lg mb-6">Nuestra empresa</h3>
-            <ul className="space-y-4 text-sm opacity-90">
-              <li><Link href="/nosotros" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Info size={16} /> Acerca de nosotros</Link></li>
-              <li><Link href="/contacto" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><User size={16} /> Contáctenos en</Link></li>
-              <li><Link href="/terminos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><FileText size={16} /> Términos y condiciones</Link></li>
-              <li><Link href="/privacidad" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><ShieldCheck size={16} /> Políticas de privacidad</Link></li>
-              <li><Link href="/cookies" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Cookie size={16} /> Políticas de cookies</Link></li>
-              <li><Link href="/pagos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><CreditCard size={16} /> Políticas de pago</Link></li>
-              <li><Link href="/politicas-de-transporte" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Car size={16} /> Políticas de traslados</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 3: Destinos */}
+          {/* Column 2: Destinos */}
           <div className="lg:col-span-2">
             <h3 className="font-bold text-lg mb-6">Destinos</h3>
             <ul className="space-y-4 text-sm opacity-90">
-              <li><Link href="/tours?destino=cusco" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Cusco</Link></li>
-              <li><Link href="/tours?destino=puno" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Puno</Link></li>
-              <li><Link href="/tours?destino=arequipa" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Arequipa</Link></li>
-              <li><Link href="/tours?destino=lima" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Lima</Link></li>
-              <li><Link href="/tours?destino=ica" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Ica</Link></li>
-              <li><Link href="/tours?destino=selva" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><MapPin size={16} /> Selva</Link></li>
+              <li><Link href="/tours?destino=cusco" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Mountain size={16} /> Cusco</Link></li>
+              <li><Link href="/tours?destino=puno" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Compass size={16} /> Puno</Link></li>
+              <li><Link href="/tours?destino=arequipa" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Map size={16} /> Arequipa</Link></li>
+              <li><Link href="/tours?destino=ica" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Navigation size={16} /> Ica</Link></li>
+              <li><Link href="/tours?destino=lima" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Palmtree size={16} /> Lima</Link></li>
+              <li><Link href="/tours?destino=selva" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Tent size={16} /> Selva</Link></li>
             </ul>
           </div>
 
-          {/* Column 4: Información útil & Redes */}
+          {/* Column 3: Políticas */}
+          <div className="lg:col-span-2">
+            <h3 className="font-bold text-lg mb-6">Políticas</h3>
+            <ul className="space-y-4 text-sm opacity-90">
+              <li><Link href="/terminos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><FileText size={16} /> Términos y Condiciones</Link></li>
+              <li><Link href="/privacidad" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><ShieldCheck size={16} /> Privacidad</Link></li>
+              <li><Link href="/cookies" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Cookie size={16} /> Cookies</Link></li>
+              <li><Link href="/pagos" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><CreditCard size={16} /> Políticas de Pago</Link></li>
+              <li><Link href="/politicas-de-transporte" className="flex items-center gap-2 hover:text-[#2dd4bf] transition-colors"><Car size={16} /> Políticas de Transporte</Link></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Información útil */}
           <div className="lg:col-span-2">
             <h3 className="font-bold text-lg mb-6">Información útil</h3>
             <ul className="space-y-4 text-sm opacity-90 mb-8">
@@ -77,13 +75,13 @@ export function Footer() {
 
             <h3 className="font-bold text-lg mb-6">Redes Sociales</h3>
             <div className="flex gap-4">
-              <a href="https://www.facebook.com/incabound?locale=es_LA" target="_blank" rel="noopener noreferrer" aria-label="Facebook de Inca Bound" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a href="#" aria-label="Facebook" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
               </a>
-              <a href="https://www.instagram.com/incabound/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de Inca Bound" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a href="#" aria-label="Instagram" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               </a>
-              <a href="https://www.tripadvisor.com.pe/Attraction_Review-g294314-d8146250-Reviews-Inca_Bound-Cusco_Cusco_Region.html" target="_blank" rel="noopener noreferrer" aria-label="TripAdvisor de Inca Bound" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a href="#" aria-label="TripAdvisor" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <svg viewBox="0 0 576 512" fill="currentColor" width="20" height="20"><path d="M528.91,178.82,576,127.58H471.66a326.11,326.11,0,0,0-367,0H0l47.09,51.24A143.911,143.911,0,0,0,241.86,390.73L288,440.93l46.11-50.17A143.94,143.94,0,0,0,575.88,285.18h-.03A143.56,143.56,0,0,0,528.91,178.82ZM144.06,382.57a97.39,97.39,0,1,1,97.39-97.39A97.39,97.39,0,0,1,144.06,382.57ZM288,282.37c0-64.09-46.62-119.08-108.09-142.59a281,281,0,0,1,216.17,0C334.61,163.3,288,218.29,288,282.37Zm143.88,100.2h-.01a97.405,97.405,0,1,1,.01,0ZM144.06,234.12h-.01a51.06,51.06,0,1,0,51.06,51.06v-.11A51,51,0,0,0,144.06,234.12Zm287.82,0a51.06,51.06,0,1,0,51.06,51.06A51.06,51.06,0,0,0,431.88,234.12Z"></path></svg>
               </a>
             </div>
@@ -95,15 +93,11 @@ export function Footer() {
             <ul className="space-y-4 text-sm opacity-90">
               <li className="flex gap-3">
                 <MapPin size={16} className="mt-1 shrink-0" />
-                <span>C.C. Sotomayor, Of. 308 - Márquez 231, Cusco</span>
+                <span>Cusco, Perú</span>
               </li>
               <li className="flex gap-3">
                 <Mail size={16} className="shrink-0" />
-                <a href="mailto:incabound@gmail.com" className="hover:text-[#2dd4bf] transition-colors">incabound@gmail.com</a>
-              </li>
-              <li className="flex gap-3">
-                <Mail size={16} className="shrink-0" />
-                <a href="mailto:info@incabound.com" className="hover:text-[#2dd4bf] transition-colors">info@incabound.com</a>
+                <a href="mailto:info@agenciadeviajes.com" className="hover:text-[#2dd4bf] transition-colors">info@agenciadeviajes.com</a>
               </li>
               <li className="flex gap-3">
                 <Phone size={16} className="shrink-0" />
@@ -118,7 +112,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-6 text-center text-xs opacity-70 flex flex-col md:flex-row items-center justify-center gap-2">
-          <span>COPYRIGHT © {new Date().getFullYear()} Inca Bound. Todos los derechos reservados.</span>
+          <span>COPYRIGHT © {new Date().getFullYear()} Agencia de Viajes. Todos los derechos reservados.</span>
           <span className="hidden md:inline">|</span>
           <span>
             Created by <a href="https://acrovtech.com" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-white transition-colors underline decoration-white/30 underline-offset-2">Acrovtech</a>

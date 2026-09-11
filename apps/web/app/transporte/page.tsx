@@ -7,7 +7,7 @@ import { TransporteClient } from '@/components/transporte/transporte-client';
 export const revalidate = 3600;
 
 export const metadata = {
-  title: 'Traslados y Transporte Turístico en Cusco y Perú | IncaBound',
+  title: 'Traslados y Transporte Turístico en Cusco y Perú | Agencia de Viajes',
   description: 'Reserva traslados seguros y cómodos entre el Aeropuerto de Cusco, Hoteles, Poroy, Ollantaytambo y el Valle Sagrado. Vehículos modernos, chofer profesional y precios transparentes.',
 };
 
@@ -92,7 +92,7 @@ export default async function TransportePage() {
         <div className="absolute inset-0">
           <Image 
             src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/transporte-hero.webp" 
-            alt="Transporte y Traslados en Cusco Inca Bound" 
+            alt="Transporte y Traslados en Cusco" 
             fill 
             sizes="100vw" 
             className="object-cover" 

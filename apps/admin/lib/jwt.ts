@@ -1,8 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose';
 
 export interface AdminSessionPayload {
+  id?: string;
   role: string;
   email: string;
+  name?: string;
+  tokenVersion?: number;
 }
 
 /**
@@ -18,7 +21,7 @@ function getJwtSecretKey(): Uint8Array {
       );
     }
     // En desarrollo local (localhost), usar clave por defecto para evitar caídas
-    return new TextEncoder().encode('incabound_admin_local_dev_secret_key_2026');
+    return new TextEncoder().encode('admin_local_dev_secret_key_2026');
   }
   return new TextEncoder().encode(secret);
 }
@@ -28,7 +31,13 @@ function getJwtSecretKey(): Uint8Array {
  */
 export async function createAdminToken(payload: AdminSessionPayload): Promise<string> {
   const secretKey = getJwtSecretKey();
-  return await new SignJWT({ role: payload.role, email: payload.email })
+  return await new SignJWT({
+    id: payload.id,
+    role: payload.role,
+    email: payload.email,
+    name: payload.name,
+    tokenVersion: payload.tokenVersion ?? 1,
+  })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('8h')
@@ -49,8 +58,11 @@ export async function verifyAdminToken(token: string): Promise<AdminSessionPaylo
     
     if (typeof payload.role === 'string' && typeof payload.email === 'string') {
       return {
+        id: typeof payload.id === 'string' ? payload.id : undefined,
         role: payload.role,
         email: payload.email,
+        name: typeof payload.name === 'string' ? payload.name : undefined,
+        tokenVersion: typeof payload.tokenVersion === 'number' ? payload.tokenVersion : undefined,
       };
     }
     return null;

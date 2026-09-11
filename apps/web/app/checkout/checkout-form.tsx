@@ -252,15 +252,28 @@ export function CheckoutForm() {
     setIsLoading(true);
 
     try {
-      const firstItem = activeItems[0];
       const langInfo = `Idioma: ${formData.language}`;
       const notes = formData.requirements ? `Notas: ${formData.requirements}` : '';
       const cleanRequirements = [langInfo, notes].filter(Boolean).join(' | ');
 
+      const formattedItems = activeItems.map(item => ({
+        tourSlug: item.tourSlug,
+        tourTitle: item.tourTitle,
+        serviceType: (item.serviceType === 'private' ? 'private' : 'shared') as 'shared' | 'private',
+        date: item.date || new Date().toISOString(),
+        pax: item.pax || numPax,
+        price: item.price,
+        totalPrice: item.totalPrice,
+        pickupHotel: formData.hotel,
+      }));
+
+      const firstActiveItem = activeItems[0];
+
       const result = await createReservationAndPaymentToken({
-        tourSlug: firstItem?.tourSlug || tourSlug,
-        tourTitle: firstItem?.tourTitle || tourTitle,
-        serviceType: firstItem?.serviceType || serviceType,
+        items: formattedItems,
+        tourSlug: firstActiveItem?.tourSlug || tourSlug,
+        tourTitle: firstActiveItem?.tourTitle || tourTitle,
+        serviceType: (firstActiveItem?.serviceType === 'private' ? 'private' : 'shared') as 'shared' | 'private',
         customerFirstName: formData.firstName,
         customerLastName: formData.lastName,
         customerEmail: formData.email,
@@ -273,9 +286,9 @@ export function CheckoutForm() {
           docType: p.documentType || 'DNI',
           docNumber: p.documentNumber || ''
         })),
-        date: firstItem?.date || dateStr || new Date().toISOString(),
+        date: firstActiveItem?.date || dateStr || new Date().toISOString(),
         pax: numPax,
-        totalPrice: parseFloat(total),
+        totalPrice: grandTotal,
       });
 
       if (result.success && result.formToken) {
@@ -1016,7 +1029,7 @@ export function CheckoutForm() {
       {/* ENLACE DE ASISTENCIA DIRECTA WHATSAPP */}
       <div className="pt-4 text-center">
         <a
-          href={CONTACT_CONFIG.getWhatsappUrl('Hola, necesito asistencia con mi reserva en IncaBound.')}
+          href={CONTACT_CONFIG.getWhatsappUrl('Hola, necesito asistencia con mi reserva.')}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-gray-500 hover:text-[#062918] transition-colors inline-flex items-center gap-1.5"

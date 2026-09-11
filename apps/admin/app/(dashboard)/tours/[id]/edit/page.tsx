@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function EditTourPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await verifyAdminSession();
-  const isGestionUser = session?.email?.trim().toLowerCase() === 'gestion@incabound.com';
+  const isGestionUser = session?.role === 'CONTENT_CREATOR' || session?.email?.trim().toLowerCase() === 'gestion@agenciadeviajes.com';
   const showCategories = !isGestionUser;
 
   const tour = await prisma.tour.findUnique({

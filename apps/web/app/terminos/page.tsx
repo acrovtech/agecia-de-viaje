@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import Image from 'next/image';
 
 export const metadata: Metadata = {
-  title: 'Términos y Condiciones | Inca Bound Tour Operator',
-  description: 'Conoce las políticas de servicio, duración de tours de 1 Día y 1/2 Día, tamaño de grupos de máximo 19 Pax y condiciones de reserva de Inca Bound.',
+  title: 'Términos y Condiciones | Agencia de Viajes',
+  description: 'Conoce las políticas de servicio, duración de tours de 1 Día y 1/2 Día, tamaño de grupos y condiciones de reserva.',
 };
 
 export default function TerminosPage() {
@@ -20,7 +20,7 @@ export default function TerminosPage() {
           <div className="absolute inset-0">
             <Image 
               src="/assets/heros/hero-terminos.png" 
-              alt="Términos y Condiciones Inca Bound" 
+              alt="Términos y Condiciones" 
               fill 
               sizes="100vw" 
               className="object-cover" 
@@ -35,7 +35,7 @@ export default function TerminosPage() {
               Términos y Condiciones
             </h1>
             <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
-              Políticas de servicio, itinerarios operacionales, duraciones reales, capacidad de pasajeros y condiciones de transporte de Inca Bound Tour Operator.
+              Políticas de servicio, itinerarios operacionales, duraciones reales, capacidad de pasajeros y condiciones de transporte.
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function TerminosPage() {
               </div>
               <div className="text-slate-600 text-sm md:text-base leading-relaxed space-y-3">
                 <p>
-                  En <strong>Inca Bound Tour Operator</strong>, la clasificación de la duración de nuestras expediciones se define bajo los siguientes estándares operativos reales:
+                  En nuestra agencia, la clasificación de la duración de nuestras expediciones se define bajo los siguientes estándares operativos reales:
                 </p>
                 <ul className="list-disc pl-6 space-y-3 text-slate-700">
                   <li>
@@ -135,7 +135,7 @@ export default function TerminosPage() {
                 </h2>
               </div>
               <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-                Cada pasajero es responsable del cuidado de sus objetos personales, cámaras y documentos durante las caminatas y paradas. Inca Bound no se responsabiliza por pérdidas de artículos de valor dejados desatendidos fuera de las consignas oficiales del transporte.
+                Cada pasajero es responsable del cuidado de sus objetos personales, cámaras y documentos durante las caminatas y paradas. La agencia no se responsabiliza por pérdidas de artículos de valor dejados desatendidos fuera de las consignas oficiales del transporte.
               </p>
             </section>
 
@@ -143,7 +143,7 @@ export default function TerminosPage() {
             <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-200/80 flex items-start gap-3 text-amber-900 text-xs md:text-sm">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <p>
-                Al efectuar la reserva de cualquier expedición o paquete a través de nuestro portal web o asesores oficiales de Inca Bound, el usuario declara haber leído, comprendido y aceptado incondicionalmente los presentes Términos y Condiciones.
+                Al efectuar la reserva de cualquier expedición o paquete a través de nuestro portal web o asesores oficiales, el usuario declara haber leído, comprendido y aceptado incondicionalmente los presentes Términos y Condiciones.
               </p>
             </div>
 

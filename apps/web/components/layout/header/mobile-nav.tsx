@@ -165,7 +165,7 @@ export function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
       {/* Footer del menú mobile */}
       <div className="mt-auto pt-6 pb-2 px-6 text-center">
-        <p className="text-xs text-gray-400 font-medium">Inca Bound &bull; Cusco, Perú</p>
+        <p className="text-xs text-gray-400 font-medium">Agencia de Viajes &bull; Cusco, Perú</p>
       </div>
     </div>
   );

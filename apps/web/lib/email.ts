@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { logger } from './logger';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.EMAIL_FROM || 'reserva@incabound.com';
+const FROM_EMAIL = process.env.EMAIL_FROM || 'reserva@agenciadeviajes.com';
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
@@ -45,7 +45,7 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmación de Reserva - Inca Bound</title>
+        <title>Confirmación de Reserva - Agencia de Viajes</title>
         <style>
           body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f5; margin: 0; padding: 0; color: #1e293b; }
           .container { max-width: 600px; margin: 30px auto; background: #ffffff; rounded: 16px; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
@@ -67,7 +67,7 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
       <body>
         <div class="container">
           <div class="header">
-            <h1>Inca Bound Operator</h1>
+            <h1>Agencia de Viajes Operator</h1>
             <p>¡Reserva Confirmada Exitosamente!</p>
           </div>
           
@@ -116,7 +116,7 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
               </a>
             </div>
           <div class="footer">
-            <p>Inca Bound Tour Operator - Cusco, Perú</p>
+            <p>Agencia de Viajes Tour Operator - Cusco, Perú</p>
             <p>Este es un correo automático de confirmación. Para cualquier modificación contacta a nuestro equipo.</p>
           </div>
         </div>
@@ -130,9 +130,9 @@ export async function sendReservationConfirmationEmail(data: ReservationEmailDat
     }
 
     const response = await resend.emails.send({
-      from: `Inca Bound <${FROM_EMAIL}>`,
+      from: `Agencia de Viajes <${FROM_EMAIL}>`,
       to: [data.customerEmail],
-      subject: `¡Reserva Confirmada! - ${data.tourTitle} | Inca Bound`,
+      subject: `¡Reserva Confirmada! - ${data.tourTitle} | Agencia de Viajes`,
       html: htmlContent,
     });
 

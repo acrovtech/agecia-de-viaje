@@ -47,7 +47,7 @@ export async function uploadToR2(
       };
     }
 
-    const bucketName = process.env.R2_BUCKET_NAME || 'incabound';
+    const bucketName = process.env.R2_BUCKET_NAME || 'agenciadeviajes';
 
     const command = new PutObjectCommand({
       Bucket: bucketName,

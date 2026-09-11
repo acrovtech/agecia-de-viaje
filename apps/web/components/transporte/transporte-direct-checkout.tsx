@@ -252,7 +252,7 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
       `*Email:* ${email || 'No especificado'}\n` +
       `*Teléfono:* ${phone || 'No especificado'}\n` +
       (notes ? `*Notas:* ${notes}\n\n` : '\n') +
-      `¡Hola IncaBound! Quisiera confirmar la disponibilidad de este traslado.`;
+      `¡Hola! Quisiera confirmar la disponibilidad de este traslado.`;
 
     const whatsappUrl = `https://wa.me/51984772299?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
@@ -287,7 +287,7 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
     try {
       const nameParts = fullName.trim().split(' ');
       const firstName = nameParts[0] || 'Cliente';
-      const lastName = nameParts.slice(1).join(' ') || 'IncaBound';
+      const lastName = nameParts.slice(1).join(' ') || 'Pasajero';
 
       const res = await createReservationAndPaymentToken({
         tourSlug: currentTransfer.slug,

@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Inca Bound Admin",
+  title: "Panel de Administración | Agencia de Viajes",
   description: "Panel de administración de tours y reservas",
 };
 

@@ -36,7 +36,7 @@ const testimonials = [
   {
     name: "Vanessa R",
     date: "Octubre 2025",
-    title: "Experiencia Inca Bound inolvidable",
+    title: "Experiencia inolvidable",
     text: "Es una empresa altamente comprometida, son cercanos, responsables y dispuestos a brindar la mejor experiencia en su país. Muy recomendados al 100%.",
     avatar: "https://media-cdn.tripadvisor.com/media/photo-o/1a/f6/f0/9f/default-avatar-2020-16.jpg"
   },
@@ -78,7 +78,7 @@ export function Testimonials() {
             Nuestros viajeros <span className="text-[#062918]">lo confirman</span>
           </h2>
           <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-            Historias reales de personas que vivieron la magia del Perú con Inca Bound. Más de 1000 opiniones de 5 estrellas en TripAdvisor.
+            Historias reales de personas que vivieron la magia del Perú con nosotros. Más de 1000 opiniones de 5 estrellas en plataformas de viaje.
           </p>
         </div>
 

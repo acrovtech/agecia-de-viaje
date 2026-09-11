@@ -13,35 +13,35 @@ const poppins = Poppins({
   variable: '--font-poppins' 
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://incabound.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agenciadeviajes.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Inca Bound | Agencia de Viajes y Tours en Perú",
-    template: "%s | Inca Bound",
+    default: "Agencia de Viajes | Tours y Experiencias en Perú",
+    template: "%s | Agencia de Viajes",
   },
-  description: "Descubre la magia de los Andes, Machu Picchu, Laguna Humantay, Vinicunca y traslados privados en Cusco con Inca Bound.",
+  description: "Descubre la magia de los Andes, Machu Picchu, Laguna Humantay, Vinicunca y traslados privados en Cusco.",
   openGraph: {
     type: "website",
     locale: "es_PE",
     url: siteUrl,
-    siteName: "Inca Bound",
-    title: "Inca Bound | Agencia de Viajes y Tours en Perú",
+    siteName: "Agencia de Viajes",
+    title: "Agencia de Viajes | Tours y Experiencias en Perú",
     description: "Experiencias únicas y auténticas en Perú con guías expertos locales y atención 24/7.",
     images: [
       {
         url: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp",
         width: 1200,
         height: 630,
-        alt: "Inca Bound Tours en Perú",
+        alt: "Tours en Perú",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Inca Bound | Tours en Perú",
-    description: "Descubre los Andes y Machu Picchu con Inca Bound.",
+    title: "Agencia de Viajes | Tours en Perú",
+    description: "Descubre los Andes y Machu Picchu con experiencias inolvidables.",
     images: ["https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp"],
   },
 };

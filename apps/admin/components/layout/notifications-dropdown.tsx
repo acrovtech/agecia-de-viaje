@@ -29,7 +29,7 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
   useEffect(() => {
     setIsMounted(true);
     try {
-      const stored = localStorage.getItem('incabound_read_notifications');
+      const stored = localStorage.getItem('admin_read_notifications');
       if (stored) {
         setReadIds(JSON.parse(stored));
       }
@@ -79,7 +79,7 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
     const allIds = notifications.map(n => n.id);
     setReadIds(allIds);
     try {
-      localStorage.setItem('incabound_read_notifications', JSON.stringify(allIds));
+      localStorage.setItem('admin_read_notifications', JSON.stringify(allIds));
     } catch (e) {
       console.error("Error saving read status:", e);
     }
@@ -91,7 +91,7 @@ export function NotificationsDropdown({ initialNotifications = [] }: { initialNo
       const nextRead = [...readIds, id];
       setReadIds(nextRead);
       try {
-        localStorage.setItem('incabound_read_notifications', JSON.stringify(nextRead));
+        localStorage.setItem('admin_read_notifications', JSON.stringify(nextRead));
       } catch (e) {
         console.error("Error saving read status:", e);
       }

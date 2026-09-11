@@ -6,8 +6,8 @@ import { CertificatesSection } from '@/components/about/certificates-section';
 import Image from 'next/image';
 
 export const metadata = {
-  title: 'Nosotros | Inca Bound',
-  description: 'Conoce más sobre Inca Bound, nuestra historia y nuestro compromiso con el turismo sostenible en Perú.',
+  title: 'Nosotros | Agencia de Viajes',
+  description: 'Conoce más sobre nuestra historia, equipo y nuestro compromiso con el turismo sostenible en Perú.',
 };
 
 export default function AboutPage() {
@@ -21,7 +21,7 @@ export default function AboutPage() {
           <div className="absolute inset-0">
             <Image 
               src="https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/hero-nosotros.webp" 
-              alt="Sobre Nosotros Inca Bound" 
+              alt="Sobre Nosotros" 
               fill 
               sizes="100vw" 
               className="object-cover" 

@@ -40,6 +40,10 @@ export function DynamicPageTitle() {
     title = 'Gestión de Categorías';
   } else if (pathname === '/megamenus') {
     title = 'Gestión de Megamenús';
+  } else if (pathname === '/usuarios') {
+    title = 'Usuarios y Roles';
+  } else if (pathname === '/logs') {
+    title = 'Logs de Auditoría Forense';
   } else if (pathname === '/blogs/new') {
     title = 'Nuevo Artículo de Blog';
     showBack = true;

@@ -20,21 +20,21 @@ export async function generateMetadata({ params }: TourPageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug || '';
   if (!slug) {
-    return { title: 'Tour no encontrado - Inca Bound' };
+    return { title: 'Tour no encontrado - Agencia de Viajes' };
   }
 
   const tour = await getTourBySlug(slug);
 
   if (!tour) {
     return {
-      title: 'Tour no encontrado - Inca Bound',
+      title: 'Tour no encontrado - Agencia de Viajes',
     };
   }
 
   const imageUrl = tour.bannerImage || tour.cardImage || '/salkantay.webp';
 
   return {
-    title: tour.metaTitle || `${tour.title} - Inca Bound`,
+    title: tour.metaTitle || `${tour.title} - Agencia de Viajes`,
     description: tour.metaDescription || tour.description.slice(0, 160),
     openGraph: {
       title: tour.title,
@@ -127,27 +127,28 @@ export default async function TourPage({ params }: TourPageProps) {
     images: tour.images.map(img => img.url)
   };
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agenciadeviajes.com';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'TouristTrip',
-        '@id': `https://incabound.com/tours/${tour.slug}#trip`,
+        '@id': `${siteUrl}/tours/${tour.slug}#trip`,
         name: tour.title,
         description: tour.description.slice(0, 300),
         image: isValidImage ? [rawImage] : ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp'],
         touristType: ['AdventureTourism', 'CulturalTourism'],
         provider: {
           '@type': 'TravelAgency',
-          name: 'Inca Bound',
-          url: 'https://incabound.com',
+          name: 'Agencia de Viajes',
+          url: siteUrl,
         },
         offers: {
           '@type': 'Offer',
           price: tour.sharedPrice || 0,
           priceCurrency: 'USD',
           availability: 'https://schema.org/InStock',
-          url: `https://incabound.com/tours/${tour.slug}`,
+          url: `${siteUrl}/tours/${tour.slug}`,
         },
         ...(tour.itineraries.length > 0 ? {
           itinerary: {
@@ -168,19 +169,19 @@ export default async function TourPage({ params }: TourPageProps) {
             '@type': 'ListItem',
             position: 1,
             name: 'Inicio',
-            item: 'https://incabound.com',
+            item: siteUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Tours',
-            item: 'https://incabound.com/tours',
+            item: `${siteUrl}/tours`,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: tour.title,
-            item: `https://incabound.com/tours/${tour.slug}`,
+            item: `${siteUrl}/tours/${tour.slug}`,
           },
         ],
       },

@@ -5,10 +5,10 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Catálogo de Tours en Perú, Cusco y Machu Picchu | Inca Bound',
-  description: 'Explora nuestra colección de tours diarios, trekking a Laguna Humantay, Vinicunca, Salkantay, Valle Sagrado y Machu Picchu con Inca Bound Tour Operator.',
+  title: 'Catálogo de Tours en Perú, Cusco y Machu Picchu | Agencia de Viajes',
+  description: 'Explora nuestra colección de tours diarios, trekking a Laguna Humantay, Vinicunca, Salkantay, Valle Sagrado y Machu Picchu.',
   openGraph: {
-    title: 'Catálogo de Tours en Perú | Inca Bound',
+    title: 'Catálogo de Tours en Perú | Agencia de Viajes',
     description: 'Explora nuestra colección de tours diarios, trekking y experiencias auténticas en Cusco y Perú.',
     images: ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp'],
   },

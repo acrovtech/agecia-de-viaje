@@ -5,6 +5,14 @@ import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      logger('warn', 'Intento de acceso bloqueado a endpoint de pago simulado en producción.');
+      return NextResponse.json(
+        { error: 'Endpoint no disponible en ambiente de producción.' },
+        { status: 403 }
+      );
+    }
+
     const { reservationId } = await req.json();
 
     if (!reservationId) {

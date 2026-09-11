@@ -54,33 +54,34 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
     (blog.bannerImage.startsWith('http') || blog.bannerImage.startsWith('/uploads') || blog.bannerImage.startsWith('/blogs'))
   );
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agenciadeviajes.com';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'BlogPosting',
-        '@id': `https://incabound.com/blog/${blog.slug}#post`,
+        '@id': `${siteUrl}/blog/${blog.slug}#post`,
         headline: blog.title,
         description: blog.metaDescription || blog.paragraphs?.[0]?.content?.slice(0, 160) || blog.title,
-        image: hasBanner ? [blog.bannerImage] : ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/blogs-hero-inca-bound.webp'],
+        image: hasBanner ? [blog.bannerImage] : ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp'],
         datePublished: blog.createdAt.toISOString(),
         dateModified: blog.updatedAt.toISOString(),
         author: {
           '@type': 'Organization',
-          name: 'Inca Bound',
-          url: 'https://incabound.com',
+          name: 'Agencia de Viajes',
+          url: siteUrl,
         },
         publisher: {
           '@type': 'Organization',
-          name: 'Inca Bound',
+          name: 'Agencia de Viajes',
           logo: {
             '@type': 'ImageObject',
-            url: 'https://incabound.com/logo.svg',
+            url: `${siteUrl}/logo.svg`,
           },
         },
         mainEntityOfPage: {
           '@type': 'WebPage',
-          '@id': `https://incabound.com/blog/${blog.slug}`,
+          '@id': `${siteUrl}/blog/${blog.slug}`,
         },
       },
       {
@@ -90,19 +91,19 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
             '@type': 'ListItem',
             position: 1,
             name: 'Inicio',
-            item: 'https://incabound.com',
+            item: siteUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Blog',
-            item: 'https://incabound.com/blog',
+            item: `${siteUrl}/blog`,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: blog.title,
-            item: `https://incabound.com/blog/${blog.slug}`,
+            item: `${siteUrl}/blog/${blog.slug}`,
           },
         ],
       },

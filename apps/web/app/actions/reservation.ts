@@ -11,13 +11,34 @@ const PassengerSchema = z.object({
   docNumber: z.string().optional().default(''),
 });
 
-const CheckoutDataSchema = z.object({
+const CartItemInputSchema = z.object({
   tourSlug: z.string().min(1, 'El slug del tour es requerido'),
   tourTitle: z.string().optional(),
   serviceType: z.enum(['shared', 'private']).optional().default('shared'),
   vehicleId: z.string().optional(),
   vehicleCode: z.string().optional(),
   pickupTime: z.string().optional(),
+  pickupHotel: z.string().optional(),
+  date: z.string().min(1, 'La fecha de reserva es requerida'),
+  pax: z.coerce.number().int().min(1, 'Debe registrar al menos 1 pasajero'),
+  price: z.number().optional(),
+  totalPrice: z.number().optional(),
+});
+
+const CheckoutDataSchema = z.object({
+  items: z.array(CartItemInputSchema).optional(),
+
+  // Campos para compatibilidad con reservas directas de 1 solo item
+  tourSlug: z.string().optional(),
+  tourTitle: z.string().optional(),
+  serviceType: z.enum(['shared', 'private']).optional().default('shared'),
+  vehicleId: z.string().optional(),
+  vehicleCode: z.string().optional(),
+  pickupTime: z.string().optional(),
+  date: z.string().optional(),
+  pax: z.coerce.number().int().optional(),
+
+  // Datos de contacto del titular
   customerFirstName: z.string().min(1, 'El nombre del titular es requerido'),
   customerLastName: z.string().min(1, 'El apellido del titular es requerido'),
   customerEmail: z.string().email('El correo electrónico ingresado no es válido'),
@@ -25,12 +46,24 @@ const CheckoutDataSchema = z.object({
   pickupHotel: z.string().optional(),
   specialRequirements: z.string().optional(),
   passengers: z.array(PassengerSchema).optional(),
-  date: z.string().min(1, 'La fecha de reserva es requerida'),
-  pax: z.coerce.number().int().min(1, 'Debe registrar al menos 1 pasajero'),
   totalPrice: z.number().optional(),
 });
 
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
+
+type CalculatedItem = {
+  tourId: string | null;
+  transferId: string | null;
+  vehicleTypeId: string | null;
+  title: string;
+  serviceType: string;
+  date: Date;
+  pax: number;
+  unitPrice: number;
+  subtotal: number;
+  pickupHotel?: string;
+  pickupTime?: string;
+};
 
 export async function createReservationAndPaymentToken(rawData: unknown) {
   try {
@@ -42,100 +75,138 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     }
     const data = parsed.data;
 
-    // 2. Buscar si es un tour o un traslado en la base de datos
-    let tour = await prisma.tour.findFirst({
-      where: {
-        OR: [
-          { slug: data.tourSlug },
-          { slug: data.tourSlug.toLowerCase() }
-        ]
-      },
-      include: {
-        privatePricing: { orderBy: { pax: 'asc' } }
-      }
-    });
+    // 2. Consolidar items a procesar (Multi-item o fallback single-item)
+    let rawItems: z.infer<typeof CartItemInputSchema>[] = [];
 
-    let transfer = null;
-    if (!tour) {
-      transfer = await prisma.transfer.findFirst({
+    if (data.items && data.items.length > 0) {
+      rawItems = data.items;
+    } else if (data.tourSlug && data.date && data.pax) {
+      rawItems = [{
+        tourSlug: data.tourSlug,
+        tourTitle: data.tourTitle,
+        serviceType: data.serviceType || 'shared',
+        vehicleId: data.vehicleId,
+        vehicleCode: data.vehicleCode,
+        pickupTime: data.pickupTime,
+        pickupHotel: data.pickupHotel,
+        date: data.date,
+        pax: data.pax,
+        totalPrice: data.totalPrice,
+      }];
+    }
+
+    if (rawItems.length === 0) {
+      return { success: false, error: 'No se enviaron servicios o tours para procesar la reserva.' };
+    }
+
+    // 3. Calcular precios 100% autoritativos desde PostgreSQL para cada ítem
+    const calculatedItems: CalculatedItem[] = [];
+    let grandTotalPrice = 0;
+
+    for (const item of rawItems) {
+      const isPrivate = item.serviceType === 'private';
+      const itemPax = item.pax;
+
+      // Buscar tour
+      const tour = await prisma.tour.findFirst({
         where: {
           OR: [
-            { slug: data.tourSlug },
-            { slug: data.tourSlug.toLowerCase() }
+            { slug: item.tourSlug },
+            { slug: item.tourSlug.toLowerCase() }
           ]
         },
         include: {
-          vehiclePrices: {
-            include: {
-              vehicle: true
-            }
-          }
+          privatePricing: { orderBy: { pax: 'asc' } }
         }
       });
-    }
 
-    if (!tour && !transfer) {
-      return { success: false, error: 'El tour o traslado seleccionado no existe en el sistema.' };
-    }
-
-    // 3. Validar número de pasajeros (pax)
-    const pax = parseInt(String(data.pax), 10);
-    if (isNaN(pax) || pax <= 0) {
-      return { success: false, error: 'La cantidad de pasajeros debe ser un número entero mayor a 0.' };
-    }
-
-    // 4. Calcular precio 100% autoritativo desde el Servidor (PostgreSQL)
-    const isPrivate = data.serviceType === 'private';
-    let serverTotalPrice = 0;
-    let selectedVehicleTypeId: string | null = null;
-
-    if (tour) {
-      let serverUnitPrice = 0;
-      if (isPrivate) {
-        if (!tour.hasPrivateService) {
-          return { success: false, error: 'Este tour no cuenta con servicio privado habilitado.' };
-        }
-
-        // Buscar la tarifa privada que coincida con la cantidad de pax
-        const matchingTier = tour.privatePricing?.find(p => p.pax === pax);
-        if (!matchingTier || matchingTier.price <= 0) {
-          return { 
-            success: false, 
-            error: `No existe una tarifa privada configurada para ${pax} ${pax === 1 ? 'pasajero' : 'pasajeros'}.` 
-          };
-        }
-
-        serverUnitPrice = matchingTier.price;
-      } else {
-        // Servicio Compartido / Grupal
-        if (tour.sharedPrice === null || tour.sharedPrice === undefined || tour.sharedPrice <= 0) {
-          return { success: false, error: 'Tarifa del tour compartido no configurada en el sistema.' };
-        }
-        serverUnitPrice = tour.sharedPrice;
+      let transfer = null;
+      if (!tour) {
+        transfer = await prisma.transfer.findFirst({
+          where: {
+            OR: [
+              { slug: item.tourSlug },
+              { slug: item.tourSlug.toLowerCase() }
+            ]
+          },
+          include: {
+            vehiclePrices: {
+              include: { vehicle: true }
+            }
+          }
+        });
       }
 
-      serverTotalPrice = Math.round(serverUnitPrice * pax * 100) / 100;
-    } else if (transfer) {
-      if (isPrivate) {
-        // En traslado privado el precio es por vehículo
-        const matchingVehiclePrice = transfer.vehiclePrices.find(vp => 
-          vp.vehicle.id === data.vehicleId || 
-          vp.vehicle.code === data.vehicleCode || 
-          vp.vehicleId === data.vehicleId
-        ) || transfer.vehiclePrices[0];
-
-        selectedVehicleTypeId = matchingVehiclePrice?.vehicle.id || null;
-        const basePrice = matchingVehiclePrice?.price || 20;
-        serverTotalPrice = basePrice;
-      } else {
-        const sharedPrice = transfer.sharedPrice || 10;
-        serverTotalPrice = Math.round(sharedPrice * pax * 100) / 100;
+      if (!tour && !transfer) {
+        return { 
+          success: false, 
+          error: `El servicio "${item.tourTitle || item.tourSlug}" no existe en el sistema.` 
+        };
       }
+
+      let unitPrice = 0;
+      let subtotal = 0;
+      let vehicleTypeId: string | null = null;
+
+      if (tour) {
+        if (isPrivate) {
+          if (!tour.hasPrivateService) {
+            return { success: false, error: `El tour "${tour.title}" no cuenta con servicio privado.` };
+          }
+          const matchingTier = tour.privatePricing?.find(p => p.pax === itemPax);
+          if (!matchingTier || matchingTier.price <= 0) {
+            return {
+              success: false,
+              error: `No existe tarifa privada configurada para ${itemPax} personas en "${tour.title}".`
+            };
+          }
+          unitPrice = matchingTier.price;
+        } else {
+          if (tour.sharedPrice === null || tour.sharedPrice === undefined || tour.sharedPrice <= 0) {
+            return { success: false, error: `Tarifa compartida no configurada para "${tour.title}".` };
+          }
+          unitPrice = tour.sharedPrice;
+        }
+        subtotal = Math.round(unitPrice * itemPax * 100) / 100;
+      } else if (transfer) {
+        if (isPrivate) {
+          const matchingVehiclePrice = transfer.vehiclePrices.find(vp => 
+            vp.vehicle.id === item.vehicleId || 
+            vp.vehicle.code === item.vehicleCode || 
+            vp.vehicleId === item.vehicleId
+          ) || transfer.vehiclePrices[0];
+
+          vehicleTypeId = matchingVehiclePrice?.vehicle.id || null;
+          unitPrice = matchingVehiclePrice?.price || 20;
+          subtotal = unitPrice; // En traslado privado el precio es fijo por vehículo
+        } else {
+          unitPrice = transfer.sharedPrice || 10;
+          subtotal = Math.round(unitPrice * itemPax * 100) / 100;
+        }
+      }
+
+      if (subtotal <= 0) {
+        return { success: false, error: `Error calculando el importe legítimo para "${item.tourTitle || item.tourSlug}".` };
+      }
+
+      calculatedItems.push({
+        tourId: tour?.id || null,
+        transferId: transfer?.id || null,
+        vehicleTypeId,
+        title: tour?.title || transfer?.title || 'Servicio Inca Bound',
+        serviceType: isPrivate ? 'private' : 'shared',
+        date: item.date ? new Date(item.date) : new Date(),
+        pax: itemPax,
+        unitPrice,
+        subtotal,
+        pickupHotel: item.pickupHotel || data.pickupHotel,
+        pickupTime: item.pickupTime,
+      });
+
+      grandTotalPrice += subtotal;
     }
 
-    if (serverTotalPrice <= 0) {
-      return { success: false, error: 'Error calculando el importe legítimo de la reserva.' };
-    }
+    grandTotalPrice = Math.round(grandTotalPrice * 100) / 100;
 
     // Helper para separar nombre en firstName y lastName si viene consolidado
     const splitName = (p: { firstName?: string; lastName?: string; name?: string }): { firstName: string; lastName: string } => {
@@ -148,22 +219,44 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       return { firstName: fullName || 'Pasajero', lastName: '' };
     };
 
-    // 5. Crear la reserva en la Base de Datos con el precio calculado en el servidor
+    const firstItem = calculatedItems[0];
+    const maxPax = Math.max(...calculatedItems.map(it => it.pax), 1);
+    const reservationCode = `IB-${Date.now().toString(36).toUpperCase()}`;
+
+    // 4. Crear la reserva en la Base de Datos con todos sus ReservationItems
     const reservation = await prisma.reservation.create({
       data: {
-        tourId: tour?.id || null,
-        transferId: transfer?.id || null,
-        serviceType: data.serviceType || (isPrivate ? 'private' : 'shared'),
+        code: reservationCode,
         customerFirstName: data.customerFirstName,
         customerLastName: data.customerLastName,
         customerEmail: data.customerEmail,
         customerPhone: data.customerPhone,
         pickupHotel: data.pickupHotel || '',
         specialRequirements: data.specialRequirements || '',
-        date: data.date ? new Date(data.date) : new Date(),
-        pax: pax,
-        totalPrice: serverTotalPrice, // PRECIO AUTORITATIVO DEL SERVIDOR
+        date: firstItem?.date || new Date(),
+        pax: maxPax,
+        totalPrice: grandTotalPrice,
+        currency: 'USD',
         status: 'PENDING',
+        // Campos de compatibilidad directa hacia atrás
+        tourId: firstItem?.tourId || null,
+        transferId: firstItem?.transferId || null,
+        serviceType: firstItem?.serviceType || 'shared',
+        // Colección normalizada multi-tour
+        items: {
+          create: calculatedItems.map(item => ({
+            tourId: item.tourId,
+            transferId: item.transferId,
+            vehicleTypeId: item.vehicleTypeId,
+            serviceType: item.serviceType,
+            date: item.date,
+            pax: item.pax,
+            unitPrice: item.unitPrice,
+            totalPrice: item.subtotal,
+            pickupHotel: item.pickupHotel || '',
+            pickupTime: item.pickupTime || '',
+          }))
+        },
         passengers: data.passengers && data.passengers.length > 0 ? {
           create: data.passengers.map(p => {
             const { firstName, lastName } = splitName(p);
@@ -178,14 +271,14 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       }
     });
 
-    // 6. Izipay Form Token con el monto 100% autoritativo en centavos
-    const shopId = process.env.IZIPAY_USERNAME || process.env.IZIPAY_SHOP_ID;
-    const testPassword = process.env.IZIPAY_PASSWORD_TEST || process.env.IZIPAY_TEST_PASSWORD || process.env.IZIPAY_SECRET_KEY;
-    const apiUrl = process.env.IZIPAY_API_URL || 'https://api.micuentaweb.pe';
+    // 5. Izipay Form Token con el monto total autoritativo en centavos
+    const shopId = process.env.IZIPAY_SHOP_ID || process.env.IZIPAY_USERNAME;
+    const testPassword = process.env.IZIPAY_TEST_PASSWORD || process.env.IZIPAY_PASSWORD_TEST || process.env.IZIPAY_SECRET_KEY;
+    const apiUrl = process.env.IZIPAY_API_URL || process.env.IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
     const currency = process.env.IZIPAY_CURRENCY || 'USD';
 
     if (!shopId || !testPassword) {
-      console.error("❌ CRÍTICO: No se encontraron las credenciales de Izipay (IZIPAY_USERNAME / IZIPAY_SHOP_ID o IZIPAY_PASSWORD_TEST / IZIPAY_TEST_PASSWORD).");
+      console.error("❌ CRÍTICO: No se encontraron las credenciales de Izipay (IZIPAY_SHOP_ID / IZIPAY_TEST_PASSWORD).");
       return {
         success: false,
         error: "Configuración de pasarela de pago incompleta en el servidor. Contacte con soporte."
@@ -193,7 +286,7 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     }
 
     const authHeader = `Basic ${Buffer.from(`${shopId}:${testPassword}`).toString('base64')}`;
-    const amountInCents = Math.round(serverTotalPrice * 100);
+    const amountInCents = Math.round(grandTotalPrice * 100);
 
     const izipayResponse = await fetch(`${apiUrl}/api-payment/V4/Charge/CreatePayment`, {
       method: "POST",

@@ -1,5 +1,5 @@
 {
-  "name": "incabound",
+  "name": "agencia-de-viajes",
   "private": true,
   "scripts": {
     "postinstall": "pnpm --filter @repo/db generate",

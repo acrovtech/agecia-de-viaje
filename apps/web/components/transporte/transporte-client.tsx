@@ -28,7 +28,7 @@ function TransporteContent({ initialTransfers }: TransporteClientProps) {
         <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold font-heading text-[#062918]">
-              ¿Por qué viajar con <span className="text-[#0d9488]">IncaBound</span>?
+              ¿Por qué viajar con <span className="text-[#0d9488]">nosotros</span>?
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 mt-2">
               Garantizamos puntualidad, vehículos sanitizados y conductores altamente capacitados.

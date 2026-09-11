@@ -9,7 +9,7 @@ export const blogsData = [
     title: 'Guía Completa para Visitar la Laguna Humantay en 2026: Consejos, Altitud y Clima',
     slug: 'guia-visitar-laguna-humantay',
     bannerImage: `${R2_BASE}/1784875453808-laguna-humantay-banner.webp`,
-    metaTitle: 'Guía para Visitar la Laguna Humantay - Inca Bound',
+    metaTitle: 'Guía para Visitar la Laguna Humantay - Agencia de Viajes',
     metaDescription: 'Descubre cómo preparar tu excursión a la Laguna Humantay a 4,200 m.n.m. Consejos de aclimatación, mejor época para viajar y qué llevar.',
     keywords: 'Laguna Humantay, Tour Humantay, Caminata Humantay Cusco, Altitud Humantay',
     paragraphs: [
@@ -37,7 +37,7 @@ export const blogsData = [
     title: 'Montaña de 7 Colores (Vinicunca): Todo lo que Debes Saber Antes de tu Viaje',
     slug: 'montana-de-7-colores-vinicunca-guia-viaje',
     bannerImage: `${R2_BASE}/1784875465196-vinicunca-banner.webp`,
-    metaTitle: 'Guía de Viaje Montaña de 7 Colores Vinicunca - Inca Bound',
+    metaTitle: 'Guía de Viaje Montaña de 7 Colores Vinicunca - Agencia de Viajes',
     metaDescription: 'Información esencial para conocer la famosa Montaña de Colores Vinicunca en Cusco. Consejos de altura, clima y recomendaciones de vestimenta.',
     keywords: 'Montaña de 7 Colores, Vinicunca, Rainbow Mountain Cusco, Tour Vinicunca',
     paragraphs: [
@@ -65,7 +65,7 @@ export const blogsData = [
     title: 'Valle Sagrado de los Incas: Pisac, Ollantaytambo y Chinchero en 1 Día',
     slug: 'valle-sagrado-incas-pisac-ollantaytambo-chinchero',
     bannerImage: `${R2_BASE}/1784875478876-valle-sagrado-banner.webp`,
-    metaTitle: 'Tour Valle Sagrado de los Incas: Pisac y Ollantaytambo - Inca Bound',
+    metaTitle: 'Tour Valle Sagrado de los Incas: Pisac y Ollantaytambo - Agencia de Viajes',
     metaDescription: 'Explora la historia, andenerías y arquitectura viva del Valle Sagrado de los Incas. Una guía completa por Pisac, Ollantaytambo y Chinchero.',
     keywords: 'Valle Sagrado Cusco, Pisac Ollantaytambo, Tour Valle Sagrado, Arqueologia Inca',
     paragraphs: [
@@ -93,7 +93,7 @@ export const blogsData = [
     title: 'Waqrapukara: La Fortaleza Inca Escondida en el Cañón del Apurímac',
     slug: 'waqrapukara-fortaleza-inca-escondida-cusco',
     bannerImage: `${R2_BASE}/1784875486698-waqrapukara-banner.webp`,
-    metaTitle: 'Waqrapukara: La Fortaleza Inca Alternativa - Inca Bound',
+    metaTitle: 'Waqrapukara: La Fortaleza Inca Alternativa - Agencia de Viajes',
     metaDescription: 'Descubre Waqrapukara, el majestuoso santuario inca erigido al borde de acantilados impresionantes en el cañón del río Apurímac.',
     keywords: 'Waqrapukara, Tour Waqrapukara, Trekking alternativo Cusco, Fortaleza Inca',
     paragraphs: [
@@ -115,7 +115,7 @@ export const blogsData = [
     title: 'Queshuachaca: El Último Puente Inca de Ichu Tejido a Mano',
     slug: 'queshuachaca-ultimo-puente-inca-tejido',
     bannerImage: `${R2_BASE}/1784875494469-queshuachaca-banner.webp`,
-    metaTitle: 'Queshuachaca: El Último Puente Inca Vivo - Inca Bound',
+    metaTitle: 'Queshuachaca: El Último Puente Inca Vivo - Agencia de Viajes',
     metaDescription: 'Conoce la impresionante historia de Queshuachaca, el último puente colgante de paja trenzada que renace cada año gracias al trabajo comunitario.',
     keywords: 'Queshuachaca, Puente Inca, Tradición Inca Cusco, Qeswachaka',
     paragraphs: [
@@ -137,7 +137,7 @@ export const blogsData = [
     title: 'Camino Inca vs. Salkantay Trek: ¿Cuál Elegir para tu Aventura a Machu Picchu?',
     slug: 'camino-inca-vs-salkantay-trek-comparativa',
     bannerImage: `${R2_BASE}/1784875500398-camino-inca-vs-salkantay-banner.webp`,
-    metaTitle: 'Camino Inca vs Salkantay Trek: Guía Comparativa - Inca Bound',
+    metaTitle: 'Camino Inca vs Salkantay Trek: Guía Comparativa - Agencia de Viajes',
     metaDescription: 'Comparamos el Camino Inca clásico y la ruta del Salkantay Trek a Machu Picchu: paisajismo, permisos, dificultad y experiencia.',
     keywords: 'Camino Inca, Salkantay Trek, Machu Picchu Trek, Comparativa rutas Machu Picchu',
     paragraphs: [

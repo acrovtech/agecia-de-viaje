@@ -10,10 +10,11 @@ declare global {
 
 export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
-export { PrismaClient } from "@prisma/client";
-export type * from "@prisma/client";
+export { PrismaClient, Role, ReservationStatus } from "@prisma/client";
+export * from "@prisma/client";
 export * from "./transfers-data";
 export * from "./schemas";
+export * from "./auth-security";
 
 /**
  * Traduce códigos de error conocidos de Prisma a mensajes claros en español.

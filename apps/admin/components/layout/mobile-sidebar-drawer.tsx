@@ -6,9 +6,11 @@ import { SidebarNav } from './sidebar-nav';
 
 export function MobileSidebarDrawer({ 
   isMaster = true, 
+  userRole = 'MASTER',
   userEmail 
 }: { 
   isMaster?: boolean; 
+  userRole?: string;
   userEmail?: string; 
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +42,7 @@ export function MobileSidebarDrawer({
         }`}
       >
         <div className="flex-1 overflow-y-auto [&_a]:py-3 [&_span]:text-[15px] md:[&_span]:text-xs [&_svg]:w-5 [&_svg]:h-5" onClick={() => setIsOpen(false)}>
-          <SidebarNav isMaster={isMaster} userEmail={userEmail} />
+          <SidebarNav isMaster={isMaster} userRole={userRole} userEmail={userEmail} />
         </div>
       </div>
     </>

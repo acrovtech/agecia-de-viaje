@@ -1,12 +1,12 @@
 /**
- * Configuración oficial y centralizada de contacto de IncaBound
+ * Configuración oficial y centralizada de contacto
  */
 export const CONTACT_CONFIG = {
-  companyName: 'Inca Bound Travel Agency',
+  companyName: 'Agencia de Viajes',
   whatsappNumber: '51984772299', // Número principal de reservas
   whatsappOperations: '51974681666', // Número de operaciones y asistencia 24/7
   displayPhone: '+51 984 772 299',
-  email: 'reserva@incabound.com',
+  email: 'contacto@agenciadeviajes.com',
   address: 'Cusco, Perú',
   getWhatsappUrl(message: string = '', number: string = '51984772299') {
     const cleanNumber = number.replace(/\D/g, '');

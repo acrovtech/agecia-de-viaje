@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Bell, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -16,11 +17,30 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await verifyAdminSession();
-  const isMaster = session ? session.role === 'MASTER' : true;
-  const userEmail = session?.email || (isMaster ? 'admin@incabound.com' : 'gestion@incabound.com');
-  const userInitials = isMaster ? 'AD' : 'GE';
-  const userName = isMaster ? 'Adriano Admin' : 'Gestión Inca Bound';
-  const userRole = isMaster ? 'Administrador Master' : 'Gestor de Contenidos';
+  if (!session) {
+    redirect('/login');
+  }
+
+  const isMaster = session.role === 'MASTER' || session.role === 'SUPERADMIN';
+  const userRoleKey = session.role;
+  const userEmail = session.email;
+
+  const roleNameMap: Record<string, string> = {
+    SUPERADMIN: 'Super Admin (Root)',
+    MASTER: 'Administrador Master',
+    OPERATOR: 'Operador de Reservas',
+    CONTENT_CREATOR: 'Gestor de Contenidos',
+    CLIENT: 'Gestor de Contenidos',
+  };
+
+  const userName = session.name || (session.email.split('@')[0] ?? 'Usuario');
+  const userRole = roleNameMap[userRoleKey] || 'Colaborador';
+  const userInitials = userName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase())
+    .join('') || userEmail.slice(0, 2).toUpperCase();
 
   // Cargar notificaciones iniciales desde el servidor
   const notifRes = await getRecentNotificationsAction();
@@ -34,12 +54,12 @@ export default async function DashboardLayout({
         {/* TOPBAR NEGRO SHOPIFY ADMIN (#0a0a0a) */}
         <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between bg-[#0a0a0a] text-white px-4 shrink-0 shadow-sm text-xs select-none">
           
-          {/* Izquierda: Logo Incabound & Mobile Drawer */}
+          {/* Izquierda: Logo Agencia de Viajes & Mobile Drawer */}
           <div className="flex items-center gap-2.5">
-            <MobileSidebarDrawer isMaster={isMaster} userEmail={userEmail} />
+            <MobileSidebarDrawer isMaster={isMaster} userRole={userRoleKey} userEmail={userEmail} />
 
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight italic font-serif text-white">incabound</span>
+              <span className="font-bold text-base tracking-tight font-sans text-white">TravelAdmin</span>
             </Link>
           </div>
 
@@ -67,7 +87,7 @@ export default async function DashboardLayout({
           
           {/* SIDEBAR NAVEGACIÓN POLARIS (#EBEBEB) */}
           <div className="hidden md:flex md:w-[240px] lg:w-[240px] md:flex-col h-full shrink-0 shadow-xs z-20">
-            <SidebarNav isMaster={isMaster} userEmail={userEmail} />
+            <SidebarNav isMaster={isMaster} userRole={userRoleKey} userEmail={userEmail} />
           </div>
 
           {/* CONTENIDO PRINCIPAL (#F1F1F1) */}

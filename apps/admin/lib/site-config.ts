@@ -1,13 +1,12 @@
 /**
- * Configuración centralizada de dominios y URLs públicas para el panel de administración de Incabound.
+ * Configuración centralizada de dominios y URLs públicas para el panel de administración.
  * 
  * Permite configurar el dominio de la web pública (storefront) vía variable de entorno NEXT_PUBLIC_SITE_URL
- * o NEXT_PUBLIC_STOREFRONT_URL. Si no se especifica, utiliza el dominio de producción por defecto
- * (https://incabound-web.acrovtech.com) o localhost cuando se ejecuta en entorno local.
+ * o NEXT_PUBLIC_STOREFRONT_URL.
  */
 
-export const DEFAULT_PRODUCTION_STOREFRONT_URL = 'https://incabound-web.acrovtech.com';
-export const DEFAULT_LOCAL_STOREFRONT_URL = 'https://incabound-web.acrovtech.com';
+export const DEFAULT_PRODUCTION_STOREFRONT_URL = 'https://agenciadeviajes.com';
+export const DEFAULT_LOCAL_STOREFRONT_URL = 'http://localhost:3000';
 
 /**
  * Obtiene la URL pública de la tienda / frontend web para una ruta dada.

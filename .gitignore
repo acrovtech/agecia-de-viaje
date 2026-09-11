@@ -43,3 +43,7 @@ yarn-error.log*
 *.pem
 media/
 
+# Agents & Customizations (contains private keys / tokens)
+.agents/
+.system_generated/
+*.log

@@ -10,10 +10,11 @@ export type CartItem = {
   createdAt: number; // timestamp Unix en ms
 };
 
-export const CART_STORAGE_KEY = 'incabound_cart';
+export const CART_STORAGE_KEY = 'travel_agency_cart';
+export const CART_OPEN_EVENT = 'travel_agency_cart_open';
 export const CART_EXPIRATION_MS = 60 * 60 * 1000; // 60 minutos en ms
 
-export const CART_UPDATED_EVENT = 'incabound_cart_updated';
+export const CART_UPDATED_EVENT = 'travel_agency_cart_updated';
 
 /**
  * Parsea los query params de la URL y construye un CartItem normalizado
@@ -38,7 +39,7 @@ export function parseCartItemFromParams(searchParams: URLSearchParams): CartItem
 
   return {
     tourSlug: tourSlug || '',
-    tourTitle: tourTitle || 'Tour Inca Bound',
+    tourTitle: tourTitle || 'Tour Seleccionado',
     image: tourImage,
     date: dateStr,
     pax: numPax,

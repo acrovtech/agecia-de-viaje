@@ -56,7 +56,16 @@ export async function POST(req: Request) {
 
         const updatedReservation = await prisma.reservation.findUnique({
           where: { id: orderId },
-          include: { tour: true }
+          include: { 
+            tour: true,
+            transfer: true,
+            items: {
+              include: {
+                tour: true,
+                transfer: true,
+              }
+            }
+          }
         });
 
         if (updatedReservation) {
@@ -67,11 +76,23 @@ export async function POST(req: Request) {
             day: 'numeric'
           });
 
+          let serviceTitle = updatedReservation.tour?.title;
+          if (!serviceTitle && updatedReservation.transfer) {
+            serviceTitle = `Traslado: ${updatedReservation.transfer.origin} - ${updatedReservation.transfer.destination}`;
+          }
+          if (updatedReservation.items && updatedReservation.items.length > 0) {
+            const itemTitles = updatedReservation.items.map(it => 
+              it.tour?.title || (it.transfer ? `Traslado: ${it.transfer.origin} a ${it.transfer.destination}` : 'Servicio Inca Bound')
+            );
+            serviceTitle = itemTitles.join(' + ');
+          }
+          serviceTitle = serviceTitle || 'Expedición Inca Bound';
+
           await sendReservationConfirmationEmail({
             reservationId: updatedReservation.id,
             customerName: `${updatedReservation.customerFirstName} ${updatedReservation.customerLastName}`,
             customerEmail: updatedReservation.customerEmail,
-            tourTitle: updatedReservation.tour?.title || 'Tour Inca Bound',
+            tourTitle: serviceTitle,
             formattedDate: formattedDate,
             pax: updatedReservation.pax,
             totalPrice: updatedReservation.totalPrice,

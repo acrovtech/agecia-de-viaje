@@ -17,7 +17,7 @@ export default function LoginPage() {
         <div className="text-center mb-8 flex flex-col items-center">
           <Image 
             src="/icon.svg" 
-            alt="Inca Bound Logo" 
+            alt="Logo" 
             width={80} 
             height={80} 
             className="object-contain mb-6" 
@@ -26,7 +26,7 @@ export default function LoginPage() {
             Panel de Administración
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Inca Bound · Sistema de Gestión Privado
+            Agencia de Viajes · Sistema de Gestión Privado
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export default function LoginPage() {
                 type="email"
                 name="email"
                 required
-                placeholder="correo@incabound.com"
+                placeholder="admin@agenciadeviajes.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#062918] focus:bg-white transition-all"
               />
             </div>

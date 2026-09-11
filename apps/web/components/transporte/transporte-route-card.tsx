@@ -143,7 +143,7 @@ export function TransporteRouteCard({ transfer }: RouteCardProps) {
       `*Hora estimada:* ${pickupTime || 'Por confirmar'}\n` +
       `*Pasajeros:* ${pax}\n` +
       `*Total Estimado:* $${currentTotal} USD\n\n` +
-      `¡Hola IncaBound! Quisiera coordinar este traslado.`;
+      `¡Hola! Quisiera coordinar este traslado.`;
 
     window.open(CONTACT_CONFIG.getWhatsappUrl(text, CONTACT_CONFIG.whatsappNumber), '_blank');
   };

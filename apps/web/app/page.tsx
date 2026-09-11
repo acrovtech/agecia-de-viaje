@@ -20,7 +20,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
 
-        {/* 3. Por qué Incabound */}
+        {/* 3. Por qué elegirnos */}
         <WhyUs />
 
         {/* 4. Tours Recomendados (4 cards) */}
