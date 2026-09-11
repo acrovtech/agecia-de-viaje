@@ -82,8 +82,17 @@ export const SharedUpdateUserSchema = z.object({
 });
 
 /**
- * Esquemas Zod para Gestión de Cupones Comerciales
+ * Esquemas Zod para Gestión de Cupones y Campañas de Marketing
  */
+export const SharedMarketingChannelSchema = z.enum([
+  'META_ADS',
+  'TIKTOK_ADS',
+  'GOOGLE_ADS',
+  'EMAIL_MARKETING',
+  'ORGANIC_VIDEO',
+]);
+export type SharedMarketingChannel = z.infer<typeof SharedMarketingChannelSchema>;
+
 export const SharedDiscountTypeSchema = z.enum(['PERCENTAGE', 'FIXED']);
 export type SharedDiscountType = z.infer<typeof SharedDiscountTypeSchema>;
 
@@ -95,11 +104,16 @@ export const SharedCreateCouponSchema = z.object({
     .trim()
     .transform((val) => val.toUpperCase())
     .refine((val) => /^[A-Z0-9_-]+$/.test(val), 'El código solo puede contener letras mayúsculas, números y guiones'),
+  name: z.string().max(100, 'El nombre de campaña no puede exceder 100 caracteres').optional().nullable(),
+  channel: SharedMarketingChannelSchema.default('META_ADS'),
   description: z.string().optional().nullable(),
   discountType: SharedDiscountTypeSchema.default('PERCENTAGE'),
   discountValue: z.coerce.number().positive('El valor del descuento debe ser mayor a 0'),
   minSpend: z.coerce.number().min(0, 'El gasto mínimo no puede ser negativo').default(0),
   maxDiscount: z.coerce.number().min(0).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  budget: z.coerce.number().min(0, 'El presupuesto no puede ser negativo').default(0).optional().nullable(),
   expiresAt: z.string().optional().nullable(),
   usageLimit: z.coerce.number().int().positive('El límite debe ser un número entero mayor a 0').optional().nullable(),
   isActive: z.boolean().default(true),
@@ -115,11 +129,16 @@ export const SharedUpdateCouponSchema = z.object({
     .transform((val) => val.toUpperCase())
     .refine((val) => /^[A-Z0-9_-]+$/.test(val), 'El código solo puede contener letras mayúsculas, números y guiones')
     .optional(),
+  name: z.string().max(100).optional().nullable(),
+  channel: SharedMarketingChannelSchema.optional(),
   description: z.string().optional().nullable(),
   discountType: SharedDiscountTypeSchema.optional(),
   discountValue: z.coerce.number().positive('El valor del descuento debe ser mayor a 0').optional(),
   minSpend: z.coerce.number().min(0).optional().nullable(),
   maxDiscount: z.coerce.number().min(0).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  budget: z.coerce.number().min(0).optional().nullable(),
   expiresAt: z.string().optional().nullable(),
   usageLimit: z.coerce.number().int().positive().optional().nullable(),
   isActive: z.boolean().optional(),

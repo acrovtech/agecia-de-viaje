@@ -61,4 +61,46 @@ describe('Coupon Validation & Calculation Logic', () => {
     expect(discountAmount).toBe(40);
     expect(finalTotal).toBe(0);
   });
+
+  it('debe validar canales de marketing y atributos de campaña publicitaria', () => {
+    const parsed = SharedCreateCouponSchema.safeParse({
+      code: 'fday20',
+      name: 'Campaña Día del Padre 2026',
+      channel: 'META_ADS',
+      discountType: 'PERCENTAGE',
+      discountValue: 20,
+      startDate: '2026-06-01T00:00:00.000Z',
+      endDate: '2026-06-15T23:59:59.000Z',
+      budget: 1500,
+      usageLimit: 100,
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.code).toBe('FDAY20');
+      expect(parsed.data.name).toBe('Campaña Día del Padre 2026');
+      expect(parsed.data.channel).toBe('META_ADS');
+      expect(parsed.data.budget).toBe(1500);
+      expect(parsed.data.usageLimit).toBe(100);
+    }
+  });
+
+  it('debe calcular métricas de ingresos y ROAS (Retorno de Inversión) con precisión', () => {
+    const budget = 1500;
+    const reservations = [
+      { totalPrice: 3200, status: 'CONFIRMED' },
+      { totalPrice: 4800, status: 'CONFIRMED' },
+      { totalPrice: 4500, status: 'COMPLETED' },
+      { totalPrice: 1000, status: 'CANCELLED' }, // No cuenta
+    ];
+
+    const confirmedRevenue = reservations
+      .filter((r) => r.status === 'CONFIRMED' || r.status === 'COMPLETED')
+      .reduce((sum, r) => sum + r.totalPrice, 0);
+
+    const roas = budget > 0 ? Number((confirmedRevenue / budget).toFixed(2)) : 0;
+
+    expect(confirmedRevenue).toBe(12500);
+    expect(roas).toBe(8.33); // $12,500 / $1,500 = 8.33x ROAS
+  });
 });

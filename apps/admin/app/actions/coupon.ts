@@ -8,6 +8,10 @@ import { requireAnyRole } from '@/lib/auth-check';
  * Obtiene la lista de cupones registrados junto con sus métricas comerciales.
  * Acceso restringido a Master, Superadmin y Marketing.
  */
+/**
+ * Obtiene la lista de cupones y campañas registrados junto con métricas de ingresos reales y ROAS.
+ * Acceso restringido a Master, Superadmin y Marketing.
+ */
 export async function getCouponsAction() {
   try {
     await requireAnyRole(['MASTER', 'MARKETING']);
@@ -18,25 +22,49 @@ export async function getCouponsAction() {
         _count: {
           select: { reservations: true },
         },
+        reservations: {
+          where: {
+            status: { in: ['PAID', 'PENDING'] },
+          },
+          select: {
+            totalPrice: true,
+            status: true,
+          },
+        },
       },
     });
 
-    const mappedCoupons: CouponItem[] = coupons.map((c: any) => ({
-      id: c.id,
-      code: c.code,
-      description: c.description,
-      discountType: c.discountType,
-      discountValue: c.discountValue,
-      minSpend: c.minSpend,
-      maxDiscount: c.maxDiscount,
-      expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
-      usageLimit: c.usageLimit,
-      timesUsed: c.timesUsed,
-      isActive: c.isActive,
-      createdBy: c.createdBy,
-      createdAt: c.createdAt.toISOString(),
-      updatedAt: c.updatedAt.toISOString(),
-    }));
+    const mappedCoupons: CouponItem[] = coupons.map((c: any) => {
+      // Dinero real generado por reservas pagadas
+      const paidReservations = c.reservations?.filter((r: any) => r.status === 'PAID') || [];
+      const totalRevenue = paidReservations.reduce((sum: number, res: any) => sum + (Number(res.totalPrice) || 0), 0);
+      const budget = Number(c.budget) || 0;
+      const roas = budget > 0 ? Number((totalRevenue / budget).toFixed(2)) : null;
+
+      return {
+        id: c.id,
+        code: c.code,
+        name: c.name || null,
+        channel: c.channel || 'META_ADS',
+        description: c.description,
+        discountType: c.discountType,
+        discountValue: c.discountValue,
+        minSpend: c.minSpend,
+        maxDiscount: c.maxDiscount,
+        startDate: c.startDate ? c.startDate.toISOString() : null,
+        endDate: c.endDate ? c.endDate.toISOString() : null,
+        budget: c.budget ?? 0,
+        expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+        usageLimit: c.usageLimit,
+        timesUsed: c.timesUsed,
+        isActive: c.isActive,
+        createdBy: c.createdBy,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+        totalRevenue,
+        roas,
+      };
+    });
 
     return { success: true, coupons: mappedCoupons };
   } catch (error: any) {
@@ -46,7 +74,7 @@ export async function getCouponsAction() {
 }
 
 /**
- * Registra un nuevo cupón comercial con código forzado a MAYÚSCULAS.
+ * Registra una nueva campaña / cupón con canal, vigencia publicitaria y presupuesto.
  */
 export async function createCouponAction(rawData: unknown) {
   try {
@@ -56,7 +84,7 @@ export async function createCouponAction(rawData: unknown) {
     if (!parsed.success) {
       return { 
         success: false, 
-        error: parsed.error.issues[0]?.message || 'Datos del cupón inválidos' 
+        error: parsed.error.issues[0]?.message || 'Datos de campaña/cupón inválidos' 
       };
     }
 
@@ -75,11 +103,16 @@ export async function createCouponAction(rawData: unknown) {
     const newCoupon = await (prisma as any).coupon.create({
       data: {
         code: cleanCode,
+        name: d.name?.trim() || null,
+        channel: d.channel || 'META_ADS',
         description: d.description?.trim() || null,
         discountType: d.discountType,
         discountValue: d.discountValue,
         minSpend: d.minSpend ?? 0,
         maxDiscount: d.maxDiscount ?? null,
+        startDate: d.startDate ? new Date(d.startDate) : null,
+        endDate: d.endDate ? new Date(d.endDate) : null,
+        budget: d.budget ?? 0,
         expiresAt: d.expiresAt ? new Date(d.expiresAt) : null,
         usageLimit: d.usageLimit ?? null,
         isActive: d.isActive ?? true,
@@ -97,7 +130,7 @@ export async function createCouponAction(rawData: unknown) {
 }
 
 /**
- * Actualiza los parámetros de un cupón existente.
+ * Actualiza los parámetros de una campaña / cupón existente.
  */
 export async function updateCouponAction(rawData: unknown) {
   try {
@@ -115,11 +148,20 @@ export async function updateCouponAction(rawData: unknown) {
 
     const updatePayload: Record<string, any> = {};
     if (data.code) updatePayload.code = data.code.trim().toUpperCase();
+    if (data.name !== undefined) updatePayload.name = data.name?.trim() || null;
+    if (data.channel) updatePayload.channel = data.channel;
     if (data.description !== undefined) updatePayload.description = data.description?.trim() || null;
     if (data.discountType) updatePayload.discountType = data.discountType;
     if (data.discountValue !== undefined) updatePayload.discountValue = data.discountValue;
     if (data.minSpend !== undefined) updatePayload.minSpend = data.minSpend ?? 0;
     if (data.maxDiscount !== undefined) updatePayload.maxDiscount = data.maxDiscount;
+    if (data.startDate !== undefined) {
+      updatePayload.startDate = data.startDate ? new Date(data.startDate) : null;
+    }
+    if (data.endDate !== undefined) {
+      updatePayload.endDate = data.endDate ? new Date(data.endDate) : null;
+    }
+    if (data.budget !== undefined) updatePayload.budget = data.budget ?? 0;
     if (data.expiresAt !== undefined) {
       updatePayload.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
     }
@@ -137,6 +179,69 @@ export async function updateCouponAction(rawData: unknown) {
   } catch (error: any) {
     console.error('Error in updateCouponAction:', error);
     return { success: false, error: handlePrismaError(error) };
+  }
+}
+
+/**
+ * Consulta analítica avanzada para reporte de temporadas y canales publicitarios.
+ * Permite filtrar por fechas y agrupar para evaluar la campaña ganadora.
+ */
+export async function getCampaignPerformanceReportAction(filterStartDate?: string, filterEndDate?: string) {
+  try {
+    await requireAnyRole(['MASTER', 'MARKETING']);
+
+    const whereClause: any = {};
+    if (filterStartDate) {
+      whereClause.startDate = { gte: new Date(filterStartDate) };
+    }
+    if (filterEndDate) {
+      whereClause.endDate = { lte: new Date(filterEndDate) };
+    }
+
+    const campaigns = await (prisma as any).coupon.findMany({
+      where: whereClause,
+      include: {
+        reservations: {
+          where: {
+            status: 'PAID',
+          },
+          select: {
+            totalPrice: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: {
+        timesUsed: 'desc',
+      },
+    });
+
+    const report = campaigns.map((camp: any) => {
+      const totalRevenue = camp.reservations.reduce((sum: number, res: any) => sum + (Number(res.totalPrice) || 0), 0);
+      const budget = Number(camp.budget) || 0;
+      const roas = budget > 0 ? Number((totalRevenue / budget).toFixed(2)) : null;
+
+      return {
+        id: camp.id,
+        campaña: camp.name || camp.code,
+        cupon: camp.code,
+        canal: camp.channel || 'META_ADS',
+        startDate: camp.startDate ? camp.startDate.toISOString().split('T')[0] : null,
+        endDate: camp.endDate ? camp.endDate.toISOString().split('T')[0] : null,
+        fechas: camp.startDate && camp.endDate 
+          ? `${camp.startDate.toISOString().split('T')[0]} al ${camp.endDate.toISOString().split('T')[0]}`
+          : 'Permanente / Sin fecha fija',
+        totalReservas: camp.timesUsed,
+        dineroGenerado: totalRevenue,
+        presupuesto: budget,
+        roas,
+      };
+    });
+
+    return { success: true, report };
+  } catch (error: any) {
+    console.error('Error in getCampaignPerformanceReportAction:', error);
+    return { success: false, error: error.message || 'Error al generar reporte de campañas' };
   }
 }
 

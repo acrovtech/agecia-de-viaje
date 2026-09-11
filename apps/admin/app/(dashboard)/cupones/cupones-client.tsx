@@ -13,18 +13,19 @@ import {
   DollarSign, 
   Percent, 
   CheckCircle2, 
-  XCircle, 
   AlertTriangle, 
   RotateCcw, 
   Filter, 
   Sparkles, 
   ShoppingBag, 
-  Clock,
-  ArrowRight,
   TrendingUp,
-  Tag
+  Target,
+  BarChart3,
+  Award,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
-import { CouponItem, DiscountType } from '@repo/db';
+import { CouponItem, DiscountType, MarketingChannel } from '@repo/db';
 import { 
   createCouponAction, 
   updateCouponAction, 
@@ -51,9 +52,51 @@ interface CuponesClientProps {
   initialCoupons: CouponItem[];
 }
 
+const CHANNEL_CONFIG: Record<
+  MarketingChannel,
+  { label: string; bg: string; text: string; border: string; icon: string }
+> = {
+  META_ADS: {
+    label: 'Meta Ads (FB/IG)',
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    icon: '📱',
+  },
+  TIKTOK_ADS: {
+    label: 'TikTok Ads',
+    bg: 'bg-zinc-900',
+    text: 'text-cyan-300',
+    border: 'border-zinc-800',
+    icon: '🎵',
+  },
+  GOOGLE_ADS: {
+    label: 'Google Ads',
+    bg: 'bg-amber-50',
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+    icon: '🔍',
+  },
+  EMAIL_MARKETING: {
+    label: 'Email Marketing',
+    bg: 'bg-purple-50',
+    text: 'text-purple-700',
+    border: 'border-purple-200',
+    icon: '✉️',
+  },
+  ORGANIC_VIDEO: {
+    label: 'Video Orgánico',
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-800',
+    border: 'border-emerald-200',
+    icon: '🎬',
+  },
+};
+
 export function CuponesClient({ initialCoupons }: CuponesClientProps) {
   const [coupons, setCoupons] = useState<CouponItem[]>(initialCoupons);
   const [searchQuery, setSearchQuery] = useState('');
+  const [channelFilter, setChannelFilter] = useState<'ALL' | MarketingChannel>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('ALL');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -63,7 +106,12 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
   // Estados del Modal de Creación / Edición
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
+  const [formName, setFormName] = useState('');
   const [formCode, setFormCode] = useState('');
+  const [formChannel, setFormChannel] = useState<MarketingChannel>('META_ADS');
+  const [formStartDate, setFormStartDate] = useState('');
+  const [formEndDate, setFormEndDate] = useState('');
+  const [formBudget, setFormBudget] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDiscountType, setFormDiscountType] = useState<DiscountType>('PERCENTAGE');
   const [formDiscountValue, setFormDiscountValue] = useState('');
@@ -80,12 +128,45 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
     coupon: null,
   });
 
-  // Métricas Comerciales Globales
+  // Métricas Analíticas y de Inteligencia de Campañas
   const metrics = useMemo(() => {
     const total = coupons.length;
     const active = coupons.filter(c => c.isActive).length;
     const totalUses = coupons.reduce((sum, c) => sum + (c.timesUsed || 0), 0);
-    return { total, active, totalUses };
+    const totalRevenue = coupons.reduce((sum, c) => sum + (c.totalRevenue || 0), 0);
+    const totalBudget = coupons.reduce((sum, c) => sum + (Number(c.budget) || 0), 0);
+    const averageRoas = totalBudget > 0 ? (totalRevenue / totalBudget).toFixed(2) : null;
+
+    // Identificar Campaña Ganadora (Mayor facturación)
+    const sortedByRevenue = [...coupons].sort((a, b) => (b.totalRevenue || 0) - (a.totalRevenue || 0));
+    const winner = sortedByRevenue[0]?.totalRevenue && sortedByRevenue[0].totalRevenue > 0 ? sortedByRevenue[0] : null;
+
+    // Identificar Canal Líder en facturación
+    const channelRevenueMap: Record<string, number> = {};
+    coupons.forEach(c => {
+      const ch = c.channel || 'META_ADS';
+      channelRevenueMap[ch] = (channelRevenueMap[ch] || 0) + (c.totalRevenue || 0);
+    });
+
+    let topChannel: { channel: MarketingChannel; revenue: number } | null = null;
+    Object.entries(channelRevenueMap).forEach(([ch, rev]) => {
+      if (!topChannel || rev > topChannel.revenue) {
+        if (rev > 0) {
+          topChannel = { channel: ch as MarketingChannel, revenue: rev };
+        }
+      }
+    });
+
+    return { 
+      total, 
+      active, 
+      totalUses, 
+      totalRevenue, 
+      totalBudget, 
+      averageRoas, 
+      winner, 
+      topChannel 
+    };
   }, [coupons]);
 
   // Filtrado de la tabla
@@ -97,9 +178,15 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
       const matchesSearch = 
         !query || 
         c.code.toLowerCase().includes(query) || 
+        (c.name && c.name.toLowerCase().includes(query)) ||
         (c.description && c.description.toLowerCase().includes(query));
 
       if (!matchesSearch) return false;
+
+      // Filtro de canal
+      if (channelFilter !== 'ALL' && (c.channel || 'META_ADS') !== channelFilter) {
+        return false;
+      }
 
       const isExpired = c.expiresAt ? new Date(c.expiresAt) < now : false;
 
@@ -109,7 +196,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
 
       return true;
     });
-  }, [coupons, searchQuery, statusFilter]);
+  }, [coupons, searchQuery, channelFilter, statusFilter]);
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -119,7 +206,12 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
 
   const openCreateModal = () => {
     setEditingCoupon(null);
+    setFormName('');
     setFormCode('');
+    setFormChannel('META_ADS');
+    setFormStartDate('');
+    setFormEndDate('');
+    setFormBudget('');
     setFormDescription('');
     setFormDiscountType('PERCENTAGE');
     setFormDiscountValue('');
@@ -134,7 +226,12 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
 
   const openEditModal = (coupon: CouponItem) => {
     setEditingCoupon(coupon);
+    setFormName(coupon.name || '');
     setFormCode(coupon.code);
+    setFormChannel(coupon.channel || 'META_ADS');
+    setFormStartDate(coupon.startDate ? new Date(coupon.startDate).toISOString().split('T')[0] || '' : '');
+    setFormEndDate(coupon.endDate ? new Date(coupon.endDate).toISOString().split('T')[0] || '' : '');
+    setFormBudget(coupon.budget ? coupon.budget.toString() : '');
     setFormDescription(coupon.description || '');
     setFormDiscountType(coupon.discountType);
     setFormDiscountValue(coupon.discountValue.toString());
@@ -154,12 +251,12 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
         setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, isActive: res.isActive! } : c));
         setFeedback({
           type: 'success',
-          message: `Cupón [${coupon.code}] ${res.isActive ? 'activado' : 'pausado'} correctamente.`,
+          message: `Campaña [${coupon.code}] ${res.isActive ? 'activada' : 'pausada'} correctamente.`,
         });
       } else {
         setFeedback({
           type: 'error',
-          message: res.error || 'Error al cambiar estado del cupón.',
+          message: res.error || 'Error al cambiar estado de la campaña.',
         });
       }
     });
@@ -182,6 +279,11 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
 
     const payload = {
       code: formCode.trim().toUpperCase(),
+      name: formName.trim() || undefined,
+      channel: formChannel,
+      startDate: formStartDate ? new Date(formStartDate).toISOString() : undefined,
+      endDate: formEndDate ? new Date(formEndDate).toISOString() : undefined,
+      budget: formBudget ? parseFloat(formBudget) : 0,
       description: formDescription.trim() || undefined,
       discountType: formDiscountType,
       discountValue: val,
@@ -202,13 +304,18 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           setCoupons(prev => prev.map(c => c.id === editingCoupon.id ? {
             ...c,
             ...res.coupon,
+            name: payload.name || null,
+            channel: payload.channel,
+            startDate: payload.startDate || null,
+            endDate: payload.endDate || null,
+            budget: payload.budget,
             createdAt: c.createdAt,
             updatedAt: new Date().toISOString(),
           } : c));
           setIsModalOpen(false);
-          setFeedback({ type: 'success', message: `Cupón [${payload.code}] actualizado exitosamente.` });
+          setFeedback({ type: 'success', message: `Campaña [${payload.code}] actualizada exitosamente.` });
         } else {
-          setFormError(res.error || 'Error al actualizar cupón.');
+          setFormError(res.error || 'Error al actualizar campaña.');
         }
       } else {
         const res = await createCouponAction(payload);
@@ -216,14 +323,21 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           const created: CouponItem = {
             id: res.coupon.id,
             code: res.coupon.code,
+            name: res.coupon.name || null,
+            channel: res.coupon.channel || 'META_ADS',
             description: res.coupon.description,
             discountType: res.coupon.discountType,
             discountValue: res.coupon.discountValue,
             minSpend: res.coupon.minSpend,
             maxDiscount: res.coupon.maxDiscount,
+            startDate: res.coupon.startDate ? res.coupon.startDate.toISOString() : null,
+            endDate: res.coupon.endDate ? res.coupon.endDate.toISOString() : null,
+            budget: res.coupon.budget || 0,
             expiresAt: res.coupon.expiresAt ? res.coupon.expiresAt.toISOString() : null,
             usageLimit: res.coupon.usageLimit,
             timesUsed: res.coupon.timesUsed || 0,
+            totalRevenue: 0,
+            roas: null,
             isActive: res.coupon.isActive,
             createdBy: res.coupon.createdBy,
             createdAt: res.coupon.createdAt.toISOString(),
@@ -231,9 +345,9 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           };
           setCoupons(prev => [created, ...prev]);
           setIsModalOpen(false);
-          setFeedback({ type: 'success', message: `Cupón [${payload.code}] creado exitosamente.` });
+          setFeedback({ type: 'success', message: `Campaña [${payload.code}] creada exitosamente.` });
         } else {
-          setFormError(res.error || 'Error al crear cupón.');
+          setFormError(res.error || 'Error al crear campaña.');
         }
       }
     });
@@ -251,10 +365,10 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           setFeedback({ type: 'success', message: res.message });
         } else {
           setCoupons(prev => prev.filter(c => c.id !== couponToDelete.id));
-          setFeedback({ type: 'success', message: `Cupón [${couponToDelete.code}] eliminado permanentemente.` });
+          setFeedback({ type: 'success', message: `Campaña [${couponToDelete.code}] eliminada permanentemente.` });
         }
       } else {
-        setFeedback({ type: 'error', message: res.error || 'Error al eliminar cupón.' });
+        setFeedback({ type: 'error', message: res.error || 'Error al eliminar campaña.' });
       }
       setDeleteModal({ isOpen: false, coupon: null });
     });
@@ -263,13 +377,18 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
   return (
     <div className="space-y-4 font-sans select-none w-full min-w-0">
       
-      {/* 1. Header con Título y Botón Principal Polaris */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Tags className="w-5 h-5 text-[#2f2f2f] shrink-0" />
-          <h1 className="text-[1.125rem] font-semibold tracking-tight text-[#2f2f2f] truncate">
-            Módulo de Cupones Comerciales
-          </h1>
+      {/* 1. Header con Título, Contexto y Botón Principal Polaris */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3.5 min-w-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-[#008060] shrink-0" />
+            <h1 className="text-[1.125rem] font-semibold tracking-tight text-[#2f2f2f] truncate">
+              Inteligencia de Campañas & Cupones
+            </h1>
+          </div>
+          <p className="text-xs text-slate-500 font-normal mt-0.5">
+            Atribución multicanal de pauta (Meta, TikTok, Google), temporadas publicitarias e ingresos por conversión.
+          </p>
         </div>
 
         <button
@@ -278,7 +397,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white font-semibold text-xs rounded-lg shadow-2xs transition-all border border-[#006e52] cursor-pointer shrink-0"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Nuevo Cupón</span>
+          <span>Nueva Campaña</span>
         </button>
       </div>
 
@@ -309,82 +428,174 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
         </div>
       )}
 
-      {/* 3. Tarjetas KPI de Resumen */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {/* 3. Tarjetas KPI de Inteligencia Comercial (Polaris Style) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
-        {/* KPI 1: Cupones Activos */}
+        {/* KPI 1: Ingresos Totales Atribuidos */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Cupones Activos
+              Ventas Atribuidas
             </span>
             <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              Vigentes
+              Dinero Real
             </span>
           </div>
           <div className="mt-2.5 mb-0.5 flex items-baseline gap-2">
             <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
-              {metrics.active}
+              ${metrics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-xs text-slate-400">de {metrics.total} totales</span>
+            <span className="text-xs font-bold text-emerald-700">USD</span>
           </div>
-          <p className="text-xs text-slate-500 font-normal">
-            Estrategias de descuento operando
+          <p className="text-xs text-slate-500 font-normal flex items-center gap-1">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Facturación de reservas pagadas</span>
           </p>
         </div>
 
-        {/* KPI 2: Usos Realizados (Métrica Clave) */}
+        {/* KPI 2: Campaña Ganadora */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Usos Realizados
+              Campaña Ganadora
             </span>
-            <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-              Conversiones
+            <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 flex items-center gap-1">
+              <Award className="w-3 h-3 text-amber-600" />
+              <span>Top 1</span>
+            </span>
+          </div>
+          <div className="mt-2.5 mb-0.5">
+            {metrics.winner ? (
+              <div>
+                <div className="text-sm font-bold text-[#2f2f2f] truncate">
+                  {metrics.winner.name || metrics.winner.code}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                    {metrics.winner.code}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-700">
+                    +${metrics.winner.totalRevenue?.toLocaleString('en-US')} USD
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <span className="text-sm text-slate-400 font-medium">Sin ventas registradas</span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Mayor retorno de inversión comercial
+          </p>
+        </div>
+
+        {/* KPI 3: Canal Líder */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Canal Líder
+            </span>
+            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+              Volumen
+            </span>
+          </div>
+          <div className="mt-2.5 mb-0.5">
+            {metrics.topChannel ? (
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">{CHANNEL_CONFIG[metrics.topChannel.channel]?.icon}</span>
+                  <span className="text-base font-bold text-[#2f2f2f]">
+                    {CHANNEL_CONFIG[metrics.topChannel.channel]?.label}
+                  </span>
+                </div>
+                <span className="text-xs text-blue-700 font-semibold block mt-0.5">
+                  ${metrics.topChannel.revenue.toLocaleString('en-US')} USD generados
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-sm font-bold text-[#2f2f2f]">
+                <span>📱 Meta Ads</span>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Canal publicitario más efectivo
+          </p>
+        </div>
+
+        {/* KPI 4: Conversiones y ROAS */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Conversiones / ROAS
+            </span>
+            <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+              Eficacia
             </span>
           </div>
           <div className="mt-2.5 mb-0.5 flex items-baseline gap-2">
             <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
               {metrics.totalUses}
             </span>
-            <span className="text-xs font-bold text-amber-700">ventas con cupón</span>
+            <span className="text-xs font-bold text-slate-500">reservas</span>
+            {metrics.averageRoas && (
+              <span className="ml-auto text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                {metrics.averageRoas}x ROAS
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 font-normal">
-            Captados vía ecommerce y reservas manuales
-          </p>
-        </div>
-
-        {/* KPI 3: Atribución Comercial */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Canal de Venta
-            </span>
-            <span className="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-              Atribución
-            </span>
-          </div>
-          <div className="mt-2.5 mb-0.5 flex items-baseline gap-2">
-            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
-              100%
-            </span>
-            <span className="text-xs font-medium text-teal-700">Auditado MKT</span>
-          </div>
-          <p className="text-xs text-slate-500 font-normal">
-            Registrado en BD sin intervención manual
+            {metrics.active} de {metrics.total} campañas en curso
           </p>
         </div>
 
       </div>
 
-      {/* 4. Barra de Búsqueda y Filtros */}
+      {/* 4. Barra de Filtros Rápidos por Canal */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        <button
+          type="button"
+          onClick={() => setChannelFilter('ALL')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
+            channelFilter === 'ALL'
+              ? 'bg-slate-900 text-white border-slate-900'
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          Todos los Canales ({coupons.length})
+        </button>
+
+        {(Object.keys(CHANNEL_CONFIG) as MarketingChannel[]).map((ch) => {
+          const cfg = CHANNEL_CONFIG[ch];
+          const isSelected = channelFilter === ch;
+          const count = coupons.filter(c => (c.channel || 'META_ADS') === ch).length;
+
+          return (
+            <button
+              key={ch}
+              type="button"
+              onClick={() => setChannelFilter(ch)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer whitespace-nowrap shadow-2xs flex items-center gap-1.5 ${
+                isSelected
+                  ? `${cfg.bg} ${cfg.text} border-slate-400 ring-1 ring-slate-400 font-bold`
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>{cfg.icon}</span>
+              <span>{cfg.label}</span>
+              <span className="text-[10px] opacity-70 font-mono">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 5. Barra de Búsqueda y Filtros de Estado */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3 space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por código de cupón (ej: CUMPLE10) o descripción..."
+              placeholder="Buscar por campaña (ej: Día del Padre), cupón (ej: FDAY20) o canal..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3.5 py-1.5 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
@@ -398,9 +609,9 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>
                     {statusFilter === 'ALL' && 'Todos los estados'}
-                    {statusFilter === 'ACTIVE' && 'Solo activos'}
-                    {statusFilter === 'INACTIVE' && 'Solo pausados'}
-                    {statusFilter === 'EXPIRED' && 'Solo expirados'}
+                    {statusFilter === 'ACTIVE' && 'Solo activas'}
+                    {statusFilter === 'INACTIVE' && 'Solo pausadas'}
+                    {statusFilter === 'EXPIRED' && 'Solo expiradas'}
                   </span>
                 </div>
               </SelectTrigger>
@@ -409,23 +620,24 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                   Todos los estados ({coupons.length})
                 </SelectItem>
                 <SelectItem value="ACTIVE" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  Solo activos ({metrics.active})
+                  Solo activas ({metrics.active})
                 </SelectItem>
                 <SelectItem value="INACTIVE" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  Solo pausados
+                  Solo pausadas
                 </SelectItem>
                 <SelectItem value="EXPIRED" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  Solo expirados
+                  Solo expiradas
                 </SelectItem>
               </SelectContent>
             </Select>
 
-            {(searchQuery || statusFilter !== 'ALL') && (
+            {(searchQuery || statusFilter !== 'ALL' || channelFilter !== 'ALL') && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('ALL');
+                  setChannelFilter('ALL');
                 }}
                 className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-colors cursor-pointer"
               >
@@ -437,18 +649,18 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
         </div>
       </div>
 
-      {/* 5. Tabla de Cupones */}
+      {/* 6. Tabla de Campañas con Atribución y Métricas Financieras */}
       {filteredCoupons.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200/90 p-12 text-center text-slate-400 shadow-2xs">
-          <Tags className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-          <p className="font-semibold text-slate-600">No se encontraron cupones con los filtros aplicados.</p>
+          <Target className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+          <p className="font-semibold text-slate-600">No se encontraron campañas con los filtros aplicados.</p>
           <button
             type="button"
             onClick={openCreateModal}
             className="mt-3 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Crear primer cupón</span>
+            <span>Crear primera campaña</span>
           </button>
         </div>
       ) : (
@@ -456,54 +668,110 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs table-fixed">
               <colgroup>
-                <col className="w-[20%]" />
+                <col className="w-[26%]" />
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
+                <col className="w-[14%]" />
                 <col className="w-[16%]" />
-                <col className="w-[24%]" />
-                <col className="w-[14%]" />
-                <col className="w-[14%]" />
                 <col className="w-[12%]" />
               </colgroup>
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                  <th className="px-4 py-3 text-left">Código de Cupón</th>
-                  <th className="px-4 py-3 text-left">Descuento</th>
-                  <th className="px-4 py-3 text-left">Descripción / Estrategia</th>
-                  <th className="px-4 py-3 text-center whitespace-nowrap">Usos Realizados</th>
-                  <th className="px-4 py-3 text-center whitespace-nowrap">Expiración</th>
+                  <th className="px-4 py-3 text-left">Campaña & Canal</th>
+                  <th className="px-4 py-3 text-left">Temporada / Vigencia</th>
+                  <th className="px-4 py-3 text-left">Beneficio</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">Reservas</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Facturación & ROAS</th>
                   <th className="px-4 py-3 text-center whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                 {filteredCoupons.map((coupon) => {
                   const isExpired = coupon.expiresAt ? new Date(coupon.expiresAt) < new Date() : false;
+                  const channel = coupon.channel || 'META_ADS';
+                  const channelMeta = CHANNEL_CONFIG[channel] || CHANNEL_CONFIG.META_ADS;
+
+                  // Estado de la temporada según fechas
+                  let seasonStatus: { text: string; color: string } | null = null;
+                  if (coupon.startDate && coupon.endDate) {
+                    const now = new Date();
+                    const start = new Date(coupon.startDate);
+                    const end = new Date(coupon.endDate);
+                    if (now >= start && now <= end) {
+                      seasonStatus = { text: 'En curso', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+                    } else if (now > end) {
+                      seasonStatus = { text: 'Finalizada', color: 'text-slate-500 bg-slate-100 border-slate-200' };
+                    } else {
+                      seasonStatus = { text: 'Próxima', color: 'text-blue-700 bg-blue-50 border-blue-200' };
+                    }
+                  }
 
                   return (
                     <tr key={coupon.id} className="hover:bg-slate-50/80 transition-colors">
                       
-                      {/* 1. Código en Mayúsculas con Botón Copiar */}
+                      {/* 1. Campaña, Código y Canal */}
                       <td className="px-4 py-3 text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md text-xs border border-slate-200 tracking-wider">
-                            {coupon.code}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(coupon.code)}
-                            title="Copiar código al portapapeles"
-                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer"
-                          >
-                            {copiedCode === coupon.code ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-900 text-xs truncate max-w-[180px]" title={coupon.name || coupon.code}>
+                              {coupon.name || 'Campaña sin nombre'}
+                            </span>
+                            
+                            {/* Canal Badge */}
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-bold border ${channelMeta.bg} ${channelMeta.text} ${channelMeta.border}`}>
+                              <span>{channelMeta.icon}</span>
+                              <span>{channelMeta.label}</span>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px] border border-slate-200 tracking-wider">
+                              {coupon.code}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(coupon.code)}
+                              title="Copiar cupón"
+                              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                            >
+                              {copiedCode === coupon.code ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </td>
 
-                      {/* 2. Beneficio / Descuento */}
+                      {/* 2. Temporada / Rango de Fechas */}
                       <td className="px-4 py-3 text-left">
-                        <div className="flex items-center gap-1.5">
+                        <div className="space-y-1">
+                          {coupon.startDate && coupon.endDate ? (
+                            <div className="text-[11px] text-slate-700 font-medium">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>
+                                  {new Date(coupon.startDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
+                                  {' - '}
+                                  {new Date(coupon.endDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                              {seasonStatus && (
+                                <span className={`inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold border ${seasonStatus.color}`}>
+                                  {seasonStatus.text}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Permanente</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* 3. Beneficio / Descuento */}
+                      <td className="px-4 py-3 text-left">
+                        <div className="space-y-0.5">
                           {coupon.discountType === 'PERCENTAGE' ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
                               <Percent className="w-3 h-3" />
@@ -515,50 +783,54 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                               <span>${coupon.discountValue.toFixed(2)} USD</span>
                             </span>
                           )}
+                          {coupon.minSpend && coupon.minSpend > 0 ? (
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              Mín. ${coupon.minSpend}
+                            </div>
+                          ) : null}
                         </div>
-                        {coupon.minSpend && coupon.minSpend > 0 ? (
-                          <div className="text-[10.5px] text-slate-400 pt-0.5 font-normal">
-                            Min. gasto: ${coupon.minSpend}
-                          </div>
-                        ) : null}
                       </td>
 
-                      {/* 3. Descripción */}
-                      <td className="px-4 py-3 text-left">
-                        <p className="text-xs text-slate-700 font-normal line-clamp-2">
-                          {coupon.description || 'Sin descripción'}
-                        </p>
-                      </td>
-
-                      {/* 4. Usos Realizados (Métrica Clave) */}
+                      {/* 4. Reservas / Cupos */}
                       <td className="px-4 py-3 text-center">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-900 font-bold text-xs shadow-2xs">
-                          <ShoppingBag className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{coupon.timesUsed}</span>
+                        <div className="inline-flex flex-col items-center">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-900 font-bold text-xs shadow-2xs">
+                            <ShoppingBag className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{coupon.timesUsed}</span>
+                            {coupon.usageLimit && (
+                              <span className="text-[10px] text-amber-700 font-normal">/ {coupon.usageLimit}</span>
+                            )}
+                          </div>
                           {coupon.usageLimit && (
-                            <span className="text-[10px] text-amber-700 font-normal">/ {coupon.usageLimit} max</span>
+                            <div className="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
+                              <div 
+                                className="bg-amber-600 h-full rounded-full"
+                                style={{ width: `${Math.min(100, (coupon.timesUsed / coupon.usageLimit) * 100)}%` }}
+                              />
+                            </div>
                           )}
                         </div>
                       </td>
 
-                      {/* 5. Expiración */}
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        {coupon.expiresAt ? (
-                          <div className="space-y-0.5">
-                            <span className={`text-[11px] font-medium ${isExpired ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
-                              {new Date(coupon.expiresAt).toLocaleDateString('es-PE', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </span>
-                            {isExpired && (
-                              <span className="block text-[9.5px] text-rose-500 uppercase font-bold">Expirado</span>
-                            )}
+                      {/* 5. Facturación Real & ROAS */}
+                      <td className="px-4 py-3 text-right">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-slate-900 text-xs block">
+                            ${(coupon.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {coupon.budget && coupon.budget > 0 ? (
+                              <span className="text-[10px] text-slate-500 font-normal">
+                                Inv: ${coupon.budget}
+                              </span>
+                            ) : null}
+                            {coupon.roas ? (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {coupon.roas}x ROAS
+                              </span>
+                            ) : null}
                           </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">Sin caducidad</span>
-                        )}
+                        </div>
                       </td>
 
                       {/* 6. Acciones (Toggle Estado, Editar, Eliminar) */}
@@ -570,14 +842,14 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                             type="button"
                             onClick={() => handleToggleStatus(coupon)}
                             disabled={isPending}
-                            title={coupon.isActive ? 'Cupón activo. Clic para pausar' : 'Cupón pausado. Clic para activar'}
+                            title={coupon.isActive ? 'Campaña activa. Clic para pausar' : 'Campaña pausada. Clic para activar'}
                             className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors shadow-2xs cursor-pointer ${
                               coupon.isActive 
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
                                 : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
                             }`}
                           >
-                            {coupon.isActive ? 'Activo' : 'Pausado'}
+                            {coupon.isActive ? 'Activa' : 'Pausada'}
                           </button>
 
                           {/* Botón Editar */}
@@ -585,7 +857,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                             type="button"
                             onClick={() => openEditModal(coupon)}
                             disabled={isPending}
-                            title="Editar cupón"
+                            title="Editar campaña"
                             className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -596,7 +868,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                             type="button"
                             onClick={() => setDeleteModal({ isOpen: true, coupon })}
                             disabled={isPending}
-                            title="Eliminar cupón"
+                            title="Eliminar campaña"
                             className="p-1.5 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-md transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -614,16 +886,16 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
         </div>
       )}
 
-      {/* MODAL DE CREACIÓN / EDICIÓN DE CUPÓN */}
+      {/* MODAL DE CREACIÓN / EDICIÓN DE CAMPAÑA */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[530px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
+        <DialogContent className="sm:max-w-[580px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
           <DialogHeader className="text-left border-b border-slate-100 pb-3">
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Tags className="w-5 h-5 text-[#008060]" />
-              <span>{editingCoupon ? `Editar Cupón: ${editingCoupon.code}` : 'Crear Nuevo Cupón Comercial'}</span>
+              <Target className="w-5 h-5 text-[#008060]" />
+              <span>{editingCoupon ? `Editar Campaña: ${editingCoupon.code}` : 'Nueva Campaña Publicitaria'}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Define códigos en mayúsculas, descuentos porcentuales o fijos y límites de uso.
+              Vincula pautas de Meta, TikTok, Google Ads o Email con cupones únicos para medir ingresos y ROAS.
             </DialogDescription>
           </DialogHeader>
 
@@ -636,22 +908,99 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
 
           <form onSubmit={handleFormSubmit} className="space-y-3.5 mt-3">
             
-            {/* Código del Cupón en Mayúsculas */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">
-                Código del Cupón (Forzado a Mayúsculas) *
-              </label>
-              <input
-                type="text"
-                required
-                value={formCode}
-                onChange={(e) => setFormCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
-                placeholder="EJ: CUMPLE10, HUMANTAY20"
-                className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs font-mono font-bold text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400 uppercase tracking-wider"
-              />
-              <span className="text-[10.5px] text-slate-400 block">
-                Solo letras mayúsculas, números y guiones. Sin espacios.
-              </span>
+            {/* Nombre de la Campaña y Código de Cupón */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Nombre de Campaña
+                </label>
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Ej: Día del Padre 2026, Inti Raymi VIP"
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs font-semibold text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Código de Cupón Único *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                  placeholder="EJ: FDAY20, INTI26"
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs font-mono font-bold text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400 uppercase tracking-wider"
+                />
+              </div>
+            </div>
+
+            {/* Canal Publicitario y Presupuesto Invertido */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Canal de Marketing *</label>
+                <Select value={formChannel} onValueChange={(val: any) => setFormChannel(val)}>
+                  <SelectTrigger className="w-full h-9 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                    <span>{CHANNEL_CONFIG[formChannel]?.label || formChannel}</span>
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50">
+                    <SelectItem value="META_ADS" className="text-xs font-medium cursor-pointer py-1.5 px-2">
+                      📱 Meta Ads (Facebook / Instagram)
+                    </SelectItem>
+                    <SelectItem value="TIKTOK_ADS" className="text-xs font-medium cursor-pointer py-1.5 px-2">
+                      🎵 TikTok Ads
+                    </SelectItem>
+                    <SelectItem value="GOOGLE_ADS" className="text-xs font-medium cursor-pointer py-1.5 px-2">
+                      🔍 Google Ads (Search / Display)
+                    </SelectItem>
+                    <SelectItem value="EMAIL_MARKETING" className="text-xs font-medium cursor-pointer py-1.5 px-2">
+                      ✉️ Email Marketing (Resend API)
+                    </SelectItem>
+                    <SelectItem value="ORGANIC_VIDEO" className="text-xs font-medium cursor-pointer py-1.5 px-2">
+                      🎬 Video Orgánico (Reels / TikTok Viral)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Presupuesto Invertido (USD $)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formBudget}
+                  onChange={(e) => setFormBudget(e.target.value)}
+                  placeholder="0.00 (Para cálculo de ROAS)"
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Fechas de Campaña Publicitaria (Inicio y Fin) */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Inicio del Anuncio</label>
+                <input
+                  type="date"
+                  value={formStartDate}
+                  onChange={(e) => setFormStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Fin del Anuncio</label>
+                <input
+                  type="date"
+                  value={formEndDate}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
+                />
+              </div>
             </div>
 
             {/* Tipo de Descuento (Toggle Porcentaje vs Monto Fijo) */}
@@ -699,7 +1048,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                   required
                   value={formDiscountValue}
                   onChange={(e) => setFormDiscountValue(e.target.value)}
-                  placeholder={formDiscountType === 'PERCENTAGE' ? '10' : '25.00'}
+                  placeholder={formDiscountType === 'PERCENTAGE' ? '20' : '50.00'}
                   className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs font-bold text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
                 />
               </div>
@@ -718,10 +1067,22 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
               </div>
             </div>
 
-            {/* Fecha de Expiración y Límite de Usos */}
+            {/* Cupo / Límite de Reservas y Fecha Límite de Canje */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Fecha de Expiración</label>
+                <label className="text-xs font-semibold text-slate-700">Cupo Máximo de Reservas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formUsageLimit}
+                  onChange={(e) => setFormUsageLimit(e.target.value)}
+                  placeholder="Ej: 100 (Ilimitado si vacío)"
+                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Límite para Canjear Cupón</label>
                 <input
                   type="date"
                   value={formExpiresAt}
@@ -729,28 +1090,16 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                   className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
                 />
               </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Límite Máximo de Usos</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formUsageLimit}
-                  onChange={(e) => setFormUsageLimit(e.target.value)}
-                  placeholder="Ilimitado"
-                  className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
-                />
-              </div>
             </div>
 
-            {/* Descripción / Campaña */}
+            {/* Descripción / Notas de Estrategia */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Descripción / Estrategia</label>
+              <label className="text-xs font-semibold text-slate-700">Estrategia / Nota Interna</label>
               <input
                 type="text"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Ej: Descuento exclusivo para venta cruzada o cumpleaños"
+                placeholder="Ej: Escalado de presupuesto para temporada alta de junio e Inti Raymi"
                 className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
               />
             </div>
@@ -758,9 +1107,9 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
             {/* Switch Estado Activo */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-800">Estado del Cupón</p>
+                <p className="text-xs font-semibold text-slate-800">Estado de la Campaña</p>
                 <p className="text-[11px] text-slate-500">
-                  {formIsActive ? 'El cupón podrá ser aplicado inmediatamente.' : 'Cupón pausado temporalmente.'}
+                  {formIsActive ? 'La campaña y el cupón estarán activos para reservas.' : 'Campaña pausada.'}
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -789,7 +1138,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
                 className="h-9 px-4 bg-[#008060] hover:bg-[#006e52] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors border border-[#006e52] cursor-pointer inline-flex items-center gap-1.5"
               >
                 {isPending && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
-                <span>{editingCoupon ? 'Guardar Cambios' : 'Crear Cupón'}</span>
+                <span>{editingCoupon ? 'Guardar Cambios' : 'Crear Campaña'}</span>
               </button>
             </DialogFooter>
 
@@ -802,13 +1151,13 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, coupon: null })}
         onConfirm={handleConfirmDelete}
-        title={`¿Eliminar cupón ${deleteModal.coupon?.code}?`}
+        title={`¿Eliminar campaña ${deleteModal.coupon?.code}?`}
         description={
           (deleteModal.coupon?.timesUsed || 0) > 0
-            ? `Este cupón registra ${deleteModal.coupon?.timesUsed} usos realizados. Se desactivará para proteger el historial contable de ventas.`
-            : 'Esta acción eliminará el cupón definitivamente del catálogo.'
+            ? `Esta campaña registra ${deleteModal.coupon?.timesUsed} conversiones cerradas. Se desactivará para proteger el historial contable de ventas.`
+            : 'Esta acción eliminará la campaña definitivamente del sistema.'
         }
-        confirmText="Eliminar Cupón"
+        confirmText="Eliminar Campaña"
         cancelText="Cancelar"
         isLoading={isPending}
         variant="danger"

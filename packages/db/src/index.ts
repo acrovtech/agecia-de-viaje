@@ -22,7 +22,16 @@ export const Role = {
   MARKETING: 'MARKETING',
 } as const;
 
-// Enums y tipos de Cupones Comerciales
+// Enums y tipos de Cupones y Campañas de Marketing
+export type MarketingChannel = 'META_ADS' | 'TIKTOK_ADS' | 'GOOGLE_ADS' | 'EMAIL_MARKETING' | 'ORGANIC_VIDEO';
+export const MarketingChannel = {
+  META_ADS: 'META_ADS',
+  TIKTOK_ADS: 'TIKTOK_ADS',
+  GOOGLE_ADS: 'GOOGLE_ADS',
+  EMAIL_MARKETING: 'EMAIL_MARKETING',
+  ORGANIC_VIDEO: 'ORGANIC_VIDEO',
+} as const;
+
 export type DiscountType = 'PERCENTAGE' | 'FIXED';
 export const DiscountType = {
   PERCENTAGE: 'PERCENTAGE',
@@ -32,11 +41,16 @@ export const DiscountType = {
 export interface CouponItem {
   id: string;
   code: string;
+  name?: string | null;
+  channel?: MarketingChannel;
   description?: string | null;
   discountType: DiscountType;
   discountValue: number;
   minSpend?: number | null;
   maxDiscount?: number | null;
+  startDate?: Date | string | null;
+  endDate?: Date | string | null;
+  budget?: number | null;
   expiresAt?: Date | string | null;
   usageLimit?: number | null;
   timesUsed: number;
@@ -44,6 +58,9 @@ export interface CouponItem {
   createdBy?: string | null;
   createdAt: Date | string;
   updatedAt?: Date | string;
+  // Métricas analíticas de inteligencia comercial
+  totalRevenue?: number;
+  roas?: number | null;
 }
 
 // Tipo extendido de Reserva con soporte para atribución de marketing

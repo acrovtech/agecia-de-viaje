@@ -195,7 +195,7 @@ export function SidebarNav({
                 )}
               >
                 <Tags className="w-4 h-4 text-[#303030] shrink-0" />
-                <span>Cupones</span>
+                <span>Campañas y Cupones</span>
               </Link>
             </li>
           )}

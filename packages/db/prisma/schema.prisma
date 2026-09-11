@@ -225,30 +225,45 @@ model Reservation {
   @@index([assignedOperatorId])
 }
 
+enum MarketingChannel {
+  META_ADS       // Facebook e Instagram
+  TIKTOK_ADS
+  GOOGLE_ADS
+  EMAIL_MARKETING
+  ORGANIC_VIDEO  // Reels/TikTok orgánico sin pagar
+}
+
 enum DiscountType {
   PERCENTAGE
   FIXED
 }
 
 model Coupon {
-  id            String       @id @default(cuid())
-  code          String       @unique // Siempre mayúsculas, ej: CUMPLE10
+  id            String            @id @default(cuid())
+  code          String            @unique // Siempre mayúsculas, ej: FDAY20
+  name          String?           // Nombre de campaña, ej: "Campaña Día del Padre 2026"
+  channel       MarketingChannel  @default(META_ADS) // Canal de origen publicitario
   description   String?
-  discountType  DiscountType @default(PERCENTAGE)
-  discountValue Float        // Valor (% o USD)
-  minSpend      Float?       @default(0)
-  maxDiscount   Float?       // Opcional tope para porcentual
-  expiresAt     DateTime?
-  usageLimit    Int?         // Límite de usos totales (opcional)
-  timesUsed     Int          @default(0) // "Usos Realizados"
-  isActive      Boolean      @default(true)
+  discountType  DiscountType      @default(PERCENTAGE)
+  discountValue Float             // Valor (% o USD)
+  minSpend      Float?            @default(0)
+  maxDiscount   Float?            // Opcional tope para porcentual
+  startDate     DateTime?         // Cuándo empieza a correr el anuncio
+  endDate       DateTime?         // Cuándo termina la campaña
+  budget        Float?            @default(0) // Presupuesto invertido (USD)
+  expiresAt     DateTime?         // Expiración del canje
+  usageLimit    Int?              // Límite de reservas / cupo
+  timesUsed     Int               @default(0) // Usos / Conversiones reales
+  isActive      Boolean           @default(true)
   createdBy     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   reservations  Reservation[]
 
   @@index([code])
+  @@index([channel])
+  @@index([startDate, endDate])
   @@index([isActive])
 }
 
