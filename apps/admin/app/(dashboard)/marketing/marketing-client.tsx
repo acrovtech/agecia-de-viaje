@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { 
   Mail, 
   Search, 
@@ -12,12 +12,23 @@ import {
   Copy, 
   Check, 
   RotateCcw, 
-  Filter,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Sparkles,
-  ArrowUpDown
+  Filter, 
+  CheckCircle2, 
+  Clock, 
+  XCircle, 
+  Sparkles, 
+  MessageSquare, 
+  Send, 
+  Eye, 
+  Compass, 
+  Car, 
+  ExternalLink, 
+  ArrowRight, 
+  Image as ImageIcon, 
+  ChevronRight, 
+  CheckCheck, 
+  AlertCircle,
+  Tag
 } from 'lucide-react';
 import {
   Select,
@@ -25,6 +36,40 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { recordMarketingCampaignEmailAction } from '@/app/actions/marketing';
+
+export interface CustomerBookingSummary {
+  id: string;
+  code: string | null;
+  title: string;
+  type: 'TOUR' | 'TRANSFER';
+  date: string;
+  pax: number;
+  totalPrice: number;
+  status: string;
+  pickupHotel?: string | null;
+  marketingCode?: string | null;
+  source?: string | null;
+  createdAt: string;
+}
+
+export interface CustomerCampaignLog {
+  id: string;
+  campaignCode: string;
+  subject: string;
+  message: string;
+  flyerUrl?: string | null;
+  whatsappUrl?: string | null;
+  createdAt: string;
+}
 
 export interface MarketingContact {
   email: string;
@@ -34,27 +79,69 @@ export interface MarketingContact {
   totalSpent: number;
   lastReservationDate: string;
   lastStatus: string;
+  preferredService: string;
+  hasAttributedBooking: boolean;
+  attributedCodes: string[];
+  campaignsSent: CustomerCampaignLog[];
+  reservations: CustomerBookingSummary[];
 }
 
 interface MarketingClientProps {
   initialContacts: MarketingContact[];
 }
 
+const PRESET_FLYERS = [
+  {
+    name: 'Machu Picchu Full Day',
+    url: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875478876-valle-sagrado-banner.webp',
+  },
+  {
+    name: 'Valle Sagrado VIP',
+    url: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875486698-waqrapukara-banner.webp',
+  },
+  {
+    name: 'Laguna Humantay',
+    url: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875453808-laguna-humantay-banner.webp',
+  },
+  {
+    name: 'Montaña de 7 Colores',
+    url: 'https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875465196-vinicunca-banner.webp',
+  },
+];
+
 export function MarketingClient({ initialContacts }: MarketingClientProps) {
-  const [contacts] = useState<MarketingContact[]>(initialContacts);
+  const [contacts, setContacts] = useState<MarketingContact[]>(initialContacts);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Modal 1: Detalle del Cliente e Historial de Reservas
+  const [selectedContact, setSelectedContact] = useState<MarketingContact | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Modal 2: Redactar Correo con Flyer y Botón WhatsApp MK
+  const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
+  const [composeRecipientEmail, setComposeRecipientEmail] = useState('');
+  const [composeRecipientName, setComposeRecipientName] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeMessage, setComposeMessage] = useState('');
+  const [composeFlyerUrl, setComposeFlyerUrl] = useState(PRESET_FLYERS[0]?.url || '');
+  const [composeMarketingCode, setComposeMarketingCode] = useState('MK1');
+  const [composeError, setComposeError] = useState<string | null>(null);
+  const [composeSuccess, setComposeSuccess] = useState(false);
 
   // Estadísticas agregadas
   const metrics = useMemo(() => {
     const total = contacts.length;
     const withPhone = contacts.filter((c) => Boolean(c.phone && c.phone.trim().length > 4)).length;
     const recurrent = contacts.filter((c) => c.reservationsCount > 1).length;
+    const attributedCount = contacts.filter((c) => c.hasAttributedBooking).length;
     const totalRevenue = contacts.reduce((sum, c) => sum + c.totalSpent, 0);
 
-    return { total, withPhone, recurrent, totalRevenue };
+    return { total, withPhone, recurrent, attributedCount, totalRevenue };
   }, [contacts]);
 
   // Filtrado de contactos
@@ -65,13 +152,16 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
         !query ||
         c.email.toLowerCase().includes(query) ||
         c.fullName.toLowerCase().includes(query) ||
-        (c.phone && c.phone.includes(query));
+        (c.phone && c.phone.includes(query)) ||
+        c.attributedCodes.some((code) => code.toLowerCase().includes(query));
 
       let matchesFilter = true;
       if (filterType === 'PHONE') {
         matchesFilter = Boolean(c.phone && c.phone.trim().length > 4);
       } else if (filterType === 'RECURRENT') {
         matchesFilter = c.reservationsCount > 1;
+      } else if (filterType === 'ATTRIBUTED') {
+        matchesFilter = c.hasAttributedBooking;
       } else if (filterType === 'PAID') {
         matchesFilter = c.lastStatus === 'PAID';
       }
@@ -99,56 +189,173 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
 
   // Copiar correos al portapapeles
   const handleCopyEmails = () => {
-    const emailsToCopy = selectedEmails.length > 0 
-      ? selectedEmails 
-      : filteredContacts.map((c) => c.email);
-    
-    if (emailsToCopy.length === 0) return;
+    const listToCopy = selectedEmails.length > 0 ? selectedEmails : filteredContacts.map((c) => c.email);
+    if (listToCopy.length === 0) return;
 
-    navigator.clipboard.writeText(emailsToCopy.join(', '));
+    navigator.clipboard.writeText(listToCopy.join(', '));
     setCopied(true);
+    setFeedback({ type: 'success', message: `${listToCopy.length} correos copiados al portapapeles.` });
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Exportar a CSV
+  // Exportar CSV
   const handleExportCSV = () => {
-    const dataToExport = selectedEmails.length > 0
-      ? filteredContacts.filter((c) => selectedEmails.includes(c.email))
+    const listToExport = selectedEmails.length > 0
+      ? contacts.filter((c) => selectedEmails.includes(c.email))
       : filteredContacts;
 
-    if (dataToExport.length === 0) return;
+    if (listToExport.length === 0) return;
 
-    const headers = ['Nombre Completo', 'Correo Electrónico', 'Teléfono', 'Reservas', 'Total Gastado (USD)', 'Última Reserva', 'Estado'];
-    const rows = dataToExport.map((c) => [
-      `"${c.fullName.replace(/"/g, '""')}"`,
+    const headers = ['Nombre Completo', 'Correo Electrónico', 'Teléfono / WhatsApp', 'Total Reservas', 'Inversión Total (USD)', 'Última Reserva', 'Atribución MK'];
+    const rows = listToExport.map((c) => [
+      `"${c.fullName}"`,
       `"${c.email}"`,
-      `"${c.phone || ''}"`,
+      `"${c.phone || 'Sin número'}"`,
       c.reservationsCount,
       c.totalSpent.toFixed(2),
-      c.lastReservationDate,
-      c.lastStatus,
+      `"${c.lastReservationDate}"`,
+      `"${c.attributedCodes.join(', ') || 'Sin código'}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `contactos_marketing_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `contactos-marketing-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    setFeedback({ type: 'success', message: `Exportados ${listToExport.length} contactos a archivo CSV.` });
   };
 
-  const hasActiveFilters = searchQuery.trim() !== '' || filterType !== 'ALL';
-  const clearAllFilters = () => {
-    setSearchQuery('');
-    setFilterType('ALL');
+  // Abrir Modal de Detalle de Cliente
+  const openDetailModal = (contact: MarketingContact) => {
+    setSelectedContact(contact);
+    setIsDetailModalOpen(true);
+  };
+
+  // Abrir Modal de Redactar Correo
+  const openComposeModal = (contact?: MarketingContact) => {
+    if (contact) {
+      setComposeRecipientEmail(contact.email);
+      setComposeRecipientName(contact.fullName);
+      setComposeSubject(`¡Beneficio Exclusivo en tu Próximo Viaje a Cusco, ${contact.fullName.split(' ')[0]}!`);
+      setComposeMessage(
+        `Hola ${contact.fullName.split(' ')[0]},\n\n` +
+        `Notamos que anteriormente reservaste con nosotros y queremos premiar tu preferencia. ` +
+        `Te presentamos nuestra promoción de temporada con un descuento especial en tours y traslados privados.\n\n` +
+        `Haz clic en el botón de WhatsApp abajo usando tu código exclusivo para coordinar tu reserva de inmediato.`
+      );
+    } else {
+      const recipientList = selectedEmails.length > 0 ? selectedEmails.join(', ') : 'Todos los contactos de la lista';
+      setComposeRecipientEmail(recipientList);
+      setComposeRecipientName('Estimado(a) Viajero(a)');
+      setComposeSubject('¡Promoción Especial de Temporada en Cusco & Machu Picchu!');
+      setComposeMessage(
+        `Hola viajero,\n\n` +
+        `Descubre la magia de los Andes peruanos con nuestras ofertas exclusivas en tours guiados y traslados ejecutivos.\n\n` +
+        `Comunícate directamente a nuestro WhatsApp oficial con el código promocional para activar tu tarifa especial.`
+      );
+    }
+
+    setComposeMarketingCode('MK1');
+    setComposeFlyerUrl(PRESET_FLYERS[0]?.url || '');
+    setComposeError(null);
+    setComposeSuccess(false);
+    setIsComposeModalOpen(true);
+  };
+
+  // Generar URL de WhatsApp con el código MK incrustado
+  const computedWhatsAppUrl = useMemo(() => {
+    const phoneClean = '51984555777'; // Teléfono oficial de reservas
+    const textMsg = encodeURIComponent(
+      `¡Hola! Recibí la promoción por correo electrónico con el código [${composeMarketingCode.toUpperCase()}]. ` +
+      `Deseo solicitar información y reservar con este beneficio.`
+    );
+    return `https://wa.me/${phoneClean}?text=${textMsg}`;
+  }, [composeMarketingCode]);
+
+  // Enviar / Registrar Correo de Campaña
+  const handleSendCampaignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setComposeError(null);
+
+    if (!composeRecipientEmail.trim()) {
+      setComposeError('Debe especificar al menos un destinatario.');
+      return;
+    }
+    if (!composeSubject.trim()) {
+      setComposeError('El asunto del correo es requerido.');
+      return;
+    }
+    if (!composeMessage.trim()) {
+      setComposeError('El cuerpo del mensaje no puede estar vacío.');
+      return;
+    }
+    if (!composeMarketingCode.trim()) {
+      setComposeError('El código de atribución de Marketing es obligatorio (ej: MK1).');
+      return;
+    }
+
+    startTransition(async () => {
+      // Si es un solo correo o varios, registramos para el email principal
+      const targetEmail = composeRecipientEmail.includes(',') 
+        ? composeRecipientEmail.split(',')[0]!.trim()
+        : composeRecipientEmail.trim();
+
+      const res = await recordMarketingCampaignEmailAction({
+        customerEmail: targetEmail,
+        campaignCode: composeMarketingCode.trim().toUpperCase(),
+        subject: composeSubject.trim(),
+        message: composeMessage.trim(),
+        flyerUrl: composeFlyerUrl.trim() || undefined,
+        whatsappUrl: computedWhatsAppUrl,
+      });
+
+      if (res.success && res.log) {
+        setComposeSuccess(true);
+        // Actualizar contacto en estado local
+        setContacts((prev) =>
+          prev.map((c) => {
+            if (c.email.toLowerCase() === targetEmail.toLowerCase()) {
+              return {
+                ...c,
+                campaignsSent: [
+                  {
+                    id: res.log.id,
+                    campaignCode: res.log.campaignCode,
+                    subject: res.log.subject,
+                    message: res.log.message,
+                    flyerUrl: res.log.flyerUrl,
+                    whatsappUrl: res.log.whatsappUrl,
+                    createdAt: 'Hace un momento',
+                  },
+                  ...c.campaignsSent,
+                ],
+              };
+            }
+            return c;
+          })
+        );
+
+        setTimeout(() => {
+          setIsComposeModalOpen(false);
+          setFeedback({
+            type: 'success',
+            message: `Campaña enviada y registrada con código de atribución [${composeMarketingCode.toUpperCase()}].`,
+          });
+        }, 1200);
+      } else {
+        setComposeError(res.error || 'Error al registrar la campaña.');
+      }
+    });
   };
 
   return (
     <div className="space-y-4 font-sans select-none w-full min-w-0">
       
-      {/* 1. Header con Título y Botones de Acción */}
+      {/* 1. Header con Título, Botones de Acción y Redactar Campaña */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <Mail className="w-5 h-5 text-[#2f2f2f] shrink-0" />
@@ -157,140 +364,159 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Badge Contador de Contactos */}
-          <div className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 shadow-2xs select-none">
-            <span className="text-slate-400 font-normal">Base de datos:</span>
-            <span className="text-slate-900 font-bold">{contacts.length}</span>
-            <span className="text-slate-500 font-medium">{contacts.length === 1 ? 'cliente' : 'clientes'}</span>
-          </div>
-
-          {/* Botón Copiar Correos */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={handleCopyEmails}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-2xs transition-all border border-slate-200 cursor-pointer shrink-0"
-            title="Copiar lista de correos separados por comas para Mailchimp, Brevo o Resend"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+            title="Copiar lista de correos separados por comas"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{copied ? '¡Copiados!' : selectedEmails.length > 0 ? `Copiar (${selectedEmails.length})` : 'Copiar Correos'}</span>
+            <span>{copied ? 'Copiados' : 'Copiar Correos'}</span>
           </button>
 
-          {/* Botón Exportar CSV */}
           <button
             type="button"
             onClick={handleExportCSV}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+            title="Descargar base de datos en formato CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Exportar CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openComposeModal()}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white font-semibold text-xs rounded-lg shadow-2xs transition-all border border-[#006e52] cursor-pointer shrink-0"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Exportar CSV</span>
+            <Send className="w-3.5 h-3.5" />
+            <span>Redactar Correo con Flyer</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Tarjetas KPI de Marketing */}
+      {/* FEEDBACK TEMPORAL */}
+      {feedback && (
+        <div
+          className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between transition-all shadow-2xs ${
+            feedback.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/90'
+              : 'bg-rose-50 text-rose-800 border border-rose-200/90'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="text-slate-400 hover:text-slate-700 text-xs px-2 py-0.5 rounded cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 2. Tarjetas KPI de Resumen Comercial */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
-        {/* KPI 1: Contactos Únicos */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Contactos
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                100% verificados
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.total}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Clientes que completaron reservas
-            </p>
+        {/* KPI 1: Base de Contactos */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Total Contactos
+            </span>
+            <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+              100% Leads
+            </span>
           </div>
+          <div className="mt-2.5 mb-0.5">
+            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
+              {metrics.total}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Clientes únicos con email registrado
+          </p>
         </div>
 
         {/* KPI 2: Con Teléfono / WhatsApp */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                WhatsApp Ready
-              </span>
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                {metrics.total > 0 ? Math.round((metrics.withPhone / metrics.total) * 100) : 0}% con móvil
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.withPhone}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Contactos con número telefónico
-            </p>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              WhatsApp Activo
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Móvil
+            </span>
           </div>
+          <div className="mt-2.5 mb-0.5">
+            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
+              {metrics.withPhone}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Listos para campañas directas
+          </p>
         </div>
 
-        {/* KPI 3: Clientes Recurrentes */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Recurrentes
-              </span>
-              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">
-                Fidelizados
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.recurrent}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Clientes con más de 1 reserva
-            </p>
+        {/* KPI 3: Ventas Atribuidas a Marketing */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Atribución MK
+            </span>
+            <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+              Captados
+            </span>
           </div>
+          <div className="mt-2.5 mb-0.5 flex items-baseline gap-2">
+            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
+              {metrics.attributedCount}
+            </span>
+            <span className="text-xs font-bold text-amber-700">con código MK</span>
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Ventas cerradas con código de campaña
+          </p>
         </div>
 
-        {/* KPI 4: Valor Total de Cartera */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Valor Cartera
-              </span>
-              <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300/80">
-                USD
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                ${metrics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Volumen acumulado por los clientes
-            </p>
+        {/* KPI 4: Volumen Total de Cartera */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Volumen Cartera
+            </span>
+            <span className="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+              Ventas
+            </span>
           </div>
+          <div className="mt-2.5 mb-0.5">
+            <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight">
+              ${metrics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-normal">
+            Facturado acumulado por clientes
+          </p>
         </div>
 
       </div>
 
-      {/* 3. Filtros y Búsqueda */}
+      {/* 3. Barra de Búsqueda y Filtros */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3 space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
-          
-          {/* Input de Búsqueda */}
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Buscar por nombre, correo o teléfono..." 
+            <input
+              type="text"
+              placeholder="Buscar por nombre, correo, teléfono o código MK..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3.5 py-1.5 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
@@ -298,69 +524,51 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            
-            {/* Dropdown de Segmentación */}
             <Select value={filterType} onValueChange={(val) => setFilterType(val ?? 'ALL')}>
-              <SelectTrigger className="h-8 w-[190px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
+              <SelectTrigger className="h-8 w-[200px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
                 <div className="flex items-center gap-1.5 truncate">
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">
-                    {filterType === 'ALL' && 'Todos los contactos'}
-                    {filterType === 'PHONE' && 'Con número móvil'}
+                  <span>
+                    {filterType === 'ALL' && 'Todos los clientes'}
+                    {filterType === 'PHONE' && 'Solo con WhatsApp'}
                     {filterType === 'RECURRENT' && 'Clientes recurrentes'}
-                    {filterType === 'PAID' && 'Último pago confirmado'}
+                    {filterType === 'ATTRIBUTED' && 'Con código de atribución'}
+                    {filterType === 'PAID' && 'Con pagos confirmados'}
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent 
-                alignItemWithTrigger={false} 
-                align="start" 
-                side="bottom" 
-                sideOffset={6}
-                className="w-[200px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50"
-              >
+              <SelectContent className="w-[200px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50">
                 <SelectItem value="ALL" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  <div className="flex items-center justify-between w-full">
-                    <span>Todos los contactos</span>
-                    <span className="text-[11px] text-slate-400 font-normal">({contacts.length})</span>
-                  </div>
+                  Todos los clientes ({contacts.length})
                 </SelectItem>
                 <SelectItem value="PHONE" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-blue-700 font-semibold">Con teléfono móvil</span>
-                    <span className="text-[11px] text-slate-400 font-normal">({metrics.withPhone})</span>
-                  </div>
+                  Solo con WhatsApp ({metrics.withPhone})
                 </SelectItem>
                 <SelectItem value="RECURRENT" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-purple-700 font-semibold">Recurrentes (+1)</span>
-                    <span className="text-[11px] text-slate-400 font-normal">({metrics.recurrent})</span>
-                  </div>
+                  Clientes recurrentes ({metrics.recurrent})
+                </SelectItem>
+                <SelectItem value="ATTRIBUTED" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
+                  Con atribución MK ({metrics.attributedCount})
                 </SelectItem>
                 <SelectItem value="PAID" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-emerald-700 font-semibold">Pagos confirmados</span>
-                  </div>
+                  Con pagos confirmados
                 </SelectItem>
               </SelectContent>
             </Select>
 
-            {/* Botón Limpiar */}
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              disabled={!hasActiveFilters}
-              className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
-                hasActiveFilters
-                  ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200 cursor-pointer'
-                  : 'text-slate-400 bg-slate-50/70 border-slate-200/80 cursor-not-allowed opacity-50'
-              }`}
-              title={hasActiveFilters ? 'Restablecer todos los filtros' : 'No hay filtros activos'}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Limpiar</span>
-            </button>
-
+            {(searchQuery || filterType !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterType('ALL');
+                }}
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -368,152 +576,133 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
       {/* 4. Tabla de Contactos de Marketing */}
       {filteredContacts.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200/90 p-12 text-center text-slate-400 shadow-2xs">
-          <Mail className="w-8 h-8 text-slate-300 mx-auto mb-2.5" />
-          <p className="font-semibold text-slate-600 text-sm">No se encontraron contactos</p>
-          <p className="text-xs text-slate-400 mt-1">Los contactos aparecerán automáticamente cuando los clientes completen reservas en el portal web.</p>
+          <p className="font-semibold text-slate-600">No se encontraron contactos que coincidan con la búsqueda.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs table-fixed">
               <colgroup>
-                <col className="w-[5%]" />
-                <col className="w-[28%]" />
-                <col className="w-[27%]" />
-                <col className="w-[18%]" />
-                <col className="w-[10%]" />
+                <col className="w-[4%]" />
+                <col className="w-[24%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
                 <col className="w-[12%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
               </colgroup>
               <thead>
-                {selectedEmails.length > 0 ? (
-                  <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                    <th className="px-4 py-2.5 text-center w-10">
-                      <input 
-                        type="checkbox" 
-                        checked={isAllSelected}
-                        onChange={toggleSelectAll}
-                        className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
-                      />
-                    </th>
-                    <th colSpan={5} className="px-3 py-2.5 text-left">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-xs">
-                          {selectedEmails.length} {selectedEmails.length === 1 ? 'contacto seleccionado' : 'contactos seleccionados'}
-                        </span>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleCopyEmails}
-                            className="px-3 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Copy size={13} />
-                            <span>Copiar correos</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleExportCSV}
-                            className="px-3 py-1 bg-[#008060] hover:bg-[#006e52] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Download size={13} />
-                            <span>Exportar selección</span>
-                          </button>
-                        </div>
-                      </div>
-                    </th>
-                  </tr>
-                ) : (
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                    <th className="px-4 py-3 text-center w-10">
-                      <input 
-                        type="checkbox" 
-                        checked={isAllSelected}
-                        onChange={toggleSelectAll}
-                        className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left">Cliente</th>
-                    <th className="px-4 py-3 text-left">Correo Electrónico</th>
-                    <th className="px-4 py-3 text-left">Teléfono / WhatsApp</th>
-                    <th className="px-4 py-3 text-center">Reservas</th>
-                    <th className="px-4 py-3 text-right">Inversión Total</th>
-                  </tr>
-                )}
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center w-8">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">Cliente / Lead</th>
+                  <th className="px-4 py-3 text-left">WhatsApp / Teléfono</th>
+                  <th className="px-4 py-3 text-center">Historial & Patrón</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">Total Gastado</th>
+                  <th className="px-4 py-3 text-center">Atribución Marketing</th>
+                  <th className="px-4 py-3 text-center">Acciones</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                 {filteredContacts.map((contact) => {
                   const isSelected = selectedEmails.includes(contact.email);
-
                   return (
-                    <tr 
-                      key={contact.email} 
-                      className={`transition-colors group ${
-                        isSelected ? 'bg-slate-50/90' : 'hover:bg-slate-50/80'
-                      }`}
+                    <tr
+                      key={contact.email}
+                      className={`transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}
                     >
-                      {/* Checkbox fijado */}
                       <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelect(contact.email)}
-                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
                         />
                       </td>
-
-                      {/* Nombre */}
-                      <td className="px-4 py-3 text-slate-900">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-700 font-bold text-[10.5px] shrink-0 shadow-2xs">
-                            {contact.fullName.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="font-semibold text-slate-900 truncate text-xs">
-                            {contact.fullName}
-                          </span>
+                      <td className="px-4 py-3 text-left">
+                        <div className="font-semibold text-slate-900 truncate">
+                          {contact.fullName}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono truncate">
+                          {contact.email}
                         </div>
                       </td>
-
-                      {/* Correo Electrónico */}
-                      <td className="px-4 py-3">
-                        <span className="text-slate-700 font-mono text-xs truncate select-text">
-                          {contact.email}
-                        </span>
-                      </td>
-
-                      {/* Teléfono */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-left">
                         {contact.phone ? (
-                          <a
-                            href={`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-700 hover:text-emerald-700 transition-colors"
-                            title="Hacer clic para abrir chat de WhatsApp"
-                          >
-                            <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
-                            <span>{contact.phone}</span>
-                          </a>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-slate-700 text-xs truncate">
+                              {contact.phone}
+                            </span>
+                            <a
+                              href={`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+                              title="Abrir chat en WhatsApp"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
                         ) : (
-                          <span className="text-slate-400 text-xs italic">No registrado</span>
+                          <span className="text-slate-400 italic text-[11px]">Sin teléfono</span>
                         )}
                       </td>
-
-                      {/* Reservas */}
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
-                          contact.reservationsCount > 1 
-                            ? 'bg-purple-50 text-purple-700 border-purple-200/80' 
-                            : 'bg-slate-100 text-slate-700 border-slate-200'
-                        }`}>
+                        <div className="font-bold text-slate-900">
                           {contact.reservationsCount} {contact.reservationsCount === 1 ? 'reserva' : 'reservas'}
-                        </span>
+                        </div>
+                        <div className="text-[10.5px] text-slate-500 truncate">
+                          {contact.preferredService}
+                        </div>
                       </td>
+                      <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap">
+                        ${contact.totalSpent.toFixed(2)} USD
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        {contact.hasAttributedBooking ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
+                            <CheckCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Atribuido ({contact.attributedCodes.join(', ')})</span>
+                          </span>
+                        ) : contact.campaignsSent.length > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>Código {contact.campaignsSent[0]?.campaignCode} Enviado</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-slate-50 text-slate-500 border border-slate-200">
+                            <span>Sin campaña</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openDetailModal(contact)}
+                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Ver historial de reservas y campañas"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Historial</span>
+                          </button>
 
-                      {/* Total Gastado */}
-                      <td className="px-4 py-3 text-right">
-                        <span className="font-bold text-slate-900 text-xs">
-                          ${contact.totalSpent.toFixed(2)} USD
-                        </span>
+                          <button
+                            type="button"
+                            onClick={() => openComposeModal(contact)}
+                            className="px-2.5 py-1 text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1 border border-emerald-200/70 cursor-pointer"
+                            title="Redactar oferta personalizada"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Redactar</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -523,6 +712,438 @@ export function MarketingClient({ initialContacts }: MarketingClientProps) {
           </div>
         </div>
       )}
+
+      {/* MODAL 1: DETALLE DE CLIENTE & HISTORIAL DE RESERVAS */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-2xl border border-slate-200">
+          {selectedContact && (
+            <>
+              <DialogHeader className="border-b border-slate-100 pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-[#008060]" />
+                      <span>Ficha de Cliente & Historial de Reservas</span>
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500">
+                      Patrón de compra, reservas efectuadas y validación de atribución de campañas.
+                    </DialogDescription>
+                  </div>
+                  {selectedContact.hasAttributedBooking && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Atribución Validada</span>
+                    </span>
+                  )}
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 pt-2">
+                {/* Resumen del Cliente */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                  <div>
+                    <span className="text-[10.5px] font-semibold text-slate-500 uppercase block">Nombre</span>
+                    <span className="text-xs font-bold text-slate-900 truncate block">{selectedContact.fullName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] font-semibold text-slate-500 uppercase block">Correo</span>
+                    <span className="text-xs font-medium text-slate-700 truncate block font-mono">{selectedContact.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] font-semibold text-slate-500 uppercase block">Gasto Total</span>
+                    <span className="text-xs font-bold text-[#008060] block">${selectedContact.totalSpent.toFixed(2)} USD</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] font-semibold text-slate-500 uppercase block">WhatsApp</span>
+                    <span className="text-xs font-medium text-slate-800 block">{selectedContact.phone || 'Sin número'}</span>
+                  </div>
+                </div>
+
+                {/* Patrón de Reserva Detectado */}
+                <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-teal-700 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-teal-950 block">Patrón de Viaje Detectado:</span>
+                      <span className="text-[11px] text-teal-800">
+                        {selectedContact.preferredService} ({selectedContact.reservationsCount} {selectedContact.reservationsCount === 1 ? 'reserva realizada' : 'reservas realizadas'})
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDetailModalOpen(false);
+                      openComposeModal(selectedContact);
+                    }}
+                    className="px-3 py-1.5 bg-white hover:bg-teal-100/60 border border-teal-300 text-teal-800 rounded-lg text-xs font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                  >
+                    <Send className="w-3 h-3 text-teal-700" />
+                    <span>Ofrecer según patrón</span>
+                  </button>
+                </div>
+
+                {/* Comparativa de Atribución Marketing */}
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Comparación & Validación de Atribución Comercial</span>
+                    </span>
+                    {selectedContact.hasAttributedBooking ? (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                        Éxito de Retribución
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                        Seguimiento Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    {selectedContact.hasAttributedBooking ? (
+                      <>
+                        🎯 <strong>¡Venta Atribuida con Éxito al Equipo de Marketing!</strong> El cliente recibió una campaña con código y el operador registró la reserva confirmada con el código <strong>[{selectedContact.attributedCodes.join(', ')}]</strong>.
+                      </>
+                    ) : selectedContact.campaignsSent.length > 0 ? (
+                      <>
+                        ⏳ Se envió el código <strong>[{selectedContact.campaignsSent[0]?.campaignCode}]</strong> por correo electrónico. Cuando el cliente concrete la compra por WhatsApp, el operador ingresará este código en su reserva manual.
+                      </>
+                    ) : (
+                      <>
+                        ℹ️ Este cliente aún no ha recibido un código de campaña por correo electrónico. Puedes enviarle una oferta con código <strong>MK1</strong> usando el botón de abajo.
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                {/* Historial Completo de Reservas */}
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block mb-2">
+                    Historial de Reservas Realizadas ({selectedContact.reservations.length})
+                  </span>
+                  {selectedContact.reservations.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">No registra reservas todavía.</p>
+                  ) : (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-500 text-[10.5px] uppercase border-b border-slate-200">
+                          <tr>
+                            <th className="p-2.5">Servicio</th>
+                            <th className="p-2.5 text-center">Fecha</th>
+                            <th className="p-2.5 text-center">Pax</th>
+                            <th className="p-2.5 text-center">Total</th>
+                            <th className="p-2.5 text-center">Estado</th>
+                            <th className="p-2.5 text-center">Código MK</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                          {selectedContact.reservations.map((res) => (
+                            <tr key={res.id} className="hover:bg-slate-50/60">
+                              <td className="p-2.5">
+                                <div className="font-bold text-slate-900 truncate max-w-[200px]">{res.title}</div>
+                                {res.code && <span className="text-[10px] text-slate-400 font-mono">#{res.code}</span>}
+                              </td>
+                              <td className="p-2.5 text-center text-slate-600 whitespace-nowrap">{res.date}</td>
+                              <td className="p-2.5 text-center">{res.pax} pax</td>
+                              <td className="p-2.5 text-center font-bold text-slate-900">${res.totalPrice.toFixed(2)}</td>
+                              <td className="p-2.5 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  res.status === 'PAID' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                                }`}>
+                                  {res.status}
+                                </span>
+                              </td>
+                              <td className="p-2.5 text-center">
+                                {res.marketingCode ? (
+                                  <span className="px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                                    {res.marketingCode}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Historial de Campañas Enviadas */}
+                {selectedContact.campaignsSent.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block mb-2">
+                      Campañas de Email Enviadas ({selectedContact.campaignsSent.length})
+                    </span>
+                    <div className="space-y-2">
+                      {selectedContact.campaignsSent.map((camp) => (
+                        <div key={camp.id} className="p-3 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-slate-900">{camp.subject}</span>
+                            <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                              Código WhatsApp: {camp.campaignCode}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 line-clamp-2">{camp.message}</p>
+                          <div className="flex items-center justify-between pt-1 text-[10.5px] text-slate-400">
+                            <span>Enviado: {camp.createdAt}</span>
+                            {camp.flyerUrl && (
+                              <a href={camp.flyerUrl} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline inline-flex items-center gap-1 font-semibold">
+                                <ImageIcon className="w-3 h-3" />
+                                <span>Ver flyer adjunto</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="border-t border-slate-100 pt-4 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="h-9 px-4 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    openComposeModal(selectedContact);
+                  }}
+                  className="h-9 px-4 bg-[#008060] hover:bg-[#006e52] text-white rounded-xl text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Redactar Correo con Código MK</span>
+                </button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 2: REDACTAR CORREO CON FLYER Y BOTÓN WHATSAPP MK */}
+      <Dialog open={isComposeModalOpen} onOpenChange={setIsComposeModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-2xl border border-slate-200">
+          <DialogHeader className="border-b border-slate-100 pb-3">
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Send className="w-5 h-5 text-[#008060]" />
+              <span>Redactor de Campaña con Flyer & Botón WhatsApp MK</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Diseña y registra ofertas personalizadas. Incluye flyer gráfico y botón directo a WhatsApp con código de atribución comercial.
+            </DialogDescription>
+          </DialogHeader>
+
+          {composeError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{composeError}</span>
+            </div>
+          )}
+
+          {composeSuccess && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>¡Campaña enviada y código de atribución registrado exitosamente!</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSendCampaignSubmit} className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              
+              {/* Columna Izquierda: Formulario de Redacción */}
+              <div className="lg:col-span-7 space-y-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Destinatario(s) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={composeRecipientEmail}
+                    onChange={(e) => setComposeRecipientEmail(e.target.value)}
+                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 font-mono"
+                    placeholder="correo@ejemplo.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Asunto del Correo *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={composeSubject}
+                    onChange={(e) => setComposeSubject(e.target.value)}
+                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    placeholder="Ej: ¡Descuento Especial en tu Próximo Tour!"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Mensaje / Cuerpo de la Oferta *
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={composeMessage}
+                    onChange={(e) => setComposeMessage(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 leading-relaxed resize-none"
+                    placeholder="Redacta la oferta que motivará al cliente a reservar..."
+                  />
+                </div>
+
+                {/* Selección / Subida de Flyer */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Flyer Gráfico Promocional
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    {PRESET_FLYERS.map((f) => (
+                      <button
+                        type="button"
+                        key={f.name}
+                        onClick={() => setComposeFlyerUrl(f.url)}
+                        className={`p-2 rounded-lg border text-left text-[11px] font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                          composeFlyerUrl === f.url
+                            ? 'bg-teal-50 border-teal-500 text-teal-900 ring-1 ring-teal-500'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        <span className="truncate">{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="url"
+                    placeholder="O ingresa URL personalizada de imagen/flyer..."
+                    value={composeFlyerUrl}
+                    onChange={(e) => setComposeFlyerUrl(e.target.value)}
+                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                {/* Código de Atribución */}
+                <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl space-y-1.5">
+                  <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Código de Atribución WhatsApp (ej: MK1)</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={composeMarketingCode}
+                    onChange={(e) => setComposeMarketingCode(e.target.value.toUpperCase())}
+                    className="w-full h-8 px-3 bg-white border border-amber-300 rounded-lg text-xs font-bold tracking-wider text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase"
+                    placeholder="MK1"
+                  />
+                  <p className="text-[11px] text-amber-800 leading-snug">
+                    Este código irá integrado en el enlace de WhatsApp del correo. Cuando el cliente toque el botón, enviará el código y el operador lo registrará en la reserva.
+                  </p>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Vista Previa en Vivo del Correo */}
+              <div className="lg:col-span-5 bg-slate-50 rounded-2xl border border-slate-200 p-3.5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2.5">
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Vista Previa del Correo</span>
+                    </span>
+                    <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">
+                      {composeMarketingCode.toUpperCase() || 'MK1'}
+                    </span>
+                  </div>
+
+                  {/* Mockup de Email */}
+                  <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                    {composeFlyerUrl && (
+                      <div className="w-full h-32 relative bg-slate-900 overflow-hidden">
+                        <img 
+                          src={composeFlyerUrl} 
+                          alt="Flyer promocional" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2.5">
+                          <span className="text-white text-[11px] font-bold tracking-wide">
+                            AGENCIA DE VIAJES CUSCO
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-3 space-y-2">
+                      <h4 className="font-bold text-slate-900 text-xs leading-snug">
+                        {composeSubject || 'Asunto del Correo'}
+                      </h4>
+                      <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">
+                        {composeMessage || 'Tu mensaje promocional aparecerá aquí...'}
+                      </p>
+
+                      {/* Botón Verde WhatsApp */}
+                      <div className="pt-2">
+                        <a
+                          href={computedWhatsAppUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full py-2 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-all text-center"
+                        >
+                          <MessageSquare className="w-4 h-4 fill-white shrink-0" />
+                          <span>Reservar con Beneficio [{composeMarketingCode.toUpperCase() || 'MK1'}]</span>
+                        </a>
+                        <span className="text-[9.5px] text-slate-400 text-center block mt-1">
+                          Enlace dinámico de WhatsApp con código de atribución
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500">
+                  <span>Al hacer clic en enviar, se registrará el código para contrastarlo con futuras reservas.</span>
+                </div>
+              </div>
+
+            </div>
+
+            <DialogFooter className="border-t border-slate-100 pt-4 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsComposeModalOpen(false)}
+                className="h-9 px-4 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isPending || composeSuccess}
+                className="h-9 px-5 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white rounded-xl text-xs font-bold shadow-2xs transition-all border border-[#006e52] flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isPending ? (
+                  <span>Registrando...</span>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Registrar y Enviar Campaña</span>
+                  </>
+                )}
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

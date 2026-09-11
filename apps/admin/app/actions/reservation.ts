@@ -163,7 +163,7 @@ export async function getRecentNotificationsAction() {
         id: r.id,
         customerName: `${r.customerFirstName} ${r.customerLastName}`,
         customerEmail: r.customerEmail,
-        tourTitle: r.tour?.title || 'Tour Inca Bound',
+        tourTitle: r.tour?.title || 'Tour Perú Andino',
         pax: r.pax,
         totalPrice: r.totalPrice,
         status: r.status,
@@ -173,5 +173,90 @@ export async function getRecentNotificationsAction() {
   } catch (error: any) {
     console.error("Error fetching notifications:", error);
     return { success: false, notifications: [] };
+  }
+}
+
+const CreateManualReservationSchema = z.object({
+  customerFirstName: z.string().min(1, 'El nombre es requerido'),
+  customerLastName: z.string().min(1, 'El apellido es requerido'),
+  customerEmail: z.string().email('Email inválido'),
+  customerPhone: z.string().min(1, 'El teléfono es requerido'),
+  type: z.enum(['TOUR', 'TRANSFER']),
+  tourId: z.string().optional().nullable(),
+  transferId: z.string().optional().nullable(),
+  vehicleTypeId: z.string().optional().nullable(),
+  serviceType: z.enum(['shared', 'private']).default('shared'),
+  date: z.string().min(1, 'La fecha es requerida'),
+  pax: z.coerce.number().min(1, 'Mínimo 1 pasajero'),
+  totalPrice: z.coerce.number().min(0, 'El monto debe ser mayor o igual a 0'),
+  status: z.enum(['PENDING', 'PAID', 'CANCELLED']).default('PAID'),
+  pickupHotel: z.string().optional().nullable(),
+  pickupTime: z.string().optional().nullable(),
+  specialRequirements: z.string().optional().nullable(),
+  marketingCode: z.string().optional().nullable(),
+});
+
+/**
+ * Crea una reserva manual registrada directamente por el operador o master.
+ * Soporta atribución directa si el cliente contactó por WhatsApp con un código de Marketing (ej: MK1).
+ */
+export async function createManualReservationAction(rawData: unknown) {
+  try {
+    const session = await requireAdminSession();
+    const parsed = CreateManualReservationSchema.safeParse(rawData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Datos de reserva incompletos.' };
+    }
+
+    const d = parsed.data;
+    const cleanCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const cleanMarketingCode = d.marketingCode ? d.marketingCode.trim().toUpperCase() : null;
+
+    const newReserva = await (prisma.reservation as any).create({
+      data: {
+        code: cleanCode,
+        customerFirstName: d.customerFirstName.trim(),
+        customerLastName: d.customerLastName.trim(),
+        customerEmail: d.customerEmail.trim().toLowerCase(),
+        customerPhone: d.customerPhone.trim(),
+        date: new Date(d.date),
+        pax: d.pax,
+        totalPrice: d.totalPrice,
+        serviceType: d.serviceType,
+        status: d.status,
+        pickupHotel: d.pickupHotel?.trim() || null,
+        pickupTime: d.pickupTime?.trim() || null,
+        specialRequirements: d.specialRequirements?.trim() || null,
+        marketingCode: cleanMarketingCode,
+        source: cleanMarketingCode ? 'WHATSAPP' : 'MANUAL',
+        tourId: d.type === 'TOUR' ? d.tourId || undefined : undefined,
+        transferId: d.type === 'TRANSFER' ? d.transferId || undefined : undefined,
+        vehicleTypeId: d.type === 'TRANSFER' ? d.vehicleTypeId || undefined : undefined,
+        assignedOperatorId: session.userId || undefined,
+        passengers: {
+          create: [
+            {
+              firstName: d.customerFirstName.trim(),
+              lastName: d.customerLastName.trim(),
+              docType: 'DNI / Pasaporte',
+              docNumber: 'REG-MANUAL',
+            }
+          ]
+        }
+      },
+      include: {
+        tour: true,
+        transfer: true,
+        vehicleType: true
+      }
+    });
+
+    revalidatePath('/reservas');
+    revalidatePath('/marketing');
+    revalidatePath('/');
+    return { success: true, reservation: newReserva };
+  } catch (error: any) {
+    console.error('Error creating manual reservation:', error);
+    return { success: false, error: handlePrismaError(error) };
   }
 }

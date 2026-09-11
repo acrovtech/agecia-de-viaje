@@ -21,6 +21,20 @@ export const Role = {
   CONTENT_CREATOR: 'CONTENT_CREATOR',
   MARKETING: 'MARKETING',
 } as const;
+
+// Tipo extendido de Reserva con soporte para atribución de marketing
+export interface MarketingCampaignLogItem {
+  id: string;
+  customerEmail: string;
+  campaignCode: string;
+  subject: string;
+  message: string;
+  flyerUrl?: string | null;
+  whatsappUrl?: string | null;
+  sentByEmail?: string | null;
+  createdAt: Date;
+}
+
 export * from "./transfers-data";
 export * from "./schemas";
 export * from "./auth-security";

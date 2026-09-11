@@ -197,6 +197,8 @@ model Reservation {
   
   status           ReservationStatus @default(PENDING)
   paymentReference String? // Izipay transaction ID or token
+  marketingCode    String? // Código de atribución marketing/WhatsApp (ej: MK1)
+  source           String?   @default("WEB") // "WEB" | "MANUAL" | "WHATSAPP"
 
   assignedOperatorId String?
   assignedOperator   User?             @relation("OperatorReservations", fields: [assignedOperatorId], references: [id], onDelete: SetNull)
@@ -212,7 +214,24 @@ model Reservation {
   @@index([tourId])
   @@index([transferId])
   @@index([customerEmail])
+  @@index([marketingCode])
   @@index([assignedOperatorId])
+}
+
+model MarketingCampaignLog {
+  id            String   @id @default(cuid())
+  customerEmail String
+  campaignCode  String   @default("MK1")
+  subject       String
+  message       String   @db.Text
+  flyerUrl      String?
+  whatsappUrl   String?  @db.Text
+  sentByEmail   String?
+  createdAt     DateTime @default(now())
+
+  @@index([customerEmail])
+  @@index([campaignCode])
+  @@index([createdAt])
 }
 
 model ReservationItem {

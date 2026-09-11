@@ -284,13 +284,19 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <h1 className="text-[1rem] font-semibold text-[#303030] tracking-tight truncate">
-            Reserva #{reserva.id.slice(-6).toUpperCase()}
+            Reserva #{reserva.code || reserva.id.slice(-6).toUpperCase()}
           </h1>
+          {reserva.marketingCode && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs shrink-0">
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              <span>Atribución MK: {reserva.marketingCode}</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <a
-            href={`https://wa.me/${formatPhoneForWhatsapp(reserva.customerPhone)}?text=Hola%20${reserva.customerFirstName},%20te%20escribimos%20de%20Inca%20Bound%20sobre%20tu%20reserva%20de%20${encodeURIComponent(reserva.tour?.title || 'Tour')}`}
+            href={`https://wa.me/${formatPhoneForWhatsapp(reserva.customerPhone)}?text=Hola%20${reserva.customerFirstName},%20te%20escribimos%20de%20la%20agencia%20sobre%20tu%20reserva%20de%20${encodeURIComponent(reserva.tour?.title || reserva.transfer?.title || 'Servicio')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3.5 py-2 h-9 sm:h-8 rounded-lg shadow-xs transition-all select-none cursor-pointer"
