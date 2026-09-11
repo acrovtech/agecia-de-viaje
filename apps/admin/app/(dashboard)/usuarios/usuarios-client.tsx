@@ -899,9 +899,9 @@ export function UsuariosClient({
         </div>
       )}
 
-      {/* 6. MODAL DE CREACIÓN Y EDICIÓN DE USUARIOS (Sin icono en header, roles limpios y espacio correcto en footer) */}
+      {/* 6. MODAL DE CREACIÓN Y EDICIÓN DE USUARIOS (10% más ancho con sm:max-w-[530px]) */}
       <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
+        <DialogContent className="sm:max-w-[530px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
           <DialogHeader className="text-left border-b border-slate-100 pb-3">
             <DialogTitle className="text-base font-bold text-slate-900">
               {editingUser ? `Editar Usuario: ${editingUser.name || editingUser.email}` : 'Registrar Nuevo Colaborador'}
