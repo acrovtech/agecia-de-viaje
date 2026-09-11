@@ -19,9 +19,14 @@ import { requireMasterRole } from '@/lib/auth-check';
  */
 export async function getUsersAction() {
   try {
-    await requireMasterRole();
+    const session = await requireMasterRole();
+    const isSuperAdmin = session.role === 'SUPERADMIN';
+
+    // Solo un SuperAdmin puede ver cuentas de tipo SuperAdmin
+    const whereClause = isSuperAdmin ? {} : { role: { not: 'SUPERADMIN' as Role } };
 
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -38,7 +43,7 @@ export async function getUsersAction() {
       orderBy: { createdAt: 'desc' },
     });
 
-    return { success: true, users };
+    return { success: true, users, isSuperAdmin };
   } catch (error: any) {
     console.error('Error in getUsersAction:', error);
     return { success: false, error: error.message || 'Error al obtener usuarios' };

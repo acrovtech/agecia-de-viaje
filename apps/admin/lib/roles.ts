@@ -25,7 +25,7 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
     key: 'MASTER',
     label: 'Administrador Master',
     shortDescription: 'Acceso total y sin restricciones a todos los módulos, gestión de usuarios, transporte privado y configuraciones críticas.',
-    badgeClass: 'bg-slate-900 text-white border border-slate-800',
+    badgeClass: 'bg-slate-100 text-slate-800 border border-slate-300',
     permissions: [
       'Gestión integral de usuarios y roles',
       'Configuración de transportes y tarifas privadas',

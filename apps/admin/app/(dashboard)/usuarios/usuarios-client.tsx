@@ -63,7 +63,13 @@ export interface AdminUserItem {
   updatedAt: Date;
 }
 
-export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[] }) {
+export function UsuariosClient({ 
+  initialUsers,
+  isSuperAdmin = false
+}: { 
+  initialUsers: AdminUserItem[];
+  isSuperAdmin?: boolean;
+}) {
   const [users, setUsers] = useState<AdminUserItem[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
@@ -346,13 +352,13 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
     return (email || 'US').slice(0, 2).toUpperCase();
   };
 
-  // Icono según rol
+  // Icono según rol con colores consistentes a sus badges outline
   const getRoleIcon = (role: Role) => {
     switch (role) {
       case 'SUPERADMIN':
         return <Crown className="w-3.5 h-3.5 text-purple-600 shrink-0" />;
       case 'MASTER':
-        return <ShieldCheck className="w-3.5 h-3.5 text-slate-800 shrink-0" />;
+        return <ShieldCheck className="w-3.5 h-3.5 text-slate-700 shrink-0" />;
       case 'OPERATOR':
         return <Headset className="w-3.5 h-3.5 text-blue-600 shrink-0" />;
       case 'CONTENT_CREATOR':
@@ -365,7 +371,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
   return (
     <div className="space-y-4 font-sans select-none w-full min-w-0">
       
-      {/* 1. Header con Título y Botón Primario Normalizado */}
+      {/* 1. Header con Título y Botón Verde Estandarizado (#008060) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <Users className="w-5 h-5 text-[#2f2f2f] shrink-0" />
@@ -384,7 +390,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
           <button
             type="button"
             onClick={openCreateModal}
-            className="h-8 px-3.5 bg-[#0a0a0a] hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white font-semibold text-xs rounded-lg shadow-2xs transition-all border border-[#006e52] cursor-pointer shrink-0"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Nuevo Usuario</span>
@@ -419,7 +425,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
         </div>
       )}
 
-      {/* 2. TARJETAS KPI DE RESUMEN (Estilo Shopify Polaris / Dashboard) */}
+      {/* 2. TARJETAS KPI DE RESUMEN (Total, Equipo de Marketing, Operadores y Master) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         {/* KPI 1: Total Usuarios */}
@@ -444,29 +450,51 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
           </div>
         </div>
 
-        {/* KPI 2: Super Admin */}
+        {/* KPI 2: Equipo de Marketing & Contenidos */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Super Admins
+                Equipo de Marketing
               </span>
-              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">
-                Root / Logs
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                {metrics.creators} miembros
               </span>
             </div>
             <div className="mt-2.5 mb-0.5">
               <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.superAdmins}
+                {metrics.creators}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-normal">
-              Acceso a auditoría forense
+              Gestión de tours, blogs y catálogo web
             </p>
           </div>
         </div>
 
-        {/* KPI 3: Master Admin */}
+        {/* KPI 3: Operadores de Reservas */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Operadores
+              </span>
+              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                {metrics.operators} operativos
+              </span>
+            </div>
+            <div className="mt-2.5 mb-0.5">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                {metrics.operators}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Manifiesto de clientes, pagos y traslados
+            </p>
+          </div>
+        </div>
+
+        {/* KPI 4: Administración Master */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -483,29 +511,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
               </span>
             </div>
             <p className="text-xs text-slate-500 font-normal">
-              Gestión general de agencia
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 4: Operadores & Contenidos */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Operaciones & Contenidos
-              </span>
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                {metrics.operators} Op / {metrics.creators} Cont
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.operators + metrics.creators}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Reservas, traslados y catálogo
+              Control general de agencia y equipo
             </p>
           </div>
         </div>
@@ -525,7 +531,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
               Jerarquía de Roles y Privilegios del Sistema
             </span>
             <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60 hidden sm:inline-block">
-              4 niveles de acceso
+              {isSuperAdmin ? '4 niveles de acceso' : '3 niveles de acceso'}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -545,33 +551,35 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
           }`}
         >
           <div className="overflow-hidden">
-            <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {Object.values(ROLE_DEFINITIONS).map((def) => (
-                <div 
-                  key={def.key} 
-                  className="bg-white rounded-xl border border-slate-200/80 p-3.5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-shadow duration-200"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${def.badgeClass}`}>
-                        {def.label}
-                      </span>
-                      {getRoleIcon(def.key)}
+            <div className={`p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3`}>
+              {Object.values(ROLE_DEFINITIONS)
+                .filter((def) => isSuperAdmin || def.key !== 'SUPERADMIN')
+                .map((def) => (
+                  <div 
+                    key={def.key} 
+                    className="bg-white rounded-xl border border-slate-200/80 p-3.5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-shadow duration-200"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${def.badgeClass}`}>
+                          {def.label}
+                        </span>
+                        {getRoleIcon(def.key)}
+                      </div>
+                      <p className="text-[11px] text-slate-600 mb-3 leading-relaxed">
+                        {def.shortDescription}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-600 mb-3 leading-relaxed">
-                      {def.shortDescription}
-                    </p>
+                    <ul className="space-y-1 text-[10.5px] text-slate-500 border-t border-slate-100 pt-2.5">
+                      {def.permissions.slice(0, 3).map((perm, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0 mt-1.5" />
+                          <span className="leading-snug">{perm}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-1 text-[10.5px] text-slate-500 border-t border-slate-100 pt-2.5">
-                    {def.permissions.slice(0, 3).map((perm, i) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0 mt-1.5" />
-                        <span className="leading-snug">{perm}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -605,7 +613,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
                     {roleFilter === 'SUPERADMIN' && 'Super Admin'}
                     {roleFilter === 'MASTER' && 'Admin Master'}
                     {roleFilter === 'OPERATOR' && 'Operador'}
-                    {roleFilter === 'CONTENT_CREATOR' && 'Contenidos'}
+                    {roleFilter === 'CONTENT_CREATOR' && 'Marketing / Contenidos'}
                   </span>
                 </div>
               </SelectTrigger>
@@ -622,15 +630,17 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
                     <span className="text-[11px] text-slate-400 font-normal">({users.length})</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="SUPERADMIN" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-purple-700 font-semibold">Super Admin</span>
-                    <span className="text-[11px] text-slate-400 font-normal">({metrics.superAdmins})</span>
-                  </div>
-                </SelectItem>
+                {isSuperAdmin && (
+                  <SelectItem value="SUPERADMIN" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-purple-700 font-semibold">Super Admin</span>
+                      <span className="text-[11px] text-slate-400 font-normal">({metrics.superAdmins})</span>
+                    </div>
+                  </SelectItem>
+                )}
                 <SelectItem value="MASTER" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-slate-900 font-semibold">Master Admin</span>
+                    <span className="text-slate-800 font-semibold">Master Admin</span>
                     <span className="text-[11px] text-slate-400 font-normal">({metrics.masters})</span>
                   </div>
                 </SelectItem>
@@ -642,7 +652,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
                 </SelectItem>
                 <SelectItem value="CONTENT_CREATOR" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-emerald-700 font-semibold">Contenidos</span>
+                    <span className="text-emerald-700 font-semibold">Marketing / Contenidos</span>
                     <span className="text-[11px] text-slate-400 font-normal">({metrics.creators})</span>
                   </div>
                 </SelectItem>
@@ -822,7 +832,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
                         </div>
                       </td>
 
-                      {/* 2. Columna Rol Asignado */}
+                      {/* 2. Columna Rol Asignado (Con estilo outline homogéneo) */}
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${roleMeta.badgeClass}`}>
                           {getRoleIcon(user.role)}
@@ -943,7 +953,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
         <DialogContent className="sm:max-w-lg bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
           <DialogHeader className="text-left border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
                 {editingUser ? <Edit3 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
               </div>
               <DialogTitle className="text-base font-bold text-slate-900">
@@ -1021,35 +1031,37 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
               </div>
             </div>
 
-            {/* Selección de Rol con Tarjetas */}
+            {/* Selección de Rol con Tarjetas (Oculta SuperAdmin si no es SuperAdmin) */}
             <div className="space-y-1.5 pt-1">
               <label className="text-xs font-semibold text-slate-700">Rol Administrativo</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {Object.values(ROLE_DEFINITIONS).map((def) => {
-                  const isSelected = formRole === def.key;
-                  return (
-                    <button
-                      key={def.key}
-                      type="button"
-                      onClick={() => setFormRole(def.key)}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-slate-900 bg-slate-900/5 ring-1 ring-slate-900 shadow-xs'
-                          : 'border-slate-200 bg-[#FAFAFA] hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${def.badgeClass}`}>
-                          {def.label}
-                        </span>
-                        {getRoleIcon(def.key)}
-                      </div>
-                      <p className="text-[10.5px] text-slate-500 leading-snug line-clamp-2 mt-1">
-                        {def.shortDescription}
-                      </p>
-                    </button>
-                  );
-                })}
+              <div className={`grid grid-cols-1 ${isSuperAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2`}>
+                {Object.values(ROLE_DEFINITIONS)
+                  .filter((def) => isSuperAdmin || def.key !== 'SUPERADMIN')
+                  .map((def) => {
+                    const isSelected = formRole === def.key;
+                    return (
+                      <button
+                        key={def.key}
+                        type="button"
+                        onClick={() => setFormRole(def.key)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-slate-900 bg-slate-900/5 ring-1 ring-slate-900 shadow-xs'
+                            : 'border-slate-200 bg-[#FAFAFA] hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${def.badgeClass}`}>
+                            {def.label}
+                          </span>
+                          {getRoleIcon(def.key)}
+                        </div>
+                        <p className="text-[10.5px] text-slate-500 leading-snug line-clamp-2 mt-1">
+                          {def.shortDescription}
+                        </p>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 
@@ -1084,7 +1096,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
               <button
                 type="submit"
                 disabled={isPending}
-                className="h-8 px-4 bg-[#0a0a0a] hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                className="h-8 px-4 bg-[#008060] hover:bg-[#006e52] active:bg-[#005e46] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors border border-[#006e52] cursor-pointer inline-flex items-center gap-1.5"
               >
                 {isPending && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
                 <span>{editingUser ? 'Guardar Cambios' : 'Crear Usuario'}</span>

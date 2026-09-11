@@ -15,6 +15,7 @@ export default async function UsuariosPage() {
 
   const result = await getUsersAction();
   const initialUsers = result.users || [];
+  const isSuperAdmin = result.isSuperAdmin ?? false;
 
-  return <UsuariosClient initialUsers={initialUsers} />;
+  return <UsuariosClient initialUsers={initialUsers} isSuperAdmin={isSuperAdmin} />;
 }
