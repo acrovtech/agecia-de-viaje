@@ -54,12 +54,27 @@ export async function GET() {
       });
     }
 
+    // 5. Insert MARKETING user if not exists
+    let marketingUser = await prisma.user.findUnique({ where: { email: 'marketing@agenciadeviajes.com' } });
+    if (!marketingUser) {
+      marketingUser = await prisma.user.create({
+        data: {
+          name: 'Equipo de Marketing',
+          email: 'marketing@agenciadeviajes.com',
+          password: await bcrypt.hash('Marketing2026*!', 10),
+          role: Role.MARKETING,
+          isActive: true,
+        }
+      });
+    }
+
     return NextResponse.json({
       message: 'Usuarios y roles administrativos inicializados exitosamente.',
       users: [
         { email: masterUser.email, role: masterUser.role },
         { email: operatorUser.email, role: operatorUser.role },
-        { email: contentUser.email, role: contentUser.role }
+        { email: contentUser.email, role: contentUser.role },
+        { email: marketingUser.email, role: marketingUser.role }
       ]
     });
   } catch (error: any) {

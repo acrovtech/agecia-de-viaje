@@ -50,15 +50,27 @@ export const ROLE_DEFINITIONS: Record<Role, RoleMetadata> = {
   },
   CONTENT_CREATOR: {
     key: 'CONTENT_CREATOR',
-    label: 'Equipo de Marketing',
-    shortDescription: 'Gestión de email marketing, base de contactos de clientes, redacción de blogs, catálogo de tours y contenidos.',
+    label: 'Gestor de Contenidos',
+    shortDescription: 'Creación, edición y publicación de paquetes turísticos, itinerarios, galerías, blogs y menús de navegación.',
     badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
     permissions: [
-      'Acceso a Email Marketing y base de clientes',
-      'Creación y edición de Tours y catálogo',
-      'Gestión de blogs y artículos promocionales',
+      'Creación y edición de Tours',
+      'Gestión de itinerarios, inclusiones y precios',
+      'Redacción y publicación de Blogs',
       'Administración de Categorías de tours',
       'Diseño y links del menú de navegación',
+    ],
+  },
+  MARKETING: {
+    key: 'MARKETING',
+    label: 'Equipo de Marketing',
+    shortDescription: 'Campañas de email marketing, base de datos de contactos de reservas, promociones y fidelización.',
+    badgeClass: 'bg-amber-50 text-amber-800 border border-amber-200/80',
+    permissions: [
+      'Acceso a Email Marketing y base de contactos',
+      'Exportación de listas de correos y teléfonos',
+      'Campañas de fidelización de clientes',
+      'Métricas de clientes recurrentes y cartera',
     ],
   },
 };

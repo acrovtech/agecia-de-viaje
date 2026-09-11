@@ -7,6 +7,7 @@ import {
   ShieldCheck, 
   Headset, 
   PenTool, 
+  Mail,
   Search, 
   Trash2, 
   Edit3, 
@@ -102,7 +103,7 @@ export function UsuariosClient({
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Estadísticas agregadas de equipo
+  // Estadísticas agregadas de equipo (4 roles de negocio)
   const metrics = useMemo(() => {
     const total = users.length;
     const active = users.filter((u) => u.isActive && (!u.lockedUntil || new Date(u.lockedUntil) < new Date())).length;
@@ -110,9 +111,10 @@ export function UsuariosClient({
     const masters = users.filter((u) => u.role === 'MASTER').length;
     const operators = users.filter((u) => u.role === 'OPERATOR').length;
     const creators = users.filter((u) => u.role === 'CONTENT_CREATOR').length;
+    const marketing = users.filter((u) => u.role === 'MARKETING').length;
     const locked = users.filter((u) => u.lockedUntil && new Date(u.lockedUntil) > new Date()).length;
 
-    return { total, active, superAdmins, masters, operators, creators, locked };
+    return { total, active, superAdmins, masters, operators, creators, marketing, locked };
   }, [users]);
 
   // Filtros activos
@@ -337,6 +339,8 @@ export function UsuariosClient({
         return <Headset className="w-3.5 h-3.5 text-blue-600 shrink-0" />;
       case 'CONTENT_CREATOR':
         return <PenTool className="w-3.5 h-3.5 text-emerald-600 shrink-0" />;
+      case 'MARKETING':
+        return <Mail className="w-3.5 h-3.5 text-amber-600 shrink-0" />;
       default:
         return <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
@@ -399,54 +403,10 @@ export function UsuariosClient({
         </div>
       )}
 
-      {/* 2. TARJETAS KPI DE RESUMEN (Total, Equipo de Marketing, Operadores y Master) */}
+      {/* 2. TARJETAS KPI DE RESUMEN (Operadores, Contenido, Marketing y Master) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
-        {/* KPI 1: Total Usuarios */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Usuarios
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                {metrics.active} activos
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.total}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Cuentas registradas en el sistema
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 2: Equipo de Marketing */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Equipo de Marketing
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                {metrics.creators} miembros
-              </span>
-            </div>
-            <div className="mt-2.5 mb-0.5">
-              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
-                {metrics.creators}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-normal">
-              Email marketing, tours y contenidos
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 3: Operadores de Reservas */}
+        {/* KPI 1: Operadores de Reservas */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -464,6 +424,50 @@ export function UsuariosClient({
             </div>
             <p className="text-xs text-slate-500 font-normal">
               Gestión de reservas y traslados
+            </p>
+          </div>
+        </div>
+
+        {/* KPI 2: Gestores de Contenidos */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Gestor de Contenido
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                {metrics.creators} editores
+              </span>
+            </div>
+            <div className="mt-2.5 mb-0.5">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                {metrics.creators}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Tours, itinerarios y redacción de blogs
+            </p>
+          </div>
+        </div>
+
+        {/* KPI 3: Equipo de Marketing */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Equipo de Marketing
+              </span>
+              <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                {metrics.marketing} miembros
+              </span>
+            </div>
+            <div className="mt-2.5 mb-0.5">
+              <span className="text-2xl md:text-3xl font-bold text-[#2f2f2f] tracking-tight font-sans">
+                {metrics.marketing}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Email marketing y base de contactos
             </p>
           </div>
         </div>
@@ -492,7 +496,7 @@ export function UsuariosClient({
 
       </div>
 
-      {/* 3. MATRIZ DE ROLES (Acordeón elegante y colapsable con animación suave de apertura y cierre) */}
+      {/* 3. MATRIZ DE ROLES (Acordeón elegante y colapsable con los 4 roles del equipo) */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all duration-300">
         <button
           type="button"
@@ -505,7 +509,7 @@ export function UsuariosClient({
               Jerarquía de Roles y Privilegios del Equipo
             </span>
             <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60 hidden sm:inline-block">
-              3 roles de equipo
+              4 roles del equipo
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -525,7 +529,7 @@ export function UsuariosClient({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {Object.values(ROLE_DEFINITIONS)
                 .filter((def) => def.key !== 'SUPERADMIN')
                 .map((def) => (
@@ -579,14 +583,15 @@ export function UsuariosClient({
             
             {/* Dropdown de Rol */}
             <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val ?? 'ALL')}>
-              <SelectTrigger className="h-8 w-[170px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
+              <SelectTrigger className="h-8 w-[180px] bg-white border border-slate-200 text-xs font-semibold px-2.5 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs justify-between">
                 <div className="flex items-center gap-1.5 truncate">
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">
                     {roleFilter === 'ALL' && 'Todos los roles'}
                     {roleFilter === 'MASTER' && 'Admin Master'}
                     {roleFilter === 'OPERATOR' && 'Operador'}
-                    {roleFilter === 'CONTENT_CREATOR' && 'Marketing'}
+                    {roleFilter === 'CONTENT_CREATOR' && 'Gestor de Contenido'}
+                    {roleFilter === 'MARKETING' && 'Equipo de Marketing'}
                   </span>
                 </div>
               </SelectTrigger>
@@ -595,7 +600,7 @@ export function UsuariosClient({
                 align="start" 
                 side="bottom" 
                 sideOffset={6}
-                className="w-[180px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50"
+                className="w-[200px] bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50"
               >
                 <SelectItem value="ALL" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
@@ -617,8 +622,14 @@ export function UsuariosClient({
                 </SelectItem>
                 <SelectItem value="CONTENT_CREATOR" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-emerald-700 font-semibold">Equipo de Marketing</span>
+                    <span className="text-emerald-700 font-semibold">Gestor de Contenido</span>
                     <span className="text-[11px] text-slate-400 font-normal">({metrics.creators})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="MARKETING" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-amber-800 font-semibold">Equipo de Marketing</span>
+                    <span className="text-[11px] text-slate-400 font-normal">({metrics.marketing})</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -966,10 +977,10 @@ export function UsuariosClient({
               </div>
             </div>
 
-            {/* Selección de Rol con Botones Limpios y Concisos (Sin texto redundante) */}
+            {/* Selección de Rol con Botones Limpios y Concisos (Los 4 roles del equipo) */}
             <div className="space-y-1.5 pt-1">
               <label className="text-xs font-semibold text-slate-700">Rol Asignado</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {Object.values(ROLE_DEFINITIONS)
                   .filter((def) => def.key !== 'SUPERADMIN')
                   .map((def) => {

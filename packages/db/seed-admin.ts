@@ -113,6 +113,32 @@ async function main() {
     }
   });
 
+  // 5. Rol MARKETING (Campañas, Base de Contactos, Email Marketing y Fidelización)
+  const marketingEmail = (process.env.MARKETING_EMAIL || 'marketing@agenciadeviajes.com').trim().toLowerCase();
+  const marketingPassword = process.env.MARKETING_PASSWORD || 'Marketing2026*!';
+  const marketingPasswordHash = await bcrypt.hash(marketingPassword, 10);
+
+  const marketingUser = await prisma.user.upsert({
+    where: { email: marketingEmail },
+    update: {
+      name: 'Equipo de Marketing',
+      password: marketingPasswordHash,
+      role: Role.MARKETING,
+      isActive: true,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    },
+    create: {
+      name: 'Equipo de Marketing',
+      email: marketingEmail,
+      password: marketingPasswordHash,
+      role: Role.MARKETING,
+      isActive: true,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    }
+  });
+
   console.log('===============================================================');
   console.log('✅ ROLES Y USUARIOS ADMINISTRATIVOS LISTOS EN EL SISTEMA:');
   console.log('===============================================================');
@@ -135,7 +161,12 @@ async function main() {
   console.log(`   👤 Nombre:     ${contentUser.name}`);
   console.log(`   📧 Correo:     ${contentUser.email}`);
   console.log(`   🔑 Contraseña: ${contentPassword}`);
-  console.log(`   🛡️  Rol:        ${contentUser.role}`);
+  console.log(`   🛡️  Rol:        ${contentUser.role}\n`);
+  console.log('5. [MARKETING] - Email Marketing, Base de Contactos y Fidelización');
+  console.log(`   👤 Nombre:     ${marketingUser.name}`);
+  console.log(`   📧 Correo:     ${marketingUser.email}`);
+  console.log(`   🔑 Contraseña: ${marketingPassword}`);
+  console.log(`   🛡️  Rol:        ${marketingUser.role}`);
   console.log('===============================================================');
 }
 

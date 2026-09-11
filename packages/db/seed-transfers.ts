@@ -5,7 +5,7 @@ import { INITIAL_VEHICLES, INITIAL_TRANSFERS } from './src/transfers-data';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding Vehicles and 4 Core Transfers...');
+  console.log(`Seeding Vehicles and ${INITIAL_TRANSFERS.length} Core Transfers...`);
 
   // 1. Seed Vehicles
   const vehicleMap: Record<string, string> = {};
@@ -35,7 +35,7 @@ async function main() {
     vehicleMap[veh.code] = v.id;
   }
 
-  // 2. Clean old transfer vehicle prices and transfers that are not in the 4 core routes
+  // 2. Clean old transfer vehicle prices and transfers that are not in the 10 core routes
   const validSlugs = INITIAL_TRANSFERS.map((t) => t.slug);
   await prisma.transferVehiclePrice.deleteMany({
     where: {
@@ -50,7 +50,7 @@ async function main() {
     },
   });
 
-  // 3. Upsert the 4 core routes
+  // 3. Upsert the 10 core routes
   for (const tr of INITIAL_TRANSFERS) {
     const transfer = await prisma.transfer.upsert({
       where: { slug: tr.slug },
@@ -100,7 +100,8 @@ async function main() {
     }
   }
 
-  console.log('Transfers synced with 4 core routes successfully!');
+  const finalTransfersCount = await prisma.transfer.count();
+  console.log(`✅ Transfers synced successfully! Total in DB: ${finalTransfersCount}`);
 }
 
 main()

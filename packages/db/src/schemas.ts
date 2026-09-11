@@ -42,7 +42,7 @@ export const SharedContactSchema = z.object({
 /**
  * Esquemas de Seguridad, Roles y Usuarios Administrativos
  */
-export const SharedRoleSchema = z.enum(['SUPERADMIN', 'MASTER', 'OPERATOR', 'CONTENT_CREATOR']);
+export const SharedRoleSchema = z.enum(['SUPERADMIN', 'MASTER', 'OPERATOR', 'CONTENT_CREATOR', 'MARKETING']);
 export type SharedRoleType = z.infer<typeof SharedRoleSchema>;
 
 export const SharedLoginSchema = z.object({

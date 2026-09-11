@@ -67,7 +67,18 @@ async function main() {
     }
   }
 
-  console.log("✅ Reimportación de tours finalizada exitosamente.");
+  const validSlugs = tours.map(t => t.slug);
+  const deleted = await prisma.tour.deleteMany({
+    where: {
+      slug: { notIn: validSlugs }
+    }
+  });
+  if (deleted.count > 0) {
+    console.log(`🧹 Eliminados ${deleted.count} tours obsoletos.`);
+  }
+
+  const finalCount = await prisma.tour.count();
+  console.log(`✅ Reimportación finalizada: ${finalCount} tours en base de datos.`);
 }
 
 main()

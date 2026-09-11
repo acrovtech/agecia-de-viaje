@@ -35,12 +35,14 @@ export function SidebarNav({
   const isMasterUser = isMaster || normalizedRole === 'MASTER' || isSuperAdmin;
   const isOperator = normalizedRole === 'OPERATOR';
   const isContentCreator = normalizedRole === 'CONTENT_CREATOR';
+  const isMarketing = normalizedRole === 'MARKETING';
 
   // Reglas de visibilidad por rol
   const showTours = isMasterUser || isContentCreator || isOperator;
   const showTransfers = isMasterUser || isOperator;
   const showCategories = isMasterUser || isContentCreator;
   const showBlogs = isMasterUser || isContentCreator;
+  const showEmailMarketing = isMasterUser || isMarketing;
   const showReservas = isMasterUser || isOperator;
   const showUsuarios = isMasterUser;
   const showLogs = isSuperAdmin;
@@ -162,7 +164,7 @@ export function SidebarNav({
           )}
 
           {/* 7. Email Marketing (Para Equipo de Marketing y Master) */}
-          {(isMasterUser || isContentCreator) && (
+          {showEmailMarketing && (
             <li>
               <Link
                 href="/marketing"

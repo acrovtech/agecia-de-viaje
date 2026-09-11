@@ -332,6 +332,7 @@ enum Role {
   MASTER
   OPERATOR
   CONTENT_CREATOR
+  MARKETING
 }
 
 model User {

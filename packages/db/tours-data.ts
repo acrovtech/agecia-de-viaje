@@ -447,8 +447,8 @@ export const tours = [
     hasSharedService: true,
     sharedPrice: 250.0,
     hasPrivateService: true,
-    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp",
-    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/tours-peru-inca-bound.webp",
+    bannerImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875478876-valle-sagrado-banner.webp",
+    cardImage: "https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/blogs/1784875478876-valle-sagrado-banner.webp",
     itineraries: [
       {
         order: 0,

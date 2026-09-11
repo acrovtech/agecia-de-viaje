@@ -154,11 +154,111 @@ export const blogsData = [
         image: `${R2_BASE}/1784875505476-salkantay-trek-1.webp`
       }
     ]
+  },
+  {
+    title: 'Guía Definitiva de Machu Picchu 2026: Nuevos Circuitos, Boletos y Consejos',
+    slug: 'machu-picchu-guia-circuitos-2026',
+    bannerImage: `${R2_BASE}/1784875478876-valle-sagrado-banner.webp`,
+    metaTitle: 'Guía de Circuitos Machu Picchu 2026 - Agencia de Viajes',
+    metaDescription: 'Conoce el nuevo sistema de circuitos para visitar Machu Picchu en 2026: rutas panorámicas, realeza y clásicas, horarios de tren y cómo comprar entradas.',
+    keywords: 'Machu Picchu 2026, Circuitos Machu Picchu, Entradas Machu Picchu, Guía Machu Picchu Cusco',
+    paragraphs: [
+      {
+        order: 1,
+        subtitle: 'El nuevo sistema de circuitos y rutas en la maravilla del mundo',
+        content: 'Desde las últimas actualizaciones del Ministerio de Cultura, la visita a Machu Picchu se organiza en circuitos específicos (Circuito Panorámico, Circuito Clásico y Circuito de la Realeza). Cada uno ofrece perspectivas únicas de la ciudadela y senderos adaptados al tiempo y condición física de los visitantes.',
+        image: `${R2_BASE}/1784875480702-valle-sagrado-1.webp`
+      },
+      {
+        order: 2,
+        subtitle: 'Horarios de tren y traslado hacia Aguas Calientes',
+        content: 'Para llegar a Machu Picchu la vía ferroviaria desde Ollantaytambo o Poroy hasta Aguas Calientes es la más cómoda y rápida. Los servicios de tren turístico Expedition, Vistadome y 360° ofrecen ventanas panorámicas para admirar el cambio de la vegetación andina a la selva subtropical.',
+        image: `${R2_BASE}/1784875482442-valle-sagrado-2.webp`
+      },
+      {
+        order: 3,
+        subtitle: 'Recomendaciones indispensables para tu visita',
+        content: 'Es mandatorio llevar tu pasaporte o documento original con el que se realizó la reserva. Te sugerimos portar protector solar, repelente orgánico para insectos, agua en botella reutilizable y calzado con suela antideslizante para los peldaños incas.',
+        image: `${R2_BASE}/1784875484937-valle-sagrado-3.webp`
+      }
+    ]
+  },
+  {
+    title: 'Maras y Moray: Salineras Milenarias y el Laboratorio Agrícola Inca',
+    slug: 'maras-moray-salineras-laboratorio-agricola',
+    bannerImage: `${R2_BASE}/1784875486698-waqrapukara-banner.webp`,
+    metaTitle: 'Tour Maras Moray y Salineras en Cusco - Agencia de Viajes',
+    metaDescription: 'Descubre las más de 3,000 pozas de sal artesanal de Maras y las impresionantes terrazas circulares concéntricas de Moray en el Valle Sagrado.',
+    keywords: 'Salineras de Maras, Moray Cusco, Laboratorio Inca, Valle Sagrado de los Incas',
+    paragraphs: [
+      {
+        order: 1,
+        subtitle: 'Las Salineras de Maras: Más de 3,000 pozas de sal ancestral',
+        content: 'Ubicadas en una pendiente del cerro Qaqawiñay, las Salineras de Maras han sido explotadas desde la época preincaica. Un manantial de agua hipersalina subterránea nutre miles de pozas artesanales donde la sal se cristaliza por evaporación solar.',
+        image: `${R2_BASE}/1784875489294-waqrapukara-1.webp`
+      },
+      {
+        order: 2,
+        subtitle: 'Moray: El fascinante centro de experimentación agrícola inca',
+        content: 'Moray está compuesto por gigantescas andenerías circulares concéntricas que generaban microclimas con variaciones de hasta 5°C entre la terraza superior y la más profunda. Los incas utilizaban este espacio para domesticar y adaptar semillas de maíz, papa y quinua provenientes de distintas alturas.',
+        image: `${R2_BASE}/1784875491655-waqrapukara-2.webp`
+      }
+    ]
+  },
+  {
+    title: 'Gastronomía Cusqueña: 7 Platos Típicos y Tradición Culinaria Andina',
+    slug: 'gastronomia-cusquena-platos-tipicos-mercados',
+    bannerImage: `${R2_BASE}/1784875494469-queshuachaca-banner.webp`,
+    metaTitle: 'Gastronomía Cusqueña y Platos Típicos Andinos - Agencia de Viajes',
+    metaDescription: 'Explora los sabores auténticos del Cusco: chiriuchu, lechón al horno, trucha frita, sopa de quinua y los mercados tradicionales de San Pedro.',
+    keywords: 'Gastronomía Cusqueña, Platos típicos Cusco, Mercado San Pedro Cusco, Chiriuchu',
+    paragraphs: [
+      {
+        order: 1,
+        subtitle: 'Una cocina milenaria con identidad de los Andes',
+        content: 'La gastronomía tradicional de Cusco es un festín de ingredientes autóctonos: más de 3,000 variedades de papas nativas, maíz gigante de Urubamba, hierbas aromáticas como la muña y el huacatay, y carnes cocinadas lentamente en hornos de leña de adobe.',
+        image: `${R2_BASE}/1784875496594-queshuachaca-1.webp`
+      },
+      {
+        order: 2,
+        subtitle: 'El emblemático Chiriuchu y los platos festivos',
+        content: 'El Chiriuchu (que significa "ají frío") es el plato bandera cusqueño por excelencia durante la fiesta del Corpus Christi, combinando cuy asado, gallina sancochada, chalgua (pescaditos secos), torreja de maíz, queso y cochayuyo (alga marina).',
+        image: `${R2_BASE}/1784875498448-queshuachaca-2.webp`
+      },
+      {
+        order: 3,
+        subtitle: 'El Mercado Central de San Pedro: El corazón gastronómico',
+        content: 'Visitar el Mercado San Pedro es sumergirse en los olores y colores del Cusco real. Desde humeantes caldos de gallina y cordero hasta jugos de frutas exóticas de la selva de La Convención, es una parada obligatoria para el viajero gourmet.',
+        image: `${R2_BASE}/1784875463197-laguna-humantay-3.webp`
+      }
+    ]
+  },
+  {
+    title: 'Choquequirao: La Ciudadela Sagrada y Hermana Secreta de Machu Picchu',
+    slug: 'choquequirao-guia-trekking-hermana-machu-picchu',
+    bannerImage: `${R2_BASE}/1784875500398-camino-inca-vs-salkantay-banner.webp`,
+    metaTitle: 'Choquequirao Trek: La Ciudadela Sagrada Inca - Agencia de Viajes',
+    metaDescription: 'Descubre Choquequirao, una de las ciudadelas incas más remotas y majestuosas del Perú. Guía completa de trekking de 4 a 5 días por el Cañón del Apurímac.',
+    keywords: 'Choquequirao, Choquequirao Trek, Trekking Cusco, Ciudadela Sagrada Inca',
+    paragraphs: [
+      {
+        order: 1,
+        subtitle: 'La última resistencia inca en las profundidades del cañón',
+        content: 'Choquequirao ("Cuna de Oro" en quechua) se sitúa a 3,033 m s. n. m. sobre las estribaciones del nevado Salcantay. Fue uno de los últimos bastiones de resistencia incaica y solo el 30% del complejo ha sido excavado hasta la fecha, rodeado de una naturaleza salvaje y casi virgen.',
+        image: `${R2_BASE}/1784875502760-camino-inca-1.webp`
+      },
+      {
+        order: 2,
+        subtitle: 'El trekking a Choquequirao: Una aventura para auténticos exploradores',
+        content: 'A diferencia de Machu Picchu, a Choquequirao solo se puede acceder caminando. La ruta clásica de 4 o 5 días parte de Capuliyoc o Cachora, desciende más de 1,500 metros hasta cruzar el río Apurímac en Playa Rosalina y asciende por la ladera opuesta en un reto físico inolvidable.',
+        image: `${R2_BASE}/1784875505476-salkantay-trek-1.webp`
+      }
+    ]
   }
 ];
 
 async function main() {
-  console.log('Seeding 6 blog articles with Cloudflare R2 image URLs...');
+  console.log(`Seeding exactly ${blogsData.length} blog articles with Cloudflare R2 image URLs...`);
   
   for (const b of blogsData) {
     console.log(`Processing blog: ${b.title}`);
@@ -190,7 +290,19 @@ async function main() {
     });
   }
 
-  console.log('Successfully seeded 6 blog articles with Cloudflare R2 image URLs!');
+  // Remove any legacy blogs that are not part of the 10 approved articles
+  const currentSlugs = blogsData.map(b => b.slug);
+  const deleted = await prisma.blog.deleteMany({
+    where: {
+      slug: { notIn: currentSlugs }
+    }
+  });
+  if (deleted.count > 0) {
+    console.log(`Cleaned up ${deleted.count} obsolete blogs.`);
+  }
+
+  const finalCount = await prisma.blog.count();
+  console.log(`✅ Successfully seeded blogs! Total count in DB: ${finalCount}`);
 }
 
 main()
