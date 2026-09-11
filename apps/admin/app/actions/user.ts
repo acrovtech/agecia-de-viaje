@@ -327,3 +327,61 @@ export async function deleteUserAction(userId: string) {
     return { success: false, error: handlePrismaError(error) };
   }
 }
+
+/**
+ * Elimina múltiples usuarios seleccionados en lote respetando salvaguardas de seguridad.
+ */
+export async function bulkDeleteUsersAction(userIds: string[]) {
+  try {
+    const session = await requireMasterRole();
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return { success: false, error: 'No se seleccionaron usuarios para eliminar.' };
+    }
+
+    // Filtrar para no eliminar la propia cuenta en uso
+    const targetIds = userIds.filter((id) => id !== session.id);
+
+    // Obtener los usuarios para comprobar roles protegidos
+    const usersToDelete = await prisma.user.findMany({
+      where: { id: { in: targetIds } },
+      select: { id: true, email: true, role: true },
+    });
+
+    // Si no es SuperAdmin, no puede borrar a ningún SuperAdmin
+    const allowedToDelete = usersToDelete.filter((u) => {
+      if (u.role === 'SUPERADMIN' && session.role !== 'SUPERADMIN') return false;
+      return true;
+    });
+
+    if (allowedToDelete.length === 0) {
+      return { 
+        success: false, 
+        error: 'No es posible eliminar los usuarios seleccionados (cuentas protegidas o su propia cuenta).' 
+      };
+    }
+
+    const idsToDelete = allowedToDelete.map((u) => u.id);
+
+    await prisma.user.deleteMany({
+      where: { id: { in: idsToDelete } },
+    });
+
+    await createAuditEntry({
+      userId: session.id ?? null,
+      action: 'USERS_BULK_DELETED',
+      entity: 'User',
+      entityId: null,
+      details: {
+        deletedCount: idsToDelete.length,
+        emails: allowedToDelete.map((u) => u.email),
+      },
+    });
+
+    revalidatePath('/usuarios');
+    return { success: true, count: idsToDelete.length };
+  } catch (error: any) {
+    console.error('Error in bulkDeleteUsersAction:', error);
+    return { success: false, error: handlePrismaError(error) };
+  }
+}

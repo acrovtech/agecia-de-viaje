@@ -10,7 +10,6 @@ import {
   Search, 
   Trash2, 
   Edit3, 
-  Key, 
   Lock, 
   Unlock, 
   CheckCircle2, 
@@ -18,11 +17,8 @@ import {
   AlertTriangle,
   RotateCcw,
   Filter,
-  Shield,
   Layers,
   ChevronDown,
-  ChevronUp,
-  X,
   Crown,
   Eye,
   EyeOff
@@ -33,7 +29,8 @@ import {
   updateUserAction, 
   toggleUserStatusAction, 
   unlockUserAccountAction, 
-  deleteUserAction 
+  deleteUserAction,
+  bulkDeleteUsersAction
 } from '@/app/actions/user';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { ROLE_DEFINITIONS, getRoleMetadata } from '@/lib/roles';
@@ -72,14 +69,22 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [showRoleMatrix, setShowRoleMatrix] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Modales
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUserItem | null>(null);
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id?: string; email?: string; name?: string }>({
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'single' | 'bulk';
+    id?: string;
+    name?: string;
+    count?: number;
+  }>({
     isOpen: false,
+    type: 'single',
   });
 
   // Campos de formulario
@@ -141,6 +146,23 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
 
+  // Lógica de Selección por Checkboxes (Igual a Reservas y Tours)
+  const isAllSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredUsers.map((u) => u.id));
+    }
+  };
+
+  const toggleSelect = (userId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
   // Apertura de modal de creación
   const openCreateModal = () => {
     setEditingUser(null);
@@ -159,7 +181,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
     setEditingUser(user);
     setFormName(user.name || '');
     setFormEmail(user.email);
-    setFormPassword(''); // Vacío para no sobreescribir salvo que se desee
+    setFormPassword('');
     setFormRole(user.role);
     setFormIsActive(user.isActive);
     setShowPassword(false);
@@ -254,18 +276,62 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
     });
   };
 
-  // Eliminación con confirmación
-  const handleDeleteConfirm = () => {
-    if (!deleteModal.id) return;
+  // Eliminación individual
+  const promptDelete = (id: string, name: string) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'single',
+      id,
+      name,
+    });
+  };
+
+  // Eliminación en lote
+  const promptBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmModal({
+      isOpen: true,
+      type: 'bulk',
+      count: selectedIds.length,
+    });
+  };
+
+  // Ejecución de eliminación (Single o Bulk)
+  const handleConfirmAction = () => {
     startTransition(async () => {
-      const res = await deleteUserAction(deleteModal.id!);
-      if (res.success) {
-        setUsers((prev) => prev.filter((u) => u.id !== deleteModal.id));
-        setDeleteModal({ isOpen: false });
-        setFeedback({ type: 'success', message: 'Usuario eliminado permanentemente del sistema.' });
-      } else {
-        setFeedback({ type: 'error', message: res.error || 'No se pudo eliminar el usuario.' });
-        setDeleteModal({ isOpen: false });
+      if (confirmModal.type === 'bulk') {
+        const res = await bulkDeleteUsersAction(selectedIds);
+        if (res.success) {
+          setUsers((prev) => prev.filter((u) => !selectedIds.includes(u.id)));
+          const deletedCount = res.count ?? selectedIds.length;
+          setSelectedIds([]);
+          setFeedback({
+            type: 'success',
+            message: `Se ${deletedCount === 1 ? 'eliminó 1 usuario' : `eliminaron ${deletedCount} usuarios`} del sistema.`,
+          });
+        } else {
+          setFeedback({
+            type: 'error',
+            message: res.error || 'No se pudieron eliminar los usuarios seleccionados.',
+          });
+        }
+        setConfirmModal({ isOpen: false, type: 'single' });
+      } else if (confirmModal.id) {
+        const res = await deleteUserAction(confirmModal.id);
+        if (res.success) {
+          setUsers((prev) => prev.filter((u) => u.id !== confirmModal.id));
+          setSelectedIds((prev) => prev.filter((id) => id !== confirmModal.id));
+          setFeedback({
+            type: 'success',
+            message: 'Usuario eliminado permanentemente del sistema.',
+          });
+        } else {
+          setFeedback({
+            type: 'error',
+            message: res.error || 'No se pudo eliminar el usuario.',
+          });
+        }
+        setConfirmModal({ isOpen: false, type: 'single' });
       }
     });
   };
@@ -446,8 +512,8 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
 
       </div>
 
-      {/* 3. MATRIZ DE ROLES (Acordeón elegante y colapsable) */}
-      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
+      {/* 3. MATRIZ DE ROLES (Acordeón elegante y colapsable con animación suave de apertura y cierre) */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all duration-300">
         <button
           type="button"
           onClick={() => setShowRoleMatrix(!showRoleMatrix)}
@@ -458,43 +524,57 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
             <span className="text-xs font-semibold text-slate-700">
               Jerarquía de Roles y Privilegios del Sistema
             </span>
+            <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60 hidden sm:inline-block">
+              4 niveles de acceso
+            </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <span>{showRoleMatrix ? 'Ocultar matriz' : 'Ver permisos por rol'}</span>
-            {showRoleMatrix ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <span>{showRoleMatrix ? 'Ocultar jerarquía' : 'Ver jerarquía de roles'}</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-300 ease-in-out ${
+                showRoleMatrix ? 'rotate-180 text-slate-700' : 'text-slate-400'
+              }`}
+            />
           </div>
         </button>
 
-        {showRoleMatrix && (
-          <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in duration-150">
-            {Object.values(ROLE_DEFINITIONS).map((def) => (
-              <div 
-                key={def.key} 
-                className="bg-white rounded-xl border border-slate-200/80 p-3.5 flex flex-col justify-between shadow-2xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${def.badgeClass}`}>
-                      {def.label}
-                    </span>
-                    {getRoleIcon(def.key)}
+        {/* Contenedor Animado con CSS Grid transitions a 60fps */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            showRoleMatrix ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="p-4 border-t border-slate-100 bg-[#FAFAFA] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Object.values(ROLE_DEFINITIONS).map((def) => (
+                <div 
+                  key={def.key} 
+                  className="bg-white rounded-xl border border-slate-200/80 p-3.5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-shadow duration-200"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${def.badgeClass}`}>
+                        {def.label}
+                      </span>
+                      {getRoleIcon(def.key)}
+                    </div>
+                    <p className="text-[11px] text-slate-600 mb-3 leading-relaxed">
+                      {def.shortDescription}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-600 mb-3 leading-relaxed">
-                    {def.shortDescription}
-                  </p>
+                  <ul className="space-y-1 text-[10.5px] text-slate-500 border-t border-slate-100 pt-2.5">
+                    {def.permissions.slice(0, 3).map((perm, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0 mt-1.5" />
+                        <span className="leading-snug">{perm}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-1 text-[10.5px] text-slate-500 border-t border-slate-100 pt-2.5">
-                  {def.permissions.slice(0, 3).map((perm, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0 mt-1.5" />
-                      <span className="leading-snug">{perm}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* 4. BARRA DE FILTROS Y BÚSQUEDA (Estilo Shopify Polaris con Custom Selects) */}
@@ -632,7 +712,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
         </div>
       </div>
 
-      {/* 5. TABLA DE USUARIOS (Diseño Idéntico a Reservas y Tours) */}
+      {/* 5. TABLA DE USUARIOS (Diseño Idéntico a Reservas y Tours con Checkboxes y Barra de Acciones en Lote) */}
       {filteredUsers.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200/90 p-12 text-center text-slate-400 shadow-2xs">
           <Users className="w-8 h-8 text-slate-300 mx-auto mb-2.5" />
@@ -644,31 +724,87 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs table-fixed">
               <colgroup>
-                <col className="w-[32%]" />
-                <col className="w-[20%]" />
-                <col className="w-[18%]" />
-                <col className="w-[18%]" />
+                <col className="w-[5%]" />
+                <col className="w-[30%]" />
+                <col className="w-[19%]" />
+                <col className="w-[17%]" />
+                <col className="w-[17%]" />
                 <col className="w-[12%]" />
               </colgroup>
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                  <th className="px-4 py-3 text-left">Usuario</th>
-                  <th className="px-4 py-3 text-left">Rol Asignado</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Último Acceso</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
-                </tr>
+                {selectedIds.length > 0 ? (
+                  /* Barra de Acciones en Lote (Bulk Actions) normalizada */
+                  <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
+                    <th colSpan={6} className="px-4 py-2.5 text-left">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
+                          <input 
+                            type="checkbox" 
+                            checked={isAllSelected}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                          />
+                          <span className="font-semibold text-slate-900 text-xs">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionado' : 'seleccionados'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={promptBulkDelete}
+                            disabled={isPending}
+                            className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                            <span>{isPending ? 'Borrando...' : 'Eliminar seleccionados'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                ) : (
+                  /* Encabezado Regular con Checkbox Maestro */
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center w-10">
+                      <input 
+                        type="checkbox" 
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left">Usuario</th>
+                    <th className="px-4 py-3 text-left">Rol Asignado</th>
+                    <th className="px-4 py-3 text-left">Estado</th>
+                    <th className="px-4 py-3 text-left">Último Acceso</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map((user) => {
                   const roleMeta = getRoleMetadata(user.role);
                   const isLocked = user.lockedUntil && new Date(user.lockedUntil) > new Date();
+                  const isSelected = selectedIds.includes(user.id);
 
                   return (
                     <tr 
                       key={user.id} 
-                      className="hover:bg-slate-50/80 transition-colors group"
+                      className={`transition-colors group ${
+                        isSelected ? 'bg-slate-50/90' : 'hover:bg-slate-50/80'
+                      }`}
                     >
+                      {/* Checkbox por fila */}
+                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          onChange={() => toggleSelect(user.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                        />
+                      </td>
+
                       {/* 1. Columna Usuario */}
                       <td className="px-4 py-3 text-slate-900">
                         <div className="flex items-center gap-3 min-w-0">
@@ -783,7 +919,7 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
                           {/* Eliminar */}
                           <button
                             type="button"
-                            onClick={() => setDeleteModal({ isOpen: true, id: user.id, email: user.email, name: user.name || user.email })}
+                            onClick={() => promptDelete(user.id, user.name || user.email)}
                             disabled={isPending}
                             title="Eliminar usuario permanentemente"
                             className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200/60 transition-colors shadow-2xs cursor-pointer"
@@ -821,41 +957,38 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
-            
-            {formError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-                <span>{formError}</span>
-              </div>
-            )}
+          {formError && (
+            <div className="p-3 mt-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
+          <form onSubmit={handleFormSubmit} className="space-y-4 mt-4">
+            
             {/* Nombre Completo */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">
-                Nombre y Apellidos
-              </label>
+              <label className="text-xs font-semibold text-slate-700">Nombre Completo</label>
               <input
                 type="text"
+                required
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ej: Adriano Cahuana"
-                className="w-full px-3 py-1.5 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+                placeholder="Ej: Carlos Mendoza"
+                className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
               />
             </div>
 
             {/* Correo Electrónico */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">
-                Correo Electrónico Oficial <span className="text-rose-500">*</span>
-              </label>
+              <label className="text-xs font-semibold text-slate-700">Correo Electrónico</label>
               <input
                 type="email"
                 required
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
-                placeholder="ejemplo@agenciadeviajes.com"
-                className="w-full px-3 py-1.5 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+                placeholder="correo@ejemplo.com"
+                className="w-full px-3 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400 font-mono"
               />
             </div>
 
@@ -863,34 +996,34 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-700">
-                  {editingUser ? 'Nueva Contraseña (dejar en blanco para mantener)' : 'Contraseña Inicial *'}
+                  {editingUser ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'}
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1"
-                >
-                  {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  <span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
-                </button>
+                {editingUser && (
+                  <span className="text-[10.5px] text-slate-400">Dejar en blanco para no cambiar</span>
+                )}
               </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  required={!editingUser}
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder={editingUser ? '••••••••' : 'Mínimo 8 caracteres seguros'}
-                  className="w-full px-3 py-1.5 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+                  placeholder={editingUser ? '••••••••' : 'Mínimo 8 caracteres'}
+                  minLength={formPassword ? 8 : undefined}
+                  className="w-full pl-3 pr-9 py-2 bg-[#F9F9F9] border border-slate-200 rounded-lg text-xs text-[#2f2f2f] focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400 font-mono"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
               </div>
             </div>
 
-            {/* Selector Visual de Rol */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700">
-                Rol Administrativo en la Plataforma <span className="text-rose-500">*</span>
-              </label>
+            {/* Selección de Rol con Tarjetas */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-slate-700">Rol Administrativo</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {Object.values(ROLE_DEFINITIONS).map((def) => {
                   const isSelected = formRole === def.key;
@@ -962,14 +1095,26 @@ export function UsuariosClient({ initialUsers }: { initialUsers: AdminUserItem[]
         </DialogContent>
       </Dialog>
 
-      {/* 7. MODAL DE CONFIRMACIÓN DE ELIMINACIÓN (Usando ConfirmModal oficial) */}
+      {/* 7. MODAL DE CONFIRMACIÓN DE ELIMINACIÓN (Single o Bulk con ConfirmModal oficial) */}
       <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false })}
-        onConfirm={handleDeleteConfirm}
-        title="¿Eliminar usuario definitivamente?"
-        description={`Esta acción revocará inmediatamente todos los tokens y eliminará de forma irreversible al usuario "${deleteModal.name}". Todas las acciones previas se mantendrán en el registro de auditoría.`}
-        confirmText="Eliminar Usuario"
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'single' })}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmModal.type === 'bulk'
+            ? '¿Eliminar usuarios seleccionados definitivamente?'
+            : '¿Eliminar usuario definitivamente?'
+        }
+        description={
+          confirmModal.type === 'bulk'
+            ? `Esta acción revocará inmediatamente todas las sesiones y eliminará de forma irreversible a los ${confirmModal.count} usuarios seleccionados. El registro de auditoría mantendrá la traza completa.`
+            : `Esta acción revocará inmediatamente todos los tokens y eliminará de forma irreversible al usuario "${confirmModal.name}". Todas las acciones previas se mantendrán en el registro de auditoría.`
+        }
+        confirmText={
+          confirmModal.type === 'bulk'
+            ? `Eliminar (${confirmModal.count})`
+            : 'Eliminar Usuario'
+        }
         cancelText="Cancelar"
         isLoading={isPending}
         variant="danger"
