@@ -67,9 +67,5 @@ export default async function CuponesPage() {
     console.error('Error al obtener cupones en CuponesPage:', error);
   }
 
-  return (
-    <div className="w-full min-w-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <CuponesClient initialCoupons={coupons} />
-    </div>
-  );
+  return <CuponesClient initialCoupons={coupons} />;
 }

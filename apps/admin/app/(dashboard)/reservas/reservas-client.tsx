@@ -539,32 +539,34 @@ export function ReservasClient({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
-                  <col className="w-[4%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[25%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[3.5%]" />
+                  <col className="w-[10.5%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[9%]" />
                   <col className="w-[5%]" />
                   <col className="w-[9%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[6%]" />
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
                     <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                      <th colSpan={9} className="px-4 py-2.5 text-left">
+                      <th className="px-4 py-3 text-center w-10 shrink-0">
+                        <input 
+                          type="checkbox" 
+                          checked={isAllSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                        />
+                      </th>
+                      <th colSpan={10} className="px-4 py-2.5 text-left">
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
-                            <input 
-                              type="checkbox" 
-                              checked={isAllSelected}
-                              onChange={toggleSelectAll}
-                              className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
-                            />
-                            <span className="font-semibold text-slate-900 text-xs">
-                              {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
-                            </span>
-                          </div>
+                          <span className="font-semibold text-slate-900 text-xs">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
+                          </span>
 
                           <div className="flex items-center gap-2">
                             <button
@@ -582,7 +584,7 @@ export function ReservasClient({
                     </tr>
                   ) : (
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                      <th className="px-4 py-3 text-center w-8">
+                      <th className="px-4 py-3 text-center w-10 shrink-0">
                         <input 
                           type="checkbox"
                           checked={isAllSelected}
@@ -590,12 +592,14 @@ export function ReservasClient({
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
                         />
                       </th>
+                      <th className="px-4 py-3 text-left">Código</th>
                       <th className="px-4 py-3 text-left">Cliente</th>
                       <th className="px-4 py-3 text-left">Servicio Reservado</th>
                       <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Viaje</th>
                       <th className="px-4 py-3 text-center">PAX</th>
                       <th className="px-4 py-3 text-center whitespace-nowrap">Total</th>
-                      <th className="px-4 py-3 text-center">Tipo & Origen</th>
+                      <th className="px-4 py-3 text-center">Tipo</th>
+                      <th className="px-4 py-3 text-center">Origen</th>
                       <th className="px-4 py-3 text-center">Estado</th>
                       <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
@@ -619,6 +623,15 @@ export function ReservasClient({
                           />
                         </td>
                         <td className="px-4 py-3 text-left">
+                          {reserva.code ? (
+                            <span className="font-mono text-[11px] font-semibold bg-slate-100/90 text-slate-700 px-2 py-0.5 rounded border border-slate-200/80 inline-block truncate max-w-[125px]">
+                              {reserva.code}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 font-mono text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-left">
                           <div className="font-semibold text-slate-900 truncate flex items-center gap-1.5">
                             <span>{reserva.customerFirstName} {reserva.customerLastName}</span>
                           </div>
@@ -631,11 +644,8 @@ export function ReservasClient({
                           >
                             {serviceTitle}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            {reserva.code && (
-                              <span className="text-[10px] text-slate-400 font-mono">#{reserva.code}</span>
-                            )}
-                            {reserva.marketingCode && (
+                          {reserva.marketingCode && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
                               <span 
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 tracking-tight"
                                 title={`Atribuido al equipo de Marketing con código WhatsApp: ${reserva.marketingCode}`}
@@ -643,8 +653,8 @@ export function ReservasClient({
                                 <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
                                 <span>MK: {reserva.marketingCode}</span>
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold">
                           {new Date(reserva.date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -656,28 +666,30 @@ export function ReservasClient({
                           ${reserva.totalPrice.toFixed(2)} USD
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <div className="flex flex-col items-center gap-1">
-                            {reserva.tour ? (
-                              <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-                                <Compass size={12} className="shrink-0 text-teal-600" />
-                                <span>Tour</span>
-                              </span>
-                            ) : reserva.transfer ? (
-                              <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                                <Car size={12} className="shrink-0 text-sky-600" />
-                                <span>Traslado</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center justify-center gap-1 w-[82px] py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                                <span>General</span>
-                              </span>
-                            )}
-                            {reserva.source && (
-                              <span className="text-[9.5px] font-medium text-slate-400 uppercase tracking-wider">
-                                {reserva.source}
-                              </span>
-                            )}
-                          </div>
+                          {reserva.tour ? (
+                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                              <Compass size={12} className="shrink-0 text-teal-600" />
+                              <span>Tour</span>
+                            </span>
+                          ) : reserva.transfer ? (
+                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                              <Car size={12} className="shrink-0 text-sky-600" />
+                              <span>Traslado</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                              <span>General</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {reserva.source ? (
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase bg-slate-100 text-slate-600 border border-slate-200">
+                              {reserva.source}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 text-xs">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           {reserva.status === 'PAID' && (
@@ -719,9 +731,16 @@ export function ReservasClient({
               <div key={reserva.id} className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3.5 flex flex-col gap-2.5 w-full min-w-0">
                 <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-slate-900 text-xs truncate">
-                      {reserva.customerFirstName} {reserva.customerLastName}
-                    </h4>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="font-bold text-slate-900 text-xs truncate">
+                        {reserva.customerFirstName} {reserva.customerLastName}
+                      </h4>
+                      {reserva.code && (
+                        <span className="font-mono text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded border border-slate-200">
+                          {reserva.code}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</p>
                   </div>
                   <span className="font-extrabold text-[#062918] text-xs shrink-0 whitespace-nowrap">
@@ -729,7 +748,7 @@ export function ReservasClient({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {reserva.tour ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
                       <Compass size={11} className="shrink-0 text-teal-600" /> Tour
@@ -739,6 +758,11 @@ export function ReservasClient({
                       <Car size={11} className="shrink-0 text-sky-600" /> Traslado
                     </span>
                   ) : null}
+                  {reserva.source && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                      {reserva.source}
+                    </span>
+                  )}
                   <div className="text-xs font-semibold text-slate-800 uppercase truncate">
                     {reserva.tour ? reserva.tour.title : reserva.transfer ? reserva.transfer.title : 'Reserva Turística'}
                   </div>

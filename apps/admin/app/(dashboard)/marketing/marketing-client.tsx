@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
+import Link from 'next/link';
 import { 
   Mail, 
   Search, 
@@ -701,15 +702,16 @@ export function MarketingClient({ initialContacts, availableCoupons = [] }: Mark
 
                       {/* 6. Historial */}
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => openDetailModal(contact)}
+                        <Link
+                          href={`/marketing/historial/${encodeURIComponent(contact.email)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="px-3 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                          title="Ver historial completo y redactar correo"
+                          title="Abrir historial del cliente en una nueva pestaña"
                         >
-                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
                           <span>Historial</span>
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   );
