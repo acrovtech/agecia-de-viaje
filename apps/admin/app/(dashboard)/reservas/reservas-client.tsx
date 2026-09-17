@@ -11,13 +11,13 @@ import {
   XCircle, 
   ArrowRight, 
   Trash2, 
-  Compass, 
-  Car, 
+  Compass,
+  Car,
+  Sparkles,
   ArrowUpDown, 
   RotateCcw, 
   Filter, 
   Plus, 
-  Sparkles, 
   User, 
   Phone, 
   Mail, 
@@ -633,22 +633,11 @@ export function ReservasClient({
                           </div>
                         </td>
                         <td className="px-4 py-3 text-left">
-                          <div className="flex items-center gap-2">
-                            {reserva.tour ? (
-                              <span title="Tour Turístico" className="p-1 rounded-md bg-teal-50 text-teal-700 border border-teal-200/80 shrink-0">
-                                <Compass size={13} className="text-teal-600" />
-                              </span>
-                            ) : reserva.transfer ? (
-                              <span title="Traslado / Transporte" className="p-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0">
-                                <Car size={13} className="text-sky-600" />
-                              </span>
-                            ) : null}
-                            <span 
-                              className="font-bold text-slate-900 uppercase line-clamp-1 text-xs"
-                              title={serviceTitle}
-                            >
-                              {serviceTitle}
-                            </span>
+                          <div 
+                            className="font-semibold text-slate-900 text-xs truncate"
+                            title={serviceTitle}
+                          >
+                            {serviceTitle}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold" suppressHydrationWarning>
@@ -716,24 +705,8 @@ export function ReservasClient({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  {reserva.tour ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
-                      <Compass size={11} className="shrink-0 text-teal-600" /> Tour
-                    </span>
-                  ) : reserva.transfer ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 shrink-0">
-                      <Car size={11} className="shrink-0 text-sky-600" /> Traslado
-                    </span>
-                  ) : null}
-                  {reserva.source && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                      {reserva.source}
-                    </span>
-                  )}
-                  <div className="text-xs font-semibold text-slate-800 uppercase truncate">
-                    {reserva.tour ? reserva.tour.title : reserva.transfer ? reserva.transfer.title : 'Reserva Turística'}
-                  </div>
+                <div className="text-xs font-semibold text-slate-900 truncate">
+                  {reserva.tour ? reserva.tour.title : reserva.transfer ? reserva.transfer.title : 'Reserva Turística'}
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs min-w-0">
