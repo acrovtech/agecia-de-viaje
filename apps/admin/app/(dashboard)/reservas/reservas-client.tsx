@@ -541,12 +541,12 @@ export function ReservasClient({
                 <colgroup>
                   <col className="w-[3.5%]" />
                   <col className="w-[6%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[31%]" />
-                  <col className="w-[11%]" />
+                  <col className="w-[21%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[12%]" />
                   <col className="w-[5.5%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[7%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[8%]" />
                   <col className="w-[7%]" />
                 </colgroup>
                 <thead>
