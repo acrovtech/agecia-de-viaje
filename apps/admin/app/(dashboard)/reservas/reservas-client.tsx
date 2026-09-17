@@ -632,10 +632,9 @@ export function ReservasClient({
                           )}
                         </td>
                         <td className="px-4 py-3 text-left">
-                          <div className="font-semibold text-slate-900 truncate flex items-center gap-1.5">
-                            <span>{reserva.customerFirstName} {reserva.customerLastName}</span>
+                          <div className="font-semibold text-slate-900 truncate">
+                            {reserva.customerFirstName} {reserva.customerLastName}
                           </div>
-                          <div className="text-[11px] text-slate-400 font-mono truncate">{reserva.customerEmail}</div>
                         </td>
                         <td className="px-4 py-3 text-left">
                           <div 
@@ -644,17 +643,6 @@ export function ReservasClient({
                           >
                             {serviceTitle}
                           </div>
-                          {reserva.marketingCode && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span 
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 tracking-tight"
-                                title={`Atribuido al equipo de Marketing con código WhatsApp: ${reserva.marketingCode}`}
-                              >
-                                <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                                <span>MK: {reserva.marketingCode}</span>
-                              </span>
-                            </div>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold">
                           {new Date(reserva.date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -741,7 +729,6 @@ export function ReservasClient({
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate">{reserva.customerEmail}</p>
                   </div>
                   <span className="font-extrabold text-[#062918] text-xs shrink-0 whitespace-nowrap">
                     ${reserva.totalPrice.toFixed(2)} USD
@@ -767,13 +754,6 @@ export function ReservasClient({
                     {reserva.tour ? reserva.tour.title : reserva.transfer ? reserva.transfer.title : 'Reserva Turística'}
                   </div>
                 </div>
-
-                {reserva.marketingCode && (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300 text-[11px] font-bold">
-                    <Sparkles className="w-3 h-3 text-amber-600" />
-                    <span>Código Atribuido: {reserva.marketingCode}</span>
-                  </div>
-                )}
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0 shrink-0">
