@@ -249,7 +249,7 @@ export async function createManualReservationAction(rawData: unknown) {
         tourId: d.type === 'TOUR' ? d.tourId || undefined : undefined,
         transferId: d.type === 'TRANSFER' ? d.transferId || undefined : undefined,
         vehicleTypeId: d.type === 'TRANSFER' ? d.vehicleTypeId || undefined : undefined,
-        assignedOperatorId: session.userId || undefined,
+        assignedOperatorId: session.userId || session.id || undefined,
         passengers: {
           create: [
             {

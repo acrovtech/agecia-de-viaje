@@ -49,8 +49,8 @@ export default async function ReservasPage() {
     ]);
 
     reservas = dbReservas as any;
-    availableTours = dbTours;
-    availableTransfers = dbTransfers;
+    availableTours = dbTours.map(t => ({ id: t.id, title: t.title, sharedPrice: t.sharedPrice ?? 0 }));
+    availableTransfers = dbTransfers.map(t => ({ id: t.id, title: t.title, sharedPrice: t.sharedPrice ?? 0 }));
     availableVehicles = dbVehicles;
     availableCoupons = dbCoupons;
   } catch (error) {

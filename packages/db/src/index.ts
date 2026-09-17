@@ -10,7 +10,49 @@ declare global {
 
 export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
-export { PrismaClient, ReservationStatus } from "@prisma/client";
+export { 
+  PrismaClient, 
+  ReservationStatus,
+  BookingStatus,
+  ReservationPaymentStatus,
+  OrderState,
+  PaymentState,
+} from "@prisma/client";
+
+export type {
+  Agency,
+  Tour,
+  TourImage,
+  TourAvailability,
+  Category,
+  Blog,
+  BlogParagraph,
+  Transfer,
+  VehicleType,
+  TransferVehiclePrice,
+  Order,
+  OrderItem,
+  Traveler,
+  ShoppingCart,
+  PaymentAttempt,
+  PaymentNotification,
+  Reservation,
+  ReservationItem,
+  ReservationPassenger,
+  Coupon,
+  MarketingCampaignLog,
+  FinancialAudit,
+  ConfigurationAudit,
+  CompanySettings,
+  LegalProfile,
+  Complaint,
+  ComplaintHistory,
+  ComplaintDelivery,
+  User,
+  AdminSession,
+  AdminAuditLog,
+  PasswordResetToken,
+} from "@prisma/client";
 
 // Re-export / override Role with full 5-role enum
 export type Role = 'SUPERADMIN' | 'MASTER' | 'OPERATOR' | 'CONTENT_CREATOR' | 'MARKETING';

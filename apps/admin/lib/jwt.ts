@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 
 export interface AdminSessionPayload {
   id?: string;
+  userId?: string;
   role: string;
   email: string;
   name?: string;

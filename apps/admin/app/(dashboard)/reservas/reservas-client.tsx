@@ -1129,7 +1129,7 @@ export function ReservasClient({
         variant="danger"
         isLoading={isPending}
         onConfirm={executeBulkDelete}
-        onCancel={() => setIsConfirmOpen(false)}
+        onClose={() => setIsConfirmOpen(false)}
       />
 
     </div>

@@ -6,7 +6,7 @@ import { updateReservationStatus, updateReservationDetails, updateReservationPas
 import Link from 'next/link';
 import { 
   ChevronRight, Calendar, MessageSquare, CheckCircle2, 
-  Clock, XCircle, Loader2, Send, Check, Pencil
+  Clock, XCircle, Loader2, Send, Check, Pencil, Sparkles
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 

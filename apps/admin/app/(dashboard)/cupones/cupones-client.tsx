@@ -149,13 +149,11 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
     });
 
     let topChannel: { channel: MarketingChannel; revenue: number } | null = null;
-    Object.entries(channelRevenueMap).forEach(([ch, rev]) => {
-      if (!topChannel || rev > topChannel.revenue) {
-        if (rev > 0) {
-          topChannel = { channel: ch as MarketingChannel, revenue: rev };
-        }
+    for (const [ch, rev] of Object.entries(channelRevenueMap)) {
+      if (rev > 0 && (!topChannel || rev > topChannel.revenue)) {
+        topChannel = { channel: ch as MarketingChannel, revenue: rev };
       }
-    });
+    }
 
     return { 
       total, 
@@ -165,7 +163,7 @@ export function CuponesClient({ initialCoupons }: CuponesClientProps) {
       totalBudget, 
       averageRoas, 
       winner, 
-      topChannel 
+      topChannel: topChannel as { channel: MarketingChannel; revenue: number } | null
     };
   }, [coupons]);
 
