@@ -43,9 +43,9 @@ export const INITIAL_VEHICLES = [
 
 export const INITIAL_TRANSFERS = [
   {
-    title: 'Aeropuerto Alejandro Velasco Astete a Hotel Cusco Centro',
+    title: 'Aeropuerto a Hotel Cusco Centro',
     slug: 'aeropuerto-cusco-hotel-cusco',
-    origin: 'Aeropuerto Alejandro Velasco Astete (CUZ)',
+    origin: 'Aeropuerto Cusco (CUZ)',
     destination: 'Hotel en Cusco Centro Histórico',
     duration: '20-30 min',
     tripType: 'Solo ida',
@@ -61,10 +61,10 @@ export const INITIAL_TRANSFERS = [
     },
   },
   {
-    title: 'Hotel Cusco Centro a Aeropuerto Alejandro Velasco Astete',
+    title: 'Hotel Cusco Centro a Aeropuerto',
     slug: 'hotel-cusco-aeropuerto-cusco',
     origin: 'Hotel en Cusco Centro Histórico',
-    destination: 'Aeropuerto Alejandro Velasco Astete (CUZ)',
+    destination: 'Aeropuerto Cusco (CUZ)',
     duration: '20-30 min',
     tripType: 'Solo ida',
     hasSharedService: true,
