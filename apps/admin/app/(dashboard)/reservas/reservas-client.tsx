@@ -541,11 +541,11 @@ export function ReservasClient({
                   <col style={{ width: '4%' }} />
                   <col style={{ width: '6%' }} />
                   <col style={{ width: '18%' }} />
-                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '24%' }} />
                   <col style={{ width: '12%' }} />
                   <col style={{ width: '6%' }} />
                   <col style={{ width: '12%' }} />
-                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '8%' }} />
                   <col style={{ width: '10%' }} />
                 </colgroup>
                 <thead>
@@ -595,7 +595,7 @@ export function ReservasClient({
                       <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Viaje</th>
                       <th className="px-4 py-3 text-center">PAX</th>
                       <th className="px-4 py-3 text-center whitespace-nowrap">Total</th>
-                      <th className="px-4 py-3 text-center">Estado</th>
+                      <th className="px-2 py-3 text-center">Estado</th>
                       <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
                   )}
@@ -648,7 +648,7 @@ export function ReservasClient({
                         <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap">
                           ${reserva.totalPrice.toFixed(2)} USD
                         </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <td className="px-2 py-3 text-center whitespace-nowrap">
                           {reserva.status === 'PAID' && (
                             <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <CheckCircle2 size={12} /> <span>Pagado</span>
