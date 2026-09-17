@@ -651,7 +651,7 @@ export function ReservasClient({
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold">
+                        <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold" suppressHydrationWarning>
                           {new Date(reserva.date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="px-4 py-3 text-center font-semibold text-slate-700">
