@@ -540,15 +540,13 @@ export function ReservasClient({
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
                   <col className="w-[3.5%]" />
-                  <col className="w-[10.5%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[5%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[7%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[5.5%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[6%]" />
                   <col className="w-[6%]" />
                 </colgroup>
                 <thead>
@@ -562,7 +560,7 @@ export function ReservasClient({
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
-                      <th colSpan={10} className="px-4 py-2.5 text-left">
+                      <th colSpan={8} className="px-4 py-2.5 text-left">
                         <div className="flex items-center gap-4">
                           <span className="font-semibold text-slate-900 text-xs">
                             {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
@@ -598,8 +596,6 @@ export function ReservasClient({
                       <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Viaje</th>
                       <th className="px-4 py-3 text-center">PAX</th>
                       <th className="px-4 py-3 text-center whitespace-nowrap">Total</th>
-                      <th className="px-4 py-3 text-center">Tipo</th>
-                      <th className="px-4 py-3 text-center">Origen</th>
                       <th className="px-4 py-3 text-center">Estado</th>
                       <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
@@ -637,11 +633,22 @@ export function ReservasClient({
                           </div>
                         </td>
                         <td className="px-4 py-3 text-left">
-                          <div 
-                            className="font-bold text-slate-900 uppercase line-clamp-1 text-xs"
-                            title={serviceTitle}
-                          >
-                            {serviceTitle}
+                          <div className="flex items-center gap-2">
+                            {reserva.tour ? (
+                              <span title="Tour Turístico" className="p-1 rounded-md bg-teal-50 text-teal-700 border border-teal-200/80 shrink-0">
+                                <Compass size={13} className="text-teal-600" />
+                              </span>
+                            ) : reserva.transfer ? (
+                              <span title="Traslado / Transporte" className="p-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0">
+                                <Car size={13} className="text-sky-600" />
+                              </span>
+                            ) : null}
+                            <span 
+                              className="font-bold text-slate-900 uppercase line-clamp-1 text-xs"
+                              title={serviceTitle}
+                            >
+                              {serviceTitle}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold">
@@ -652,32 +659,6 @@ export function ReservasClient({
                         </td>
                         <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap">
                           ${reserva.totalPrice.toFixed(2)} USD
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          {reserva.tour ? (
-                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-                              <Compass size={12} className="shrink-0 text-teal-600" />
-                              <span>Tour</span>
-                            </span>
-                          ) : reserva.transfer ? (
-                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                              <Car size={12} className="shrink-0 text-sky-600" />
-                              <span>Traslado</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                              <span>General</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          {reserva.source ? (
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase bg-slate-100 text-slate-600 border border-slate-200">
-                              {reserva.source}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300 text-xs">-</span>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           {reserva.status === 'PAID' && (
