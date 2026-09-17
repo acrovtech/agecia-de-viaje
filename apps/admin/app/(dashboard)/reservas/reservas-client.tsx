@@ -539,9 +539,9 @@ export function ReservasClient({
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
                   <col style={{ width: '4%' }} />
-                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '6%' }} />
                   <col style={{ width: '18%' }} />
-                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '22%' }} />
                   <col style={{ width: '12%' }} />
                   <col style={{ width: '6%' }} />
                   <col style={{ width: '12%' }} />
