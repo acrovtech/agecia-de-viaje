@@ -1,6 +1,6 @@
 export const tours = [
   {
-    title: "LAGUNA HUMANTAY",
+    title: "Laguna Humantay",
     slug: "laguna-humantay",
     description: "La Laguna Humantay es uno de los destinos naturales más impresionantes de Cusco y una de las excursiones de un día más populares del Perú. Ubicada al pie del majestuoso nevado Humantay, esta laguna de aguas color turquesa ofrece un paisaje espectacular rodeado por los Andes.\nDurante este recorrido disfrutarás de un viaje panorámico por el valle de Mollepata, atravesando comunidades andinas y paisajes de montaña hasta llegar a Soraypampa, punto de inicio de la caminata. Desde allí comenzarás un ascenso que te llevará hasta la laguna, donde podrás admirar uno de los escenarios naturales.",
     duration: "1 Día",
@@ -60,7 +60,7 @@ export const tours = [
     ]
   },
   {
-    title: "MONTAÑA DE 7 COLORES (VINICUNCA)",
+    title: "Montaña de 7 Colores (Vinicunca)",
     slug: "montana-de-colores-vinicunca",
     description: "La Montaña de 7 Colores, también conocida como Vinicunca o Montaña Arcoíris, es uno de los destinos más emblemáticos de Cusco y una de las maravillas naturales más visitadas del Perú. Sus impresionantes franjas de colores, formadas por minerales a lo largo de millones de años, crean un paisaje único en la cordillera de los Andes.\nEsta excursión de un día te llevará a descubrir espectaculares paisajes altoandinos, donde podrás observar nevados, extensas pampas, llamas, alpacas y vicuñas en su hábitat natural. La caminata hasta el mirador de Vinicunca recompensa el esfuerzo con una vista inolvidable, ideal para amantes de la naturaleza, el trekking y la fotografía.",
     duration: "1 Día",
@@ -124,7 +124,7 @@ export const tours = [
     ]
   },
   {
-    title: "GLACIARES DE AUSANGATE Y 4 LAGUNAS",
+    title: "Glaciares de Ausangate y 4 Lagunas",
     slug: "glaciares-de-ausangate-y-4-lagunas",
     description: "Descubre uno de los paisajes más espectaculares de los Andes peruanos con el Tour Glaciares de Ausangate y 4 Lagunas, una experiencia de un día que combina impresionantes lagunas de origen glaciar, majestuosos nevados y la riqueza natural de la cordillera de Vilcanota.\nDurante esta excursión visitarás las hermosas lagunas Azulcocha, Otorongo, Pucacocha y Alqacocha, cada una con características y tonalidades únicas, alimentadas por los deshielos del imponente nevado Ausangate, la montaña más alta de la región de Cusco. A lo largo del recorrido podrás apreciar paisajes altoandinos, fauna silvestre como llamas, alpacas y vicuñas, además de convivir con comunidades que conservan sus tradiciones ancestrales.",
     duration: "1 Día",
@@ -190,7 +190,7 @@ export const tours = [
     ]
   },
   {
-    title: "7 LAGUNAS DE AUSANGATE",
+    title: "7 Lagunas de Ausangate",
     slug: "7-lagunas-de-ausangate",
     description: "Descubre uno de los paisajes más impresionantes de la cordillera de Vilcanota con el Tour 7 Lagunas de Ausangate, una experiencia inolvidable que combina naturaleza, aventura y cultura andina. Durante esta excursión recorrerás un circuito de lagunas de origen glaciar, cada una con diferentes tonalidades de azul, verde y turquesa, alimentadas por los deshielos del majestuoso nevado Ausangate, la montaña más alta de la región de Cusco.\nA lo largo del recorrido caminarás entre imponentes montañas, bofedales, glaciares y extensas praderas donde habitan llamas, alpacas y vicuñas en su entorno natural. Además, tendrás la oportunidad de conocer la comunidad de Pacchanta y, al finalizar la caminata, relajarte en sus famosas aguas termales.",
     duration: "1 Día",
@@ -255,7 +255,7 @@ export const tours = [
     ]
   },
   {
-    title: "TOUR PALLAY PONCHO",
+    title: "Tour Pallay Poncho",
     slug: "tour-pallay-poncho",
     description: "Descubre uno de los destinos más recientes y sorprendentes de los Andes peruanos con el Tour Pallay Poncho, una impresionante montaña conocida por sus formaciones rocosas de colores y sus características crestas puntiagudas que recuerdan los diseños de los tradicionales ponchos andinos. Ubicada en la provincia de Canas, al sur de Cusco, esta maravilla natural ofrece un paisaje único, menos concurrido y rodeado de espectaculares vistas de la cordillera.\nDurante esta excursión recorrerás pintorescos pueblos andinos, atravesarás extensas pampas y disfrutarás de una caminata que culmina con una vista panorámica de la montaña y de la hermosa laguna Langui-Layo. Gracias a su belleza y tranquilidad, Pallay Poncho se ha convertido en un destino ideal para los amantes del trekking, la fotografía y la naturaleza.",
     duration: "1 Día",
@@ -320,7 +320,7 @@ export const tours = [
     ]
   },
   {
-    title: "VALLE SAGRADO VIP",
+    title: "Valle Sagrado VIP",
     slug: "valle-sagrado-vip",
     description: "El Valle Sagrado de los Incas es uno de los destinos más emblemáticos de Cusco y una de las excursiones de un día más recomendadas para quienes desean conocer la historia, cultura y arquitectura del Imperio Inca. Ubicado entre imponentes montañas y atravesado por el río Vilcanota, este valle alberga importantes centros arqueológicos, pintorescos pueblos andinos y espectaculares paisajes naturales.\nDurante este recorrido visitarás los principales atractivos del Valle Sagrado, como Pisac, Ollantaytambo y Chinchero, donde podrás admirar impresionantes construcciones incas, terrazas agrícolas, mercados artesanales y hermosos paisajes andinos. Además, disfrutarás de un delicioso almuerzo buffet con una variada gastronomía regional.",
     duration: "1 Día",
@@ -379,7 +379,7 @@ export const tours = [
     ]
   },
   {
-    title: "CITY TOUR CUSCO",
+    title: "City Tour Cusco",
     slug: "city-tour-cusco",
     description: "El City Tour en Cusco es una de las mejores experiencias para conocer la historia, cultura y legado del Imperio Inca en una sola tarde. Este recorrido combina la visita al principal templo inca de la ciudad y cuatro importantes complejos arqueológicos ubicados en los alrededores de Cusco.\nDurante el recorrido conocerás el majestuoso Qorikancha, antiguo Templo del Sol, considerado el recinto religioso más importante del Imperio Inca. Posteriormente visitarás las fortalezas y centros ceremoniales de Sacsayhuamán, Qenqo, Puka Pukara y Tambomachay, donde descubrirás impresionantes construcciones de piedra, arquitectura inca y espectaculares paisajes.",
     duration: "1/2 Día",
@@ -437,7 +437,7 @@ export const tours = [
     ]
   },
   {
-    title: "MACHU PICCHU",
+    title: "Machu Picchu Full Day",
     slug: "machu-picchu",
     description: "Machu Picchu Full Day es una de las experiencias más inolvidables del Perú y una de las Siete Maravillas del Mundo Moderno. Este recorrido de un día te permitirá descubrir la impresionante ciudadela inca de Machu Picchu, considerada una obra maestra de la arquitectura e ingeniería del Imperio Inca.\nDurante esta excursión viajarás en tren a través del hermoso Valle Sagrado, rodeado de montañas, ríos y paisajes espectaculares, hasta llegar al pueblo de Aguas Calientes. Desde allí abordarás el bus ecológico que asciende hacia la ciudadela de Machu Picchu, donde realizarás una visita guiada por sus principales templos, plazas, terrazas agrícolas y miradores antes de retornar a Cusco.",
     duration: "1 Día",
@@ -501,7 +501,7 @@ export const tours = [
     ]
   },
   {
-    title: "QUESHUACHACA",
+    title: "Puente Inca Q'eswachaka",
     slug: "queshuachaca",
     description: "El Tour Qeswachaka es una de las experiencias culturales más auténticas de Cusco. Este recorrido te llevará a conocer el último puente colgante inca elaborado completamente con fibra vegetal (ichu), una tradición ancestral que las comunidades andinas mantienen viva y que ha sido reconocida como Patrimonio Cultural Inmaterial de la Humanidad por la UNESCO.\nDurante el recorrido disfrutarás de impresionantes paisajes andinos, visitarás hermosas lagunas altoandinas y atravesarás pequeños pueblos tradicionales hasta llegar al majestuoso puente Qeswachaka, suspendido sobre el río Apurímac, donde podrás conocer de cerca una de las técnicas de ingeniería más sorprendentes heredadas del Imperio Inca.",
     duration: "1 Día",
@@ -560,7 +560,7 @@ export const tours = [
     ]
   },
   {
-    title: "WAQRAPUKARA",
+    title: "Fortaleza de Waqrapukara",
     slug: "waqrapukara",
     description: "Waqrapukara es uno de los destinos arqueológicos y paisajísticos más impresionantes de Cusco. Su nombre, que en quechua significa 'Fortaleza en forma de Cuerno', hace referencia a las imponentes formaciones rocosas que rodean este antiguo santuario inca, ubicado sobre un profundo cañón.\nDurante este recorrido disfrutarás de un viaje por los hermosos paisajes de los Andes, atravesando comunidades tradicionales hasta llegar al punto de inicio de la caminata. Desde allí realizarás una caminata rodeada de montañas, valles y espectaculares vistas panorámicas hasta llegar al complejo arqueológico de Waqrapukara, donde conocerás su historia, arquitectura y la importancia ceremonial que tuvo durante el Imperio Inca.",
     duration: "1 Día",
