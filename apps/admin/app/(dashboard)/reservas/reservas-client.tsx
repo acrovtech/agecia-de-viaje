@@ -534,25 +534,24 @@ export function ReservasClient({
         </div>
       ) : (
         <>
-          {/* 3. VISTA DESKTOP: TABLA COMPLETA CON SOPORTE DE ATRIBUCIÓN MARKETING */}
           <div className="hidden md:block bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
-                  <col className="w-12" />
-                  <col className="w-28" />
-                  <col className="w-48" />
-                  <col className="w-auto" />
-                  <col className="w-32" />
-                  <col className="w-16" />
-                  <col className="w-32" />
-                  <col className="w-28" />
-                  <col className="w-28" />
+                  <col style={{ width: '4%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '18%' }} />
+                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '6%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '9%' }} />
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
                     <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                      <th className="px-4 py-3 text-center w-12 shrink-0">
+                      <th className="px-4 py-3 text-center">
                         <input 
                           type="checkbox" 
                           checked={isAllSelected}
@@ -582,12 +581,12 @@ export function ReservasClient({
                     </tr>
                   ) : (
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                      <th className="px-4 py-3 text-center w-12 shrink-0">
+                      <th className="px-4 py-3 text-center">
                         <input 
-                          type="checkbox"
+                          type="checkbox" 
                           checked={isAllSelected}
                           onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
                       <th className="px-4 py-3 text-left">Código</th>
