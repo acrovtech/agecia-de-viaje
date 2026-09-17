@@ -539,20 +539,20 @@ export function ReservasClient({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
-                  <col className="w-[3.5%]" />
-                  <col className="w-[6%]" />
-                  <col className="w-[21%]" />
-                  <col className="w-[26%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[5.5%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[7%]" />
+                  <col className="w-12" />
+                  <col className="w-28" />
+                  <col className="w-48" />
+                  <col className="w-auto" />
+                  <col className="w-32" />
+                  <col className="w-16" />
+                  <col className="w-32" />
+                  <col className="w-28" />
+                  <col className="w-28" />
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
                     <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                      <th className="px-4 py-3 text-center w-10 shrink-0">
+                      <th className="px-4 py-3 text-center w-12 shrink-0">
                         <input 
                           type="checkbox" 
                           checked={isAllSelected}
@@ -582,7 +582,7 @@ export function ReservasClient({
                     </tr>
                   ) : (
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                      <th className="px-4 py-3 text-center w-10 shrink-0">
+                      <th className="px-4 py-3 text-center w-12 shrink-0">
                         <input 
                           type="checkbox"
                           checked={isAllSelected}
