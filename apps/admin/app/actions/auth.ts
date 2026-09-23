@@ -5,7 +5,9 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { createAdminToken } from '@/lib/jwt';
+import { createAdminToken } from '../../lib/jwt';
+import { API_SESSION_COOKIE, isApiAdmin } from '../../lib/admin-mode';
+import { centralLogin, centralLogout, CentralApiError } from '../../lib/central-api';
 
 const EIGHT_HOURS_IN_SECONDS = 60 * 60 * 8; // 8 Horas de sesión laboral segura
 
@@ -15,6 +17,28 @@ const LoginSchema = z.object({
 });
 
 export async function loginAction(prevState: any, formData: FormData) {
+  if (isApiAdmin()) {
+    const parsed = z.object({
+      email: z.string().trim().toLowerCase().email().max(254),
+      password: z.string().min(1).refine((value) => Buffer.byteLength(value, 'utf8') <= 72),
+      agencySlug: z.string().max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    }).safeParse({ email: formData.get('email'), password: formData.get('password'), agencySlug: formData.get('agencySlug') });
+    if (!parsed.success) return { error: 'Revisa el correo, contraseña y código de agencia.' };
+    try {
+      const session = await centralLogin(parsed.data.email, parsed.data.password, parsed.data.agencySlug);
+      const store = await cookies();
+      store.set(API_SESSION_COOKIE, session.accessToken, {
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
+        expires: new Date(session.expiresAt),
+      });
+      store.delete('admin_session');
+    } catch (error) {
+      return { error: error instanceof CentralApiError && error.status === 401
+        ? 'No pudimos iniciar sesión. Revisa tus credenciales y el acceso a la agencia.'
+        : 'No pudimos iniciar sesión en este momento. Inténtalo nuevamente en unos minutos.' };
+    }
+    redirect('/workspace');
+  }
   const parsed = LoginSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
@@ -138,6 +162,15 @@ export async function loginAction(prevState: any, formData: FormData) {
 
 export async function logoutAction() {
   const cookieStore = await cookies();
+  if (isApiAdmin()) {
+    const token = cookieStore.get(API_SESSION_COOKIE)?.value;
+    if (token) {
+      let failed = false;
+      try { await centralLogout(token); } catch { failed = true; }
+      if (failed) redirect('/workspace?logout=unavailable');
+    }
+    cookieStore.delete(API_SESSION_COOKIE);
+  }
   cookieStore.delete('admin_session');
   redirect('/login');
 }

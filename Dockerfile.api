@@ -1,0 +1,30 @@
+FROM node:24-bookworm-slim AS base
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+
+FROM base AS builder
+RUN npm install --global pnpm@12.0.0
+# Build context is the monorepo root. .dockerignore excludes secrets and local artifacts.
+COPY . .
+RUN pnpm --filter api... install --frozen-lockfile
+RUN pnpm --filter @repo/db generate
+RUN pnpm --filter api build
+
+FROM base AS runner
+ENV NODE_ENV=production
+ENV API_HOST=0.0.0.0
+ENV API_PORT=3002
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder --chown=node:node /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder --chown=node:node /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=node:node /app/packages/db ./packages/db
+USER node
+WORKDIR /app/apps/api
+EXPOSE 3002
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.API_PORT||3002)+'/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+# Schema migrations are an explicit deployment step, never a startup side effect.
+CMD ["node", "dist/main.js"]

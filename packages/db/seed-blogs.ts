@@ -258,6 +258,11 @@ export const blogsData = [
 ];
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Operación cancelada: No se permite ejecutar seeds de demo en entorno de producción.');
+    process.exit(1);
+  }
+
   console.log(`Seeding exactly ${blogsData.length} blog articles with Cloudflare R2 image URLs...`);
   
   for (const b of blogsData) {

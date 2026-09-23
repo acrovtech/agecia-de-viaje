@@ -111,6 +111,7 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       // Buscar tour
       const tour = await prisma.tour.findFirst({
         where: {
+          isPublished: true,
           OR: [
             { slug: item.tourSlug },
             { slug: item.tourSlug.toLowerCase() }
@@ -125,6 +126,7 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       if (!tour) {
         transfer = await prisma.transfer.findFirst({
           where: {
+            isPublished: true, isActive: true,
             OR: [
               { slug: item.tourSlug },
               { slug: item.tourSlug.toLowerCase() }

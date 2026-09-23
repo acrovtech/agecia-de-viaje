@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 export interface AdminSessionPayload {
   id?: string;
   userId?: string;
+  agencyId?: string;
   role: string;
   email: string;
   name?: string;
@@ -34,6 +35,7 @@ export async function createAdminToken(payload: AdminSessionPayload): Promise<st
   const secretKey = getJwtSecretKey();
   return await new SignJWT({
     id: payload.id,
+    agencyId: payload.agencyId,
     role: payload.role,
     email: payload.email,
     name: payload.name,
@@ -60,6 +62,7 @@ export async function verifyAdminToken(token: string): Promise<AdminSessionPaylo
     if (typeof payload.role === 'string' && typeof payload.email === 'string') {
       return {
         id: typeof payload.id === 'string' ? payload.id : undefined,
+        agencyId: typeof payload.agencyId === 'string' ? payload.agencyId : undefined,
         role: payload.role,
         email: payload.email,
         name: typeof payload.name === 'string' ? payload.name : undefined,

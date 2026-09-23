@@ -1,0 +1,42 @@
+name: SaaS foundation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: api_test_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test -d api_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
+      API_TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with:
+          version: 12.0.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Only the disposable service above; never a deployment migration.
+      - run: pnpm db:deploy
+      - run: pnpm test
+      - run: pnpm --filter api lint
+      - run: pnpm --filter api test:integration
+      - run: pnpm --filter web build
+      - run: pnpm --filter admin build

@@ -58,18 +58,18 @@ export default async function ResultadoPage({ params }: ResultadoPageProps) {
     customerFirstName: reservation.customerFirstName,
     customerLastName: reservation.customerLastName,
     customerEmail: reservation.customerEmail,
-    customerPhone: reservation.customerPhone,
     date: reservation.date.toISOString(),
     pax: reservation.pax,
     totalPrice: reservation.totalPrice,
     pickupHotel: reservation.pickupHotel,
     status: reservation.status as 'PENDING' | 'PAID' | 'CANCELLED',
-    paymentReference: reservation.paymentReference,
     passengers: reservation.passengers.map(p => ({
       firstName: p.firstName,
       lastName: p.lastName,
       docType: p.docType,
-      docNumber: p.docNumber,
+      docNumber: p.docNumber && p.docNumber.length >= 4
+        ? `***${p.docNumber.slice(-4)}`
+        : (p.docNumber ? '****' : ''),
     }))
   };
 

@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAdminToken } from '@/lib/jwt';
+import { verifyAdminToken } from './lib/jwt';
+import { API_SESSION_COOKIE, isApiAdmin } from './lib/admin-mode';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (isApiAdmin()) {
+    // API mode has a separate surface; old pages and API handlers are not tenant safe yet.
+    const asset = ['/icon.svg', '/logo.svg', '/favicon.ico'].includes(pathname);
+    if (asset && ['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
+    if (pathname === '/login') return NextResponse.next();
+    if (!['/workspace', '/workspace/content', '/workspace/resources', '/workspace/reservations'].includes(pathname)) {
+      if (pathname.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
+        return new NextResponse(null, { status: 403 });
+      }
+      return NextResponse.redirect(new URL('/workspace', request.url));
+    }
+    const token = request.cookies.get(API_SESSION_COOKIE)?.value;
+    if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return NextResponse.redirect(new URL('/login', request.url));
+    // Authoritative session and agency authorization happen again in the server page and API.
+    return NextResponse.next();
+  }
 
   // Permitir assets estáticos, login e imágenes
   if (
@@ -42,5 +59,5 @@ export async function proxy(request: NextRequest) {
 export const middleware = proxy;
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

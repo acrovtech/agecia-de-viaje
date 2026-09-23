@@ -1,10 +1,15 @@
 import { cookies } from 'next/headers';
 import { verifyAdminToken, AdminSessionPayload } from './jwt';
+import { prisma } from '@repo/db';
+import { isApiAdmin } from './admin-mode';
 
 /**
- * Valida si existe una sesión de administrador válida y firmada con JWT en las cookies de la petición.
+ * Valida si existe una sesión de administrador válida y firmada con JWT en las cookies de la petición,
+ * comprobando además en base de datos la vigencia, revocación y estado activo de la cuenta.
  */
 export async function verifyAdminSession(): Promise<AdminSessionPayload | null> {
+  // Legacy actions must never authorize a central session or fall back to an old JWT.
+  if (isApiAdmin()) return null;
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('admin_session');
 
@@ -13,7 +18,54 @@ export async function verifyAdminSession(): Promise<AdminSessionPayload | null> 
   }
 
   // Verificar firma criptográfica y expiración del JWT
-  return await verifyAdminToken(sessionCookie.value);
+  const payload = await verifyAdminToken(sessionCookie.value);
+  if (!payload || !payload.email) {
+    return null;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: payload.id ? { id: payload.id } : { email: payload.email },
+      select: {
+        id: true,
+        agencyId: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        lockedUntil: true,
+        tokenVersion: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      return null;
+    }
+
+    if (user.lockedUntil && new Date() < new Date(user.lockedUntil)) {
+      return null;
+    }
+
+    if (
+      typeof payload.tokenVersion === 'number' &&
+      typeof user.tokenVersion === 'number' &&
+      user.tokenVersion !== payload.tokenVersion
+    ) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      agencyId: user.agencyId ?? undefined,
+      email: user.email,
+      name: user.name ?? undefined,
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    };
+  } catch (error) {
+    console.error('Error verificando vigencia del usuario en sesión:', error);
+    return null;
+  }
 }
 
 /**

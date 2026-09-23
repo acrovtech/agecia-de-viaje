@@ -4,7 +4,7 @@ import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+import { requireMasterRole, requireContentOrMaster } from '@/lib/auth-check';
 
 const BlogSchema = z.object({
   title: z.string().min(1, 'El título es requerido'),
@@ -52,7 +52,7 @@ function extractParagraphs(formData: FormData): { subtitle: string; content: str
 }
 
 export async function createBlog(formData: FormData) {
-  await requireAdminSession();
+  await requireContentOrMaster();
   const rawData = {
     title: formData.get('title'),
     slug: formData.get('slug'),
@@ -100,7 +100,7 @@ export async function createBlog(formData: FormData) {
 }
 
 export async function updateBlog(formData: FormData) {
-  await requireAdminSession();
+  await requireContentOrMaster();
   const id = formData.get('id') as string;
   if (!id) {
     throw new Error('ID de la publicación no proporcionado.');

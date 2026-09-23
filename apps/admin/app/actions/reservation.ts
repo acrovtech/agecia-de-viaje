@@ -3,7 +3,7 @@
 import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+import { requireAdminSession, requireMasterRole, requireOperatorOrMaster } from '@/lib/auth-check';
 
 const StatusSchema = z.enum(['PENDING', 'PAID', 'CANCELLED']);
 
@@ -51,7 +51,7 @@ export async function updateReservationStatus(reservationId: string, rawStatus: 
 
 export async function updateReservationDetails(reservationId: string, rawData: unknown) {
   try {
-    await requireAdminSession();
+    await requireOperatorOrMaster();
     if (!reservationId) return { success: false, error: "ID de reserva requerido." };
 
     const parsed = ReservationDetailsSchema.safeParse(rawData);
@@ -78,7 +78,7 @@ export async function updateReservationPassengersAction(
   rawPassengers: Array<{ firstName?: string; lastName?: string; name?: string; docType: string; docNumber: string }>
 ) {
   try {
-    await requireAdminSession();
+    await requireOperatorOrMaster();
     if (!reservationId) return { success: false, error: "ID de reserva requerido." };
 
     const parsed = z.array(PassengerItemSchema).safeParse(rawPassengers);
@@ -202,7 +202,7 @@ const CreateManualReservationSchema = z.object({
  */
 export async function createManualReservationAction(rawData: unknown) {
   try {
-    const session = await requireAdminSession();
+    const session = await requireOperatorOrMaster();
     const parsed = CreateManualReservationSchema.safeParse(rawData);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message || 'Datos de reserva incompletos.' };

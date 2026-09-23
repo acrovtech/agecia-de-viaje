@@ -4,6 +4,13 @@ import bcrypt from 'bcryptjs';
 import { requireMasterRole } from '@/lib/auth-check';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Endpoint no disponible en entorno de producción.' },
+      { status: 404 }
+    );
+  }
+
   try {
     await requireMasterRole();
 

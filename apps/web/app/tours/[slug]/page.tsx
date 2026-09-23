@@ -8,7 +8,7 @@ import { MapPin, Clock, Mountain, Users, BarChart } from 'lucide-react';
 import Image from 'next/image';
 import { getTourBySlug } from '@/lib/queries/tour';
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 interface TourPageProps {
   params: Promise<{
@@ -207,7 +207,7 @@ export default async function TourPage({ params }: TourPageProps) {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <Header />
       

@@ -8,7 +8,7 @@ export async function RecommendedTours() {
   try {
     // Mostrar ÚNICAMENTE los tours marcados como destacados en el admin
     tours = await prisma.tour.findMany({
-      where: { isFeatured: true },
+      where: { isFeatured: true, isPublished: true },
       take: 6,
       orderBy: { createdAt: 'desc' },
     });
@@ -16,6 +16,7 @@ export async function RecommendedTours() {
     // Si aún no se ha marcado ningún tour como destacado, mostrar los más recientes de respaldo
     if (tours.length === 0) {
       tours = await prisma.tour.findMany({
+        where: { isPublished: true },
         take: 6,
         orderBy: { createdAt: 'desc' },
       });

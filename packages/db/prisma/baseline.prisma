@@ -1,0 +1,979 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// MULTI-TENANT CORE
+// -----------------------------------------------------------------------------
+
+model Agency {
+  id           String   @id @default(cuid())
+  name         String   // ej. "Inca Bound", "Cusco Expeditions"
+  slug         String   @unique // ej. "incabound"
+  subdomain    String   @unique // ej. "incabound" -> incabound.tudominio.com
+  customDomain String?  @unique // ej. "www.incabound.com"
+  logoUrl      String?
+  iconUrl      String?
+  phone        String?
+  email        String?
+  address      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones multi-tenant
+  users               User[]
+  tours               Tour[]
+  transfers           Transfer[]
+  categories          Category[]
+  blogs               Blog[]
+  coupons             Coupon[]
+  marketingCampaigns  MarketingCampaignLog[]
+  orders              Order[]
+  reservations        Reservation[]
+  shoppingCarts       ShoppingCart[]
+  availabilities      TourAvailability[]
+  companySettings     CompanySettings?
+  legalProfile        LegalProfile?
+  complaints          Complaint[]
+  financialAudits     FinancialAudit[]
+  configurationAudits ConfigurationAudit[]
+
+  @@index([slug])
+  @@index([subdomain])
+  @@index([isActive])
+}
+
+// -----------------------------------------------------------------------------
+// CATÁLOGO: TOURS Y TRASLADOS
+// -----------------------------------------------------------------------------
+
+model Tour {
+  id                String   @id @default(cuid())
+  agencyId          String?
+  agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  title             String
+  slug              String   @unique
+  description       String   @db.Text
+
+  // Megamenu / Grouping
+  region            String?  // e.g. "Cusco", "Lima"
+  menuGroup         String?  // e.g. "Full Day", "Aventura"
+  isFeatured        Boolean  @default(false)
+
+  // Images
+  bannerImage       String
+  cardImage         String
+
+  // Details
+  duration          String
+  altitude          String?
+  transport         String?
+  groupSize         String?
+  difficulty        String?
+  mapImage          String?  @db.Text
+
+  // Pricing
+  hasSharedService  Boolean  @default(true)
+  sharedPrice       Float?
+  hasPrivateService Boolean  @default(false)
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?  @db.Text
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  categories        Category[]
+  reservations      Reservation[]
+  reservationItems  ReservationItem[]
+
+  // Relational Fields
+  images            TourImage[]
+  itineraries       TourItineraryDay[]
+  inclusions        TourInclusion[]
+  exclusions        TourExclusion[]
+  recommendations   TourRecommendation[]
+  faqs              TourFaq[]
+  privatePricing    TourPrivatePricing[]
+
+  @@index([agencyId])
+  @@index([slug])
+  @@index([isFeatured])
+}
+
+model TourImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourItineraryDay {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourInclusion {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourExclusion {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourRecommendation {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourFaq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourPrivatePricing {
+  id        String   @id @default(cuid())
+  pax       Int
+  price     Float
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String   @unique
+
+  tours     Tour[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model Blog {
+  id              String   @id @default(cuid())
+  agencyId        String?
+  agency          Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  title           String
+  slug            String   @unique
+  bannerImage     String
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  keywords        String?  @db.Text
+
+  paragraphs      BlogParagraph[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model BlogParagraph {
+  id       String  @id @default(cuid())
+  blogId   String
+  blog     Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  order    Int
+  subtitle String?
+  content  String  @db.Text
+  image    String?
+
+  @@index([blogId])
+}
+
+model Transfer {
+  id                String   @id @default(cuid())
+  agencyId          String?
+  agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  title             String
+  slug              String   @unique
+  origin            String   // ej. "Aeropuerto de Cusco"
+  destination       String   // ej. "Hotel / Centro Cusco / Est. Av Sol Inca Rail"
+  duration          String   // ej. "20-30 min"
+  tripType          String   @default("Solo ida") // "Solo ida", "Ida y vuelta"
+  description       String?  @db.Text
+  bannerImage       String?
+
+  // Modalidades de servicio y precios
+  hasSharedService  Boolean  @default(false)
+  sharedPrice       Float?   // Precio por persona en compartido
+
+  hasPrivateService Boolean  @default(true)
+
+  // Tarifas privadas por vehículo
+  vehiclePrices     TransferVehiclePrice[]
+  reservations      Reservation[]
+  reservationItems  ReservationItem[]
+
+  isActive          Boolean  @default(true)
+  order             Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model VehicleType {
+  id          String   @id @default(cuid())
+  code        String   @unique // ej. "sedan", "minivan", "benz-10", "benz-15"
+  name        String   // ej. "Sedan", "MiniVan", "Mercedes Benz 10pax", "Mercedes Benz 15pax"
+  subtitle    String?  // ej. "Sedan / SUV", "Minivan Ejecutiva"
+  maxPax      Int      // ej. 3, 6, 10, 15
+  maxLuggage  Int      // ej. 3, 6, 10, 15
+  image       String   // URL o path de la foto del vehículo
+  features    String[] // ["Chofer profesional", "A/C en todo el recorrido", "Privado — sin compartir"]
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  prices            TransferVehiclePrice[]
+  reservations      Reservation[]
+  reservationItems  ReservationItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TransferVehiclePrice {
+  id          String      @id @default(cuid())
+  transferId  String
+  transfer    Transfer    @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  vehicleId   String
+  vehicle     VehicleType @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  price       Float       // Precio total por vehículo en esta ruta
+
+  @@unique([transferId, vehicleId])
+  @@index([transferId])
+  @@index([vehicleId])
+}
+
+// -----------------------------------------------------------------------------
+// CONTROL DE CAPACIDAD Y AFORO
+// -----------------------------------------------------------------------------
+
+model TourAvailability {
+  id        String   @id @default(uuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  tourId    String
+  date      DateTime
+  capacity  Int
+  closed    Boolean  @default(false)
+
+  @@unique([tourId, date])
+  @@index([agencyId])
+  @@index([tourId, date])
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS TRANSACCIONALES
+// -----------------------------------------------------------------------------
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum ReservationPaymentStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  REFUND_PENDING
+  PARTIALLY_REFUNDED
+  REFUNDED
+  PAYMENT_RECEIVED_REVIEW
+  FAILED
+  EXPIRED
+  LEGACY_UNKNOWN
+}
+
+enum OrderState {
+  PENDING_PAYMENT
+  CONFIRMED
+  PAYMENT_EXPIRED
+  PAYMENT_RECEIVED_REVIEW
+  CANCELLED
+}
+
+enum PaymentState {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REQUIRES_REVIEW
+  RECEIVED_REVIEW
+}
+
+enum ReservationStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
+// E-COMMERCE: CARRITO Y ÓRDENES COMERCIALES
+// -----------------------------------------------------------------------------
+
+model ShoppingCart {
+  id        String   @id @default(uuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  kind      String   @default("TOURS")
+  items     Json
+  revision  Int      @default(0)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  orders    Order[]
+
+  @@index([agencyId])
+  @@index([expiresAt])
+}
+
+model Order {
+  id                    String                   @id @default(uuid())
+  code                  String                   @unique @default(dbgenerated("('AG-'::text || upper(substr(md5((random())::text), 1, 20)))"))
+  agencyId              String?
+  agency                Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  accessTokenHash       String?                  @unique
+  accessVersion         Int                      @default(0)
+  bookingStatus         BookingStatus            @default(PENDING)
+  paymentStatus         ReservationPaymentStatus @default(PENDING)
+  refundedMinor         Int                      @default(0)
+
+  cartId                String
+  cart                  ShoppingCart             @relation(fields: [cartId], references: [id])
+  checkoutKey           String                   @unique
+  quoteFingerprint      String
+  kind                  String                   @default("TOURS")
+  state                 OrderState               @default(PENDING_PAYMENT)
+
+  buyerFirstName        String
+  buyerLastName         String
+  buyerEmail            String
+  buyerPhone            String
+  address               String?
+  notes                 String?
+  currency              String                   @default("USD")
+
+  // Importes monetarios en centavos enteros
+  subtotalMinor         Int
+  discountMinor         Int                      @default(0)
+  igvMinor              Int                      @default(0)
+  cardFeeMinor          Int                      @default(0)
+  totalMinor            Int
+  requiredPaymentMinor  Int
+  paidMinor             Int                      @default(0)
+  remainingMinor        Int
+
+  // Parámetros fiscales y comerciales snapshoteados
+  igvEnabled            Boolean                  @default(false)
+  igvBps                Int                      @default(1800)
+  cardFeeEnabled        Boolean                  @default(false)
+  cardFeeBps            Int                      @default(0)
+  partialPaymentEnabled Boolean                  @default(false)
+  initialPaymentBps     Int                      @default(5000)
+  availabilityEnforced  Boolean                  @default(false)
+
+  // Integración de Cupones y Marketing SaaS
+  couponId              String?
+  coupon                Coupon?                  @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  marketingCode         String?
+  source                String?                  @default("WEB") // WEB, MANUAL, WHATSAPP, ECOMMERCE
+  assignedOperatorId    String?
+  assignedOperator      User?                    @relation("OperatorOrders", fields: [assignedOperatorId], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime                 @default(now())
+  expiresAt             DateTime
+
+  items                 OrderItem[]
+  attempts              PaymentAttempt[]
+  notifications         PaymentNotification[]
+  financialAudits       FinancialAudit[]
+
+  @@index([agencyId])
+  @@index([state, expiresAt])
+  @@index([buyerEmail])
+  @@index([marketingCode])
+  @@index([couponId])
+  @@index([assignedOperatorId])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id              String     @id @default(uuid())
+  orderId         String
+  order           Order      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  cartLineId      String
+  serviceId       String
+  serviceKind     String     // 'TOUR' | 'TRANSFER'
+  title           String
+  slug            String
+  image           String?
+  date            DateTime
+  modality        String     // 'shared' | 'private'
+  pax             Int
+  pricingUnit     String     @default("PER_TRAVELER") // 'PER_TRAVELER' | 'GROUP'
+  tierPax         Int?
+  baseAmountMinor Int
+  subtotalMinor   Int
+  vehicleId       String?
+  vehicleName     String?
+  pickupTime      String?
+  pickupHotel     String?
+  specialNotes    String?    @db.Text
+  travelers       Traveler[]
+
+  @@unique([orderId, cartLineId])
+  @@index([serviceId, date])
+}
+
+model Traveler {
+  id             String    @id @default(uuid())
+  orderItemId    String
+  orderItem      OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  firstName      String
+  lastName       String
+  documentType   String    @default("DNI") // DNI, PASAPORTE, CE
+  documentNumber String
+
+  @@index([orderItemId])
+}
+
+model PaymentAttempt {
+  id                String       @id @default(uuid())
+  orderId           String
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider          String       @default("CULQI") // CULQI, IZIPAY, STRIPE
+  environment       String       @default("test")  // test, prod
+  accountId         String
+  state             PaymentState @default(CREATED)
+  amountMinor       Int
+  currency          String       @default("USD")
+  providerReference String?      @unique
+  receivedMinor     Int          @default(0)
+  reviewReason      String?
+  createdAt         DateTime     @default(now())
+  expiresAt         DateTime
+  confirmedAt       DateTime?
+
+  @@index([state, expiresAt])
+  @@index([orderId])
+}
+
+model PaymentNotification {
+  id             String       @id @default(uuid())
+  orderId        String?
+  order          Order?       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  legacyId       String?
+  legacy         Reservation? @relation(fields: [legacyId], references: [id], onDelete: Restrict)
+  audience       String       // "CUSTOMER" | "ADMIN"
+  kind           String       // "ORDER_CONFIRMED" | "PAYMENT_RECEIPT"
+  state          String       @default("PENDING") // PENDING, SENT, FAILED, REVIEW
+  snapshot       Json?
+  envelope       Json?
+  attempts       Int          @default(0)
+  firstAttemptAt DateTime?
+  lastAttemptAt  DateTime?
+  failureCode    String?
+  createdAt      DateTime     @default(now())
+  sentAt         DateTime?
+
+  @@unique([orderId, audience, kind])
+  @@unique([legacyId, audience, kind])
+  @@index([state, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// RESERVAS HISTÓRICAS / MANUALES (LEGACY & DIRECT BACKWARDS COMPATIBILITY)
+// -----------------------------------------------------------------------------
+
+model Reservation {
+  id                  String                   @id @default(cuid())
+  code                String?                  @unique @default(dbgenerated("('AG-L-'::text || upper(substr(md5((random())::text), 1, 20)))"))
+  agencyId            String?
+  agency              Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  accessTokenHash     String?                  @unique
+  accessVersion       Int                      @default(0)
+  bookingStatus       BookingStatus            @default(PENDING)
+  paymentStatus       ReservationPaymentStatus @default(PENDING)
+  paidMinor           Int                      @default(0)
+  refundedMinor       Int                      @default(0)
+
+  tourId              String?
+  tour                Tour?                    @relation(fields: [tourId], references: [id])
+
+  transferId          String?
+  transfer            Transfer?                @relation(fields: [transferId], references: [id])
+
+  vehicleTypeId       String?
+  vehicleType         VehicleType?             @relation(fields: [vehicleTypeId], references: [id])
+
+  serviceType         String?  // 'shared' | 'private'
+  pickupTime          String?
+
+  customerFirstName   String
+  customerLastName    String
+  customerEmail       String
+  customerPhone       String
+
+  date                DateTime
+  pax                 Int
+  totalPrice          Float
+  currency            String                   @default("USD")
+
+  pickupHotel         String?
+  specialRequirements String?                  @db.Text
+
+  status              ReservationStatus        @default(PENDING)
+  paymentReference    String?                  // Izipay transaction ID or token
+  marketingCode       String?                  // Código de atribución marketing/WhatsApp (ej: MK1)
+  source              String?                  @default("WEB") // "WEB" | "MANUAL" | "WHATSAPP" | "ECOMMERCE"
+
+  // Campos de Cupones y Descuento
+  couponId            String?
+  coupon              Coupon?                  @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  discountAmount      Float?                   @default(0)
+  originalPrice       Float?
+
+  assignedOperatorId  String?
+  assignedOperator    User?                    @relation("OperatorReservations", fields: [assignedOperatorId], references: [id], onDelete: SetNull)
+
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  items               ReservationItem[]
+  passengers          ReservationPassenger[]
+  financialAudits     FinancialAudit[]
+  notifications       PaymentNotification[]
+
+  @@index([agencyId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([tourId])
+  @@index([transferId])
+  @@index([customerEmail])
+  @@index([marketingCode])
+  @@index([couponId])
+  @@index([assignedOperatorId])
+}
+
+model ReservationItem {
+  id               String       @id @default(cuid())
+  reservationId    String
+  reservation      Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  tourId           String?
+  tour             Tour?        @relation(fields: [tourId], references: [id])
+
+  transferId       String?
+  transfer         Transfer?    @relation(fields: [transferId], references: [id])
+
+  vehicleTypeId    String?
+  vehicleType      VehicleType? @relation(fields: [vehicleTypeId], references: [id])
+
+  serviceType      String       @default("shared") // 'shared' | 'private'
+  date             DateTime
+  pax              Int
+  unitPrice        Float
+  totalPrice       Float
+
+  pickupHotel      String?
+  pickupTime       String?
+
+  createdAt        DateTime     @default(now())
+
+  @@index([reservationId])
+  @@index([tourId])
+  @@index([transferId])
+}
+
+model ReservationPassenger {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  firstName     String
+  lastName      String
+  docType       String      @default("DNI") // DNI, Pasaporte, CE
+  docNumber     String
+
+  createdAt     DateTime    @default(now())
+
+  @@index([reservationId])
+}
+
+// -----------------------------------------------------------------------------
+// MARKETING Y CUPONES SAAS
+// -----------------------------------------------------------------------------
+
+enum MarketingChannel {
+  META_ADS       // Facebook e Instagram
+  TIKTOK_ADS
+  GOOGLE_ADS
+  EMAIL_MARKETING
+  ORGANIC_VIDEO  // Reels/TikTok orgánico sin pagar
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model Coupon {
+  id                 String            @id @default(cuid())
+  agencyId           String?
+  agency             Agency?           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  code               String            @unique // Siempre mayúsculas, ej: FDAY20
+  name               String?           // Nombre de campaña, ej: "Campaña Día del Padre 2026"
+  channel            MarketingChannel  @default(META_ADS) // Canal de origen publicitario
+  description        String?
+  discountType       DiscountType      @default(PERCENTAGE)
+  discountValue      Float             // Valor (% o USD float)
+  discountValueMinor Int?              // Valor en centavos si es FIXED
+  minSpend           Float?            @default(0)
+  minSpendMinor      Int?              @default(0)
+  maxDiscount        Float?            // Opcional tope para porcentual
+  maxDiscountMinor   Int?
+  startDate          DateTime?         // Cuándo empieza a correr el anuncio
+  endDate            DateTime?         // Cuándo termina la campaña
+  budget             Float?            @default(0) // Presupuesto invertido (USD)
+  budgetMinor        Int?              @default(0)
+  expiresAt          DateTime?         // Expiración del canje
+  usageLimit         Int?              // Límite de reservas / cupo
+  timesUsed          Int               @default(0) // Usos / Conversiones reales
+  isActive           Boolean           @default(true)
+  createdBy          String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  reservations       Reservation[]
+  orders             Order[]
+
+  @@index([agencyId])
+  @@index([code])
+  @@index([channel])
+  @@index([startDate, endDate])
+  @@index([isActive])
+}
+
+model MarketingCampaignLog {
+  id            String   @id @default(cuid())
+  agencyId      String?
+  agency        Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  customerEmail String
+  campaignCode  String   @default("MK1")
+  subject       String
+  message       String   @db.Text
+  flyerUrl      String?
+  whatsappUrl   String?  @db.Text
+  sentByEmail   String?
+  createdAt     DateTime @default(now())
+
+  @@index([agencyId])
+  @@index([customerEmail])
+  @@index([campaignCode])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// USUARIOS, SEGURIDAD Y CONTROL DE ACCESO (RBAC)
+// -----------------------------------------------------------------------------
+
+enum Role {
+  SUPERADMIN
+  MASTER
+  OPERATOR
+  CONTENT_CREATOR
+  MARKETING
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  agencyId            String?
+  agency              Agency?              @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  name                String?
+  email               String               @unique
+  password            String               // Hashed with bcrypt (cost factor >= 10) or Argon2
+  role                Role                 @default(OPERATOR)
+  isActive            Boolean              @default(true)
+
+  // Defensas contra ataques de fuerza bruta
+  failedLoginAttempts Int                  @default(0)
+  lockedUntil         DateTime?
+
+  // Seguridad de sesiones
+  tokenVersion        Int                  @default(1)
+  passwordChangedAt   DateTime?
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+
+  // Trazabilidad y auditoría
+  auditLogs           AdminAuditLog[]
+  sessions            AdminSession[]
+  passwordResetTokens PasswordResetToken[]
+  assignedReservations Reservation[]       @relation("OperatorReservations")
+  assignedOrders      Order[]              @relation("OperatorOrders")
+  financialAudits     FinancialAudit[]
+  configurationAudits ConfigurationAudit[]
+  complaintHistory    ComplaintHistory[]
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([agencyId])
+  @@index([role])
+  @@index([isActive])
+}
+
+model AdminSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  isRevoked    Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // USER_LOGIN, FAILED_LOGIN, ROLE_CHANGE, USER_CREATE, PASSWORD_RESET, etc.
+  entity    String   // User, Reservation, Tour, Transfer, Setting
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// AUDITORÍA FINANCIERA Y DE CONFIGURACIÓN
+// -----------------------------------------------------------------------------
+
+model FinancialAudit {
+  id              String                   @id @default(uuid())
+  agencyId        String?
+  agency          Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  requestId       String                   @unique // Idempotencia
+  requestHash     String
+  orderId         String?
+  order           Order?                   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  legacyId        String?
+  legacy          Reservation?             @relation(fields: [legacyId], references: [id], onDelete: Restrict)
+  actorId         String
+  actor           User                     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action          String                   // MANUAL_ADMIN, REFUND, CANCEL, STATUS_CHANGE
+  origin          String                   @default("MANUAL_ADMIN")
+  previousBooking BookingStatus
+  newBooking      BookingStatus
+  previousPayment ReservationPaymentStatus
+  newPayment      ReservationPaymentStatus
+  amountMinor     Int?
+  reference       String?
+  reason          String                   @db.Text
+  createdAt       DateTime                 @default(now())
+
+  @@index([agencyId])
+  @@index([orderId, createdAt])
+  @@index([legacyId, createdAt])
+}
+
+model ConfigurationAudit {
+  id        String   @id @default(uuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  target    String   // "COMPANY_SETTINGS" | "LEGAL_PROFILE" | "AVAILABILITY"
+  before    Json
+  after     Json
+  createdAt DateTime @default(now())
+
+  @@index([agencyId])
+}
+
+// -----------------------------------------------------------------------------
+// CUMPLIMIENTO LEGAL: LIBRO DE RECLAMACIONES Y PERFIL LEGAL
+// -----------------------------------------------------------------------------
+
+model CompanySettings {
+  id                    String   @id @default(cuid())
+  agencyId              String?  @unique
+  agency                Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  igvEnabled            Boolean  @default(false)
+  igvBps                Int      @default(1800)
+  cardFeeEnabled        Boolean  @default(false)
+  cardFeeBps            Int      @default(0)
+  partialPaymentEnabled Boolean  @default(false)
+  initialPaymentBps     Int      @default(5000)
+  availabilityEnabled   Boolean  @default(false)
+  updatedAt             DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model LegalProfile {
+  id        String   @id @default(cuid())
+  agencyId  String?  @unique
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  data      Json     // RUC, Razón Social, Nombre Comercial, Domicilio Fiscal, Representante Legal, etc.
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model Complaint {
+  id          String              @id @default(uuid())
+  agencyId    String?
+  agency      Agency?             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  number      Int                 @unique @default(autoincrement())
+  accessHash  String              @unique
+  requestHash String
+  receipt     Json
+  status      String              @default("RECEIVED") // RECEIVED, IN_REVIEW, RESOLVED, CLOSED
+  createdAt   DateTime            @default(now())
+  history     ComplaintHistory[]
+  deliveries  ComplaintDelivery[]
+
+  @@index([agencyId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model ComplaintHistory {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Restrict)
+  actorId     String?
+  actor       User?     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  status      String
+  note        String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([complaintId])
+}
+
+model ComplaintDelivery {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Restrict)
+  audience    String    // "CUSTOMER" | "ADMIN"
+  recipient   String
+  text        String    @db.Text
+  envelope    Json?
+  state       String    @default("PENDING")
+  attempts    Int       @default(0)
+  failureCode String?
+  attemptedAt DateTime?
+  createdAt   DateTime  @default(now())
+  sentAt      DateTime?
+
+  @@index([complaintId])
+  @@index([state, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// ACCESO SEGURO Y RATE LIMITING
+// -----------------------------------------------------------------------------
+
+model ReservationAccess {
+  hash          String   @id
+  source        String
+  reservationId String
+  version       Int
+  expiresAt     DateTime
+
+  @@index([expiresAt])
+}
+
+model LookupRateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model OperationsJob {
+  id                   String    @id
+  reconciliationCursor String?
+  owner                String?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  lastSuccessAt        DateTime?
+  failureCode          String?
+}

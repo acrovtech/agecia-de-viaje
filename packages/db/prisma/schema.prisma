@@ -28,6 +28,8 @@ model Agency {
 
   // Relaciones multi-tenant
   users               User[]
+  memberships         AgencyMembership[]
+  vehicleTypes        VehicleType[]
   tours               Tour[]
   transfers           Transfer[]
   categories          Category[]
@@ -54,6 +56,7 @@ model Agency {
 // -----------------------------------------------------------------------------
 
 model Tour {
+  isPublished       Boolean @default(false)
   id                String   @id @default(cuid())
   agencyId          String?
   agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
@@ -228,6 +231,7 @@ model BlogParagraph {
 }
 
 model Transfer {
+  isPublished       Boolean @default(false)
   id                String   @id @default(cuid())
   agencyId          String?
   agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
@@ -260,6 +264,8 @@ model Transfer {
 }
 
 model VehicleType {
+  agencyId    String?
+  agency      Agency? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
   code        String   @unique // ej. "sedan", "minivan", "benz-10", "benz-15"
   name        String   // ej. "Sedan", "MiniVan", "Mercedes Benz 10pax", "Mercedes Benz 15pax"
@@ -277,6 +283,8 @@ model VehicleType {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([agencyId])
 }
 
 model TransferVehiclePrice {
@@ -378,7 +386,7 @@ model ShoppingCart {
 
 model Order {
   id                    String                   @id @default(uuid())
-  code                  String                   @unique @default(dbgenerated("('AG-' || upper(substr(md5(random()::text), 1, 20)))"))
+  code                  String                   @unique @default(dbgenerated("('AG-'::text || upper(substr(md5((random())::text), 1, 20)))"))
   agencyId              String?
   agency                Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   accessTokenHash       String?                  @unique
@@ -536,7 +544,7 @@ model PaymentNotification {
 
 model Reservation {
   id                  String                   @id @default(cuid())
-  code                String?                  @unique @default(dbgenerated("('AG-L-' || upper(substr(md5(random()::text), 1, 20)))"))
+  code                String?                  @unique @default(dbgenerated("('AG-L-'::text || upper(substr(md5((random())::text), 1, 20)))"))
   agencyId            String?
   agency              Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   accessTokenHash     String?                  @unique
@@ -592,7 +600,17 @@ model Reservation {
   passengers          ReservationPassenger[]
   financialAudits     FinancialAudit[]
   notifications       PaymentNotification[]
+  operationStatus     OperationalStatus?
+  totalMinor          Int?
+  unitPriceMinor      Int?
+  pricingUnit         String?
+  serviceTitle        String?
+  vehicleName         String?
+  requestKey          String?
+  requestHash         String?
+  events              ReservationEvent[]
 
+  @@unique([agencyId, requestKey])
   @@index([agencyId])
   @@index([status])
   @@index([createdAt])
@@ -602,6 +620,27 @@ model Reservation {
   @@index([marketingCode])
   @@index([couponId])
   @@index([assignedOperatorId])
+}
+
+enum OperationalStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model ReservationEvent {
+  id            String @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  actorId       String
+  actorLabel    String
+  fromStatus    OperationalStatus?
+  toStatus      OperationalStatus
+  note          String
+  createdAt     DateTime @default(now())
+
+  @@index([reservationId, createdAt])
 }
 
 model ReservationItem {
@@ -757,6 +796,7 @@ model User {
   // Trazabilidad y auditoría
   auditLogs           AdminAuditLog[]
   sessions            AdminSession[]
+  memberships         AgencyMembership[]
   passwordResetTokens PasswordResetToken[]
   assignedReservations Reservation[]       @relation("OperatorReservations")
   assignedOrders      Order[]              @relation("OperatorOrders")
@@ -770,6 +810,45 @@ model User {
   @@index([agencyId])
   @@index([role])
   @@index([isActive])
+}
+
+enum AgencyMemberRole {
+  OWNER
+  ADMIN
+  OPERATOR
+  EDITOR
+  VIEWER
+}
+
+model AgencyMembership {
+  id        String @id @default(cuid())
+  agencyId  String
+  userId    String
+  role      AgencyMemberRole @default(VIEWER)
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  agency    Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions  ApiSession[]
+
+  @@unique([agencyId, userId])
+  @@index([userId, isActive])
+}
+
+model ApiSession {
+  id             String @id @default(cuid())
+  membershipId   String
+  tokenHash      String @unique
+  tokenVersion   Int
+  passwordHash   String // SHA-256 fingerprint of the stored bcrypt hash; not the password.
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  membership     AgencyMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([membershipId, revokedAt])
+  @@index([expiresAt])
 }
 
 model AdminSession {

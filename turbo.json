@@ -8,7 +8,9 @@
     "build": {
       "dependsOn": ["^generate", "^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+      "env": ["CATALOG_SOURCE", "API_INTERNAL_URL", "STOREFRONT_SLUG", "ADMIN_AUTH_MODE", "ADMIN_API_URL"],
+      "passThroughEnv": ["DATABASE_URL"],
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -18,7 +20,8 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["DATABASE_URL", "API_*", "PORT", "NODE_ENV", "CATALOG_SOURCE", "STOREFRONT_SLUG", "NEXT_PUBLIC_*", "IZIPAY_*", "ADMIN_*"]
     }
   }
 }

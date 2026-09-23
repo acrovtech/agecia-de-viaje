@@ -4,7 +4,13 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Operación cancelada: No se permite ejecutar seeds en entorno de producción.');
+    process.exit(1);
+  }
+
   console.log('🔐 Iniciando creación y sincronización de roles y usuarios administrativos...');
+  const forceReset = process.env.FORCE_PASSWORD_RESET === 'true';
 
   // 1. Rol SUPERADMIN (Root / Propietario de Plataforma - Acceso Total + Visor de Logs de Auditoría)
   const superAdminEmail = (process.env.SUPERADMIN_EMAIL || process.env.ADMIN_EMAIL || 'admin@agenciadeviajes.com').trim().toLowerCase();
@@ -16,7 +22,7 @@ async function main() {
     where: { email: superAdminEmail },
     update: {
       name: superAdminName,
-      password: superAdminPasswordHash,
+      ...(forceReset ? { password: superAdminPasswordHash } : {}),
       role: Role.SUPERADMIN,
       isActive: true,
       failedLoginAttempts: 0,
@@ -43,7 +49,7 @@ async function main() {
     where: { email: masterEmail },
     update: {
       name: masterName,
-      password: masterPasswordHash,
+      ...(forceReset ? { password: masterPasswordHash } : {}),
       role: Role.MASTER,
       isActive: true,
       failedLoginAttempts: 0,
@@ -70,7 +76,7 @@ async function main() {
     where: { email: operatorEmail },
     update: {
       name: operatorName,
-      password: operatorPasswordHash,
+      ...(forceReset ? { password: operatorPasswordHash } : {}),
       role: Role.OPERATOR,
       isActive: true,
       failedLoginAttempts: 0,
@@ -96,7 +102,7 @@ async function main() {
     where: { email: contentEmail },
     update: {
       name: 'Gestión de Contenidos',
-      password: contentPasswordHash,
+      ...(forceReset ? { password: contentPasswordHash } : {}),
       role: Role.CONTENT_CREATOR,
       isActive: true,
       failedLoginAttempts: 0,
@@ -122,7 +128,7 @@ async function main() {
     where: { email: marketingEmail },
     update: {
       name: 'Equipo de Marketing',
-      password: marketingPasswordHash,
+      ...(forceReset ? { password: marketingPasswordHash } : {}),
       role: Role.MARKETING,
       isActive: true,
       failedLoginAttempts: 0,
@@ -142,32 +148,13 @@ async function main() {
   console.log('===============================================================');
   console.log('✅ ROLES Y USUARIOS ADMINISTRATIVOS LISTOS EN EL SISTEMA:');
   console.log('===============================================================');
-  console.log('1. [SUPERADMIN] - Control Total + Visor de Logs de Auditoría (Nuestro Usuario)');
-  console.log(`   👤 Nombre:     ${superAdminUser.name}`);
-  console.log(`   📧 Correo:     ${superAdminUser.email}`);
-  console.log(`   🔑 Contraseña: ${superAdminPassword}`);
-  console.log(`   🛡️  Rol:        ${superAdminUser.role}\n`);
-  console.log('2. [MASTER] - Administrador General de Agencia');
-  console.log(`   👤 Nombre:     ${masterUser.name}`);
-  console.log(`   📧 Correo:     ${masterUser.email}`);
-  console.log(`   🔑 Contraseña: ${masterPassword}`);
-  console.log(`   🛡️  Rol:        ${masterUser.role}\n`);
-  console.log('3. [OPERATOR] - Reservas, Pagos, Hoteles y Manifiesto de Pasajeros');
-  console.log(`   👤 Nombre:     ${operatorUser.name}`);
-  console.log(`   📧 Correo:     ${operatorUser.email}`);
-  console.log(`   🔑 Contraseña: ${operatorPassword}`);
-  console.log(`   🛡️  Rol:        ${operatorUser.role}\n`);
-  console.log('4. [CONTENT_CREATOR] - Edición de Tours, Precios, Blogs y Megamenú');
-  console.log(`   👤 Nombre:     ${contentUser.name}`);
-  console.log(`   📧 Correo:     ${contentUser.email}`);
-  console.log(`   🔑 Contraseña: ${contentPassword}`);
-  console.log(`   🛡️  Rol:        ${contentUser.role}\n`);
-  console.log('5. [MARKETING] - Email Marketing, Base de Contactos y Fidelización');
-  console.log(`   👤 Nombre:     ${marketingUser.name}`);
-  console.log(`   📧 Correo:     ${marketingUser.email}`);
-  console.log(`   🔑 Contraseña: ${marketingPassword}`);
-  console.log(`   🛡️  Rol:        ${marketingUser.role}`);
+  console.log(`1. [SUPERADMIN]     ${superAdminUser.email} (Rol: ${superAdminUser.role})`);
+  console.log(`2. [MASTER]         ${masterUser.email} (Rol: ${masterUser.role})`);
+  console.log(`3. [OPERATOR]       ${operatorUser.email} (Rol: ${operatorUser.role})`);
+  console.log(`4. [CONTENT]        ${contentUser.email} (Rol: ${contentUser.role})`);
+  console.log(`5. [MARKETING]      ${marketingUser.email} (Rol: ${marketingUser.role})`);
   console.log('===============================================================');
+  console.log('🔒 Contraseñas preservadas de forma segura (no expuestas en logs).');
 }
 
 main()

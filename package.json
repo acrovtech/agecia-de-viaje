@@ -4,20 +4,23 @@
   "scripts": {
     "postinstall": "pnpm --filter @repo/db generate",
     "db:seed": "pnpm --filter @repo/db seed",
-    "db:deploy": "pnpm --filter @repo/db push && pnpm --filter @repo/db seed",
+    "db:deploy": "node scripts/deploy-db.mjs",
     "build": "turbo run build",
-    "start": "pnpm db:deploy && pnpm --filter web start",
+    "start": "pnpm --filter web start",
+    "dev:api": "pnpm --filter api dev",
+    "start:api": "pnpm --filter api start",
+    "test:api": "pnpm --filter api test",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test": "vitest run"
+    "test": "vitest run && pnpm --filter api test"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "next": "16.2.0",
+    "next": "16.3.5",
     "prettier": "^3.7.4",
     "turbo": "^2.10.3",
     "typescript": "5.9.2",

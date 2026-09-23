@@ -24,13 +24,11 @@ type ReservationData = {
   customerFirstName: string;
   customerLastName: string;
   customerEmail: string;
-  customerPhone: string;
   date: string;
   pax: number;
   totalPrice: number;
   pickupHotel?: string | null;
   status: 'PENDING' | 'PAID' | 'CANCELLED';
-  paymentReference?: string | null;
   passengers: Array<{
     firstName: string;
     lastName: string;

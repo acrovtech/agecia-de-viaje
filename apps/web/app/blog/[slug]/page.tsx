@@ -114,7 +114,7 @@ export default async function SingleBlogPage({ params }: { params: Promise<{ slu
     <div className="flex flex-col min-h-screen bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <Header />
 

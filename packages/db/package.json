@@ -2,9 +2,14 @@
   "name": "@repo/db",
   "version": "0.0.0",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./prisma": {
+      "types": "./prisma-client.d.ts",
+      "default": "./prisma-client.cjs"
+    }
   },
   "scripts": {
+    "membership:grant": "node grant-membership.mjs",
     "generate": "prisma generate",
     "push": "prisma db push",
     "db:push:ci": "prisma db push --accept-data-loss",

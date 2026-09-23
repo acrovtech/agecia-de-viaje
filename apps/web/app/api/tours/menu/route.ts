@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const tours = await prisma.tour.findMany({
+      where: { isPublished: true },
       select: {
         id: true,
         title: true,

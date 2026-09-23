@@ -3,8 +3,9 @@ import { Footer } from '@/components/layout/footer';
 import Image from 'next/image';
 import { prisma, INITIAL_TRANSFERS, INITIAL_VEHICLES } from '@repo/db';
 import { TransporteClient } from '@/components/transporte/transporte-client';
+import { apiCatalog } from '@/lib/api-catalog';
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 export const metadata = {
   title: 'Traslados y Transporte Turístico en Cusco y Perú | Agencia de Viajes',
@@ -14,18 +15,52 @@ export const metadata = {
 export default async function TransportePage() {
   let transfersData: any[] = [];
 
+  // 1. Intento primario vía API central NestJS desacoplada
   try {
-    const dbTransfers = await prisma.transfer.findMany({
-      where: { isActive: true },
-      orderBy: { order: 'asc' },
-      include: {
-        vehiclePrices: {
-          include: {
-            vehicle: true,
+    const apiTransfers = apiCatalog.isEnabled() ? await apiCatalog.getTransfers() : [];
+    if (apiTransfers && apiTransfers.length > 0) {
+      transfersData = apiTransfers.map((t) => ({
+        id: t.id,
+        title: t.title,
+        slug: t.slug,
+        origin: t.origin,
+        destination: t.destination,
+        duration: t.duration,
+        tripType: t.tripType,
+        hasSharedService: t.hasSharedService,
+        sharedPrice: t.sharedPrice,
+        hasPrivateService: t.hasPrivateService,
+        vehicles: t.vehicleOptions.map((vp) => ({
+          id: vp.id,
+          code: vp.vehicleCode,
+          name: vp.vehicleName,
+          subtitle: vp.subtitle,
+          maxPax: vp.maxPax,
+          maxLuggage: vp.maxLuggage,
+          image: vp.image,
+          price: vp.price,
+          features: vp.features,
+        })),
+      }));
+    }
+  } catch (err) {
+    // Continuar a fallback de resiliencia
+  }
+
+  // 2. Resiliencia local / fallback seguro a BD directa
+  if (!apiCatalog.isEnabled() && transfersData.length === 0) {
+    try {
+      const dbTransfers = await prisma.transfer.findMany({
+        where: { isActive: true, isPublished: true },
+        orderBy: { order: 'asc' },
+        include: {
+          vehiclePrices: {
+            include: {
+              vehicle: true,
+            },
           },
         },
-      },
-    });
+      });
 
     if (dbTransfers && dbTransfers.length > 0) {
       transfersData = dbTransfers.map((t) => ({
@@ -48,16 +83,16 @@ export default async function TransportePage() {
           maxLuggage: vp.vehicle.maxLuggage,
           image: vp.vehicle.image,
           price: vp.price,
-          features: vp.vehicle.features,
         })),
       }));
     }
   } catch (error) {
     console.error('Error fetching transfers from DB:', error);
   }
+}
 
-  // Fallback to rich seed structure if DB is empty or during local setup
-  if (transfersData.length === 0) {
+  // Demo fixtures require explicit local opt-in; drafts never trigger demo publication.
+  if (process.env.NODE_ENV !== 'production' && process.env.LEGACY_DEMO_CATALOG === 'true' && !apiCatalog.isEnabled() && transfersData.length === 0) {
     transfersData = INITIAL_TRANSFERS.map((t, idx) => ({
       id: `seed-transfer-${idx}`,
       title: t.title,

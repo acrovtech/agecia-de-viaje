@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@repo/db';
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agenciadeviajes.com';
 
@@ -84,6 +86,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const [tours, blogs] = await Promise.all([
       prisma.tour.findMany({
+        where: { isPublished: true },
         select: {
           slug: true,
           updatedAt: true,

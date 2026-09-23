@@ -1,0 +1,40 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "nodemon --watch src --ext ts --exec \"pnpm build && node dist/main.js\"",
+    "start": "node dist/main.js",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "test": "pnpm build && node --test test/http.e2e.mjs",
+    "test:admin": "node --test test/admin.smoke.mjs",
+    "test:integration": "pnpm build && node --test test/postgres.e2e.mjs test/auth.postgres.e2e.mjs test/catalog-write.postgres.e2e.mjs test/catalog-content.postgres.e2e.mjs test/reservations.postgres.e2e.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.0.3",
+    "@nestjs/core": "12.0.3",
+    "@nestjs/platform-express": "12.0.3",
+    "@nestjs/swagger": "12.0.1",
+    "@nestjs/throttler": "6.7.0",
+    "@repo/db": "workspace:*",
+    "bcryptjs": "3.0.3",
+    "helmet": "8.3.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@nestjs/testing": "12.0.3",
+    "@types/express": "5.0.6",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.39.1",
+    "nodemon": "3.1.14",
+    "supertest": "7.2.2",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.50.0"
+  }
+}

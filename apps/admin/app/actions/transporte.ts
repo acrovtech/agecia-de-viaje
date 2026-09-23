@@ -4,7 +4,7 @@ import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+import { requireMasterRole, requireOperatorOrMaster } from '@/lib/auth-check';
 
 const TransferInputSchema = z.object({
   title: z.string().min(2, 'El título es requerido'),
@@ -22,7 +22,7 @@ const TransferInputSchema = z.object({
 });
 
 export async function createTransfer(formData: FormData) {
-  await requireAdminSession();
+  const session = await requireOperatorOrMaster();
 
   const title = (formData.get('title') as string)?.trim() || '';
   const slug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
@@ -91,6 +91,7 @@ export async function createTransfer(formData: FormData) {
     await prisma.transfer.create({
       data: {
         ...parsed.data,
+        ...(session.agencyId ? { agencyId: session.agencyId } : {}),
         vehiclePrices: {
           create: vehiclePricesToCreate.map((vp) => ({
             vehicleId: vp.vehicleId,
@@ -110,7 +111,7 @@ export async function createTransfer(formData: FormData) {
 }
 
 export async function updateTransfer(formData: FormData) {
-  await requireAdminSession();
+  await requireOperatorOrMaster();
   const id = formData.get('id') as string;
   if (!id) throw new Error('ID es requerido.');
 
@@ -225,7 +226,7 @@ export async function deleteTransfer(id: string) {
 
 export async function toggleTransferStatus(id: string, currentStatus: boolean) {
   try {
-    await requireAdminSession();
+    await requireOperatorOrMaster();
     await prisma.transfer.update({
       where: { id },
       data: { isActive: !currentStatus },
@@ -251,7 +252,7 @@ const VehicleTypeInputSchema = z.object({
 
 export async function createVehicleType(rawData: unknown) {
   try {
-    await requireAdminSession();
+    await requireOperatorOrMaster();
     const parsed = VehicleTypeInputSchema.safeParse(rawData);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message || 'Datos de vehículo inválidos' };
@@ -280,7 +281,7 @@ export async function createVehicleType(rawData: unknown) {
 
 export async function updateVehicleType(id: string, rawData: unknown) {
   try {
-    await requireAdminSession();
+    await requireOperatorOrMaster();
     if (!id) return { success: false, error: 'ID es requerido' };
 
     const parsed = VehicleTypeInputSchema.partial().safeParse(rawData);

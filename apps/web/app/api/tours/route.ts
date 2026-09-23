@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
     if (slug) {
       const tour = await prisma.tour.findUnique({
-        where: { slug },
+        where: { slug, isPublished: true },
         include: {
           categories: true,
           privatePricing: { orderBy: { pax: 'asc' } },
@@ -21,6 +21,7 @@ export async function GET(req: Request) {
     }
 
     const tours = await prisma.tour.findMany({
+      where: { isPublished: true },
       include: {
         categories: true,
         privatePricing: { orderBy: { pax: 'asc' } },
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
     });
     
     const categories = await prisma.category.findMany({
+      where: { tours: { some: { isPublished: true } } },
       orderBy: { name: 'asc' }
     });
     

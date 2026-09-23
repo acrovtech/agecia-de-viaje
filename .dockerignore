@@ -1,0 +1,16 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.agents
+.system_generated
+**/*.log
+**/*.pem
+opencode.json
+opencode.*.json
+!opencode.example.json

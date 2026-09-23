@@ -9,6 +9,16 @@ import {
   requireContentOrMaster
 } from './auth-check';
 import * as jwtModule from './jwt';
+import { prisma } from '@repo/db';
+
+// Mock de @repo/db
+vi.mock('@repo/db', () => ({
+  prisma: {
+    user: {
+      findUnique: vi.fn(),
+    },
+  },
+}));
 
 // Mock de next/headers
 let mockCookieMap: Record<string, string> = {};
@@ -23,9 +33,40 @@ vi.mock('next/headers', () => ({
 }));
 
 describe('Admin Authorization Guards (verifyAdminSession, requireAdminSession & requireMasterRole)', () => {
+  it('API mode rejects legacy cookies before querying JWT or the database', async () => {
+    vi.stubEnv('ADMIN_AUTH_MODE', 'api');
+    mockCookieMap['admin_session'] = 'valid.legacy.jwt';
+    const verify = vi.spyOn(jwtModule, 'verifyAdminToken');
+    const find = vi.mocked(prisma.user.findUnique);
+    find.mockClear();
+    try {
+      expect(await verifyAdminSession()).toBeNull();
+      await expect(requireMasterRole()).rejects.toThrow();
+      expect(verify).not.toHaveBeenCalled();
+      expect(find).not.toHaveBeenCalled();
+    } finally { vi.unstubAllEnvs(); }
+  });
   beforeEach(() => {
     mockCookieMap = {};
     vi.restoreAllMocks();
+    (prisma.user.findUnique as any).mockImplementation(async ({ where }: any) => {
+      const email = where.email || '';
+      let role = 'CLIENT';
+      if (email.includes('root')) role = 'SUPERADMIN';
+      else if (email.includes('master')) role = 'MASTER';
+      else if (email.includes('operator')) role = 'OPERATOR';
+      else if (email.includes('content')) role = 'CONTENT_CREATOR';
+
+      return {
+        id: where.id || 'mock-id',
+        email: where.email || 'user@agenciadeviajes.com',
+        name: 'Mock User',
+        role,
+        isActive: true,
+        lockedUntil: null,
+        tokenVersion: 1,
+      };
+    });
   });
 
   it('verifyAdminSession debe retornar null si no hay cookie de sesión', async () => {
@@ -37,13 +78,13 @@ describe('Admin Authorization Guards (verifyAdminSession, requireAdminSession & 
     mockCookieMap['admin_session'] = 'valid.jwt.token';
     vi.spyOn(jwtModule, 'verifyAdminToken').mockResolvedValueOnce({
       role: 'CLIENT',
-      email: 'operator@agenciadeviajes.com',
+      email: 'client@agenciadeviajes.com',
     });
 
     const session = await verifyAdminSession();
-    expect(session).toEqual({
+    expect(session).toMatchObject({
       role: 'CLIENT',
-      email: 'operator@agenciadeviajes.com',
+      email: 'client@agenciadeviajes.com',
     });
   });
 
@@ -51,7 +92,7 @@ describe('Admin Authorization Guards (verifyAdminSession, requireAdminSession & 
     mockCookieMap['admin_session'] = 'valid.jwt.token';
     vi.spyOn(jwtModule, 'verifyAdminToken').mockResolvedValueOnce({
       role: 'CLIENT',
-      email: 'operator@agenciadeviajes.com',
+      email: 'client@agenciadeviajes.com',
     });
 
     const session = await requireAdminSession();
@@ -152,5 +193,67 @@ describe('Admin Authorization Guards (verifyAdminSession, requireAdminSession & 
 
     const session = await requireAnyRole(['CONTENT_CREATOR']);
     expect(session.role).toBe('SUPERADMIN');
+  });
+
+  it('verifyAdminSession debe retornar null si el usuario está inactivo (isActive: false)', async () => {
+    mockCookieMap['admin_session'] = 'valid.jwt.token';
+    vi.spyOn(jwtModule, 'verifyAdminToken').mockResolvedValueOnce({
+      id: 'usr_inactive',
+      role: 'MASTER',
+      email: 'inactive@agenciadeviajes.com',
+    });
+    (prisma.user.findUnique as any).mockResolvedValueOnce({
+      id: 'usr_inactive',
+      email: 'inactive@agenciadeviajes.com',
+      isActive: false,
+      role: 'MASTER',
+      lockedUntil: null,
+      tokenVersion: 1,
+    });
+
+    const session = await verifyAdminSession();
+    expect(session).toBeNull();
+  });
+
+  it('verifyAdminSession debe retornar null si el tokenVersion no coincide (sesión revocada)', async () => {
+    mockCookieMap['admin_session'] = 'valid.jwt.token';
+    vi.spyOn(jwtModule, 'verifyAdminToken').mockResolvedValueOnce({
+      id: 'usr_revoked',
+      role: 'MASTER',
+      email: 'revoked@agenciadeviajes.com',
+      tokenVersion: 1,
+    });
+    (prisma.user.findUnique as any).mockResolvedValueOnce({
+      id: 'usr_revoked',
+      email: 'revoked@agenciadeviajes.com',
+      isActive: true,
+      role: 'MASTER',
+      lockedUntil: null,
+      tokenVersion: 2, // Token revocado tras incremento
+    });
+
+    const session = await verifyAdminSession();
+    expect(session).toBeNull();
+  });
+
+  it('verifyAdminSession debe retornar null si la cuenta se encuentra bloqueada temporalmente', async () => {
+    mockCookieMap['admin_session'] = 'valid.jwt.token';
+    vi.spyOn(jwtModule, 'verifyAdminToken').mockResolvedValueOnce({
+      id: 'usr_locked',
+      role: 'OPERATOR',
+      email: 'locked@agenciadeviajes.com',
+      tokenVersion: 1,
+    });
+    (prisma.user.findUnique as any).mockResolvedValueOnce({
+      id: 'usr_locked',
+      email: 'locked@agenciadeviajes.com',
+      isActive: true,
+      role: 'OPERATOR',
+      lockedUntil: new Date(Date.now() + 1000 * 60 * 15), // Bloqueado por 15 min
+      tokenVersion: 1,
+    });
+
+    const session = await verifyAdminSession();
+    expect(session).toBeNull();
   });
 });

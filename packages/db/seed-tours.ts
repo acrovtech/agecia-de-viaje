@@ -4,6 +4,11 @@ import { tours } from './tours-data';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Operación cancelada: No se permite ejecutar seeds de demo en entorno de producción.');
+    process.exit(1);
+  }
+
   console.log("🌱 Iniciando actualización e importación limpia de Tours...");
 
   for (const tourData of tours) {

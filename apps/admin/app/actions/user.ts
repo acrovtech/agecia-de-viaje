@@ -229,6 +229,11 @@ export async function toggleUserStatusAction(userId: string) {
       return { success: false, error: 'Usuario no encontrado.' };
     }
 
+    // Solo un SuperAdmin puede alterar el estado de otro SuperAdmin
+    if (user.role === 'SUPERADMIN' && session.role !== 'SUPERADMIN') {
+      return { success: false, error: 'Permisos insuficientes. Solo un SuperAdmin puede modificar cuentas SuperAdmin.' };
+    }
+
     const isSelf = session.id === user.id || session.email === user.email;
     if (isSelf) {
       return { success: false, error: 'No puede desactivar su propia cuenta en uso.' };
@@ -268,6 +273,16 @@ export async function toggleUserStatusAction(userId: string) {
 export async function unlockUserAccountAction(userId: string) {
   try {
     const session = await requireMasterRole();
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return { success: false, error: 'Usuario no encontrado.' };
+    }
+
+    // Solo un SuperAdmin puede desbloquear cuentas SuperAdmin
+    if (user.role === 'SUPERADMIN' && session.role !== 'SUPERADMIN') {
+      return { success: false, error: 'Permisos insuficientes. Solo un SuperAdmin puede desbloquear cuentas SuperAdmin.' };
+    }
 
     await prisma.user.update({
       where: { id: userId },

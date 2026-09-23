@@ -4,7 +4,7 @@ import { prisma, handlePrismaError } from '@repo/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { requireAdminSession, requireMasterRole } from '@/lib/auth-check';
+import { requireMasterRole, requireContentOrMaster } from '@/lib/auth-check';
 
 const TourInputSchema = z.object({
   title: z.string().min(2, 'El título del tour es obligatorio (mínimo 2 caracteres)'),
@@ -17,7 +17,7 @@ const TourInputSchema = z.object({
 });
 
 export async function createTour(formData: FormData) {
-  await requireAdminSession();
+  const session = await requireContentOrMaster();
   const id = (formData.get('id') as string)?.trim() || undefined;
   const rawTitle = (formData.get('title') as string)?.trim() || '';
   const rawSlug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
@@ -204,6 +204,7 @@ export async function createTour(formData: FormData) {
         await tx.tour.create({
           data: {
             ...tourData,
+            ...(session.agencyId ? { agencyId: session.agencyId } : {}),
             itineraries: itinerary.length > 0 ? { 
               create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
             } : undefined,
@@ -268,7 +269,7 @@ export async function deleteTour(id: string) {
 
 export async function setToursFeaturedStatus(tourIds: string[], isFeatured: boolean) {
   try {
-    await requireAdminSession();
+    await requireContentOrMaster();
     if (!tourIds.length) return { success: true };
 
     if (isFeatured) {
@@ -305,7 +306,7 @@ export async function setToursFeaturedStatus(tourIds: string[], isFeatured: bool
 
 export async function toggleTourFeaturedStatus(id: string) {
   try {
-    await requireAdminSession();
+    await requireContentOrMaster();
     const tour = await prisma.tour.findUnique({
       where: { id },
       select: { id: true, isFeatured: true, title: true },
