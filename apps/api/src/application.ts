@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { PayloadTooLargeException, VersioningType } from '@nestjs/common';
+import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import type { NextFunction, Request, Response } from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import { AppModule } from './app.module.js';
 import { ApiConfig } from './config.js';
 import { ApiErrorFilter } from './http/error.filter.js';
@@ -13,6 +13,8 @@ import { ApiErrorFilter } from './http/error.filter.js';
 export function configureApplication(app: NestExpressApplication, config: ApiConfig) {
   app.disable('x-powered-by');
   app.set('trust proxy', false);
+  app.use(express.json({ limit: '64kb' }));
+  app.use(express.urlencoded({ limit: '64kb', extended: true }));
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Request-Id', randomUUID());
     res.setHeader('Cache-Control', 'no-store');
@@ -38,7 +40,7 @@ export function configureApplication(app: NestExpressApplication, config: ApiCon
 
 export async function createApplication(config: ApiConfig) {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(config), {
-    abortOnError: false, bodyParser: true,
+    abortOnError: false, bodyParser: false,
   });
   configureApplication(app, config);
   app.enableShutdownHooks();

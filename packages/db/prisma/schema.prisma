@@ -608,8 +608,12 @@ model Reservation {
   vehicleName         String?
   requestKey          String?
   requestHash         String?
-  paymentFormToken    String?
-  events              ReservationEvent[]
+  paymentFormToken            String?
+  paymentFormTokenCreatedAt   DateTime?
+  paymentSessionOwner         String?
+  paymentSessionExpiresAt     DateTime?
+  paymentSessionStatus        String?
+  events                      ReservationEvent[]
 
   @@unique([agencyId, requestKey])
   @@index([agencyId])

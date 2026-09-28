@@ -260,8 +260,11 @@ export class PaymentsService {
     const expectedCurrency = (reservation.currency || 'USD').toUpperCase();
 
     if (receivedCurrency !== expectedCurrency) {
-      await this.prisma.reservation.update({
-        where: { id: reservation.id },
+      const mismatch = await this.prisma.reservation.updateMany({
+        where: {
+          id: reservation.id,
+          paymentStatus: ReservationPaymentStatus.PENDING,
+        },
         data: {
           status: ReservationStatus.PENDING,
           bookingStatus: BookingStatus.PENDING,
@@ -270,6 +273,26 @@ export class PaymentsService {
           paymentReference: transactionUuid,
         },
       });
+
+      if (mismatch.count === 0) {
+        // La reserva ya no está PENDING: verificar si ya fue confirmada PAID para evitar downgrade
+        const reloaded = await this.prisma.reservation.findUnique({ where: { id: reservation.id } });
+        if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
+          return {
+            success: true,
+            reservationCode: reloaded.code || orderDetails.orderId,
+            status: 'PAID',
+            paidMinor: reloaded.paidMinor,
+          };
+        }
+        return {
+          success: false,
+          reservationCode: reloaded?.code || orderDetails.orderId,
+          status: 'REVIEW_REQUIRED',
+          reviewReason: 'RESERVATION_UNDER_FINANCIAL_REVIEW',
+        };
+      }
+
       await this.prisma.reservationEvent.create({
         data: {
           reservationId: reservation.id,
@@ -288,8 +311,11 @@ export class PaymentsService {
     }
 
     if (receivedMinor !== expectedMinor) {
-      await this.prisma.reservation.update({
-        where: { id: reservation.id },
+      const mismatch = await this.prisma.reservation.updateMany({
+        where: {
+          id: reservation.id,
+          paymentStatus: ReservationPaymentStatus.PENDING,
+        },
         data: {
           status: ReservationStatus.PENDING,
           bookingStatus: BookingStatus.PENDING,
@@ -298,6 +324,26 @@ export class PaymentsService {
           paymentReference: transactionUuid,
         },
       });
+
+      if (mismatch.count === 0) {
+        // La reserva ya no está PENDING: verificar si ya fue confirmada PAID para evitar downgrade
+        const reloaded = await this.prisma.reservation.findUnique({ where: { id: reservation.id } });
+        if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
+          return {
+            success: true,
+            reservationCode: reloaded.code || orderDetails.orderId,
+            status: 'PAID',
+            paidMinor: reloaded.paidMinor,
+          };
+        }
+        return {
+          success: false,
+          reservationCode: reloaded?.code || orderDetails.orderId,
+          status: 'REVIEW_REQUIRED',
+          reviewReason: 'RESERVATION_UNDER_FINANCIAL_REVIEW',
+        };
+      }
+
       await this.prisma.reservationEvent.create({
         data: {
           reservationId: reservation.id,
@@ -315,10 +361,8 @@ export class PaymentsService {
       };
     }
 
-    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1, P1.2)
-    let couponCapacityExhausted = false;
-
-    await this.prisma.$transaction(async (tx) => {
+    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1, P1.2, P1.3)
+    const txResult = await this.prisma.$transaction(async (tx) => {
       // A. Transición atómica PENDING -> PAID (sólo PENDING puede pasar a PAID automáticamente)
       const updateResult = await tx.reservation.updateMany({
         where: {
@@ -336,15 +380,16 @@ export class PaymentsService {
 
       if (updateResult.count === 0) {
         // Carrera concurrente: otra petición completó la transición a PAID o ya no está PENDING
-        return;
+        return { transitionLost: true as const };
       }
 
-      // B. Consumo atómico condicional de cupón con límite (Ticket P1, P1.2)
+      // B. Consumo atómico condicional de cupón con límite (Ticket P1, P1.2, P1.3)
       if (reservation.couponId) {
         const coupon = await tx.coupon.findUnique({ where: { id: reservation.couponId } });
         if (coupon && coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
+          let exhausted = false;
           if (coupon.usageLimit <= 0) {
-            couponCapacityExhausted = true;
+            exhausted = true;
           } else {
             const claim = await tx.coupon.updateMany({
               where: {
@@ -357,11 +402,11 @@ export class PaymentsService {
             });
 
             if (claim.count === 0) {
-              couponCapacityExhausted = true;
+              exhausted = true;
             }
           }
 
-          if (couponCapacityExhausted) {
+          if (exhausted) {
             // Capacidad de cupón agotada: preservar el dinero capturado y referencia sin fingir éxito comercial
             await tx.reservation.update({
               where: { id: reservation.id },
@@ -382,7 +427,12 @@ export class PaymentsService {
                 note: `[AUDIT: COUPON_OVERALLOCATED_REVIEW] Cupón "${coupon.code}" agotó su cupo (${coupon.usageLimit}) concurrentemente tras captura de pago. Transacción: ${transactionUuid}`,
               },
             });
-            return;
+            return {
+              transitionLost: false as const,
+              success: false,
+              status: 'REVIEW_REQUIRED',
+              reviewReason: 'COUPON_CAPACITY_EXHAUSTED',
+            };
           }
         } else if (reservation.couponId) {
           await tx.coupon.update({
@@ -409,22 +459,50 @@ export class PaymentsService {
           },
         },
       });
+
+      return {
+        transitionLost: false as const,
+        success: true,
+        status: 'PAID',
+        paidMinor: receivedMinor,
+      };
     });
 
-    if (couponCapacityExhausted) {
+    if (txResult.transitionLost) {
+      // Re-consultar estado final autoritativo en base de datos para responder fielmente (P1.3)
+      const reloaded = await this.prisma.reservation.findUnique({
+        where: { id: reservation.id },
+      });
+      if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
+        return {
+          success: true,
+          reservationCode: reloaded.code || orderDetails.orderId,
+          status: 'PAID',
+          paidMinor: reloaded.paidMinor,
+        };
+      }
+      if (reloaded?.paymentStatus === ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW) {
+        return {
+          success: false,
+          reservationCode: reloaded.code || orderDetails.orderId,
+          status: 'REVIEW_REQUIRED',
+          reviewReason: 'RESERVATION_UNDER_FINANCIAL_REVIEW',
+        };
+      }
       return {
         success: false,
-        reservationCode: reservation.code || orderDetails.orderId,
-        status: 'REVIEW_REQUIRED',
-        reviewReason: 'COUPON_CAPACITY_EXHAUSTED',
+        reservationCode: reloaded?.code || orderDetails.orderId,
+        status: reloaded?.paymentStatus || 'UNKNOWN',
+        reviewReason: 'STATE_TRANSITION_FAILED',
       };
     }
 
     return {
-      success: true,
+      success: txResult.success,
       reservationCode: reservation.code || orderDetails.orderId,
-      status: 'PAID',
-      paidMinor: receivedMinor,
+      status: txResult.status,
+      paidMinor: txResult.paidMinor,
+      reviewReason: txResult.reviewReason,
     };
   }
 }

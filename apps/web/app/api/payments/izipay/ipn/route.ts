@@ -40,7 +40,6 @@ export async function POST(req: Request) {
       krAnswerRaw = params.get('kr-answer') || '';
       krHash = params.get('kr-hash') || krHash;
     } else {
-      const rawText = await req.text();
       try {
         const json = JSON.parse(rawText);
         if (typeof json['kr-answer'] === 'string') {

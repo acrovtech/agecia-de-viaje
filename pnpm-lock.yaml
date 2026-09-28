@@ -264,6 +264,9 @@ importers:
       bcryptjs:
         specifier: 3.0.3
         version: 3.0.3
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
       helmet:
         specifier: 8.3.0
         version: 8.3.0

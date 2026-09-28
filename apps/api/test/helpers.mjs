@@ -19,7 +19,7 @@ async function application(settings, prisma, controllers = []) {
   const builder = Test.createTestingModule({ imports: [AppModule.register(settings)], controllers });
   if (prisma) builder.overrideProvider(PrismaService).useValue(prisma);
   const module = await builder.compile();
-  const app = module.createNestApplication({ logger: false, bodyParser: true });
+  const app = module.createNestApplication({ logger: false, bodyParser: false });
   configureApplication(app, settings);
   await app.init();
   return app;

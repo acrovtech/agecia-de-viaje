@@ -31,6 +31,8 @@ export class CheckoutService {
       id: string;
       code: string | null;
       paymentFormToken?: string | null;
+      paymentFormTokenCreatedAt?: Date | null;
+      paymentSessionStatus?: string | null;
       paymentStatus: ReservationPaymentStatus;
       customerEmail: string;
       customerFirstName: string;
@@ -39,7 +41,7 @@ export class CheckoutService {
     },
     amountMinor: number,
   ): Promise<string | null> {
-    // 1. Validar allowlist de estados para sesión de pago (P1.2)
+    // 1. Validar allowlist de estados para sesión de pago (fail closed)
     if (reservation.paymentStatus === ReservationPaymentStatus.PAID) {
       return null;
     }
@@ -70,39 +72,146 @@ export class CheckoutService {
       return null;
     }
 
-    // 2. Reutilizar formToken existente si ya fue generado previamente
-    if (reservation.paymentFormToken) {
-      return reservation.paymentFormToken;
+    const FORM_TOKEN_TTL_MS = 14 * 60 * 1000; // 14 minutos (conservador frente a los 15m oficiales de Izipay)
+
+    // 2. Comprobar si existe un formToken activo y no expirado
+    const isTokenUsable = (token: string | null | undefined, createdAt: Date | null | undefined, status: string | null | undefined) => {
+      if (!token) return false;
+      if (status && status !== 'READY') return false;
+      if (!createdAt) return false;
+      const age = Date.now() - new Date(createdAt).getTime();
+      return age >= 0 && age < FORM_TOKEN_TTL_MS;
+    };
+
+    if (isTokenUsable(reservation.paymentFormToken, reservation.paymentFormTokenCreatedAt, reservation.paymentSessionStatus)) {
+      return reservation.paymentFormToken!;
     }
 
-    // 3. Single-flight in-flight protection: evitar llamadas concurrentes a CreatePayment
-    let pendingPromise = this.inFlightPaymentSessions.get(reservation.id);
-    if (!pendingPromise) {
-      pendingPromise = (async () => {
-        const session = await this.paymentsService.createPaymentSession({
-          orderId: reservation.code || `IB-${reservation.id.slice(0, 8)}`,
-          amountMinor,
-          currency: 'USD',
-          customerEmail: reservation.customerEmail,
-          customerFirstName: reservation.customerFirstName,
-          customerLastName: reservation.customerLastName,
-          customerPhone: reservation.customerPhone,
-        });
+    // 3. Coordinación distribuida con lease en PostgreSQL (P1.3)
+    // Coalesce local por proceso como optimización en memoria
+    let inFlight = this.inFlightPaymentSessions.get(reservation.id);
+    if (!inFlight) {
+      inFlight = (async () => {
+        const leaseOwner = crypto.randomUUID();
+        const LEASE_DURATION_MS = 30000; // 30 segundos de lease para cubrir llamadas lentas/timeout
+        const maxAttempts = 2;
 
-        if (session.formToken) {
-          await this.prisma.reservation.update({
-            where: { id: reservation.id },
-            data: { paymentFormToken: session.formToken },
-          }).catch(() => {});
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const now = new Date();
+          const leaseExpiresAt = new Date(now.getTime() + LEASE_DURATION_MS);
+
+          // Intentar adquirir el lease de generación en la base de datos
+          const claim = await this.prisma.reservation.updateMany({
+            where: {
+              id: reservation.id,
+              paymentStatus: ReservationPaymentStatus.PENDING,
+              OR: [
+                { paymentSessionExpiresAt: null },
+                { paymentSessionExpiresAt: { lt: now } },
+                { paymentSessionStatus: { in: ['IDLE', 'FAILED', 'EXPIRED'] } },
+                { paymentSessionStatus: null },
+              ],
+            },
+            data: {
+              paymentSessionOwner: leaseOwner,
+              paymentSessionExpiresAt: leaseExpiresAt,
+              paymentSessionStatus: 'CREATING',
+            },
+          });
+
+          if (claim.count === 1) {
+            // Este proceso ganó el lease exclusivo: invocar a la pasarela
+            try {
+              const session = await this.paymentsService.createPaymentSession({
+                orderId: reservation.code || `IB-${reservation.id.slice(0, 8)}`,
+                amountMinor,
+                currency: 'USD',
+                customerEmail: reservation.customerEmail,
+                customerFirstName: reservation.customerFirstName,
+                customerLastName: reservation.customerLastName,
+                customerPhone: reservation.customerPhone,
+              });
+
+              const tokenCreatedAt = new Date();
+              // Persistir atómicamente el formToken solo si seguimos siendo los dueños del lease
+              await this.prisma.reservation.updateMany({
+                where: {
+                  id: reservation.id,
+                  paymentSessionOwner: leaseOwner,
+                },
+                data: {
+                  paymentFormToken: session.formToken,
+                  paymentFormTokenCreatedAt: tokenCreatedAt,
+                  paymentSessionStatus: session.formToken ? 'READY' : 'FAILED',
+                  paymentSessionExpiresAt: null,
+                  paymentSessionOwner: null,
+                },
+              });
+
+              return { formToken: session.formToken };
+            } catch (providerError) {
+              // Liberar el lease en caso de error para permitir reintentos posteriores
+              await this.prisma.reservation.updateMany({
+                where: {
+                  id: reservation.id,
+                  paymentSessionOwner: leaseOwner,
+                },
+                data: {
+                  paymentSessionStatus: 'FAILED',
+                  paymentSessionExpiresAt: null,
+                  paymentSessionOwner: null,
+                },
+              }).catch(() => {});
+              throw providerError;
+            }
+          }
+
+          // Otro proceso/réplica posee el lease: esperar y consultar el resultado persistido
+          for (let poll = 0; poll < 15; poll++) {
+            await new Promise((r) => setTimeout(r, 200));
+            const reloaded = await this.prisma.reservation.findUnique({
+              where: { id: reservation.id },
+              select: {
+                paymentFormToken: true,
+                paymentFormTokenCreatedAt: true,
+                paymentSessionStatus: true,
+                paymentSessionExpiresAt: true,
+              },
+            });
+
+            if (reloaded && isTokenUsable(reloaded.paymentFormToken, reloaded.paymentFormTokenCreatedAt, reloaded.paymentSessionStatus)) {
+              return { formToken: reloaded.paymentFormToken };
+            }
+            if (reloaded?.paymentSessionStatus === 'FAILED') {
+              break; // El otro proceso falló; intentar adquirir el lease en la siguiente iteración
+            }
+            if (reloaded?.paymentSessionExpiresAt && reloaded.paymentSessionExpiresAt < new Date()) {
+              break; // El lease del otro proceso expiró; intentar reclamarlo
+            }
+          }
         }
-        return session;
+
+        // Si tras agotar esperas no hay sesión utilizable, consultar estado final en DB
+        const finalCheck = await this.prisma.reservation.findUnique({
+          where: { id: reservation.id },
+          select: {
+            paymentFormToken: true,
+            paymentFormTokenCreatedAt: true,
+            paymentSessionStatus: true,
+          },
+        });
+        if (finalCheck && isTokenUsable(finalCheck.paymentFormToken, finalCheck.paymentFormTokenCreatedAt, finalCheck.paymentSessionStatus)) {
+          return { formToken: finalCheck.paymentFormToken };
+        }
+
+        throw new ConflictException('No fue posible coordinar la sesión de pago concurrentemente. Por favor reintente.');
       })();
 
-      this.inFlightPaymentSessions.set(reservation.id, pendingPromise);
+      this.inFlightPaymentSessions.set(reservation.id, inFlight);
     }
 
     try {
-      const res = await pendingPromise;
+      const res = await inFlight;
       return res.formToken;
     } finally {
       this.inFlightPaymentSessions.delete(reservation.id);
@@ -429,96 +538,176 @@ export class CheckoutService {
       throw new BadRequestException('No se procesaron ítems para la reserva');
     }
 
-    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2)
+    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2, P1.3)
     let reservation: any;
     try {
-      reservation = await this.prisma.reservation.create({
-        data: {
-          agencyId: agency.id,
-          code: reservationCode,
-          requestKey: idempotencyKey || null,
-          requestHash: requestHash,
-          bookingStatus: isZeroTotal ? BookingStatus.CONFIRMED : BookingStatus.PENDING,
-          paymentStatus: isZeroTotal ? ReservationPaymentStatus.PAID : ReservationPaymentStatus.PENDING,
-          status: isZeroTotal ? ReservationStatus.PAID : ReservationStatus.PENDING,
-          paidMinor: 0,
-          totalMinor: totalMinor,
-          unitPriceMinor: firstItem.unitPriceMinor,
-          serviceTitle: firstItem.title,
-          vehicleName: firstItem.vehicleName || null,
-          totalPrice: totalMinor / 100,
-          originalPrice: subtotalMinor / 100,
-          discountAmount: discountMinor / 100,
-          currency: 'USD',
-          couponId: appliedCouponId,
-          customerFirstName: dto.customerFirstName.trim(),
-          customerLastName: dto.customerLastName.trim(),
-          customerEmail: dto.customerEmail.trim().toLowerCase(),
-          customerPhone: dto.customerPhone.trim(),
-          pickupHotel: dto.pickupHotel?.trim() || null,
-          specialRequirements: dto.specialRequirements?.trim() || null,
-          date: firstItem.date,
-          pax: firstItem.pax,
-          serviceType: firstItem.serviceType,
-          paymentReference: isZeroTotal ? 'ZERO_TOTAL_PROMOTION' : null,
-          items: {
-            create: calculatedItems.map((it) => ({
-              serviceType: it.serviceType,
-              date: it.date,
-              pax: it.pax,
-              unitPrice: it.unitPriceMinor / 100,
-              totalPrice: it.subtotalMinor / 100,
-              tourId: it.tourId,
-              transferId: it.transferId,
-              vehicleTypeId: it.vehicleTypeId,
-            })),
-          },
-          passengers: {
-            create: (dto.passengers || []).map((p) => ({
-              firstName: p.firstName.trim(),
-              lastName: p.lastName.trim(),
-              docType: p.documentType.trim(),
-              docNumber: p.documentNumber.trim(),
-            })),
-          },
-        },
-      });
-
-      // Manejo específico de confirmación directa cuando el total es 0 (P1.2)
       if (isZeroTotal) {
-        if (appliedCouponId) {
-          await this.prisma.coupon.update({
-            where: { id: appliedCouponId },
-            data: { timesUsed: { increment: 1 } },
-          }).catch(() => {});
-        }
+        // Flujo atómico transaccional para reservas bonificadas al 100% (P1.3)
+        reservation = await this.prisma.$transaction(async (tx) => {
+          let appliedCouponCode = 'N/A';
+          if (appliedCouponId) {
+            const coupon = await tx.coupon.findUnique({ where: { id: appliedCouponId } });
+            if (!coupon) {
+              throw new BadRequestException('Cupón de descuento no válido');
+            }
+            appliedCouponCode = coupon.code;
+            if (coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
+              if (coupon.usageLimit <= 0) {
+                throw new ConflictException('El cupón ha alcanzado su límite de usos');
+              }
+              const claim = await tx.coupon.updateMany({
+                where: {
+                  id: appliedCouponId,
+                  timesUsed: { lt: coupon.usageLimit },
+                },
+                data: {
+                  timesUsed: { increment: 1 },
+                },
+              });
+              if (claim.count === 0) {
+                throw new ConflictException('El cupón ha alcanzado su límite de usos');
+              }
+            } else {
+              await tx.coupon.update({
+                where: { id: appliedCouponId },
+                data: { timesUsed: { increment: 1 } },
+              });
+            }
+          }
 
-        await this.prisma.paymentNotification.create({
-          data: {
-            legacyId: reservation.id,
-            audience: 'CUSTOMER',
-            kind: 'ORDER_CONFIRMED',
-            state: 'PENDING',
-            snapshot: {
-              email: reservation.customerEmail,
-              name: `${reservation.customerFirstName} ${reservation.customerLastName}`,
-              reservationCode: reservation.code,
+          const created = await tx.reservation.create({
+            data: {
+              agencyId: agency.id,
+              code: reservationCode,
+              requestKey: idempotencyKey || null,
+              requestHash: requestHash,
+              bookingStatus: BookingStatus.CONFIRMED,
+              paymentStatus: ReservationPaymentStatus.PAID,
+              status: ReservationStatus.PAID,
               paidMinor: 0,
-              currency: reservation.currency,
-              transactionUuid: 'ZERO_TOTAL_PROMOTION',
+              totalMinor: 0,
+              unitPriceMinor: firstItem.unitPriceMinor,
+              serviceTitle: firstItem.title,
+              vehicleName: firstItem.vehicleName || null,
+              totalPrice: 0,
+              originalPrice: subtotalMinor / 100,
+              discountAmount: discountMinor / 100,
+              currency: 'USD',
+              couponId: appliedCouponId,
+              customerFirstName: dto.customerFirstName.trim(),
+              customerLastName: dto.customerLastName.trim(),
+              customerEmail: dto.customerEmail.trim().toLowerCase(),
+              customerPhone: dto.customerPhone.trim(),
+              pickupHotel: dto.pickupHotel?.trim() || null,
+              specialRequirements: dto.specialRequirements?.trim() || null,
+              date: firstItem.date,
+              pax: firstItem.pax,
+              serviceType: firstItem.serviceType,
+              paymentReference: null, // P1.3: paymentReference se reserva exclusivamente para IDs de pasarela
+              items: {
+                create: calculatedItems.map((it) => ({
+                  serviceType: it.serviceType,
+                  date: it.date,
+                  pax: it.pax,
+                  unitPrice: it.unitPriceMinor / 100,
+                  totalPrice: it.subtotalMinor / 100,
+                  tourId: it.tourId,
+                  transferId: it.transferId,
+                  vehicleTypeId: it.vehicleTypeId,
+                })),
+              },
+              passengers: {
+                create: (dto.passengers || []).map((p) => ({
+                  firstName: p.firstName.trim(),
+                  lastName: p.lastName.trim(),
+                  docType: p.documentType.trim(),
+                  docNumber: p.documentNumber.trim(),
+                })),
+              },
+            },
+          });
+
+          await tx.paymentNotification.create({
+            data: {
+              legacyId: created.id,
+              audience: 'CUSTOMER',
+              kind: 'ORDER_CONFIRMED',
+              state: 'PENDING',
+              snapshot: {
+                email: created.customerEmail,
+                name: `${created.customerFirstName} ${created.customerLastName}`,
+                reservationCode: created.code,
+                paidMinor: 0,
+                currency: created.currency,
+                transactionUuid: null,
+              },
+            },
+          });
+
+          await tx.reservationEvent.create({
+            data: {
+              reservationId: created.id,
+              actorId: 'system',
+              actorLabel: 'system:checkout-zero-total',
+              toStatus: OperationalStatus.CONFIRMED,
+              note: `[AUDIT: ZERO_TOTAL_CHECKOUT_CONFIRMED] Reserva confirmada con importe 0 mediante bonificación de cupón "${appliedCouponCode}"`,
+            },
+          });
+
+          return created;
+        });
+      } else {
+        reservation = await this.prisma.reservation.create({
+          data: {
+            agencyId: agency.id,
+            code: reservationCode,
+            requestKey: idempotencyKey || null,
+            requestHash: requestHash,
+            bookingStatus: BookingStatus.PENDING,
+            paymentStatus: ReservationPaymentStatus.PENDING,
+            status: ReservationStatus.PENDING,
+            paidMinor: 0,
+            totalMinor: totalMinor,
+            unitPriceMinor: firstItem.unitPriceMinor,
+            serviceTitle: firstItem.title,
+            vehicleName: firstItem.vehicleName || null,
+            totalPrice: totalMinor / 100,
+            originalPrice: subtotalMinor / 100,
+            discountAmount: discountMinor / 100,
+            currency: 'USD',
+            couponId: appliedCouponId,
+            customerFirstName: dto.customerFirstName.trim(),
+            customerLastName: dto.customerLastName.trim(),
+            customerEmail: dto.customerEmail.trim().toLowerCase(),
+            customerPhone: dto.customerPhone.trim(),
+            pickupHotel: dto.pickupHotel?.trim() || null,
+            specialRequirements: dto.specialRequirements?.trim() || null,
+            date: firstItem.date,
+            pax: firstItem.pax,
+            serviceType: firstItem.serviceType,
+            paymentReference: null,
+            items: {
+              create: calculatedItems.map((it) => ({
+                serviceType: it.serviceType,
+                date: it.date,
+                pax: it.pax,
+                unitPrice: it.unitPriceMinor / 100,
+                totalPrice: it.subtotalMinor / 100,
+                tourId: it.tourId,
+                transferId: it.transferId,
+                vehicleTypeId: it.vehicleTypeId,
+              })),
+            },
+            passengers: {
+              create: (dto.passengers || []).map((p) => ({
+                firstName: p.firstName.trim(),
+                lastName: p.lastName.trim(),
+                docType: p.documentType.trim(),
+                docNumber: p.documentNumber.trim(),
+              })),
             },
           },
-        }).catch(() => {});
-
-        await this.prisma.reservationEvent.create({
-          data: {
-            reservationId: reservation.id,
-            actorId: 'system',
-            actorLabel: 'system:checkout-zero-total',
-            toStatus: OperationalStatus.CONFIRMED,
-            note: '[AUDIT: ZERO_TOTAL_CHECKOUT_CONFIRMED] Reserva confirmada con importe 0 mediante promoción',
-          },
-        }).catch(() => {});
+        });
       }
     } catch (createErr: any) {
       // Manejo de carrera concurrente con misma clave

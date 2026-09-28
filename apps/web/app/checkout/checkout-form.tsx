@@ -225,11 +225,7 @@ export function CheckoutForm() {
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [step2Error, setStep2Error] = useState<string | null>(null);
   const checkoutAttemptIdRef = useRef<string | null>(null);
-
-  // Iniciar nuevo intento con nueva clave si se modifican datos materiales de la reserva
-  useEffect(() => {
-    checkoutAttemptIdRef.current = null;
-  }, [tourSlug, dateStr, numPax, grandTotal, appliedCoupon?.code]);
+  const lastMaterialSignatureRef = useRef<string | null>(null);
 
   // Estilos UI normalizados
   const inputBaseStyle = "w-full h-[38px] px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
@@ -349,11 +345,39 @@ export function CheckoutForm() {
         totalPrice: finalPayableTotal,
         couponCode: appliedCoupon?.code,
         idempotencyKey: (() => {
-          if (!checkoutAttemptIdRef.current) {
-            const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-              ? crypto.randomUUID().replace(/-/g, '')
-              : Date.now().toString(36);
-            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${uuid.slice(0, 12)}`;
+          const currentSignature = JSON.stringify({
+            items: formattedItems.map(it => ({ s: it.tourSlug, d: it.date, p: it.pax, t: it.serviceType })),
+            contact: {
+              f: formData.firstName.trim().toLowerCase(),
+              l: formData.lastName.trim().toLowerCase(),
+              e: formData.email.trim().toLowerCase(),
+              p: formData.phone.trim(),
+              h: (formData.hotel || '').trim(),
+              r: cleanRequirements.trim(),
+            },
+            passengers: passengers.map(p => ({
+              f: (p.firstName || '').trim().toLowerCase(),
+              l: (p.lastName || '').trim().toLowerCase(),
+              t: (p.documentType || 'DNI').trim().toLowerCase(),
+              n: (p.documentNumber || '').trim(),
+            })),
+            total: finalPayableTotal,
+            coupon: appliedCoupon?.code || '',
+          });
+
+          if (!checkoutAttemptIdRef.current || currentSignature !== lastMaterialSignatureRef.current) {
+            let key = '';
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+              key = `chk_${crypto.randomUUID().replace(/-/g, '')}`;
+            } else if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+              const bytes = new Uint8Array(16);
+              crypto.getRandomValues(bytes);
+              key = `chk_${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+            } else {
+              throw new Error('API criptográfica segura no disponible en el navegador');
+            }
+            checkoutAttemptIdRef.current = key;
+            lastMaterialSignatureRef.current = currentSignature;
           }
           return checkoutAttemptIdRef.current;
         })(),

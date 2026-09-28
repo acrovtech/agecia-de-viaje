@@ -228,11 +228,7 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [showIzipayModal, setShowIzipayModal] = useState<boolean>(false);
   const checkoutAttemptIdRef = useRef<string | null>(null);
-
-  // Iniciar nuevo intento si se modifican datos materiales de la reserva
-  useEffect(() => {
-    checkoutAttemptIdRef.current = null;
-  }, [currentTransfer?.slug, selectedVehicle?.id, dateString, time]);
+  const lastMaterialSignatureRef = useRef<string | null>(null);
 
   const totalPrice = selectedVehicle?.price || currentTransfer?.sharedPrice || 0;
 
@@ -311,11 +307,33 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
         date: dateString,
         pax: selectedVehicle.maxPax || 1,
         idempotencyKey: (() => {
-          if (!checkoutAttemptIdRef.current) {
-            const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-              ? crypto.randomUUID().replace(/-/g, '')
-              : Date.now().toString(36);
-            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${uuid.slice(0, 12)}`;
+          const currentSignature = JSON.stringify({
+            transfer: currentTransfer.slug,
+            vehicle: selectedVehicle.id,
+            date: dateString,
+            time,
+            contact: {
+              n: fullName.trim().toLowerCase(),
+              e: email.trim().toLowerCase(),
+              p: phone.trim(),
+              r: (notes || '').trim(),
+            },
+            price: totalPrice,
+          });
+
+          if (!checkoutAttemptIdRef.current || currentSignature !== lastMaterialSignatureRef.current) {
+            let key = '';
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+              key = `chk_${crypto.randomUUID().replace(/-/g, '')}`;
+            } else if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+              const bytes = new Uint8Array(16);
+              crypto.getRandomValues(bytes);
+              key = `chk_${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+            } else {
+              throw new Error('API criptográfica segura no disponible en el navegador');
+            }
+            checkoutAttemptIdRef.current = key;
+            lastMaterialSignatureRef.current = currentSignature;
           }
           return checkoutAttemptIdRef.current;
         })(),

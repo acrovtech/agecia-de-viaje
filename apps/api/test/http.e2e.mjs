@@ -173,6 +173,7 @@ const prisma = {
       reservations.push(res);
       return res;
     },
+    findUnique: async ({ where }) => reservations.find((r) => r.id === where.id) ?? null,
     update: async ({ where, data }) => {
       const res = reservations.find((r) => r.id === where.id);
       if (res) Object.assign(res, data);
@@ -185,6 +186,17 @@ const prisma = {
         if (where.paymentStatus) {
           if (where.paymentStatus.in && !where.paymentStatus.in.includes(r.paymentStatus)) continue;
           if (typeof where.paymentStatus === 'string' && r.paymentStatus !== where.paymentStatus) continue;
+        }
+        if (where.paymentSessionOwner && r.paymentSessionOwner !== where.paymentSessionOwner) continue;
+        if (where.OR && Array.isArray(where.OR)) {
+          const matchOr = where.OR.some((cond) => {
+            if (cond.paymentSessionExpiresAt === null && (r.paymentSessionExpiresAt === null || r.paymentSessionExpiresAt === undefined)) return true;
+            if (cond.paymentSessionExpiresAt?.lt && r.paymentSessionExpiresAt && r.paymentSessionExpiresAt < cond.paymentSessionExpiresAt.lt) return true;
+            if (cond.paymentSessionStatus?.in && cond.paymentSessionStatus.in.includes(r.paymentSessionStatus)) return true;
+            if (cond.paymentSessionStatus === null && (r.paymentSessionStatus === null || r.paymentSessionStatus === undefined)) return true;
+            return false;
+          });
+          if (!matchOr) continue;
         }
         Object.assign(r, data);
         count++;
@@ -1449,7 +1461,7 @@ test('zero-total checkout confirms directly without payment session', async () =
 
   const saved = reservations.find((r) => r.id === res.body.reservationId);
   assert.equal(saved.paymentStatus, 'PAID');
-  assert.equal(saved.paymentReference, 'ZERO_TOTAL_PROMOTION');
+  assert.equal(saved.paymentReference, null);
 
   const freeCoupon = coupons.find((c) => c.code === 'FREE100');
   assert.equal(freeCoupon.timesUsed, 1);
@@ -1491,6 +1503,132 @@ test('concurrent same-key checkout cannot create multiple provider sessions', as
   assert.equal(res1.body.formToken, res2.body.formToken);
   assert.ok(res1.body.formToken);
 });
+
+test('concurrent valid PAID IPN vs amount-mismatch IPN cannot downgrade PAID', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-race-amt-mismatch-1')
+    .send({
+      customerFirstName: 'RaceAmt',
+      customerLastName: 'Tester',
+      customerEmail: 'raceamt@example.test',
+      customerPhone: '+51999999930',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const orderId = checkout.body.reservationCode;
+
+  // Valid IPN
+  const krValid = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-race-valid-amt-1' }],
+  };
+  const hashValid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krValid)).digest('hex');
+
+  // Mismatch IPN (underpaid)
+  const krMismatch = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 1500, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-race-mismatch-amt-1' }],
+  };
+  const hashMismatch = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krMismatch)).digest('hex');
+
+  const [resValid, resMismatch] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': krValid, 'kr-hash': hashValid }),
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': krMismatch, 'kr-hash': hashMismatch }),
+  ]);
+
+  assert.equal(resValid.status, 200);
+  assert.equal(resMismatch.status, 200);
+
+  // Authoritative DB state MUST remain PAID and cannot be downgraded
+  const saved = reservations.find((r) => r.code === orderId);
+  assert.equal(saved.paymentStatus, 'PAID');
+});
+
+test('concurrent valid PAID IPN vs currency-mismatch IPN cannot downgrade PAID', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-race-curr-mismatch-1')
+    .send({
+      customerFirstName: 'RaceCurr',
+      customerLastName: 'Tester',
+      customerEmail: 'racecurr@example.test',
+      customerPhone: '+51999999931',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const orderId = checkout.body.reservationCode;
+
+  // Valid IPN
+  const krValid = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-race-valid-curr-1' }],
+  };
+  const hashValid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krValid)).digest('hex');
+
+  // Currency mismatch IPN (PEN instead of USD)
+  const krMismatch = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'PEN' },
+    transactions: [{ uuid: 'tx-race-mismatch-curr-1' }],
+  };
+  const hashMismatch = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krMismatch)).digest('hex');
+
+  const [resValid, resMismatch] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': krValid, 'kr-hash': hashValid }),
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': krMismatch, 'kr-hash': hashMismatch }),
+  ]);
+
+  assert.equal(resValid.status, 200);
+  assert.equal(resMismatch.status, 200);
+
+  // Authoritative DB state MUST remain PAID and cannot be downgraded
+  const saved = reservations.find((r) => r.code === orderId);
+  assert.equal(saved.paymentStatus, 'PAID');
+});
+
+test('stale payment session older than 14 minutes is regenerated', async () => {
+  const key = 'idemp-stale-session-test-1';
+  const payload = {
+    customerFirstName: 'Stale',
+    customerLastName: 'Session',
+    customerEmail: 'stalesession@example.test',
+    customerPhone: '+51999999932',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+
+  const initial = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  assert.ok(initial.body.formToken);
+
+  // Simulate token aging beyond 14-minute validity window (e.g. 15 minutes ago)
+  const saved = reservations.find((r) => r.id === initial.body.reservationId);
+  saved.paymentFormToken = 'stale_token_before_regen';
+  const oldDate = new Date(Date.now() - 15 * 60 * 1000);
+  saved.paymentFormTokenCreatedAt = oldDate;
+
+  // Retry checkout with same key - should regenerate token because old one is stale
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  assert.notEqual(retry.body.formToken, 'stale_token_before_regen');
+  assert.ok(retry.body.formToken);
+  assert.equal(retry.body.reservationId, initial.body.reservationId);
+  assert.ok(saved.paymentFormTokenCreatedAt > oldDate);
+});
+
 
 
 
