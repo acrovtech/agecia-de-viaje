@@ -5,15 +5,27 @@ import { hash } from 'bcryptjs';
 import request from 'supertest';
 import { PrismaClient } from '@repo/db/prisma';
 import { application, config } from './helpers.mjs';
+import { validatePostgresTestTarget } from '../scripts/postgres-gate-safety.mjs';
 
 test('Strict Multi-Tenancy & Tenant-Scoped Constraints (P2.2)', async (t) => {
-  // Use tenant_test schema on PostgreSQL
-  const rawUrl = process.env.API_TEST_DATABASE_URL || process.env.DATABASE_URL || '';
-  assert.ok(rawUrl, 'Database URL must be provided');
-  const databaseUrl = rawUrl.includes('schema=')
-    ? rawUrl.replace(/schema=[^&]+/, 'schema=tenant_test')
-    : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}schema=tenant_test`;
+  // 1. Mandatory test database URL - never silently fall back to DATABASE_URL
+  const rawTestDbUrl = process.env.API_TEST_DATABASE_URL;
+  if (!rawTestDbUrl || typeof rawTestDbUrl !== 'string' || rawTestDbUrl.trim() === '') {
+    throw new Error(
+      'API_TEST_DATABASE_URL is mandatory for PostgreSQL multi-tenant tests. Silently falling back to DATABASE_URL is strictly forbidden.'
+    );
+  }
 
+  // 2. Validate safety against production URL; reject same database + schema; enforce test marker
+  const safety = validatePostgresTestTarget(
+    rawTestDbUrl.trim(),
+    process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
+  );
+  if (!safety.ok) {
+    throw new Error(`[SAFETY VIOLATION] Target rejected: ${safety.reason}`);
+  }
+
+  const databaseUrl = rawTestDbUrl.trim();
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
   const suffix = randomUUID().slice(0, 8);
 
@@ -388,42 +400,138 @@ test('Strict Multi-Tenancy & Tenant-Scoped Constraints (P2.2)', async (t) => {
       assert.equal(prices.length, 0, 'Cross-tenant vehicle price must not be persisted');
     });
 
-    await t.test('11.2 Checkout CANNOT use coupon belonging to another agency', async () => {
-      // Attempt checkout in Agency A using Agency B coupon
+    await t.test('11.2 Real Foreign Service Checkout: calling Agency A with Agency B tour returns exact 404', async () => {
+      // Setup published Tour B strictly owned by Agency B
+      assert.equal(tourB.agencyId, agencyB.id);
+      assert.equal(tourB.isPublished, true);
+
+      const idempotencyKey = randomUUID();
       const checkoutRes = await request(server)
-        .post(`/v1/storefronts/${agencyA.slug}/checkout/quote`)
+        .post(`/v1/storefronts/${agencyA.slug}/checkout`)
+        .set('Idempotency-Key', idempotencyKey)
         .send({
+          customerFirstName: 'Attacker',
+          customerLastName: 'User',
+          customerEmail: 'attacker@example.test',
+          customerPhone: '+51999888777',
           items: [{
-            serviceId: tourB.id,
-            serviceKind: 'TOUR',
-            date: new Date(Date.now() + 86400000).toISOString(),
-            modality: 'shared',
+            slug: tourB.slug,
+            serviceType: 'shared',
+            date: '2026-10-15',
             pax: 2,
           }],
-          couponCode: couponB.code,
         });
 
-      // Must be rejected (either service not in agency or coupon not valid for agency)
-      assert.ok([400, 404].includes(checkoutRes.status), `Expected 400/404, got ${checkoutRes.status}`);
+      // Must return exact 404 because Agency A must not resolve Agency B's service
+      assert.equal(checkoutRes.status, 404, `Expected exact 404, got ${checkoutRes.status}: ${JSON.stringify(checkoutRes.body)}`);
+      assert.equal(checkoutRes.body.error?.code, 'NOT_FOUND', 'Expected error code NOT_FOUND');
+
+      // Assert no Agency A reservation is created using Tour B
+      const reservationsWithTourB = await prisma.reservation.count({
+        where: {
+          agencyId: agencyA.id,
+          tourId: tourB.id,
+        },
+      });
+      assert.equal(reservationsWithTourB, 0, 'No Agency A reservation must be created using Tour B');
+
+      // Assert no cross-tenant ReservationItem link exists
+      const reservationItemsWithTourB = await prisma.reservationItem.count({
+        where: {
+          tourId: tourB.id,
+          reservation: {
+            agencyId: agencyA.id,
+          },
+        },
+      });
+      assert.equal(reservationItemsWithTourB, 0, 'No cross-tenant ReservationItem link must exist');
     });
 
-    await t.test('11.3 Reservation creation against foreign agency service is rejected', async () => {
-      // Attempt reservation in Agency A with service belonging to Agency B
-      const res = await request(server)
-        .post(`/v1/storefronts/${agencyA.slug}/checkout/reserve`)
+    await t.test('11.3 Real Foreign Coupon: calling Agency A checkout with valid Tour A and Agency B coupon returns exact 400', async () => {
+      // 1. Create a valid published Agency A tour specifically for this test
+      const tourAValid = await prisma.tour.create({
+        data: {
+          agencyId: agencyA.id,
+          title: 'Agency A Valid Tour',
+          slug: `tour-a-valid-${suffix}`,
+          description: 'Valid published tour owned by Agency A',
+          duration: '1 day',
+          bannerImage: '/a.webp',
+          cardImage: '/a.webp',
+          hasSharedService: true,
+          sharedPrice: 80.0,
+          isPublished: true,
+        },
+      });
+
+      // 2. Create coupon owned ONLY by Agency B with a unique code
+      const uniqueCouponCodeB = `COUPON-ONLY-B-${suffix}`.toUpperCase();
+      const couponOnlyB = await prisma.coupon.create({
+        data: {
+          agencyId: agencyB.id,
+          code: uniqueCouponCodeB,
+          name: 'Agency B Isolated Coupon',
+          discountType: 'PERCENTAGE',
+          discountValue: 25,
+          isActive: true,
+          timesUsed: 0,
+        },
+      });
+
+      // Confirm no Agency A coupon has the same code
+      const couponCountInA = await prisma.coupon.count({
+        where: { agencyId: agencyA.id, code: uniqueCouponCodeB },
+      });
+      assert.equal(couponCountInA, 0, 'Agency A must not have this coupon code');
+
+      const initialTimesUsed = couponOnlyB.timesUsed;
+      const idempotencyKey = randomUUID();
+
+      // 3. Call the REAL Agency A checkout with Agency A's own valid tour, Agency B's coupon code, and valid data
+      const checkoutRes = await request(server)
+        .post(`/v1/storefronts/${agencyA.slug}/checkout`)
+        .set('Idempotency-Key', idempotencyKey)
         .send({
-          serviceId: tourB.id, // belongs to Agency B!
-          serviceKind: 'TOUR',
-          serviceType: 'shared',
-          date: new Date(Date.now() + 86400000).toISOString(),
-          pax: 2,
-          customerFirstName: 'Attacker',
-          customerLastName: 'Doe',
-          customerEmail: 'attacker@test.com',
-          customerPhone: '123456789',
+          customerFirstName: 'Legit',
+          customerLastName: 'Traveler',
+          customerEmail: 'traveler@example.test',
+          customerPhone: '+51987654321',
+          items: [{
+            slug: tourAValid.slug,
+            serviceType: 'shared',
+            date: '2026-10-20',
+            pax: 2,
+          }],
+          couponCode: uniqueCouponCodeB,
         });
 
-      assert.ok([400, 404].includes(res.status), `Expected 400 or 404, got ${res.status}`);
+      // 4. Must return exact 400 with existing invalid-coupon behavior
+      assert.equal(checkoutRes.status, 400, `Expected exact 400, got ${checkoutRes.status}: ${JSON.stringify(checkoutRes.body)}`);
+      assert.equal(checkoutRes.body.error?.code, 'INVALID_REQUEST', 'Expected error code INVALID_REQUEST');
+
+      // 5. Verify Agency B coupon timesUsed does not change
+      const refreshedCouponB = await prisma.coupon.findUnique({
+        where: { id: couponOnlyB.id },
+      });
+      assert.equal(refreshedCouponB.timesUsed, initialTimesUsed, 'Agency B coupon timesUsed must NOT change');
+
+      // 6. Verify no successful reservation using Agency B coupon is persisted
+      const reservationsWithCouponB = await prisma.reservation.count({
+        where: {
+          couponId: couponOnlyB.id,
+        },
+      });
+      assert.equal(reservationsWithCouponB, 0, 'No reservation must be persisted using Agency B coupon');
+
+      // 7. Verify no reservation in Agency A was created from this failed checkout attempt
+      const reservationsInA = await prisma.reservation.count({
+        where: {
+          agencyId: agencyA.id,
+          customerEmail: 'traveler@example.test',
+          tourId: tourAValid.id,
+        },
+      });
+      assert.equal(reservationsInA, 0, 'No reservation in Agency A must be persisted when coupon fails');
     });
 
   } finally {
