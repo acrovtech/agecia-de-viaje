@@ -1,112 +1,103 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
 import { sendReservationConfirmationEmail } from '@/lib/email';
-import { verifyIzipayHMAC, getIzipayHmacSecret } from '@/lib/izipay';
 import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // Izipay envía los datos de respuesta en la propiedad 'kr-answer' y el hash en 'kr-hash'
     const krAnswerRaw = body['kr-answer'];
-    const krHash = body['kr-hash'];
+    const krHash = body['kr-hash'] || req.headers.get('kr-hash') || '';
 
-    if (!krAnswerRaw || !krHash) {
+    if (!krAnswerRaw) {
       return NextResponse.json({ error: 'Payload de Izipay inválido' }, { status: 400 });
     }
 
-    const hmacKey = getIzipayHmacSecret();
+    const apiBaseUrl = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
 
-    if (!hmacKey) {
-      logger('error', 'Izipay IPN Error: No se configuró la llave HMAC adecuada.');
-      return NextResponse.json({ error: 'Configuración de seguridad incompleta' }, { status: 500 });
+    // Delegación autoritativa al dominio central de pagos NestJS
+    const apiResponse = await fetch(`${apiBaseUrl}/v1/payments/izipay/ipn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'kr-hash': krHash,
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+
+    const result = await apiResponse.json().catch(() => ({}));
+
+    if (!apiResponse.ok) {
+      logger('warn', `IPN rechazado por la API central (${apiResponse.status}): ${JSON.stringify(result)}`);
+      return NextResponse.json(result, { status: apiResponse.status });
     }
 
-    // Validar firma HMAC con comparación en tiempo constante
-    const isValidSignature = verifyIzipayHMAC(krAnswerRaw, krHash, hmacKey);
+    // Si el pago fue confirmado autoritativamente por NestJS
+    if (result.success && result.status === 'PAID') {
+      const orderId = result.reservationCode;
+      logger('info', `IZIPAY IPN: Confirmado por API central para orden: ${orderId}`);
 
-    if (!isValidSignature) {
-      logger('warn', 'IZIPAY IPN RECHAZADO: Firma HMAC inválida.');
-      return NextResponse.json({ error: 'Firma HMAC de Izipay inválida' }, { status: 401 });
-    }
-
-    const answer = typeof krAnswerRaw === 'string' ? JSON.parse(krAnswerRaw) : krAnswerRaw;
-    const orderId = answer.orderDetails?.orderId;
-    const orderStatus = answer.orderStatus; // Ej. 'PAID', 'AUTHORIZED'
-
-    if (orderId && (orderStatus === 'PAID' || orderStatus === 'AUTHORIZED')) {
-      const transactionUuid = answer.transactions?.[0]?.uuid || 'IZIPAY_PAID';
-
-      // 1. Transición atómica e idempotente: solo muta si la reserva está actualmente en estado PENDING
-      const updateResult = await prisma.reservation.updateMany({
-        where: {
-          id: orderId,
-          status: 'PENDING'
-        },
-        data: {
-          status: 'PAID',
-          paymentReference: transactionUuid
-        }
-      });
-
-      // 2. Si count === 1, esta llamada realizó legítimamente la primera transición PENDING -> PAID
-      if (updateResult.count === 1) {
-        logger('info', `IZIPAY IPN: Transición PENDING -> PAID exitosa para Reserva ID: ${orderId} - Estado Izipay: ${orderStatus}`);
-
-        const updatedReservation = await prisma.reservation.findUnique({
-          where: { id: orderId },
-          include: { 
+      // Notificación por email al cliente (no bloqueante de la transacción de pago)
+      try {
+        const reservation = await prisma.reservation.findFirst({
+          where: {
+            OR: [{ code: orderId }, { id: orderId }],
+          },
+          include: {
             tour: true,
             transfer: true,
             items: {
               include: {
                 tour: true,
                 transfer: true,
-              }
-            }
-          }
+              },
+            },
+          },
         });
 
-        if (updatedReservation) {
-          const formattedDate = new Date(updatedReservation.date).toLocaleDateString('es-ES', {
+        if (reservation) {
+          const formattedDate = new Date(reservation.date).toLocaleDateString('es-ES', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
           });
 
-          let serviceTitle = updatedReservation.tour?.title;
-          if (!serviceTitle && updatedReservation.transfer) {
-            serviceTitle = `Traslado: ${updatedReservation.transfer.origin} - ${updatedReservation.transfer.destination}`;
+          let serviceTitle = reservation.tour?.title;
+          if (!serviceTitle && reservation.transfer) {
+            serviceTitle = `Traslado: ${reservation.transfer.origin} - ${reservation.transfer.destination}`;
           }
-          if (updatedReservation.items && updatedReservation.items.length > 0) {
-            const itemTitles = updatedReservation.items.map(it => 
-              it.tour?.title || (it.transfer ? `Traslado: ${it.transfer.origin} a ${it.transfer.destination}` : 'Servicio Inca Bound')
+          if (reservation.items && reservation.items.length > 0) {
+            const itemTitles = reservation.items.map((it) =>
+              it.tour?.title || (it.transfer ? `Traslado: ${it.transfer.origin} a ${it.transfer.destination}` : 'Servicio Inca Bound'),
             );
             serviceTitle = itemTitles.join(' + ');
           }
           serviceTitle = serviceTitle || 'Expedición Inca Bound';
 
           await sendReservationConfirmationEmail({
-            reservationId: updatedReservation.id,
-            customerName: `${updatedReservation.customerFirstName} ${updatedReservation.customerLastName}`,
-            customerEmail: updatedReservation.customerEmail,
+            reservationId: reservation.id,
+            customerName: `${reservation.customerFirstName} ${reservation.customerLastName}`,
+            customerEmail: reservation.customerEmail,
             tourTitle: serviceTitle,
             formattedDate: formattedDate,
-            pax: updatedReservation.pax,
-            totalPrice: updatedReservation.totalPrice,
-            pickupHotel: updatedReservation.pickupHotel || undefined
+            pax: reservation.pax,
+            totalPrice: reservation.totalPrice,
+            pickupHotel: reservation.pickupHotel || undefined,
           });
         }
-      } else {
-        logger('info', `IZIPAY IPN: Notificación repetida o reserva ya procesada para Reserva ID: ${orderId} (count: ${updateResult.count})`);
+      } catch (emailError) {
+        logger('error', 'Error enviando correo de confirmación post-IPN:', emailError);
       }
+    } else if (result.status === 'REVIEW_REQUIRED') {
+      logger('warn', `IZIPAY IPN: Transacción requiere revisión manual (${result.reviewReason})`);
     }
 
-    return NextResponse.json({ response: 'OK' }, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     logger('error', 'Error en Webhook IPN de Izipay:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno al procesar IPN' }, { status: 500 });
   }
 }
+

@@ -100,7 +100,7 @@ export interface ApiTransferSummary {
 }
 
 const API_BASE_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
-const STOREFRONT_SLUG = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG || '';
+const STOREFRONT_SLUG = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG || 'incabound';
 
 /**
  * Cliente de Catálogo para la API central NestJS.

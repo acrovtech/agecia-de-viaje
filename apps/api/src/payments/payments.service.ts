@@ -42,6 +42,67 @@ export class PaymentsService {
     }
   }
 
+  async createPaymentSession(params: {
+    orderId: string;
+    amountMinor: number;
+    currency?: string;
+    customerEmail: string;
+    customerFirstName: string;
+    customerLastName: string;
+    customerPhone: string;
+  }): Promise<{ formToken: string | null }> {
+    if (this.config.environment === 'test') {
+      return { formToken: `test_token_${params.orderId}` };
+    }
+
+    const { izipayShopId, izipayPassword, izipayApiUrl, izipayCurrency } = this.config;
+    if (!izipayShopId || !izipayPassword) {
+      if (this.config.environment === 'production') {
+        throw new BadRequestException('Pasarela de pago no configurada en el servidor');
+      }
+      return { formToken: null };
+    }
+
+    const authHeader = `Basic ${Buffer.from(`${izipayShopId}:${izipayPassword}`).toString('base64')}`;
+    const currency = (params.currency || izipayCurrency || 'USD').toUpperCase();
+
+    try {
+      const response = await fetch(`${izipayApiUrl}/api-payment/V4/Charge/CreatePayment`, {
+        method: 'POST',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          amount: params.amountMinor,
+          currency,
+          orderId: params.orderId,
+          customer: {
+            email: params.customerEmail,
+            billingDetails: {
+              firstName: params.customerFirstName,
+              lastName: params.customerLastName,
+              phoneNumber: params.customerPhone,
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      const data = await response.json();
+      if (data.status !== 'SUCCESS' || !data.answer?.formToken) {
+        const errorMsg = data._error?.message || 'No se pudo iniciar la transacción con la pasarela de pago';
+        throw new BadRequestException(errorMsg);
+      }
+
+      return { formToken: data.answer.formToken };
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Error de comunicación con la pasarela de pago');
+    }
+  }
+
   async processIzipayIpn(payload: IzipayIpnPayloadDto, headerHash?: string): Promise<IpnProcessResultDto> {
     const rawAnswer = payload['kr-answer'];
     const hash = headerHash || payload['kr-hash'];
@@ -59,7 +120,12 @@ export class PaymentsService {
     }
 
     const reservation = await this.prisma.reservation.findFirst({
-      where: { code: orderDetails.orderId },
+      where: {
+        OR: [
+          { code: orderDetails.orderId },
+          { id: orderDetails.orderId },
+        ],
+      },
     });
 
     if (!reservation) {
@@ -87,7 +153,9 @@ export class PaymentsService {
     }
 
     // 2. Cotejo estricto de importe y moneda (Tickets A10, A14)
-    const expectedMinor = Math.round(reservation.totalPrice * 100);
+    const expectedMinor = (reservation.totalMinor !== null && reservation.totalMinor !== undefined && reservation.totalMinor > 0)
+      ? reservation.totalMinor
+      : Math.round(reservation.totalPrice * 100);
     const receivedMinor = orderDetails.orderTotalAmount;
     const receivedCurrency = (orderDetails.orderCurrency || 'USD').toUpperCase();
     const expectedCurrency = (reservation.currency || 'USD').toUpperCase();

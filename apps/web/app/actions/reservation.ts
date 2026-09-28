@@ -1,6 +1,5 @@
 'use server';
 
-import { prisma, handlePrismaError } from '@repo/db';
 import { z } from 'zod';
 
 const PassengerSchema = z.object({
@@ -52,18 +51,20 @@ const CheckoutDataSchema = z.object({
 
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
 
-type CalculatedItem = {
-  tourId: string | null;
-  transferId: string | null;
-  vehicleTypeId: string | null;
-  title: string;
-  serviceType: string;
-  date: Date;
-  pax: number;
-  unitPrice: number;
-  subtotal: number;
-  pickupHotel?: string;
-  pickupTime?: string;
+const splitName = (p: { firstName?: string; lastName?: string; name?: string; docType?: string; docNumber?: string }): { firstName: string; lastName: string; documentType: string; documentNumber: string } => {
+  let fName = p.firstName || '';
+  let lName = p.lastName || '';
+  if (!fName && !lName && p.name) {
+    const parts = p.name.trim().split(' ');
+    fName = parts[0] || 'Pasajero';
+    lName = parts.slice(1).join(' ') || '';
+  }
+  return {
+    firstName: fName || 'Pasajero',
+    lastName: lName || '',
+    documentType: p.docType || 'DNI',
+    documentNumber: p.docNumber || '',
+  };
 };
 
 export async function createReservationAndPaymentToken(rawData: unknown) {
@@ -100,290 +101,62 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       return { success: false, error: 'No se enviaron servicios o tours para procesar la reserva.' };
     }
 
-    // 3. Calcular precios 100% autoritativos desde PostgreSQL para cada ítem
-    const calculatedItems: CalculatedItem[] = [];
-    let grandTotalPrice = 0;
+    // 3. Resolución segura del tenant / storefront server-side
+    const storefront = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG || 'incabound';
+    const apiBaseUrl = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
 
-    for (const item of rawItems) {
-      const isPrivate = item.serviceType === 'private';
-      const itemPax = item.pax;
-
-      // Buscar tour
-      const tour = await prisma.tour.findFirst({
-        where: {
-          isPublished: true,
-          OR: [
-            { slug: item.tourSlug },
-            { slug: item.tourSlug.toLowerCase() }
-          ]
-        },
-        include: {
-          privatePricing: { orderBy: { pax: 'asc' } }
-        }
-      });
-
-      let transfer = null;
-      if (!tour) {
-        transfer = await prisma.transfer.findFirst({
-          where: {
-            isPublished: true, isActive: true,
-            OR: [
-              { slug: item.tourSlug },
-              { slug: item.tourSlug.toLowerCase() }
-            ]
-          },
-          include: {
-            vehiclePrices: {
-              include: { vehicle: true }
-            }
-          }
-        });
-      }
-
-      if (!tour && !transfer) {
-        return { 
-          success: false, 
-          error: `El servicio "${item.tourTitle || item.tourSlug}" no existe en el sistema.` 
-        };
-      }
-
-      let unitPrice = 0;
-      let subtotal = 0;
-      let vehicleTypeId: string | null = null;
-
-      if (tour) {
-        if (isPrivate) {
-          if (!tour.hasPrivateService) {
-            return { success: false, error: `El tour "${tour.title}" no cuenta con servicio privado.` };
-          }
-          const matchingTier = tour.privatePricing?.find(p => p.pax === itemPax);
-          if (!matchingTier || matchingTier.price <= 0) {
-            return {
-              success: false,
-              error: `No existe tarifa privada configurada para ${itemPax} personas en "${tour.title}".`
-            };
-          }
-          unitPrice = matchingTier.price;
-        } else {
-          if (tour.sharedPrice === null || tour.sharedPrice === undefined || tour.sharedPrice <= 0) {
-            return { success: false, error: `Tarifa compartida no configurada para "${tour.title}".` };
-          }
-          unitPrice = tour.sharedPrice;
-        }
-        subtotal = Math.round(unitPrice * itemPax * 100) / 100;
-      } else if (transfer) {
-        if (isPrivate) {
-          const matchingVehiclePrice = transfer.vehiclePrices.find(vp => 
-            vp.vehicle.id === item.vehicleId || 
-            vp.vehicle.code === item.vehicleCode || 
-            vp.vehicleId === item.vehicleId
-          ) || transfer.vehiclePrices[0];
-
-          vehicleTypeId = matchingVehiclePrice?.vehicle.id || null;
-          unitPrice = matchingVehiclePrice?.price || 20;
-          subtotal = unitPrice; // En traslado privado el precio es fijo por vehículo
-        } else {
-          unitPrice = transfer.sharedPrice || 10;
-          subtotal = Math.round(unitPrice * itemPax * 100) / 100;
-        }
-      }
-
-      if (subtotal <= 0) {
-        return { success: false, error: `Error calculando el importe legítimo para "${item.tourTitle || item.tourSlug}".` };
-      }
-
-      calculatedItems.push({
-        tourId: tour?.id || null,
-        transferId: transfer?.id || null,
-        vehicleTypeId,
-        title: tour?.title || transfer?.title || 'Servicio Inca Bound',
-        serviceType: isPrivate ? 'private' : 'shared',
-        date: item.date ? new Date(item.date) : new Date(),
-        pax: itemPax,
-        unitPrice,
-        subtotal,
-        pickupHotel: item.pickupHotel || data.pickupHotel,
-        pickupTime: item.pickupTime,
-      });
-
-      grandTotalPrice += subtotal;
-    }
-
-    grandTotalPrice = Math.round(grandTotalPrice * 100) / 100;
-    const originalPrice = grandTotalPrice;
-    let discountAmount = 0;
-    let appliedCouponId: string | null = null;
-    let appliedMarketingCode: string | null = null;
-
-    // Validación autoritativa de cupón de descuento en servidor
-    if (data.couponCode) {
-      const cleanCouponCode = data.couponCode.trim().toUpperCase();
-      const coupon = await (prisma as any).coupon.findUnique({
-        where: { code: cleanCouponCode },
-      });
-
-      const now = new Date();
-      if (
-        coupon &&
-        coupon.isActive &&
-        (!coupon.expiresAt || new Date(coupon.expiresAt) >= now) &&
-        (!coupon.usageLimit || coupon.timesUsed < coupon.usageLimit) &&
-        (!coupon.minSpend || grandTotalPrice >= coupon.minSpend)
-      ) {
-        appliedCouponId = coupon.id;
-        appliedMarketingCode = coupon.code;
-
-        if (coupon.discountType === 'PERCENTAGE') {
-          discountAmount = (grandTotalPrice * coupon.discountValue) / 100;
-          if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
-            discountAmount = coupon.maxDiscount;
-          }
-        } else {
-          discountAmount = coupon.discountValue;
-        }
-
-        discountAmount = Math.min(discountAmount, grandTotalPrice);
-        discountAmount = Math.round(discountAmount * 100) / 100;
-        grandTotalPrice = Math.max(0, Math.round((grandTotalPrice - discountAmount) * 100) / 100);
-
-        // Incrementar usos realizados del cupón automáticamente en BD
-        await (prisma as any).coupon.update({
-          where: { id: coupon.id },
-          data: { timesUsed: { increment: 1 } },
-        });
-      }
-    }
-
-    // Helper para separar nombre en firstName y lastName si viene consolidado
-    const splitName = (p: { firstName?: string; lastName?: string; name?: string }): { firstName: string; lastName: string } => {
-      if (p.firstName && p.lastName) return { firstName: p.firstName, lastName: p.lastName };
-      const fullName = (p.name || '').trim();
-      const parts = fullName.split(' ');
-      if (parts.length > 1) {
-        return { firstName: parts[0] || 'Pasajero', lastName: parts.slice(1).join(' ') || '' };
-      }
-      return { firstName: fullName || 'Pasajero', lastName: '' };
+    // 4. Mapear al DTO esperado por el dominio autoritativo NestJS
+    const checkoutPayload = {
+      customerFirstName: data.customerFirstName.trim(),
+      customerLastName: data.customerLastName.trim(),
+      customerEmail: data.customerEmail.trim(),
+      customerPhone: data.customerPhone.trim(),
+      pickupHotel: data.pickupHotel?.trim() || undefined,
+      specialRequirements: data.specialRequirements?.trim() || undefined,
+      couponCode: data.couponCode?.trim() || undefined,
+      items: rawItems.map((item) => ({
+        slug: item.tourSlug.trim(),
+        serviceType: item.serviceType || 'shared',
+        date: item.date,
+        pax: item.pax,
+        vehicleCode: item.vehicleCode || undefined,
+      })),
+      passengers: (data.passengers || []).map(splitName),
     };
 
-    const firstItem = calculatedItems[0];
-    const maxPax = Math.max(...calculatedItems.map(it => it.pax), 1);
-    const reservationCode = `IB-${Date.now().toString(36).toUpperCase()}`;
+    const idempotencyKey = crypto.randomUUID();
 
-    // 4. Crear la reserva en la Base de Datos con todos sus ReservationItems
-    const reservation = await (prisma.reservation as any).create({
-      data: {
-        code: reservationCode,
-        customerFirstName: data.customerFirstName,
-        customerLastName: data.customerLastName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone,
-        pickupHotel: data.pickupHotel || '',
-        specialRequirements: data.specialRequirements || '',
-        date: firstItem?.date || new Date(),
-        pax: maxPax,
-        totalPrice: grandTotalPrice,
-        originalPrice: discountAmount > 0 ? originalPrice : null,
-        discountAmount: discountAmount > 0 ? discountAmount : 0,
-        couponId: appliedCouponId,
-        marketingCode: appliedMarketingCode,
-        source: appliedCouponId ? 'ECOMMERCE' : 'WEB',
-        currency: 'USD',
-        status: 'PENDING',
-        // Campos de compatibilidad directa hacia atrás
-        tourId: firstItem?.tourId || null,
-        transferId: firstItem?.transferId || null,
-        serviceType: firstItem?.serviceType || 'shared',
-        // Colección normalizada multi-tour
-        items: {
-          create: calculatedItems.map(item => ({
-            tourId: item.tourId,
-            transferId: item.transferId,
-            vehicleTypeId: item.vehicleTypeId,
-            serviceType: item.serviceType,
-            date: item.date,
-            pax: item.pax,
-            unitPrice: item.unitPrice,
-            totalPrice: item.subtotal,
-            pickupHotel: item.pickupHotel || '',
-            pickupTime: item.pickupTime || '',
-          }))
-        },
-        passengers: data.passengers && data.passengers.length > 0 ? {
-          create: data.passengers.map(p => {
-            const { firstName, lastName } = splitName(p);
-            return {
-              firstName,
-              lastName,
-              docType: p.docType || 'DNI',
-              docNumber: p.docNumber || ''
-            };
-          })
-        } : undefined
-      }
-    });
-
-    // 5. Izipay Form Token con el monto total autoritativo en centavos
-    const shopId = process.env.IZIPAY_SHOP_ID || process.env.IZIPAY_USERNAME;
-    const testPassword = process.env.IZIPAY_TEST_PASSWORD || process.env.IZIPAY_PASSWORD_TEST || process.env.IZIPAY_SECRET_KEY;
-    const apiUrl = process.env.IZIPAY_API_URL || process.env.IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
-    const currency = process.env.IZIPAY_CURRENCY || 'USD';
-
-    if (!shopId || !testPassword) {
-      console.error("❌ CRÍTICO: No se encontraron las credenciales de Izipay (IZIPAY_SHOP_ID / IZIPAY_TEST_PASSWORD).");
-      return {
-        success: false,
-        error: "Configuración de pasarela de pago incompleta en el servidor. Contacte con soporte."
-      };
-    }
-
-    const authHeader = `Basic ${Buffer.from(`${shopId}:${testPassword}`).toString('base64')}`;
-    const amountInCents = Math.round(grandTotalPrice * 100);
-
-    const izipayResponse = await fetch(`${apiUrl}/api-payment/V4/Charge/CreatePayment`, {
-      method: "POST",
+    const response = await fetch(`${apiBaseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/checkout`, {
+      method: 'POST',
       headers: {
-        "Authorization": authHeader,
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
       },
-      body: JSON.stringify({
-        amount: amountInCents,
-        currency: currency,
-        orderId: reservation.id,
-        customer: {
-          email: data.customerEmail,
-          billingDetails: {
-            firstName: data.customerFirstName,
-            lastName: data.customerLastName,
-            phoneNumber: data.customerPhone,
-          }
-        }
-      })
+      body: JSON.stringify(checkoutPayload),
+      cache: 'no-store',
     });
 
-    const izipayData = await izipayResponse.json();
-
-    if (izipayData.status !== "SUCCESS" || !izipayData.answer?.formToken) {
-      console.error("❌ CRÍTICO: Error obteniendo Form Token de Izipay:", izipayData);
-      return {
-        success: false,
-        error: izipayData._error?.message || "No se pudo iniciar la transacción con la pasarela de pago."
-      };
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => null);
+      const errorMsg = Array.isArray(errBody?.message)
+        ? errBody.message.join(', ')
+        : (errBody?.message || `Error del motor central de reservas (${response.status})`);
+      return { success: false, error: errorMsg };
     }
 
-    const formToken = izipayData.answer.formToken;
+    const result = await response.json();
 
-    await prisma.reservation.update({
-      where: { id: reservation.id },
-      data: { paymentReference: formToken }
-    });
-
-    return { 
-      success: true, 
-      reservationId: reservation.id, 
-      formToken: formToken 
+    return {
+      success: true,
+      reservationId: result.reservationId,
+      reservationCode: result.reservationCode,
+      formToken: result.formToken || null,
     };
   } catch (error: any) {
-    console.error("Error al crear reserva:", error);
-    return { success: false, error: handlePrismaError(error) };
+    console.error('Error al procesar reserva con la API central:', error);
+    return {
+      success: false,
+      error: 'No se pudo conectar con el motor central de reservas. Verifique la conexión con el servidor.',
+    };
   }
 }

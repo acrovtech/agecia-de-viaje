@@ -104,4 +104,7 @@ export class CheckoutResponseDto {
 
   @ApiProperty({ description: 'Estado actual del pago' })
   paymentStatus!: string;
+
+  @ApiProperty({ required: false, nullable: true, description: 'Token de formulario para Izipay Embedded' })
+  formToken?: string | null;
 }

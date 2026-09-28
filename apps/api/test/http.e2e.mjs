@@ -43,7 +43,7 @@ const transfers = [
     destination: 'Hotel', duration: '30 min', tripType: 'Solo ida', description: 'Ruta A',
     bannerImage: '/banner-a.webp', hasSharedService: true, sharedPrice: 15, hasPrivateService: true,
     isActive: true, order: 1,
-    vehiclePrices: [{ price: 45, vehicle: { id: 'v-sedan', code: 'sedan', name: 'Sedan', maxPax: 3, maxLuggage: 3 } }],
+    vehiclePrices: [{ price: 45, vehicle: { id: 'v-sedan', agencyId: 'a', code: 'sedan', name: 'Sedan', maxPax: 3, maxLuggage: 3 } }],
   },
   {
     id: 'tr-b',
@@ -51,13 +51,14 @@ const transfers = [
     destination: 'Hotel', duration: '20 min', tripType: 'Solo ida', description: 'Ruta B',
     bannerImage: '/banner-b.webp', hasSharedService: false, sharedPrice: null, hasPrivateService: true,
     isActive: true, order: 1,
-    vehiclePrices: [{ price: 60, vehicle: { id: 'v-van', code: 'van', name: 'Van', maxPax: 6, maxLuggage: 6 } }],
+    vehiclePrices: [{ price: 60, vehicle: { id: 'v-van', agencyId: 'b', code: 'van', name: 'Van', maxPax: 6, maxLuggage: 6 } }],
   },
 ];
 
 const coupons = [
   { id: 'c1', agencyId: 'a', code: 'PROMO10', isActive: true, discountType: 'PERCENTAGE', discountValue: 10, timesUsed: 0, usageLimit: 100, minSpend: 10 },
   { id: 'c2', agencyId: 'a', code: 'EXPIRED', isActive: true, expiresAt: new Date('2020-01-01'), discountType: 'FIXED', discountValue: 5, timesUsed: 0 },
+  { id: 'c3', agencyId: 'b', code: 'AGENCYB_ONLY', isActive: true, discountType: 'PERCENTAGE', discountValue: 20, timesUsed: 0, usageLimit: 50, minSpend: 10 },
 ];
 const reservations = [];
 const notifications = [];
@@ -80,7 +81,20 @@ const prisma = {
     findFirst: async ({ where }) => transfers.find((t) => t.agencyId === where.agencyId && t.slug === where.slug && t.isActive === where.isActive) ?? null,
   },
   coupon: {
-    findFirst: async ({ where }) => coupons.find((c) => c.code === where.code && c.isActive === where.isActive) ?? null,
+    findFirst: async ({ where }) => coupons.find((c) => {
+      if (c.code !== where.code) return false;
+      if (where.isActive !== undefined && c.isActive !== where.isActive) return false;
+      if (where.OR && Array.isArray(where.OR)) {
+        const matches = where.OR.some((cond) => {
+          if (cond.agencyId === null) return c.agencyId === null;
+          return c.agencyId === cond.agencyId;
+        });
+        if (!matches) return false;
+      } else if (where.agencyId !== undefined && c.agencyId !== where.agencyId) {
+        return false;
+      }
+      return true;
+    }) ?? null,
     update: async ({ where, data }) => {
       const c = coupons.find((item) => item.id === where.id);
       if (c && data.timesUsed?.increment) c.timesUsed += data.timesUsed.increment;
@@ -89,13 +103,24 @@ const prisma = {
   },
   reservation: {
     findFirst: async ({ where }) => {
-      if (where.paymentReference) {
-        return reservations.find((r) => r.paymentReference === where.paymentReference) ?? null;
-      }
-      if (where.code) {
-        return reservations.find((r) => r.code === where.code) ?? null;
-      }
-      return null;
+      return reservations.find((r) => {
+        if (where.agencyId && r.agencyId !== where.agencyId) return false;
+        if (where.paymentReference && r.paymentReference !== where.paymentReference) return false;
+        if (where.code && r.code !== where.code) return false;
+        if (where.id && r.id !== where.id) return false;
+        if (where.requestKey && r.requestKey !== where.requestKey) return false;
+        if (where.OR && Array.isArray(where.OR)) {
+          const matchAny = where.OR.some((cond) => {
+            if (cond.paymentReference && r.paymentReference === cond.paymentReference) return true;
+            if (cond.code && r.code === cond.code) return true;
+            if (cond.id && r.id === cond.id) return true;
+            if (cond.requestKey && r.requestKey === cond.requestKey) return true;
+            return false;
+          });
+          if (!matchAny) return false;
+        }
+        return true;
+      }) ?? null;
     },
     create: async ({ data }) => {
       const res = {
@@ -460,4 +485,164 @@ test('izipay IPN transitions reservation to PAID and records transactional outbo
   assert.equal(notif.state, 'PENDING');
   assert.equal(notif.kind, 'ORDER_CONFIRMED');
   assert.equal(notif.snapshot.paidMinor, 3600);
+});
+
+test('duplicate izipay IPN does not consume coupon twice nor duplicate notifications', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Eve',
+      customerLastName: 'Polastri',
+      customerEmail: 'eve@example.test',
+      customerPhone: '+51999999993',
+      couponCode: 'PROMO10',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const coupon = coupons.find((c) => c.code === 'PROMO10');
+  const timesUsedBefore = coupon.timesUsed;
+  const notifCountBefore = notifications.length;
+
+  const krAnswer = {
+    orderStatus: 'PAID',
+    orderDetails: {
+      orderId: checkout.body.reservationCode,
+      orderTotalAmount: 1800,
+      orderCurrency: 'USD',
+    },
+    transactions: [{ uuid: 'tx-izipay-first' }],
+  };
+  const validHash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
+
+  // Primer IPN exitoso
+  const firstIpn = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': validHash })
+    .expect(200);
+
+  assert.equal(firstIpn.body.status, 'PAID');
+  assert.equal(coupon.timesUsed, timesUsedBefore + 1);
+  assert.equal(notifications.length, notifCountBefore + 1);
+
+  // Segundo IPN idéntico (reintento de la pasarela)
+  const secondIpn = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': validHash })
+    .expect(200);
+
+  assert.equal(secondIpn.body.status, 'PAID');
+  // NO incrementa el cupón dos veces
+  assert.equal(coupon.timesUsed, timesUsedBefore + 1);
+  // NO duplica outbox transaccional
+  assert.equal(notifications.length, notifCountBefore + 1);
+});
+
+test('failed payment IPN does not consume coupon and does not mark PAID', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Frank',
+      customerLastName: 'Castle',
+      customerEmail: 'frank@example.test',
+      customerPhone: '+51999999992',
+      couponCode: 'PROMO10',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const coupon = coupons.find((c) => c.code === 'PROMO10');
+  const timesUsedBefore = coupon.timesUsed;
+
+  const krAnswer = {
+    orderStatus: 'REFUSED',
+    orderDetails: {
+      orderId: checkout.body.reservationCode,
+      orderTotalAmount: 1800,
+      orderCurrency: 'USD',
+    },
+  };
+  const validHash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
+
+  const ipnResult = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': validHash })
+    .expect(200);
+
+  assert.equal(ipnResult.body.success, false);
+  assert.equal(ipnResult.body.status, 'REFUSED');
+  // Cupón permanece intacto
+  assert.equal(coupon.timesUsed, timesUsedBefore);
+
+  const resInDb = reservations.find((r) => r.code === checkout.body.reservationCode);
+  assert.notEqual(resInDb.paymentStatus, 'PAID');
+});
+
+test('valid payment with non-existent orderId returns 404', async () => {
+  const krAnswer = {
+    orderStatus: 'PAID',
+    orderDetails: {
+      orderId: 'IB-DOES-NOT-EXIST',
+      orderTotalAmount: 2000,
+      orderCurrency: 'USD',
+    },
+  };
+  const validHash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
+
+  await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': validHash })
+    .expect(404);
+});
+
+test('cross-agency product, vehicle, or coupon use is rejected', async () => {
+  // 1. Tour de agencia B intentado comprar desde agencia A -> 404
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Grace',
+      customerLastName: 'Hopper',
+      customerEmail: 'grace@example.test',
+      customerPhone: '+51999999991',
+      items: [{ slug: 'tour-b', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(404);
+
+  // 2. Cupón de agencia B intentado usar en agencia A -> 400
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Grace',
+      customerLastName: 'Hopper',
+      customerEmail: 'grace@example.test',
+      customerPhone: '+51999999991',
+      couponCode: 'AGENCYB_ONLY',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(400);
+});
+
+test('client cannot manipulate agencyId or fake prices; server calculates authoritatively', async () => {
+  const res = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      agencyId: 'agency-b-evil', // Intento de inyectar agencyId ajeno
+      customerFirstName: 'Heist',
+      customerLastName: 'Planner',
+      customerEmail: 'heist@example.test',
+      customerPhone: '+51999999990',
+      totalPrice: 1, // Intento de pagar 1 USD en vez de tarifa autoritativa
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 2, price: 0.5 }],
+    })
+    .expect(201);
+
+  // Total autoritativo calculado por el servidor: 20 USD x 2 = 4000 centavos
+  assert.equal(res.body.totalMinor, 4000);
+  assert.equal(res.body.subtotalMinor, 4000);
+
+  // La reserva creada pertenece a la agencia resuelta por la ruta 'agency-a'
+  const created = reservations.find((r) => r.id === res.body.reservationId);
+  assert.equal(created.agencyId, 'a');
+  assert.notEqual(created.agencyId, 'agency-b-evil');
+  assert.notEqual(created.agencyId, null);
 });

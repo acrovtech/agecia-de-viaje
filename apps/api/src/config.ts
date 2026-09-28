@@ -25,7 +25,14 @@ const environmentSchema = z.object({
   API_DOCS_ENABLED: z.enum(['true', 'false']).default('false'),
   API_RATE_LIMIT: z.coerce.number().int().min(1).max(10000).default(120),
   API_AUTH_ENABLED: z.enum(['true', 'false']).default('false'),
+  API_CHECKOUT_ENABLED: z.enum(['true', 'false']).default('false'),
   IZIPAY_SECRET_KEY: z.string().default(''),
+  IZIPAY_HMAC_SHA256: z.string().optional(),
+  IZIPAY_SHOP_ID: z.string().optional(),
+  IZIPAY_PASSWORD: z.string().optional(),
+  IZIPAY_TEST_PASSWORD: z.string().optional(),
+  IZIPAY_API_URL: z.string().optional(),
+  IZIPAY_CURRENCY: z.string().default('USD'),
   IZIPAY_MODE: z.enum(['test', 'live']).default('test'),
 });
 
@@ -39,7 +46,12 @@ export type ApiConfig = Readonly<{
   docsEnabled: boolean;
   rateLimit: number;
   authEnabled: boolean;
+  checkoutEnabled: boolean;
   izipaySecretKey: string;
+  izipayShopId: string;
+  izipayPassword: string;
+  izipayApiUrl: string;
+  izipayCurrency: string;
   izipayMode: 'test' | 'live';
 }>;
 
@@ -51,6 +63,17 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     throw new Error(`Configuración API inválida: ${fields.join(', ')}`);
   }
   const value = parsed.data;
+  const izipaySecretKey = value.IZIPAY_SECRET_KEY || env.IZIPAY_HMAC_SHA256 || '';
+  const izipayShopId = value.IZIPAY_SHOP_ID || env.IZIPAY_SHOP_ID || env.IZIPAY_USERNAME || '';
+  const izipayPassword = value.IZIPAY_PASSWORD || value.IZIPAY_TEST_PASSWORD || env.IZIPAY_TEST_PASSWORD || env.IZIPAY_PASSWORD_TEST || '';
+  const izipayApiUrl = value.IZIPAY_API_URL || env.IZIPAY_API_URL || 'https://api.micuentaweb.pe';
+  const izipayCurrency = (value.IZIPAY_CURRENCY || env.IZIPAY_CURRENCY || 'USD').toUpperCase();
+  const checkoutEnabled = value.API_CHECKOUT_ENABLED === 'true' || value.NODE_ENV === 'test';
+
+  if (checkoutEnabled && value.NODE_ENV === 'production' && !izipaySecretKey) {
+    throw new Error('Configuración API inválida: IZIPAY_HMAC_SHA256 / IZIPAY_SECRET_KEY requerido para checkout en producción');
+  }
+
   return Object.freeze({
     environment: value.NODE_ENV,
     databaseUrl: value.DATABASE_URL,
@@ -61,7 +84,12 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     docsEnabled: value.API_DOCS_ENABLED === 'true',
     rateLimit: value.API_RATE_LIMIT,
     authEnabled: value.API_AUTH_ENABLED === 'true',
-    izipaySecretKey: value.IZIPAY_SECRET_KEY,
+    checkoutEnabled,
+    izipaySecretKey,
+    izipayShopId,
+    izipayPassword,
+    izipayApiUrl,
+    izipayCurrency,
     izipayMode: value.IZIPAY_MODE,
   });
 }

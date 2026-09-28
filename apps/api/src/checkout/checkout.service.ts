@@ -9,6 +9,7 @@ import { BookingStatus, ReservationPaymentStatus, ReservationStatus } from '@rep
 import { API_CONFIG, ApiConfig } from '../config.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { TenantContext } from '../tenant/tenant.types.js';
+import { PaymentsService } from '../payments/payments.service.js';
 import {
   CheckoutResponseDto,
   CreateCheckoutDto,
@@ -19,6 +20,7 @@ export class CheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(API_CONFIG) private readonly config: ApiConfig,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   private async resolveAgency(tenantOrStorefront: TenantContext | string) {
@@ -50,7 +52,10 @@ export class CheckoutService {
       const existing = await this.prisma.reservation.findFirst({
         where: {
           agencyId: agency.id,
-          paymentReference: `IDEMP:${idempotencyKey}`,
+          OR: [
+            { paymentReference: `IDEMP:${idempotencyKey}` },
+            { requestKey: idempotencyKey },
+          ],
         },
         include: {
           items: {
@@ -63,7 +68,9 @@ export class CheckoutService {
         if (existing.customerEmail.toLowerCase() !== dto.customerEmail.trim().toLowerCase()) {
           throw new ConflictException('Idempotency key ya utilizada con datos divergentes');
         }
-        const totalMinor = existing.paidMinor > 0 ? existing.paidMinor : Math.round(existing.totalPrice * 100);
+        const totalMinor = (existing.totalMinor !== null && existing.totalMinor !== undefined && existing.totalMinor > 0)
+          ? existing.totalMinor
+          : (existing.paidMinor > 0 ? existing.paidMinor : Math.round(existing.totalPrice * 100));
         const subtotalMinor = existing.originalPrice ? Math.round(existing.originalPrice * 100) : totalMinor;
         const discountMinor = existing.discountAmount ? Math.round(existing.discountAmount * 100) : 0;
 
@@ -76,6 +83,7 @@ export class CheckoutService {
           currency: 'USD',
           bookingStatus: existing.bookingStatus,
           paymentStatus: existing.paymentStatus,
+          formToken: existing.paymentReference?.startsWith('IDEMP:') ? null : (existing.paymentReference || null),
           items: existing.items.map((it) => ({
             slug: it.tour?.slug || it.transfer?.slug || '',
             title: it.tour?.title || it.transfer?.title || 'Servicio',
@@ -207,6 +215,9 @@ export class CheckoutService {
         if (!vp) {
           throw new BadRequestException(`No se encontró vehículo compatible para ${item.pax} pasajeros`);
         }
+        if (vp.vehicle.agencyId && vp.vehicle.agencyId !== agency.id) {
+          throw new BadRequestException('El vehículo no pertenece a esta agencia');
+        }
         if (vp.vehicle.maxPax < item.pax) {
           throw new BadRequestException(`El vehículo "${vp.vehicle.name}" excede su capacidad máxima (${vp.vehicle.maxPax} pax)`);
         }
@@ -284,10 +295,15 @@ export class CheckoutService {
       data: {
         agencyId: agency.id,
         code: reservationCode,
+        requestKey: idempotencyKey || null,
         bookingStatus: BookingStatus.PENDING,
         paymentStatus: ReservationPaymentStatus.PENDING,
         status: ReservationStatus.PENDING,
         paidMinor: 0,
+        totalMinor: totalMinor,
+        unitPriceMinor: firstItem.unitPriceMinor,
+        serviceTitle: firstItem.title,
+        vehicleName: firstItem.vehicleName || null,
         totalPrice: totalMinor / 100,
         originalPrice: subtotalMinor / 100,
         discountAmount: discountMinor / 100,
@@ -326,6 +342,27 @@ export class CheckoutService {
       },
     });
 
+    let formToken: string | null = null;
+    if (totalMinor > 0) {
+      const session = await this.paymentsService.createPaymentSession({
+        orderId: reservation.code || reservationCode,
+        amountMinor: totalMinor,
+        currency: 'USD',
+        customerEmail: reservation.customerEmail,
+        customerFirstName: reservation.customerFirstName,
+        customerLastName: reservation.customerLastName,
+        customerPhone: reservation.customerPhone,
+      });
+      formToken = session.formToken;
+
+      if (formToken) {
+        await this.prisma.reservation.update({
+          where: { id: reservation.id },
+          data: { paymentReference: formToken },
+        });
+      }
+    }
+
     return {
       reservationId: reservation.id,
       reservationCode: reservation.code || reservationCode,
@@ -335,6 +372,7 @@ export class CheckoutService {
       currency: 'USD',
       bookingStatus: reservation.bookingStatus,
       paymentStatus: reservation.paymentStatus,
+      formToken,
       items: calculatedItems.map((it) => ({
         slug: it.slug,
         title: it.title,

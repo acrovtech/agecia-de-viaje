@@ -33,8 +33,8 @@ export class AppModule {
         HealthController,
         CatalogController,
         ...(config.authEnabled ? [AuthController, MembershipsController, AdminCatalogController, CatalogContentController, ReservationsController] : []),
-        // Financial prototypes must not be exposed before concurrency and gateway validation.
-        ...(config.environment === 'test' ? [CheckoutController, PaymentsController] : []),
+        // Financial endpoints are enabled when checkout is activated and validated.
+        ...(config.checkoutEnabled ? [CheckoutController, PaymentsController] : []),
       ],
       providers: [
         { provide: API_CONFIG, useValue: config },
