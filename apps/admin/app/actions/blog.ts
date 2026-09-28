@@ -52,7 +52,10 @@ function extractParagraphs(formData: FormData): { subtitle: string; content: str
 }
 
 export async function createBlog(formData: FormData) {
-  await requireContentOrMaster();
+  const session = await requireContentOrMaster();
+  if (!session.agencyId) {
+    throw new Error('Se requiere una agencia asociada.');
+  }
   const rawData = {
     title: formData.get('title'),
     slug: formData.get('slug'),
@@ -75,6 +78,7 @@ export async function createBlog(formData: FormData) {
     await prisma.$transaction(async (tx) => {
       await tx.blog.create({
         data: {
+          agencyId: session.agencyId!,
           title,
           slug,
           bannerImage,

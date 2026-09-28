@@ -58,10 +58,10 @@ model Agency {
 model Tour {
   isPublished       Boolean @default(false)
   id                String   @id @default(cuid())
-  agencyId          String?
-  agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId          String
+  agency            Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   title             String
-  slug              String   @unique
+  slug              String
   description       String   @db.Text
   
   // Megamenu / Grouping
@@ -106,6 +106,7 @@ model Tour {
   faqs              TourFaq[]
   privatePricing    TourPrivatePricing[]
 
+  @@unique([agencyId, slug])
   @@index([agencyId])
   @@index([slug])
   @@index([isFeatured])
@@ -186,25 +187,26 @@ model TourPrivatePricing {
 
 model Category {
   id        String   @id @default(cuid())
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   name      String
-  slug      String   @unique
+  slug      String
   
   tours     Tour[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([agencyId, slug])
   @@index([agencyId])
 }
 
 model Blog {
   id              String   @id @default(cuid())
-  agencyId        String?
-  agency          Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId        String
+  agency          Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   title           String
-  slug            String   @unique
+  slug            String
   bannerImage     String
   metaTitle       String?
   metaDescription String?  @db.Text
@@ -215,6 +217,7 @@ model Blog {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@unique([agencyId, slug])
   @@index([agencyId])
 }
 
@@ -233,10 +236,10 @@ model BlogParagraph {
 model Transfer {
   isPublished       Boolean @default(false)
   id                String   @id @default(cuid())
-  agencyId          String?
-  agency            Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId          String
+  agency            Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   title             String
-  slug              String   @unique
+  slug              String
   origin            String   // ej. "Aeropuerto de Cusco"
   destination       String   // ej. "Hotel / Centro Cusco / Est. Av Sol Inca Rail"
   duration          String   // ej. "20-30 min"
@@ -260,14 +263,15 @@ model Transfer {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  @@unique([agencyId, slug])
   @@index([agencyId])
 }
 
 model VehicleType {
-  agencyId    String?
-  agency      Agency? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId    String
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
-  code        String   @unique // ej. "sedan", "minivan", "benz-10", "benz-15"
+  code        String   // ej. "sedan", "minivan", "benz-10", "benz-15"
   name        String   // ej. "Sedan", "MiniVan", "Mercedes Benz 10pax", "Mercedes Benz 15pax"
   subtitle    String?  // ej. "Sedan / SUV", "Minivan Ejecutiva"
   maxPax      Int      // ej. 3, 6, 10, 15
@@ -284,6 +288,7 @@ model VehicleType {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@unique([agencyId, code])
   @@index([agencyId])
 }
 
@@ -306,8 +311,8 @@ model TransferVehiclePrice {
 
 model TourAvailability {
   id        String   @id @default(uuid())
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   tourId    String
   date      DateTime
   capacity  Int
@@ -371,8 +376,8 @@ enum ReservationStatus {
 
 model ShoppingCart {
   id        String   @id @default(uuid())
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   kind      String   @default("TOURS")
   items     Json
   revision  Int      @default(0)
@@ -387,8 +392,8 @@ model ShoppingCart {
 model Order {
   id                    String                   @id @default(uuid())
   code                  String                   @unique @default(dbgenerated("('AG-'::text || upper(substr(md5((random())::text), 1, 20)))"))
-  agencyId              String?
-  agency                Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId              String
+  agency                Agency                   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   accessTokenHash       String?                  @unique
   accessVersion         Int                      @default(0)
   bookingStatus         BookingStatus            @default(PENDING)
@@ -545,8 +550,8 @@ model PaymentNotification {
 model Reservation {
   id                  String                   @id @default(cuid())
   code                String?                  @unique @default(dbgenerated("('AG-L-'::text || upper(substr(md5((random())::text), 1, 20)))"))
-  agencyId            String?
-  agency              Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId            String
+  agency              Agency                   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   accessTokenHash     String?                  @unique
   accessVersion       Int                      @default(0)
   bookingStatus       BookingStatus            @default(PENDING)
@@ -712,9 +717,9 @@ enum DiscountType {
 
 model Coupon {
   id                 String            @id @default(cuid())
-  agencyId           String?
-  agency             Agency?           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  code               String            @unique // Siempre mayúsculas, ej: FDAY20
+  agencyId           String
+  agency             Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  code               String            // Siempre mayúsculas, ej: FDAY20
   name               String?           // Nombre de campaña, ej: "Campaña Día del Padre 2026"
   channel            MarketingChannel  @default(META_ADS) // Canal de origen publicitario
   description        String?
@@ -740,6 +745,7 @@ model Coupon {
   reservations       Reservation[]
   orders             Order[]
 
+  @@unique([agencyId, code])
   @@index([agencyId])
   @@index([code])
   @@index([channel])
@@ -749,8 +755,8 @@ model Coupon {
 
 model MarketingCampaignLog {
   id            String   @id @default(cuid())
-  agencyId      String?
-  agency        Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId      String
+  agency        Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   customerEmail String
   campaignCode  String   @default("MK1")
   subject       String
@@ -910,8 +916,8 @@ model AdminAuditLog {
 
 model FinancialAudit {
   id              String                   @id @default(uuid())
-  agencyId        String?
-  agency          Agency?                  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId        String
+  agency          Agency                   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   requestId       String                   @unique // Idempotencia
   requestHash     String
   orderId         String?
@@ -938,8 +944,8 @@ model FinancialAudit {
 
 model ConfigurationAudit {
   id        String   @id @default(uuid())
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   actorId   String
   actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
   target    String   // "COMPANY_SETTINGS" | "LEGAL_PROFILE" | "AVAILABILITY"
@@ -956,8 +962,8 @@ model ConfigurationAudit {
 
 model CompanySettings {
   id                    String   @id @default(cuid())
-  agencyId              String?  @unique
-  agency                Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId              String   @unique
+  agency                Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   igvEnabled            Boolean  @default(false)
   igvBps                Int      @default(1800)
   cardFeeEnabled        Boolean  @default(false)
@@ -972,8 +978,8 @@ model CompanySettings {
 
 model LegalProfile {
   id        String   @id @default(cuid())
-  agencyId  String?  @unique
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId  String   @unique
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   data      Json     // RUC, Razón Social, Nombre Comercial, Domicilio Fiscal, Representante Legal, etc.
   updatedAt DateTime @updatedAt
 
@@ -982,8 +988,8 @@ model LegalProfile {
 
 model Complaint {
   id          String              @id @default(uuid())
-  agencyId    String?
-  agency      Agency?             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId    String
+  agency      Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   number      Int                 @unique @default(autoincrement())
   accessHash  String              @unique
   requestHash String

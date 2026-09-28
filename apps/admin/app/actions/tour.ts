@@ -200,11 +200,12 @@ export async function createTour(formData: FormData) {
           }
         });
       } else {
+        if (!session.agencyId) throw new Error('Se requiere una agencia asociada.');
         // Create new Tour con transacción atómica
         await tx.tour.create({
           data: {
             ...tourData,
-            ...(session.agencyId ? { agencyId: session.agencyId } : {}),
+            agencyId: session.agencyId,
             itineraries: itinerary.length > 0 ? { 
               create: itinerary.map((item, index) => ({ title: item.title, content: item.content, order: index })) 
             } : undefined,

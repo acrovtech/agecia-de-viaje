@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const slug = searchParams.get('slug');
 
     if (slug) {
-      const tour = await prisma.tour.findUnique({
+      const tour = await prisma.tour.findFirst({
         where: { slug, isPublished: true },
         include: {
           categories: true,

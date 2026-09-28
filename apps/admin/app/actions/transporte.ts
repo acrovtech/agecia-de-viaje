@@ -23,6 +23,9 @@ const TransferInputSchema = z.object({
 
 export async function createTransfer(formData: FormData) {
   const session = await requireOperatorOrMaster();
+  if (!session.agencyId) {
+    throw new Error('Se requiere una agencia asociada.');
+  }
 
   const title = (formData.get('title') as string)?.trim() || '';
   const slug = (formData.get('slug') as string)?.trim()?.toLowerCase() || '';
@@ -91,7 +94,7 @@ export async function createTransfer(formData: FormData) {
     await prisma.transfer.create({
       data: {
         ...parsed.data,
-        ...(session.agencyId ? { agencyId: session.agencyId } : {}),
+        agencyId: session.agencyId,
         vehiclePrices: {
           create: vehiclePricesToCreate.map((vp) => ({
             vehicleId: vp.vehicleId,
@@ -252,7 +255,10 @@ const VehicleTypeInputSchema = z.object({
 
 export async function createVehicleType(rawData: unknown) {
   try {
-    await requireOperatorOrMaster();
+    const session = await requireOperatorOrMaster();
+    if (!session.agencyId) {
+      return { success: false, error: 'Se requiere una agencia asociada.' };
+    }
     const parsed = VehicleTypeInputSchema.safeParse(rawData);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message || 'Datos de vehículo inválidos' };
@@ -261,6 +267,7 @@ export async function createVehicleType(rawData: unknown) {
     const data = parsed.data;
     const vehicle = await prisma.vehicleType.create({
       data: {
+        agencyId: session.agencyId,
         code: data.code.trim().toLowerCase(),
         name: data.name.trim(),
         subtitle: data.subtitle?.trim() || null,

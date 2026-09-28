@@ -34,7 +34,7 @@ test('complete catalog: content, owned resources and publication', async (t) => 
     let tour, transfer, category, vehicle;
     const otherCategory = await prisma.category.create({ data: { name: 'Foreign', slug: `foreign-${suffix}`, agencyId: b.id } });
     const foreignVehicle = await prisma.vehicleType.create({ data: { ...vehicleBody, code: `foreign-${suffix}`, agencyId: b.id } }); vehicles.push(foreignVehicle.id);
-    const orphanVehicle = await prisma.vehicleType.create({ data: { ...vehicleBody, code: `orphan-${suffix}` } }); vehicles.push(orphanVehicle.id);
+    const foreignVehicle2 = await prisma.vehicleType.create({ data: { ...vehicleBody, code: `foreign2-${suffix}`, agencyId: b.id } }); vehicles.push(foreignVehicle2.id);
     const content = {
       hasPrivateService: true, categoryIds: [],
       images: [{ url: '/first.webp', alt: 'Primera' }, { url: '/second.webp', alt: null }],
@@ -83,7 +83,7 @@ test('complete catalog: content, owned resources and publication', async (t) => 
     });
 
     await t.test('only active vehicles owned by the agency may receive transfer prices', async () => {
-      for (const vehicleId of [foreignVehicle.id, orphanVehicle.id]) {
+      for (const vehicleId of [foreignVehicle.id, foreignVehicle2.id]) {
         await write('put', `transfers/${transfer.id}/content`, { hasPrivateService: true, vehiclePrices: [{ vehicleId, price: 50 }], expectedUpdatedAt: transfer.updatedAt }).expect(400);
       }
       transfer = (await write('put', `transfers/${transfer.id}/content`, { hasPrivateService: true, vehiclePrices: [{ vehicleId: vehicle.id, price: 50 }], expectedUpdatedAt: transfer.updatedAt }).expect(200)).body;

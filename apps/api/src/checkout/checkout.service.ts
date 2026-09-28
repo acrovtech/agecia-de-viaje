@@ -503,7 +503,7 @@ export class CheckoutService {
         where: {
           code: cleanCode,
           isActive: true,
-          OR: [{ agencyId: agency.id }, { agencyId: null }],
+          agencyId: agency.id,
         },
       });
 

@@ -11,7 +11,10 @@ const CategoryInputSchema = z.object({
 });
 
 export async function createCategory(name: string, slug: string) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  if (!session.agencyId) {
+    return { error: 'Se requiere una agencia asociada.' };
+  }
   const parsed = CategoryInputSchema.safeParse({ name, slug });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Datos de categoría inválidos' };
@@ -19,7 +22,10 @@ export async function createCategory(name: string, slug: string) {
 
   try {
     const category = await prisma.category.create({
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        agencyId: session.agencyId,
+      },
     });
     revalidatePath('/categories');
     return { success: true, category };

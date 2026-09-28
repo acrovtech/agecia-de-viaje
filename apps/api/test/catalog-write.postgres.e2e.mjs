@@ -79,8 +79,7 @@ test('catalog writes: ownership, roles, concurrency and atomic audit', async (t)
     await t.test('foreign and unassigned records cannot be read or updated by ID', async () => {
       const foreign = await prisma.tour.create({ data: { ...tourBody, slug: `foreign-${suffix}`, agencyId: b.id } });
       const foreignTransfer = await prisma.transfer.create({ data: { ...transferBody, slug: `foreign-transfer-${suffix}`, agencyId: b.id } });
-      orphan = await prisma.tour.create({ data: { ...tourBody, slug: `orphan-${suffix}` } });
-      for (const resource of [foreign, orphan]) {
+      for (const resource of [foreign]) {
         await request(server).get(`${route}/tours/${resource.id}`).auth(token, { type: 'bearer' }).expect(404);
         await write('put', `${route}/tours/${resource.id}`, { ...tourBody, expectedUpdatedAt: resource.updatedAt.toISOString() }).expect(404);
       }
