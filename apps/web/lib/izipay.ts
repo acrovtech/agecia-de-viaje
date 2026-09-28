@@ -55,3 +55,28 @@ export function verifyIzipayHMAC(
     return false;
   }
 }
+/**
+ * Obtiene la clave pública de cliente para Izipay en el navegador (NEXT_PUBLIC_*).
+ * En producción (NODE_ENV === 'production'):
+ * - NUNCA utiliza claves demo hardcodeadas.
+ * - NUNCA prefiere claves de prueba (_TEST) por encima de la clave oficial.
+ * - Requiere NEXT_PUBLIC_IZIPAY_PUBLIC_KEY y falla de forma segura (null) si está ausente.
+ * En desarrollo/staging:
+ * - Permite fallback ordenado a NEXT_PUBLIC_IZIPAY_PUBLIC_KEY_TEST.
+ */
+export function getIzipayClientPublicKey(): string | null {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const prodKey = (process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || '').trim();
+
+  if (isProduction) {
+    if (!prodKey) {
+      console.error('❌ CRÍTICO EN PRODUCCIÓN: NEXT_PUBLIC_IZIPAY_PUBLIC_KEY ausente.');
+      return null;
+    }
+    return prodKey;
+  }
+
+  const testKey = (process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY_TEST || '').trim();
+  return prodKey || testKey || null;
+}
+

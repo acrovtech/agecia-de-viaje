@@ -74,6 +74,9 @@ const coupons = [
   { id: 'c2', agencyId: 'a', code: 'EXPIRED', isActive: true, expiresAt: new Date('2020-01-01'), discountType: 'FIXED', discountValue: 5, timesUsed: 0 },
   { id: 'c3', agencyId: 'b', code: 'AGENCYB_ONLY', isActive: true, discountType: 'PERCENTAGE', discountValue: 20, timesUsed: 0, usageLimit: 50, minSpend: 10 },
   { id: 'c-limited', agencyId: 'a', code: 'LIMITED1', isActive: true, discountType: 'FIXED', discountValue: 5, timesUsed: 0, usageLimit: 1, minSpend: 10 },
+  { id: 'c-unlimited', agencyId: 'a', code: 'UNLIMITED', isActive: true, discountType: 'FIXED', discountValue: 5, timesUsed: 10, usageLimit: null, minSpend: 10 },
+  { id: 'c-zero', agencyId: 'a', code: 'ZERO_USE', isActive: true, discountType: 'FIXED', discountValue: 5, timesUsed: 0, usageLimit: 0, minSpend: 10 },
+  { id: 'c-free', agencyId: 'a', code: 'FREE100', isActive: true, discountType: 'PERCENTAGE', discountValue: 100, timesUsed: 0, usageLimit: 10, minSpend: 10 },
 ];
 const reservations = [];
 const notifications = [];
@@ -352,6 +355,7 @@ test('financial prototypes are unavailable outside the test environment', async 
 test('checkout creates reservation with minor units and quotes authoritatively', async () => {
   const result = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-quote-1')
     .send({
       customerFirstName: 'John',
       customerLastName: 'Doe',
@@ -378,6 +382,7 @@ test('checkout applies coupon discount without burning usage prematurely', async
 
   const result = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-coupon-1')
     .send({
       customerFirstName: 'Jane',
       customerLastName: 'Doe',
@@ -430,6 +435,7 @@ test('checkout is idempotent with Idempotency-Key header', async () => {
 test('checkout rejects invalid or expired coupon', async () => {
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-expired-1')
     .send({
       customerFirstName: 'Bob',
       customerLastName: 'Builder',
@@ -455,6 +461,7 @@ test('izipay IPN handles amount mismatch safely without marking PAID', async () 
   // Crear reserva previa de 20 USD = 2000 centavos
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-mismatch-1')
     .send({
       customerFirstName: 'Charlie',
       customerLastName: 'Brown',
@@ -495,6 +502,7 @@ test('izipay IPN transitions reservation to PAID and records transactional outbo
   // Crear reserva con cupón PROMO10: total 3600 centavos
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-ipn-trans-1')
     .send({
       customerFirstName: 'Diana',
       customerLastName: 'Prince',
@@ -545,6 +553,7 @@ test('izipay IPN transitions reservation to PAID and records transactional outbo
 test('duplicate izipay IPN does not consume coupon twice nor duplicate notifications', async () => {
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-ipn-dup-1')
     .send({
       customerFirstName: 'Eve',
       customerLastName: 'Polastri',
@@ -596,6 +605,7 @@ test('duplicate izipay IPN does not consume coupon twice nor duplicate notificat
 test('failed payment IPN does not consume coupon and does not mark PAID', async () => {
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-ipn-fail-1')
     .send({
       customerFirstName: 'Frank',
       customerLastName: 'Castle',
@@ -654,6 +664,7 @@ test('cross-agency product, vehicle, or coupon use is rejected', async () => {
   // 1. Tour de agencia B intentado comprar desde agencia A -> 404
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-cross-t-1')
     .send({
       customerFirstName: 'Grace',
       customerLastName: 'Hopper',
@@ -666,6 +677,7 @@ test('cross-agency product, vehicle, or coupon use is rejected', async () => {
   // 2. Cupón de agencia B intentado usar en agencia A -> 400
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-cross-c-1')
     .send({
       customerFirstName: 'Grace',
       customerLastName: 'Hopper',
@@ -680,6 +692,7 @@ test('cross-agency product, vehicle, or coupon use is rejected', async () => {
 test('client cannot manipulate agencyId or fake prices; server calculates authoritatively', async () => {
   const res = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-price-hack-1')
     .send({
       agencyId: 'agency-b-evil', // Intento de inyectar agencyId ajeno
       customerFirstName: 'Heist',
@@ -705,6 +718,7 @@ test('client cannot manipulate agencyId or fake prices; server calculates author
 test('checkout rejects draft tour (isPublished: false)', async () => {
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-draft-t-1')
     .send({
       customerFirstName: 'Draft',
       customerLastName: 'Tester',
@@ -718,6 +732,7 @@ test('checkout rejects draft tour (isPublished: false)', async () => {
 test('checkout rejects draft transfer (isPublished: false)', async () => {
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-draft-tr-1')
     .send({
       customerFirstName: 'Draft',
       customerLastName: 'Transfer',
@@ -731,6 +746,7 @@ test('checkout rejects draft transfer (isPublished: false)', async () => {
 test('checkout rejects transfer with orphan vehicle (agencyId: null)', async () => {
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-orphan-v-1')
     .send({
       customerFirstName: 'Orphan',
       customerLastName: 'Vehicle',
@@ -744,6 +760,7 @@ test('checkout rejects transfer with orphan vehicle (agencyId: null)', async () 
 test('checkout rejects transfer with vehicle belonging to another agency', async () => {
   await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-foreign-v-1')
     .send({
       customerFirstName: 'Foreign',
       customerLastName: 'Vehicle',
@@ -868,6 +885,7 @@ test('paid reservation never returns transaction UUID as formToken (returns form
 test('limited coupon cannot be oversubscribed concurrently; second payment enters REVIEW without losing payment', async () => {
   const c1 = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-limited-race-1')
     .send({
       customerFirstName: 'Racer1',
       customerLastName: 'Coupon',
@@ -880,6 +898,7 @@ test('limited coupon cannot be oversubscribed concurrently; second payment enter
 
   const c2 = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-limited-race-2')
     .send({
       customerFirstName: 'Racer2',
       customerLastName: 'Coupon',
@@ -924,6 +943,7 @@ test('limited coupon cannot be oversubscribed concurrently; second payment enter
 test('concurrent identical IPNs cause exactly one financial transition and produce one outbox event', async () => {
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-concurrent-ipn-c')
     .send({
       customerFirstName: 'IPN',
       customerLastName: 'Concurrent',
@@ -958,6 +978,7 @@ test('amount mismatch preserves customer specialRequirements notes without overw
   const specialNotes = 'Notas del pasajero: Habitación cerca del ascensor y dieta vegana';
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-notes-mismatch-1')
     .send({
       customerFirstName: 'Notes',
       customerLastName: 'Preserve',
@@ -1015,6 +1036,7 @@ test('missing or invalid currency in IPN does not default silently and fails val
 test('invalid provider status (UNPAID, SUCCESS) cannot mark reservation as PAID', async () => {
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-status-invalid-1')
     .send({
       customerFirstName: 'Status',
       customerLastName: 'Invalid',
@@ -1077,6 +1099,7 @@ test('production checkout fails startup when credentials are incomplete', () => 
 test('provider-style IPN with raw string kr-answer validates HMAC signature cleanly', async () => {
   const checkout = await request(app.getHttpServer())
     .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-raw-string-test-1')
     .send({
       customerFirstName: 'Raw',
       customerLastName: 'String',
@@ -1146,5 +1169,328 @@ test('production storefront missing tenant configuration fails closed without in
     if (originalPublicSlug !== undefined) process.env.NEXT_PUBLIC_AGENCY_SLUG = originalPublicSlug;
   }
 });
+
+// ============================================================================
+// PHASE 1.2 REGRESSION TESTS: PAYMENT SESSION SAFETY & INTEGRITY
+// ============================================================================
+
+test('missing Idempotency-Key returns 400', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'No',
+      customerLastName: 'Key',
+      customerEmail: 'nokey@example.test',
+      customerPhone: '+51999999999',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(400);
+});
+
+test('passenger change with same key returns 409', async () => {
+  const key = 'idemp-passenger-divergence-1';
+  const basePayload = {
+    customerFirstName: 'Pass',
+    customerLastName: 'Change',
+    customerEmail: 'passchange@example.test',
+    customerPhone: '+51999999920',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    passengers: [{ firstName: 'Original', lastName: 'Passenger', documentType: 'DNI', documentNumber: '11223344' }],
+  };
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(basePayload)
+    .expect(201);
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      ...basePayload,
+      passengers: [{ firstName: 'Modified', lastName: 'Passenger', documentType: 'DNI', documentNumber: '11223344' }],
+    })
+    .expect(409);
+});
+
+test('document-number change with same key returns 409', async () => {
+  const key = 'idemp-doc-divergence-1';
+  const basePayload = {
+    customerFirstName: 'Doc',
+    customerLastName: 'Change',
+    customerEmail: 'docchange@example.test',
+    customerPhone: '+51999999921',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    passengers: [{ firstName: 'Same', lastName: 'Name', documentType: 'DNI', documentNumber: '11223344' }],
+  };
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(basePayload)
+    .expect(201);
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      ...basePayload,
+      passengers: [{ firstName: 'Same', lastName: 'Name', documentType: 'DNI', documentNumber: '99887766' }],
+    })
+    .expect(409);
+});
+
+test('REVIEW reservation cannot create another payment session', async () => {
+  const key = 'idemp-review-no-session-1';
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'Review',
+      customerLastName: 'State',
+      customerEmail: 'review@example.test',
+      customerPhone: '+51999999922',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const res = reservations.find((r) => r.id === checkout.body.reservationId);
+  res.paymentStatus = 'PAYMENT_RECEIVED_REVIEW';
+  res.paymentReference = 'tx-captured-uuid-123';
+
+  // Reintento de checkout con la misma clave: NO genera nuevo formToken
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'Review',
+      customerLastName: 'State',
+      customerEmail: 'review@example.test',
+      customerPhone: '+51999999922',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  assert.equal(retry.body.paymentStatus, 'PAYMENT_RECEIVED_REVIEW');
+  assert.equal(retry.body.formToken, null);
+});
+
+test('PARTIALLY_PAID cannot create a full new payment session', async () => {
+  const key = 'idemp-partial-paid-1';
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'Partial',
+      customerLastName: 'Paid',
+      customerEmail: 'partial@example.test',
+      customerPhone: '+51999999923',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const res = reservations.find((r) => r.id === checkout.body.reservationId);
+  res.paymentStatus = 'PARTIALLY_PAID';
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'Partial',
+      customerLastName: 'Paid',
+      customerEmail: 'partial@example.test',
+      customerPhone: '+51999999923',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(409);
+});
+
+test('REFUND_PENDING and REFUNDED cannot create another payment session', async () => {
+  const key1 = 'idemp-refund-pending-1';
+  const c1 = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key1)
+    .send({
+      customerFirstName: 'Refund',
+      customerLastName: 'Pending',
+      customerEmail: 'refpend@example.test',
+      customerPhone: '+51999999924',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const r1 = reservations.find((r) => r.id === c1.body.reservationId);
+  r1.paymentStatus = 'REFUND_PENDING';
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key1)
+    .send({
+      customerFirstName: 'Refund',
+      customerLastName: 'Pending',
+      customerEmail: 'refpend@example.test',
+      customerPhone: '+51999999924',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(409);
+
+  const key2 = 'idemp-refunded-1';
+  const c2 = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key2)
+    .send({
+      customerFirstName: 'Refunded',
+      customerLastName: 'Customer',
+      customerEmail: 'refunded@example.test',
+      customerPhone: '+51999999925',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const r2 = reservations.find((r) => r.id === c2.body.reservationId);
+  r2.paymentStatus = 'REFUNDED';
+
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key2)
+    .send({
+      customerFirstName: 'Refunded',
+      customerLastName: 'Customer',
+      customerEmail: 'refunded@example.test',
+      customerPhone: '+51999999925',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(409);
+});
+
+test('usageLimit=0 rejected before provider call', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-zero-limit-coupon-1')
+    .send({
+      customerFirstName: 'Zero',
+      customerLastName: 'Limit',
+      customerEmail: 'zerolimit@example.test',
+      customerPhone: '+51999999926',
+      couponCode: 'ZERO_USE',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(400);
+});
+
+test('unlimited coupon remains valid', async () => {
+  const res = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-unlimited-coupon-1')
+    .send({
+      customerFirstName: 'Unlimited',
+      customerLastName: 'User',
+      customerEmail: 'unlimited@example.test',
+      customerPhone: '+51999999927',
+      couponCode: 'UNLIMITED',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  assert.equal(res.body.discountMinor, 500);
+  assert.equal(res.body.totalMinor, 1500);
+});
+
+test('explicit production IZIPAY_PASSWORD required and does not accept TEST password', () => {
+  assert.throws(
+    () => {
+      parseConfig({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+        API_CHECKOUT_ENABLED: 'true',
+        IZIPAY_SHOP_ID: '12345678',
+        IZIPAY_API_URL: 'https://api.micuentaweb.pe',
+        API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+        IZIPAY_TEST_PASSWORD: 'test_password_only',
+      });
+    },
+    (err) => {
+      assert.ok(err.message.includes('IZIPAY_PASSWORD'));
+      return true;
+    },
+  );
+
+  const cfg = parseConfig({
+    NODE_ENV: 'production',
+    DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+    API_CHECKOUT_ENABLED: 'true',
+    IZIPAY_SHOP_ID: '12345678',
+    IZIPAY_PASSWORD: 'explicit_production_password',
+    IZIPAY_API_URL: 'https://api.micuentaweb.pe',
+    API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+  });
+  assert.equal(cfg.izipayPassword, 'explicit_production_password');
+});
+
+test('zero-total checkout confirms directly without payment session', async () => {
+  const res = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-zero-total-free-1')
+    .send({
+      customerFirstName: 'Free',
+      customerLastName: 'Promo',
+      customerEmail: 'free@example.test',
+      customerPhone: '+51999999928',
+      couponCode: 'FREE100',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  assert.equal(res.body.totalMinor, 0);
+  assert.equal(res.body.paymentStatus, 'PAID');
+  assert.equal(res.body.bookingStatus, 'CONFIRMED');
+  assert.equal(res.body.formToken, null);
+
+  const saved = reservations.find((r) => r.id === res.body.reservationId);
+  assert.equal(saved.paymentStatus, 'PAID');
+  assert.equal(saved.paymentReference, 'ZERO_TOTAL_PROMOTION');
+
+  const freeCoupon = coupons.find((c) => c.code === 'FREE100');
+  assert.equal(freeCoupon.timesUsed, 1);
+
+  const notif = notifications.find((n) => n.legacyId === res.body.reservationId);
+  assert.ok(notif);
+  assert.equal(notif.kind, 'ORDER_CONFIRMED');
+});
+
+test('oversized IPN payload is rejected before processing', async () => {
+  const hugeAnswer = 'A'.repeat(70000);
+  await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({
+      'kr-answer': hugeAnswer,
+      'kr-hash': 'fakehash',
+    })
+    .expect(413);
+});
+
+test('concurrent same-key checkout cannot create multiple provider sessions', async () => {
+  const key = 'idemp-concurrent-sessions-test-1';
+  const payload = {
+    customerFirstName: 'Flight',
+    customerLastName: 'Racer',
+    customerEmail: 'flightracer@example.test',
+    customerPhone: '+51999999929',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+
+  const [res1, res2] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+  ]);
+
+  assert.equal(res1.status, 201);
+  assert.equal(res2.status, 201);
+  assert.equal(res1.body.reservationId, res2.body.reservationId);
+  assert.equal(res1.body.formToken, res2.body.formToken);
+  assert.ok(res1.body.formToken);
+});
+
 
 

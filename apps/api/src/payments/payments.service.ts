@@ -1,6 +1,9 @@
 import crypto from 'node:crypto';
 import {
+  BadGatewayException,
   BadRequestException,
+  ConflictException,
+  GatewayTimeoutException,
   Inject,
   Injectable,
   NotFoundException,
@@ -30,8 +33,8 @@ export class PaymentsService {
   verifySignature(rawPayload: unknown, receivedHash: string | undefined): boolean {
     if (!receivedHash) return false;
     const payloadStr = typeof rawPayload === 'string' ? rawPayload : JSON.stringify(rawPayload);
-    // Credencial oficial de Izipay para IPN server-to-server: PASSWORD (o izipayPassword)
-    const secret = this.config.izipayPassword || this.config.izipaySecretKey;
+    // Credencial oficial de Izipay para IPN server-to-server: IZIPAY_PASSWORD
+    const secret = this.config.izipayPassword || (this.config.environment !== 'production' ? this.config.izipaySecretKey : '');
     if (!secret) return false;
 
     try {
@@ -59,9 +62,14 @@ export class PaymentsService {
     }
 
     const { izipayShopId, izipayPassword, izipayApiUrl, izipayCurrency } = this.config;
-    if (!izipayShopId || !izipayPassword) {
-      if (this.config.environment === 'production') {
-        throw new BadRequestException('Pasarela de pago no configurada en el servidor');
+    if (!izipayShopId || !izipayPassword || !izipayApiUrl) {
+      if (this.config.environment === 'production' || this.config.checkoutEnabled) {
+        throw new BadGatewayException({
+          statusCode: 502,
+          error: 'Bad Gateway',
+          message: 'Pasarela de pago no configurada en el servidor',
+          diagnosticCode: 'GATEWAY_CONFIG_ERROR',
+        });
       }
       return { formToken: null };
     }
@@ -69,8 +77,9 @@ export class PaymentsService {
     const authHeader = `Basic ${Buffer.from(`${izipayShopId}:${izipayPassword}`).toString('base64')}`;
     const currency = (params.currency || izipayCurrency || 'USD').toUpperCase();
 
+    let response: Response;
     try {
-      const response = await fetch(`${izipayApiUrl}/api-payment/V4/Charge/CreatePayment`, {
+      response = await fetch(`${izipayApiUrl}/api-payment/V4/Charge/CreatePayment`, {
         method: 'POST',
         headers: {
           Authorization: authHeader,
@@ -92,18 +101,63 @@ export class PaymentsService {
         }),
         signal: AbortSignal.timeout(10000),
       });
-
-      const data = await response.json();
-      if (data.status !== 'SUCCESS' || !data.answer?.formToken) {
-        const errorMsg = data._error?.message || 'No se pudo iniciar la transacción con la pasarela de pago';
-        throw new BadRequestException(errorMsg);
+    } catch (fetchErr: any) {
+      if (fetchErr.name === 'TimeoutError' || String(fetchErr?.message).includes('timeout')) {
+        throw new GatewayTimeoutException({
+          statusCode: 504,
+          error: 'Gateway Timeout',
+          message: 'Tiempo de espera agotado al conectar con la pasarela de pago',
+          diagnosticCode: 'GATEWAY_TIMEOUT',
+        });
       }
-
-      return { formToken: data.answer.formToken };
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException('Error de comunicación con la pasarela de pago');
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: 'Bad Gateway',
+        message: 'Fallo de conectividad con la pasarela de pago',
+        diagnosticCode: 'GATEWAY_SERVER_ERROR',
+      });
     }
+
+    if (response.status >= 400 && response.status < 500) {
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: 'Bad Gateway',
+        message: 'Error de cliente devuelto por la pasarela de pago',
+        diagnosticCode: 'GATEWAY_CLIENT_ERROR',
+      });
+    }
+
+    if (response.status >= 500) {
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: 'Bad Gateway',
+        message: 'Error interno devuelto por la pasarela de pago',
+        diagnosticCode: 'GATEWAY_SERVER_ERROR',
+      });
+    }
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: 'Bad Gateway',
+        message: 'Respuesta malformada de la pasarela de pago',
+        diagnosticCode: 'GATEWAY_MALFORMED_RESPONSE',
+      });
+    }
+
+    if (data.status !== 'SUCCESS' || !data.answer?.formToken) {
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: 'Bad Gateway',
+        message: 'La pasarela de pago no devolvió un token de formulario válido',
+        diagnosticCode: 'GATEWAY_MALFORMED_RESPONSE',
+      });
+    }
+
+    return { formToken: data.answer.formToken };
   }
 
   async processIzipayIpn(payload: IzipayIpnPayloadDto, headerHash?: string): Promise<IpnProcessResultDto> {
@@ -156,6 +210,17 @@ export class PaymentsService {
       };
     }
 
+    // 2. REVIEW es un estado terminal para el procesamiento automático de IPN (Ticket P1.2)
+    // No se reabre automáticamente a PAID sin una conciliación administrativa autenticada
+    if (reservation.paymentStatus === ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW) {
+      return {
+        success: false,
+        reservationCode: reservation.code || orderDetails.orderId,
+        status: 'REVIEW_REQUIRED',
+        reviewReason: 'RESERVATION_UNDER_FINANCIAL_REVIEW',
+      };
+    }
+
     // 3. Validación de estado documentado por Izipay: Solo 'PAID' es aceptado (Ticket P1)
     if (answer.orderStatus !== 'PAID') {
       return {
@@ -186,7 +251,7 @@ export class PaymentsService {
       };
     }
 
-    // 5. Cotejo estricto de importe y moneda sin sobreescribir notas del cliente (Tickets A10, A14, P1)
+    // 5. Cotejo estricto de importe y moneda sin sobreescribir notas del cliente (Tickets A10, A14, P1, P1.2)
     const expectedMinor = (reservation.totalMinor !== null && reservation.totalMinor !== undefined && reservation.totalMinor > 0)
       ? reservation.totalMinor
       : Math.round(reservation.totalPrice * 100);
@@ -197,7 +262,13 @@ export class PaymentsService {
     if (receivedCurrency !== expectedCurrency) {
       await this.prisma.reservation.update({
         where: { id: reservation.id },
-        data: { paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW },
+        data: {
+          status: ReservationStatus.PENDING,
+          bookingStatus: BookingStatus.PENDING,
+          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+          paidMinor: receivedMinor,
+          paymentReference: transactionUuid,
+        },
       });
       await this.prisma.reservationEvent.create({
         data: {
@@ -205,7 +276,7 @@ export class PaymentsService {
           actorId: 'system',
           actorLabel: 'system:izipay-ipn',
           toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-          note: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}`,
+          note: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}. Transacción: ${transactionUuid}`,
         },
       });
       return {
@@ -219,7 +290,13 @@ export class PaymentsService {
     if (receivedMinor !== expectedMinor) {
       await this.prisma.reservation.update({
         where: { id: reservation.id },
-        data: { paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW },
+        data: {
+          status: ReservationStatus.PENDING,
+          bookingStatus: BookingStatus.PENDING,
+          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+          paidMinor: receivedMinor,
+          paymentReference: transactionUuid,
+        },
       });
       await this.prisma.reservationEvent.create({
         data: {
@@ -227,7 +304,7 @@ export class PaymentsService {
           actorId: 'system',
           actorLabel: 'system:izipay-ipn',
           toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-          note: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c`,
+          note: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c. Transacción: ${transactionUuid}`,
         },
       });
       return {
@@ -238,17 +315,15 @@ export class PaymentsService {
       };
     }
 
-    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1)
+    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1, P1.2)
     let couponCapacityExhausted = false;
 
     await this.prisma.$transaction(async (tx) => {
-      // A. Transición atómica PENDING -> PAID (gana exactamente una transacción)
+      // A. Transición atómica PENDING -> PAID (sólo PENDING puede pasar a PAID automáticamente)
       const updateResult = await tx.reservation.updateMany({
         where: {
           id: reservation.id,
-          paymentStatus: {
-            in: [ReservationPaymentStatus.PENDING, ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW],
-          },
+          paymentStatus: ReservationPaymentStatus.PENDING,
         },
         data: {
           status: ReservationStatus.PAID,
@@ -260,31 +335,42 @@ export class PaymentsService {
       });
 
       if (updateResult.count === 0) {
-        // Carrera concurrente: otra petición completó la transición a PAID
+        // Carrera concurrente: otra petición completó la transición a PAID o ya no está PENDING
         return;
       }
 
-      // B. Consumo atómico condicional de cupón con límite (Ticket P1)
+      // B. Consumo atómico condicional de cupón con límite (Ticket P1, P1.2)
       if (reservation.couponId) {
         const coupon = await tx.coupon.findUnique({ where: { id: reservation.couponId } });
         if (coupon && coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
-          const claim = await tx.coupon.updateMany({
-            where: {
-              id: reservation.couponId,
-              timesUsed: { lt: coupon.usageLimit },
-            },
-            data: {
-              timesUsed: { increment: 1 },
-            },
-          });
-
-          if (claim.count === 0) {
-            // Capacidad de cupón agotada concurrentemente por otra reserva
+          if (coupon.usageLimit <= 0) {
             couponCapacityExhausted = true;
+          } else {
+            const claim = await tx.coupon.updateMany({
+              where: {
+                id: reservation.couponId,
+                timesUsed: { lt: coupon.usageLimit },
+              },
+              data: {
+                timesUsed: { increment: 1 },
+              },
+            });
+
+            if (claim.count === 0) {
+              couponCapacityExhausted = true;
+            }
+          }
+
+          if (couponCapacityExhausted) {
+            // Capacidad de cupón agotada: preservar el dinero capturado y referencia sin fingir éxito comercial
             await tx.reservation.update({
               where: { id: reservation.id },
               data: {
+                status: ReservationStatus.PENDING,
+                bookingStatus: BookingStatus.PENDING,
                 paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+                paidMinor: receivedMinor,
+                paymentReference: transactionUuid,
               },
             });
             await tx.reservationEvent.create({
@@ -293,7 +379,7 @@ export class PaymentsService {
                 actorId: 'system',
                 actorLabel: 'system:izipay-ipn',
                 toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-                note: `[AUDIT: COUPON_OVERALLOCATED_REVIEW] Cupón "${coupon.code}" agotó su cupo (${coupon.usageLimit}) concurrentemente tras captura de pago.`,
+                note: `[AUDIT: COUPON_OVERALLOCATED_REVIEW] Cupón "${coupon.code}" agotó su cupo (${coupon.usageLimit}) concurrentemente tras captura de pago. Transacción: ${transactionUuid}`,
               },
             });
             return;

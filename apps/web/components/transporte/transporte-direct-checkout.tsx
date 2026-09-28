@@ -27,6 +27,7 @@ import {
 import { TransferRouteData, VehicleOption } from './transporte-route-card';
 import { Calendar } from '@/components/ui/calendar';
 import { createReservationAndPaymentToken } from '@/app/actions/reservation';
+import { getIzipayClientPublicKey } from '@/lib/izipay';
 import KRGlue from '@lyracom/embedded-form-glue';
 
 interface DirectCheckoutProps {
@@ -228,6 +229,11 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
   const [showIzipayModal, setShowIzipayModal] = useState<boolean>(false);
   const checkoutAttemptIdRef = useRef<string | null>(null);
 
+  // Iniciar nuevo intento si se modifican datos materiales de la reserva
+  useEffect(() => {
+    checkoutAttemptIdRef.current = null;
+  }, [currentTransfer?.slug, selectedVehicle?.id, dateString, time]);
+
   const totalPrice = selectedVehicle?.price || currentTransfer?.sharedPrice || 0;
 
   // WhatsApp Submit
@@ -306,7 +312,10 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
         pax: selectedVehicle.maxPax || 1,
         idempotencyKey: (() => {
           if (!checkoutAttemptIdRef.current) {
-            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+            const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+              ? crypto.randomUUID().replace(/-/g, '')
+              : Date.now().toString(36);
+            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${uuid.slice(0, 12)}`;
           }
           return checkoutAttemptIdRef.current;
         })(),
@@ -322,7 +331,12 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
       setShowIzipayModal(true);
 
       const endpoint = process.env.NEXT_PUBLIC_IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
-      const publicKey = process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || '81438965:testpublickey_DEMOPUBLICKEY99999999999999999';
+      const publicKey = getIzipayClientPublicKey();
+      if (!publicKey) {
+        setErrorMessage('Configuración de pasarela de pago segura no disponible.');
+        setIsProcessing(false);
+        return;
+      }
 
       const { KR } = await KRGlue.loadLibrary(endpoint, publicKey);
       await KR.setFormConfig({

@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, ReservationPaymentStatus, ReservationStatus } from '@repo/db/prisma';
+import { BookingStatus, OperationalStatus, ReservationPaymentStatus, ReservationStatus } from '@repo/db/prisma';
 import { API_CONFIG, ApiConfig } from '../config.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { TenantContext } from '../tenant/tenant.types.js';
@@ -18,11 +18,96 @@ import {
 
 @Injectable()
 export class CheckoutService {
+  private readonly inFlightPaymentSessions = new Map<string, Promise<{ formToken: string | null }>>();
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(API_CONFIG) private readonly config: ApiConfig,
     private readonly paymentsService: PaymentsService,
   ) {}
+
+  private async getOrCreatePaymentSession(
+    reservation: {
+      id: string;
+      code: string | null;
+      paymentFormToken?: string | null;
+      paymentStatus: ReservationPaymentStatus;
+      customerEmail: string;
+      customerFirstName: string;
+      customerLastName: string;
+      customerPhone: string;
+    },
+    amountMinor: number,
+  ): Promise<string | null> {
+    // 1. Validar allowlist de estados para sesión de pago (P1.2)
+    if (reservation.paymentStatus === ReservationPaymentStatus.PAID) {
+      return null;
+    }
+    if (reservation.paymentStatus === ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW) {
+      return null;
+    }
+    if (reservation.paymentStatus === ReservationPaymentStatus.PARTIALLY_PAID) {
+      throw new ConflictException('La reserva se encuentra en pago parcial y requiere revisión administrativa');
+    }
+    if (
+      reservation.paymentStatus === ReservationPaymentStatus.REFUND_PENDING ||
+      reservation.paymentStatus === ReservationPaymentStatus.PARTIALLY_REFUNDED ||
+      reservation.paymentStatus === ReservationPaymentStatus.REFUNDED
+    ) {
+      throw new ConflictException('La reserva se encuentra en proceso de reembolso o ha sido reembolsada');
+    }
+    if (
+      reservation.paymentStatus === ReservationPaymentStatus.FAILED ||
+      reservation.paymentStatus === ReservationPaymentStatus.EXPIRED
+    ) {
+      throw new ConflictException('La reserva ha expirado o fallado. Por favor inicie una nueva reserva.');
+    }
+    if (reservation.paymentStatus !== ReservationPaymentStatus.PENDING) {
+      throw new BadRequestException('Estado de reserva no válido para iniciar sesión de pago');
+    }
+
+    if (amountMinor <= 0) {
+      return null;
+    }
+
+    // 2. Reutilizar formToken existente si ya fue generado previamente
+    if (reservation.paymentFormToken) {
+      return reservation.paymentFormToken;
+    }
+
+    // 3. Single-flight in-flight protection: evitar llamadas concurrentes a CreatePayment
+    let pendingPromise = this.inFlightPaymentSessions.get(reservation.id);
+    if (!pendingPromise) {
+      pendingPromise = (async () => {
+        const session = await this.paymentsService.createPaymentSession({
+          orderId: reservation.code || `IB-${reservation.id.slice(0, 8)}`,
+          amountMinor,
+          currency: 'USD',
+          customerEmail: reservation.customerEmail,
+          customerFirstName: reservation.customerFirstName,
+          customerLastName: reservation.customerLastName,
+          customerPhone: reservation.customerPhone,
+        });
+
+        if (session.formToken) {
+          await this.prisma.reservation.update({
+            where: { id: reservation.id },
+            data: { paymentFormToken: session.formToken },
+          }).catch(() => {});
+        }
+        return session;
+      })();
+
+      this.inFlightPaymentSessions.set(reservation.id, pendingPromise);
+    }
+
+    try {
+      const res = await pendingPromise;
+      return res.formToken;
+    } finally {
+      this.inFlightPaymentSessions.delete(reservation.id);
+    }
+  }
 
   private async resolveAgency(tenantOrStorefront: TenantContext | string) {
     if (typeof tenantOrStorefront === 'object' && tenantOrStorefront !== null && 'agencyId' in tenantOrStorefront) {
@@ -48,7 +133,30 @@ export class CheckoutService {
   ): Promise<CheckoutResponseDto> {
     const agency = await this.resolveAgency(tenantOrStorefront);
 
-    // Normalización de entrada para huella criptográfica determinista (Ticket P1)
+    // Normalización de entrada exhaustiva para huella criptográfica determinista (Tickets P1, P1.2)
+    const canonicalPassengers = (dto.passengers || []).map((p) => ({
+      firstName: p.firstName.trim().toLowerCase(),
+      lastName: p.lastName.trim().toLowerCase(),
+      documentType: p.documentType.trim().toLowerCase(),
+      documentNumber: p.documentNumber.trim().toLowerCase(),
+    })).sort((a, b) => {
+      const keyA = `${a.documentType}:${a.documentNumber}:${a.lastName}:${a.firstName}`;
+      const keyB = `${b.documentType}:${b.documentNumber}:${b.lastName}:${b.firstName}`;
+      return keyA.localeCompare(keyB);
+    });
+
+    const canonicalItems = (dto.items || []).map((i) => ({
+      slug: i.slug.trim().toLowerCase(),
+      serviceType: i.serviceType.trim().toLowerCase(),
+      date: i.date.trim(),
+      pax: i.pax,
+      vehicleCode: i.vehicleCode?.trim().toLowerCase() || null,
+    })).sort((a, b) => {
+      const keyA = `${a.slug}|${a.date}|${a.serviceType}|${a.pax}|${a.vehicleCode || ''}`;
+      const keyB = `${b.slug}|${b.date}|${b.serviceType}|${b.pax}|${b.vehicleCode || ''}`;
+      return keyA.localeCompare(keyB);
+    });
+
     const normalizedPayload = {
       agencyId: agency.id,
       customerFirstName: dto.customerFirstName.trim().toLowerCase(),
@@ -56,19 +164,14 @@ export class CheckoutService {
       customerEmail: dto.customerEmail.trim().toLowerCase(),
       customerPhone: dto.customerPhone.trim(),
       couponCode: dto.couponCode?.trim().toUpperCase() || null,
-      pickupHotel: dto.pickupHotel?.trim() || null,
-      specialRequirements: dto.specialRequirements?.trim() || null,
-      items: (dto.items || []).map((i) => ({
-        slug: i.slug.trim().toLowerCase(),
-        serviceType: i.serviceType,
-        date: i.date.trim(),
-        pax: i.pax,
-        vehicleCode: i.vehicleCode?.trim() || null,
-      })).sort((a, b) => a.slug.localeCompare(b.slug)),
+      pickupHotel: dto.pickupHotel?.trim().toLowerCase() || null,
+      specialRequirements: dto.specialRequirements?.trim().toLowerCase() || null,
+      items: canonicalItems,
+      passengers: canonicalPassengers,
     };
     const requestHash = crypto.createHash('sha256').update(JSON.stringify(normalizedPayload)).digest('hex');
 
-    // 1. Manejo de idempotencia autoritativa mediante requestKey (Tickets A11, P1)
+    // 1. Manejo de idempotencia autoritativa mediante requestKey (Tickets A11, P1, P1.2)
     if (idempotencyKey) {
       const existing = await this.prisma.reservation.findFirst({
         where: {
@@ -90,33 +193,13 @@ export class CheckoutService {
           throw new ConflictException('Idempotency key ya utilizada con datos divergentes');
         }
 
-        const totalMinor = (existing.totalMinor !== null && existing.totalMinor !== undefined && existing.totalMinor > 0)
+        const totalMinor = (existing.totalMinor !== null && existing.totalMinor !== undefined && existing.totalMinor >= 0)
           ? existing.totalMinor
           : (existing.paidMinor > 0 ? existing.paidMinor : Math.round(existing.totalPrice * 100));
         const subtotalMinor = existing.originalPrice ? Math.round(existing.originalPrice * 100) : totalMinor;
         const discountMinor = existing.discountAmount ? Math.round(existing.discountAmount * 100) : 0;
 
-        let formToken: string | null = null;
-        // Si ya está PAID, retornar estado sin solicitar nueva sesión ni devolver UUID como token
-        if (existing.paymentStatus === ReservationPaymentStatus.PAID) {
-          formToken = null;
-        } else if (totalMinor > 0) {
-          // Recuperación resiliente de sesión de pago si quedó pendiente
-          try {
-            const session = await this.paymentsService.createPaymentSession({
-              orderId: existing.code || `IB-${existing.id.slice(0, 8)}`,
-              amountMinor: totalMinor,
-              currency: 'USD',
-              customerEmail: existing.customerEmail,
-              customerFirstName: existing.customerFirstName,
-              customerLastName: existing.customerLastName,
-              customerPhone: existing.customerPhone,
-            });
-            formToken = session.formToken;
-          } catch {
-            formToken = null;
-          }
-        }
+        const formToken = await this.getOrCreatePaymentSession(existing, totalMinor);
 
         return {
           reservationId: existing.id,
@@ -290,7 +373,7 @@ export class CheckoutService {
       });
     }
 
-    // 3. Validación de cupones sin quemado prematuro (Ticket A11)
+    // 3. Validación de cupones y límites de uso (Tickets A11, P1.2)
     let appliedCouponId: string | null = null;
     let discountMinor = 0;
 
@@ -305,31 +388,40 @@ export class CheckoutService {
       });
 
       const now = new Date();
-      if (
-        coupon &&
-        (!coupon.expiresAt || new Date(coupon.expiresAt) >= now) &&
-        (!coupon.usageLimit || coupon.timesUsed < coupon.usageLimit) &&
-        (!coupon.minSpend || (subtotalMinor / 100) >= coupon.minSpend)
-      ) {
-        appliedCouponId = coupon.id;
-        if (coupon.discountType === 'PERCENTAGE') {
-          let disc = Math.round((subtotalMinor * coupon.discountValue) / 100);
-          if (coupon.maxDiscount) {
-            disc = Math.min(disc, Math.round(coupon.maxDiscount * 100));
-          }
-          discountMinor = disc;
-        } else {
-          discountMinor = Math.round(coupon.discountValue * 100);
-        }
-        discountMinor = Math.min(discountMinor, subtotalMinor);
-      } else {
-        throw new BadRequestException('Cupón de descuento no válido o condiciones no alcanzadas');
+      if (!coupon) {
+        throw new BadRequestException('Cupón de descuento no válido');
       }
+      if (coupon.expiresAt && new Date(coupon.expiresAt) < now) {
+        throw new BadRequestException('El cupón ha expirado');
+      }
+      // Semántica estricta P1.2: null/undefined = ilimitado, > 0 = limitado, <= 0 = inválido/agotado
+      if (coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
+        if (coupon.usageLimit <= 0 || coupon.timesUsed >= coupon.usageLimit) {
+          throw new BadRequestException('El cupón ha alcanzado su límite de usos');
+        }
+      }
+      if (coupon.minSpend && (subtotalMinor / 100) < coupon.minSpend) {
+        throw new BadRequestException('El monto de la reserva no alcanza el mínimo requerido para este cupón');
+      }
+
+      appliedCouponId = coupon.id;
+      if (coupon.discountType === 'PERCENTAGE') {
+        let disc = Math.round((subtotalMinor * coupon.discountValue) / 100);
+        if (coupon.maxDiscount) {
+          disc = Math.min(disc, Math.round(coupon.maxDiscount * 100));
+        }
+        discountMinor = disc;
+      } else {
+        discountMinor = Math.round(coupon.discountValue * 100);
+      }
+      discountMinor = Math.min(discountMinor, subtotalMinor);
     }
 
     const totalMinor = Math.max(0, subtotalMinor - discountMinor);
+    const isZeroTotal = totalMinor === 0;
+
     const reservationCode = idempotencyKey
-      ? `IB-${idempotencyKey.replace(/[^a-zA-Z0-9]/g, '').slice(0, 16).toUpperCase()}`
+      ? `IB-${crypto.createHash('sha256').update(idempotencyKey).digest('hex').slice(0, 12).toUpperCase()}`
       : `IB-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
 
     const firstItem = calculatedItems[0];
@@ -337,7 +429,7 @@ export class CheckoutService {
       throw new BadRequestException('No se procesaron ítems para la reserva');
     }
 
-    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1)
+    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2)
     let reservation: any;
     try {
       reservation = await this.prisma.reservation.create({
@@ -346,9 +438,9 @@ export class CheckoutService {
           code: reservationCode,
           requestKey: idempotencyKey || null,
           requestHash: requestHash,
-          bookingStatus: BookingStatus.PENDING,
-          paymentStatus: ReservationPaymentStatus.PENDING,
-          status: ReservationStatus.PENDING,
+          bookingStatus: isZeroTotal ? BookingStatus.CONFIRMED : BookingStatus.PENDING,
+          paymentStatus: isZeroTotal ? ReservationPaymentStatus.PAID : ReservationPaymentStatus.PENDING,
+          status: isZeroTotal ? ReservationStatus.PAID : ReservationStatus.PENDING,
           paidMinor: 0,
           totalMinor: totalMinor,
           unitPriceMinor: firstItem.unitPriceMinor,
@@ -368,7 +460,7 @@ export class CheckoutService {
           date: firstItem.date,
           pax: firstItem.pax,
           serviceType: firstItem.serviceType,
-          paymentReference: null, // requestKey NO se mezcla con paymentReference
+          paymentReference: isZeroTotal ? 'ZERO_TOTAL_PROMOTION' : null,
           items: {
             create: calculatedItems.map((it) => ({
               serviceType: it.serviceType,
@@ -391,6 +483,43 @@ export class CheckoutService {
           },
         },
       });
+
+      // Manejo específico de confirmación directa cuando el total es 0 (P1.2)
+      if (isZeroTotal) {
+        if (appliedCouponId) {
+          await this.prisma.coupon.update({
+            where: { id: appliedCouponId },
+            data: { timesUsed: { increment: 1 } },
+          }).catch(() => {});
+        }
+
+        await this.prisma.paymentNotification.create({
+          data: {
+            legacyId: reservation.id,
+            audience: 'CUSTOMER',
+            kind: 'ORDER_CONFIRMED',
+            state: 'PENDING',
+            snapshot: {
+              email: reservation.customerEmail,
+              name: `${reservation.customerFirstName} ${reservation.customerLastName}`,
+              reservationCode: reservation.code,
+              paidMinor: 0,
+              currency: reservation.currency,
+              transactionUuid: 'ZERO_TOTAL_PROMOTION',
+            },
+          },
+        }).catch(() => {});
+
+        await this.prisma.reservationEvent.create({
+          data: {
+            reservationId: reservation.id,
+            actorId: 'system',
+            actorLabel: 'system:checkout-zero-total',
+            toStatus: OperationalStatus.CONFIRMED,
+            note: '[AUDIT: ZERO_TOTAL_CHECKOUT_CONFIRMED] Reserva confirmada con importe 0 mediante promoción',
+          },
+        }).catch(() => {});
+      }
     } catch (createErr: any) {
       // Manejo de carrera concurrente con misma clave
       if (idempotencyKey && (createErr?.code === 'P2002' || String(createErr?.message).includes('unique constraint') || String(createErr?.message).includes('requestKey'))) {
@@ -402,23 +531,7 @@ export class CheckoutService {
           if (winningRes.requestHash && winningRes.requestHash !== requestHash) {
             throw new ConflictException('Idempotency key ya utilizada con datos divergentes');
           }
-          let formToken: string | null = null;
-          if (winningRes.paymentStatus !== ReservationPaymentStatus.PAID && totalMinor > 0) {
-            try {
-              const session = await this.paymentsService.createPaymentSession({
-                orderId: winningRes.code || `IB-${winningRes.id.slice(0, 8)}`,
-                amountMinor: totalMinor,
-                currency: 'USD',
-                customerEmail: winningRes.customerEmail,
-                customerFirstName: winningRes.customerFirstName,
-                customerLastName: winningRes.customerLastName,
-                customerPhone: winningRes.customerPhone,
-              });
-              formToken = session.formToken;
-            } catch {
-              formToken = null;
-            }
-          }
+          const formToken = await this.getOrCreatePaymentSession(winningRes, totalMinor);
           return {
             reservationId: winningRes.id,
             reservationCode: winningRes.code || reservationCode,
@@ -442,24 +555,10 @@ export class CheckoutService {
       throw createErr;
     }
 
-    // 5. Creación de sesión Izipay resiliente (Ticket P1)
+    // 5. Creación controlada de sesión de pago Izipay (Tickets P1, P1.2)
     let formToken: string | null = null;
     if (totalMinor > 0) {
-      try {
-        const session = await this.paymentsService.createPaymentSession({
-          orderId: reservation.code || reservationCode,
-          amountMinor: totalMinor,
-          currency: 'USD',
-          customerEmail: reservation.customerEmail,
-          customerFirstName: reservation.customerFirstName,
-          customerLastName: reservation.customerLastName,
-          customerPhone: reservation.customerPhone,
-        });
-        formToken = session.formToken;
-      } catch (err: any) {
-        // La reserva persiste; ante reintento con la misma clave se recupera la sesión
-        formToken = null;
-      }
+      formToken = await this.getOrCreatePaymentSession(reservation, totalMinor);
     }
 
     return {

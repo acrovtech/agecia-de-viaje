@@ -25,6 +25,7 @@ import { formatCurrency } from '@repo/ui/lib/currency';
 import { CheckoutPassengerFields } from './components/checkout-passenger-fields';
 import { CheckoutModalEdit } from './components/checkout-modal-edit';
 import { CONTACT_CONFIG } from '@/lib/contact-config';
+import { getIzipayClientPublicKey } from '@/lib/izipay';
 
 type Passenger = {
   firstName: string;
@@ -225,6 +226,11 @@ export function CheckoutForm() {
   const [step2Error, setStep2Error] = useState<string | null>(null);
   const checkoutAttemptIdRef = useRef<string | null>(null);
 
+  // Iniciar nuevo intento con nueva clave si se modifican datos materiales de la reserva
+  useEffect(() => {
+    checkoutAttemptIdRef.current = null;
+  }, [tourSlug, dateStr, numPax, grandTotal, appliedCoupon?.code]);
+
   // Estilos UI normalizados
   const inputBaseStyle = "w-full h-[38px] px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
 
@@ -344,16 +350,26 @@ export function CheckoutForm() {
         couponCode: appliedCoupon?.code,
         idempotencyKey: (() => {
           if (!checkoutAttemptIdRef.current) {
-            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+            const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+              ? crypto.randomUUID().replace(/-/g, '')
+              : Date.now().toString(36);
+            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${uuid.slice(0, 12)}`;
           }
           return checkoutAttemptIdRef.current;
         })(),
       });
 
-      if (result.success && result.formToken) {
-        setFormToken(result.formToken);
-        setReservationId(result.reservationId ?? null);
-        setCurrentStep(3);
+      if (result.success) {
+        if (result.formToken) {
+          setFormToken(result.formToken);
+          setReservationId(result.reservationId ?? null);
+          setCurrentStep(3);
+        } else if (finalPayableTotal === 0) {
+          // Confirmación automática sin pasarela para total 0
+          window.location.href = `/reserva/${result.reservationId}/resultado`;
+        } else {
+          setStep2Error("No se pudo iniciar la sesión de pago. Intenta de nuevo.");
+        }
       } else {
         setStep2Error(result.error || "Ocurrió un error al registrar tu reserva. Intenta de nuevo.");
       }
@@ -369,7 +385,11 @@ export function CheckoutForm() {
   useEffect(() => {
     if (currentStep === 3 && formToken) {
       const endpoint = process.env.NEXT_PUBLIC_IZIPAY_CLIENT_ENDPOINT || 'https://static.micuentaweb.pe';
-      const publicKey = process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY_TEST || process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || '';
+      const publicKey = getIzipayClientPublicKey();
+      if (!publicKey) {
+        setPaymentError("Configuración de pasarela de pago segura no disponible.");
+        return;
+      }
 
       let isMounted = true;
 

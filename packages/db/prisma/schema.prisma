@@ -608,6 +608,7 @@ model Reservation {
   vehicleName         String?
   requestKey          String?
   requestHash         String?
+  paymentFormToken    String?
   events              ReservationEvent[]
 
   @@unique([agencyId, requestKey])

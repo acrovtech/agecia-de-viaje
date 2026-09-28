@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger';
 
 function getApiInternalUrl(): string {
   const url = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -14,13 +14,28 @@ function getApiInternalUrl(): string {
 
 export async function POST(req: Request) {
   try {
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > 65536) {
+      return NextResponse.json(
+        { error: 'El tamaño del payload excede el límite permitido de 64KB' },
+        { status: 413 },
+      );
+    }
+
     const contentType = req.headers.get('content-type') || '';
     let krAnswerRaw = '';
     let krHash = req.headers.get('kr-hash') || '';
 
+    const rawText = await req.text();
+    if (rawText.length > 65536) {
+      return NextResponse.json(
+        { error: 'El tamaño del payload excede el límite permitido de 64KB' },
+        { status: 413 },
+      );
+    }
+
     // Soporte para ambos formatos oficiales de Izipay: x-www-form-urlencoded y JSON
     if (contentType.includes('application/x-www-form-urlencoded')) {
-      const rawText = await req.text();
       const params = new URLSearchParams(rawText);
       krAnswerRaw = params.get('kr-answer') || '';
       krHash = params.get('kr-hash') || krHash;

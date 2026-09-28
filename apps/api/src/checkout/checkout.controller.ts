@@ -30,8 +30,8 @@ export class CheckoutController {
   @ApiOperation({ summary: 'Crea una intención de reserva y checkout con cotización autoritativa e idempotencia.' })
   @ApiHeader({
     name: 'idempotency-key',
-    required: false,
-    description: 'Clave única para evitar procesamiento duplicado ante reintentos de red.',
+    required: true,
+    description: 'Clave única obligatoria para garantizar idempotencia y evitar cobros duplicados.',
   })
   @ApiOkResponse({ type: CheckoutResponseDto })
   async create(
@@ -42,17 +42,18 @@ export class CheckoutController {
     const parsedStorefront = identifier.safeParse(storefront);
     if (!parsedStorefront.success) throw new BadRequestException('Storefront inválido');
 
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      throw new BadRequestException('El encabezado Idempotency-Key es obligatorio para iniciar el checkout');
+    }
+
+    const parsedKey = idempotencyKeySchema.safeParse(idempotencyKey);
+    if (!parsedKey.success) throw new BadRequestException('Idempotency-Key inválido (debe tener entre 8 y 128 caracteres)');
+    const parsedIdempotencyKey = parsedKey.data;
+
     const parsedBody = createCheckoutSchema.safeParse(body);
     if (!parsedBody.success) {
       const errorMsg = parsedBody.error.issues.map((it) => `${it.path.join('.')}: ${it.message}`).join(', ');
       throw new BadRequestException(`Datos de checkout inválidos: ${errorMsg}`);
-    }
-
-    let parsedIdempotencyKey: string | undefined;
-    if (idempotencyKey) {
-      const parsedKey = idempotencyKeySchema.safeParse(idempotencyKey);
-      if (!parsedKey.success) throw new BadRequestException('Idempotency-Key inválido');
-      parsedIdempotencyKey = parsedKey.data;
     }
 
     return this.checkout.createCheckout(parsedStorefront.data, parsedBody.data, parsedIdempotencyKey);
