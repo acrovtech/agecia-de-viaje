@@ -25,4 +25,4 @@ async function application(settings, prisma, controllers = []) {
   return app;
 }
 
-export { config, application };
+export { config, application, parseConfig };

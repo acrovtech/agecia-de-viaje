@@ -9,7 +9,12 @@ import {
 import { ApiHeader, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { PublicRoute } from '../security/public-route.js';
-import { CheckoutResponseDto, CreateCheckoutDto } from './checkout.dto.js';
+import {
+  CheckoutResponseDto,
+  CreateCheckoutDto,
+  createCheckoutSchema,
+  idempotencyKeySchema,
+} from './checkout.dto.js';
 import { CheckoutService } from './checkout.service.js';
 
 const identifier = z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -37,6 +42,19 @@ export class CheckoutController {
     const parsedStorefront = identifier.safeParse(storefront);
     if (!parsedStorefront.success) throw new BadRequestException('Storefront inválido');
 
-    return this.checkout.createCheckout(parsedStorefront.data, body, idempotencyKey);
+    const parsedBody = createCheckoutSchema.safeParse(body);
+    if (!parsedBody.success) {
+      const errorMsg = parsedBody.error.issues.map((it) => `${it.path.join('.')}: ${it.message}`).join(', ');
+      throw new BadRequestException(`Datos de checkout inválidos: ${errorMsg}`);
+    }
+
+    let parsedIdempotencyKey: string | undefined;
+    if (idempotencyKey) {
+      const parsedKey = idempotencyKeySchema.safeParse(idempotencyKey);
+      if (!parsedKey.success) throw new BadRequestException('Idempotency-Key inválido');
+      parsedIdempotencyKey = parsedKey.data;
+    }
+
+    return this.checkout.createCheckout(parsedStorefront.data, parsedBody.data, parsedIdempotencyKey);
   }
 }

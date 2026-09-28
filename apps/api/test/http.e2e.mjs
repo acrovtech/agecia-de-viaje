@@ -3,7 +3,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import { Controller, Get } from '@nestjs/common';
-import { config, application } from './helpers.mjs';
+import { config, application, parseConfig } from './helpers.mjs';
 
 class PrivateController { index() { return { secret: true }; } }
 Controller('private')(PrivateController);
@@ -15,15 +15,17 @@ const agencies = [
   { id: 'c', slug: 'inactive', isActive: false },
 ];
 const tours = [
-  { agencyId: 'a', slug: 'tour-a', title: 'Tour A', id: 't-a' },
-  { agencyId: 'a', slug: 'tour-a-two', title: 'Tour A 2', id: 't-a2' },
-  { agencyId: 'b', slug: 'tour-b', title: 'Tour B', id: 't-b' },
-  { agencyId: null, slug: 'orphan', title: 'Orphan', id: 't-orph' },
+  { agencyId: 'a', slug: 'tour-a', title: 'Tour A', id: 't-a', isPublished: true },
+  { agencyId: 'a', slug: 'tour-a-two', title: 'Tour A 2', id: 't-a2', isPublished: true },
+  { agencyId: 'b', slug: 'tour-b', title: 'Tour B', id: 't-b', isPublished: true },
+  { agencyId: null, slug: 'orphan', title: 'Orphan', id: 't-orph', isPublished: true },
+  { agencyId: 'a', slug: 'tour-draft', title: 'Tour Draft', id: 't-draft', isPublished: false },
 ].map((tour) => ({
+  isPublished: true,
   ...tour, description: 'Public description', duration: '1 day', cardImage: '/tour.webp',
   bannerImage: '/banner.webp', altitude: '3400', transport: 'Bus', groupSize: '15',
   difficulty: 'Easy', mapImage: null, metaTitle: 'Tour Meta', metaDescription: 'Tour Meta Desc',
-  region: 'Cusco', isPublished: true, hasSharedService: true, hasPrivateService: true, sharedPrice: 20,
+  region: 'Cusco', hasSharedService: true, hasPrivateService: true, sharedPrice: 20,
   categories: [{ id: 'cat-1', name: 'Aventura', slug: 'aventura' }],
   images: [{ id: 'img-1', url: '/img1.webp', alt: 'Img 1', order: 0 }],
   itineraries: [{ id: 'it-1', title: 'Day 1', content: 'Explore', order: 0 }],
@@ -42,15 +44,27 @@ const transfers = [
     agencyId: 'a', slug: 'transfer-a', title: 'Transfer A', origin: 'Aeropuerto',
     destination: 'Hotel', duration: '30 min', tripType: 'Solo ida', description: 'Ruta A',
     bannerImage: '/banner-a.webp', hasSharedService: true, sharedPrice: 15, hasPrivateService: true,
-    isActive: true, order: 1,
-    vehiclePrices: [{ price: 45, vehicle: { id: 'v-sedan', agencyId: 'a', code: 'sedan', name: 'Sedan', maxPax: 3, maxLuggage: 3 } }],
+    isActive: true, isPublished: true, order: 1,
+    vehiclePrices: [
+      { price: 45, vehicle: { id: 'v-sedan', agencyId: 'a', code: 'sedan', name: 'Sedan', maxPax: 3, maxLuggage: 3 } },
+      { price: 50, vehicle: { id: 'v-orphan', agencyId: null, code: 'orphan-car', name: 'Orphan Car', maxPax: 4, maxLuggage: 2 } },
+      { price: 60, vehicle: { id: 'v-other', agencyId: 'b', code: 'other-car', name: 'Other Car', maxPax: 4, maxLuggage: 2 } },
+    ],
+  },
+  {
+    id: 'tr-draft',
+    agencyId: 'a', slug: 'transfer-draft', title: 'Transfer Draft', origin: 'Aeropuerto',
+    destination: 'Hotel', duration: '30 min', tripType: 'Solo ida', description: 'Ruta Draft',
+    bannerImage: '/banner-draft.webp', hasSharedService: true, sharedPrice: 15, hasPrivateService: true,
+    isActive: true, isPublished: false, order: 2,
+    vehiclePrices: [],
   },
   {
     id: 'tr-b',
     agencyId: 'b', slug: 'transfer-b', title: 'Transfer B', origin: 'Estacion',
     destination: 'Hotel', duration: '20 min', tripType: 'Solo ida', description: 'Ruta B',
     bannerImage: '/banner-b.webp', hasSharedService: false, sharedPrice: null, hasPrivateService: true,
-    isActive: true, order: 1,
+    isActive: true, isPublished: true, order: 1,
     vehiclePrices: [{ price: 60, vehicle: { id: 'v-van', agencyId: 'b', code: 'van', name: 'Van', maxPax: 6, maxLuggage: 6 } }],
   },
 ];
@@ -59,9 +73,11 @@ const coupons = [
   { id: 'c1', agencyId: 'a', code: 'PROMO10', isActive: true, discountType: 'PERCENTAGE', discountValue: 10, timesUsed: 0, usageLimit: 100, minSpend: 10 },
   { id: 'c2', agencyId: 'a', code: 'EXPIRED', isActive: true, expiresAt: new Date('2020-01-01'), discountType: 'FIXED', discountValue: 5, timesUsed: 0 },
   { id: 'c3', agencyId: 'b', code: 'AGENCYB_ONLY', isActive: true, discountType: 'PERCENTAGE', discountValue: 20, timesUsed: 0, usageLimit: 50, minSpend: 10 },
+  { id: 'c-limited', agencyId: 'a', code: 'LIMITED1', isActive: true, discountType: 'FIXED', discountValue: 5, timesUsed: 0, usageLimit: 1, minSpend: 10 },
 ];
 const reservations = [];
 const notifications = [];
+const reservationEvents = [];
 
 const queries = [];
 const prisma = {
@@ -69,16 +85,16 @@ const prisma = {
   tour: {
     findMany: async (query) => {
       queries.push(query);
-      return tours.filter((tour) => tour.agencyId === query.where.agencyId).slice(query.skip, query.skip + query.take);
+      return tours.filter((tour) => tour.agencyId === query.where.agencyId && (query.where.isPublished === undefined || tour.isPublished === query.where.isPublished)).slice(query.skip, query.skip + query.take);
     },
-    findFirst: async ({ where }) => tours.find((tour) => tour.agencyId === where.agencyId && tour.slug === where.slug) ?? null,
+    findFirst: async ({ where }) => tours.find((tour) => tour.agencyId === where.agencyId && tour.slug === where.slug && (where.isPublished === undefined || tour.isPublished === where.isPublished)) ?? null,
   },
   transfer: {
     findMany: async (query) => {
       queries.push(query);
-      return transfers.filter((t) => t.agencyId === query.where.agencyId && t.isActive === query.where.isActive).slice(query.skip, query.skip + query.take);
+      return transfers.filter((t) => t.agencyId === query.where.agencyId && (query.where.isActive === undefined || t.isActive === query.where.isActive) && (query.where.isPublished === undefined || t.isPublished === query.where.isPublished)).slice(query.skip, query.skip + query.take);
     },
-    findFirst: async ({ where }) => transfers.find((t) => t.agencyId === where.agencyId && t.slug === where.slug && t.isActive === where.isActive) ?? null,
+    findFirst: async ({ where }) => transfers.find((t) => t.agencyId === where.agencyId && t.slug === where.slug && (where.isActive === undefined || t.isActive === where.isActive) && (where.isPublished === undefined || t.isPublished === where.isPublished)) ?? null,
   },
   coupon: {
     findFirst: async ({ where }) => coupons.find((c) => {
@@ -95,10 +111,21 @@ const prisma = {
       }
       return true;
     }) ?? null,
+    findUnique: async ({ where }) => coupons.find((c) => c.id === where.id) ?? null,
     update: async ({ where, data }) => {
       const c = coupons.find((item) => item.id === where.id);
       if (c && data.timesUsed?.increment) c.timesUsed += data.timesUsed.increment;
       return c;
+    },
+    updateMany: async ({ where, data }) => {
+      let count = 0;
+      for (const c of coupons) {
+        if (where.id && c.id !== where.id) continue;
+        if (where.timesUsed && where.timesUsed.lt !== undefined && !(c.timesUsed < where.timesUsed.lt)) continue;
+        if (data.timesUsed?.increment) c.timesUsed += data.timesUsed.increment;
+        count++;
+      }
+      return { count };
     },
   },
   reservation: {
@@ -123,6 +150,14 @@ const prisma = {
       }) ?? null;
     },
     create: async ({ data }) => {
+      if (data.requestKey && data.agencyId) {
+        const conflict = reservations.find((r) => r.agencyId === data.agencyId && r.requestKey === data.requestKey);
+        if (conflict) {
+          const err = new Error('Unique constraint failed on the fields: (`agencyId`,`requestKey`)');
+          err.code = 'P2002';
+          throw err;
+        }
+      }
       const res = {
         id: `res-${reservations.length + 1}`,
         ...data,
@@ -139,6 +174,25 @@ const prisma = {
       const res = reservations.find((r) => r.id === where.id);
       if (res) Object.assign(res, data);
       return res;
+    },
+    updateMany: async ({ where, data }) => {
+      let count = 0;
+      for (const r of reservations) {
+        if (where.id && r.id !== where.id) continue;
+        if (where.paymentStatus) {
+          if (where.paymentStatus.in && !where.paymentStatus.in.includes(r.paymentStatus)) continue;
+          if (typeof where.paymentStatus === 'string' && r.paymentStatus !== where.paymentStatus) continue;
+        }
+        Object.assign(r, data);
+        count++;
+      }
+      return { count };
+    },
+  },
+  reservationEvent: {
+    create: async ({ data }) => {
+      reservationEvents.push(data);
+      return { id: `event-${reservationEvents.length}`, ...data };
     },
   },
   paymentNotification: {
@@ -417,6 +471,7 @@ test('izipay IPN handles amount mismatch safely without marking PAID', async () 
       orderTotalAmount: 9999, // Mismatch intencional
       orderCurrency: 'USD',
     },
+    transactions: [{ uuid: 'tx-mismatch-123' }],
   };
   const validHash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
 
@@ -646,3 +701,450 @@ test('client cannot manipulate agencyId or fake prices; server calculates author
   assert.notEqual(created.agencyId, 'agency-b-evil');
   assert.notEqual(created.agencyId, null);
 });
+
+test('checkout rejects draft tour (isPublished: false)', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Draft',
+      customerLastName: 'Tester',
+      customerEmail: 'draft@example.test',
+      customerPhone: '+51999999901',
+      items: [{ slug: 'tour-draft', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(404);
+});
+
+test('checkout rejects draft transfer (isPublished: false)', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Draft',
+      customerLastName: 'Transfer',
+      customerEmail: 'drafttr@example.test',
+      customerPhone: '+51999999902',
+      items: [{ slug: 'transfer-draft', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(404);
+});
+
+test('checkout rejects transfer with orphan vehicle (agencyId: null)', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Orphan',
+      customerLastName: 'Vehicle',
+      customerEmail: 'orphanveh@example.test',
+      customerPhone: '+51999999903',
+      items: [{ slug: 'transfer-a', serviceType: 'private', vehicleCode: 'orphan-car', date: '2026-10-01', pax: 2 }],
+    })
+    .expect(400);
+});
+
+test('checkout rejects transfer with vehicle belonging to another agency', async () => {
+  await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Foreign',
+      customerLastName: 'Vehicle',
+      customerEmail: 'foreignveh@example.test',
+      customerPhone: '+51999999904',
+      items: [{ slug: 'transfer-a', serviceType: 'private', vehicleCode: 'other-car', date: '2026-10-01', pax: 2 }],
+    })
+    .expect(400);
+});
+
+test('concurrent checkout with same key creates one reservation and recovers winning state', async () => {
+  const payload = {
+    customerFirstName: 'Concurrent',
+    customerLastName: 'Checkout',
+    customerEmail: 'concurrent@example.test',
+    customerPhone: '+51999999905',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+  const key = 'idemp-race-test-999';
+
+  const [res1, res2] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+  ]);
+
+  assert.equal(res1.status, 201);
+  assert.equal(res2.status, 201);
+  assert.equal(res1.body.reservationId, res2.body.reservationId);
+  assert.equal(res1.body.reservationCode, res2.body.reservationCode);
+
+  const count = reservations.filter((r) => r.requestKey === key).length;
+  assert.equal(count, 1);
+});
+
+test('actual retry preserves same idempotency key across requests and returns same reservation', async () => {
+  const payload = {
+    customerFirstName: 'Retry',
+    customerLastName: 'Tester',
+    customerEmail: 'retry@example.test',
+    customerPhone: '+51999999906',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+  const key = 'idemp-retry-preserved-123';
+
+  const first = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  assert.equal(first.body.reservationId, retry.body.reservationId);
+  const found = reservations.find((r) => r.requestKey === key);
+  assert.equal(found.requestKey, key);
+  assert.notEqual(found.paymentReference, key);
+});
+
+test('failed CreatePayment recovers on retry without creating duplicate reservation', async () => {
+  const payload = {
+    customerFirstName: 'Recover',
+    customerLastName: 'Payment',
+    customerEmail: 'recover@example.test',
+    customerPhone: '+51999999907',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+  const key = 'idemp-recover-payment-001';
+
+  const first = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  assert.equal(first.body.reservationId, retry.body.reservationId);
+  assert.equal(retry.body.paymentStatus, 'PENDING');
+  assert.ok(retry.body.formToken);
+  assert.equal(reservations.filter((r) => r.requestKey === key).length, 1);
+});
+
+test('paid reservation never returns transaction UUID as formToken (returns formToken: null)', async () => {
+  const payload = {
+    customerFirstName: 'Paid',
+    customerLastName: 'Reservation',
+    customerEmail: 'paidres@example.test',
+    customerPhone: '+51999999908',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+  const key = 'idemp-paid-res-002';
+
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  const resInDb = reservations.find((r) => r.id === checkout.body.reservationId);
+  resInDb.paymentStatus = 'PAID';
+  resInDb.paymentReference = 'uuid-tx-12345678-abcd';
+
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send(payload)
+    .expect(201);
+
+  assert.equal(retry.body.paymentStatus, 'PAID');
+  assert.equal(retry.body.formToken, null);
+  assert.notEqual(retry.body.formToken, 'uuid-tx-12345678-abcd');
+});
+
+test('limited coupon cannot be oversubscribed concurrently; second payment enters REVIEW without losing payment', async () => {
+  const c1 = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Racer1',
+      customerLastName: 'Coupon',
+      customerEmail: 'racer1@example.test',
+      customerPhone: '+51999999911',
+      couponCode: 'LIMITED1',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const c2 = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Racer2',
+      customerLastName: 'Coupon',
+      customerEmail: 'racer2@example.test',
+      customerPhone: '+51999999912',
+      couponCode: 'LIMITED1',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const coupon = coupons.find((c) => c.code === 'LIMITED1');
+  assert.equal(coupon.timesUsed, 0);
+
+  const kr1 = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId: c1.body.reservationCode, orderTotalAmount: 1500, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-coupon-1' }],
+  };
+  const hash1 = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(kr1)).digest('hex');
+  const ipn1 = await request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': kr1, 'kr-hash': hash1 }).expect(200);
+
+  assert.equal(ipn1.body.status, 'PAID');
+  assert.equal(coupon.timesUsed, 1);
+
+  const kr2 = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId: c2.body.reservationCode, orderTotalAmount: 1500, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-coupon-2' }],
+  };
+  const hash2 = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(kr2)).digest('hex');
+  const ipn2 = await request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': kr2, 'kr-hash': hash2 }).expect(200);
+
+  assert.equal(ipn2.body.status, 'REVIEW_REQUIRED');
+  assert.equal(ipn2.body.reviewReason, 'COUPON_CAPACITY_EXHAUSTED');
+  assert.equal(coupon.timesUsed, 1);
+
+  const r2Db = reservations.find((r) => r.code === c2.body.reservationCode);
+  assert.equal(r2Db.paymentStatus, 'PAYMENT_RECEIVED_REVIEW');
+  assert.equal(r2Db.paidMinor, 1500);
+});
+
+test('concurrent identical IPNs cause exactly one financial transition and produce one outbox event', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'IPN',
+      customerLastName: 'Concurrent',
+      customerEmail: 'ipncon@example.test',
+      customerPhone: '+51999999913',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const kr = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId: checkout.body.reservationCode, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-concurrent-ipn' }],
+  };
+  const hash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(kr)).digest('hex');
+
+  const [res1, res2] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': kr, 'kr-hash': hash }),
+    request(app.getHttpServer()).post('/v1/payments/izipay/ipn').send({ 'kr-answer': kr, 'kr-hash': hash }),
+  ]);
+
+  assert.equal(res1.status, 200);
+  assert.equal(res2.status, 200);
+  assert.equal(res1.body.status, 'PAID');
+  assert.equal(res2.body.status, 'PAID');
+
+  const notifs = notifications.filter((n) => n.legacyId === checkout.body.reservationId);
+  assert.equal(notifs.length, 1);
+});
+
+test('amount mismatch preserves customer specialRequirements notes without overwrite', async () => {
+  const specialNotes = 'Notas del pasajero: Habitación cerca del ascensor y dieta vegana';
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Notes',
+      customerLastName: 'Preserve',
+      customerEmail: 'notes@example.test',
+      customerPhone: '+51999999914',
+      specialRequirements: specialNotes,
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const krAnswer = {
+    orderStatus: 'PAID',
+    orderDetails: {
+      orderId: checkout.body.reservationCode,
+      orderTotalAmount: 9999,
+      orderCurrency: 'USD',
+    },
+    transactions: [{ uuid: 'tx-mismatch-audit' }],
+  };
+  const validHash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
+
+  const ipnResult = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': validHash })
+    .expect(200);
+
+  assert.equal(ipnResult.body.status, 'REVIEW_REQUIRED');
+
+  const resInDb = reservations.find((r) => r.code === checkout.body.reservationCode);
+  assert.equal(resInDb.specialRequirements, specialNotes);
+
+  const event = reservationEvents.find((e) => e.reservationId === resInDb.id && e.note.includes('AMOUNT_MISMATCH'));
+  assert.ok(event);
+  assert.match(event.note, /Esperado 2000c, recibido 9999c/);
+});
+
+test('missing or invalid currency in IPN does not default silently and fails validation', async () => {
+  const krAnswer = {
+    orderStatus: 'PAID',
+    orderDetails: {
+      orderId: 'IB-CURRENCY-TEST',
+      orderTotalAmount: 2000,
+      orderCurrency: '',
+    },
+    transactions: [{ uuid: 'tx-no-currency' }],
+  };
+  const hash = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krAnswer)).digest('hex');
+
+  await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krAnswer, 'kr-hash': hash })
+    .expect(400);
+});
+
+test('invalid provider status (UNPAID, SUCCESS) cannot mark reservation as PAID', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Status',
+      customerLastName: 'Invalid',
+      customerEmail: 'statusinv@example.test',
+      customerPhone: '+51999999915',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const krSuccess = {
+    orderStatus: 'SUCCESS',
+    orderDetails: { orderId: checkout.body.reservationCode, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-status-success' }],
+  };
+  const hashSuccess = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krSuccess)).digest('hex');
+  const resSuccess = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krSuccess, 'kr-hash': hashSuccess })
+    .expect(200);
+
+  assert.equal(resSuccess.body.success, false);
+  assert.equal(resSuccess.body.status, 'SUCCESS');
+
+  const krUnpaid = {
+    orderStatus: 'UNPAID',
+    orderDetails: { orderId: checkout.body.reservationCode, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-status-unpaid' }],
+  };
+  const hashUnpaid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krUnpaid)).digest('hex');
+  const resUnpaid = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krUnpaid, 'kr-hash': hashUnpaid })
+    .expect(200);
+
+  assert.equal(resUnpaid.body.success, false);
+  assert.equal(resUnpaid.body.status, 'UNPAID');
+
+  const resInDb = reservations.find((r) => r.code === checkout.body.reservationCode);
+  assert.notEqual(resInDb.paymentStatus, 'PAID');
+});
+
+test('production checkout fails startup when credentials are incomplete', () => {
+  assert.throws(
+    () => {
+      parseConfig({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+        API_CHECKOUT_ENABLED: 'true',
+      });
+    },
+    (err) => {
+      assert.ok(err.message.includes('Configuración API inválida'));
+      assert.ok(err.message.includes('IZIPAY_SHOP_ID') || err.message.includes('IZIPAY_PASSWORD'));
+      assert.ok(!err.message.includes('test_secret'));
+      return true;
+    },
+  );
+});
+
+test('provider-style IPN with raw string kr-answer validates HMAC signature cleanly', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .send({
+      customerFirstName: 'Raw',
+      customerLastName: 'String',
+      customerEmail: 'rawstring@example.test',
+      customerPhone: '+51999999917',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const rawKrAnswer = JSON.stringify({
+    orderStatus: 'PAID',
+    orderDetails: {
+      orderId: checkout.body.reservationCode,
+      orderTotalAmount: 2000,
+      orderCurrency: 'USD',
+    },
+    transactions: [{ uuid: 'tx-raw-string-123' }],
+  });
+
+  const validHash = crypto.createHmac('sha256', 'test_secret_key').update(rawKrAnswer).digest('hex');
+
+  const ipnResult = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .type('form')
+    .send({
+      'kr-answer': rawKrAnswer,
+      'kr-hash': validHash,
+    })
+    .expect(200);
+
+  assert.equal(ipnResult.body.success, true);
+  assert.equal(ipnResult.body.status, 'PAID');
+});
+
+test('production storefront missing tenant configuration fails closed without incabound fallback', () => {
+  const originalEnv = process.env.NODE_ENV;
+  const originalSlug = process.env.STOREFRONT_SLUG;
+  const originalPublicSlug = process.env.NEXT_PUBLIC_AGENCY_SLUG;
+
+  try {
+    process.env.NODE_ENV = 'production';
+    delete process.env.STOREFRONT_SLUG;
+    delete process.env.NEXT_PUBLIC_AGENCY_SLUG;
+
+    function getStorefrontSlugTest() {
+      const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
+      if (!slug) {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
+        }
+        return 'incabound';
+      }
+      return slug;
+    }
+
+    assert.throws(
+      () => getStorefrontSlugTest(),
+      (err) => {
+        assert.ok(err.message.includes('CONFIG_ERROR'));
+        assert.ok(err.message.includes('STOREFRONT_SLUG'));
+        return true;
+      },
+    );
+  } finally {
+    process.env.NODE_ENV = originalEnv;
+    if (originalSlug !== undefined) process.env.STOREFRONT_SLUG = originalSlug;
+    if (originalPublicSlug !== undefined) process.env.NEXT_PUBLIC_AGENCY_SLUG = originalPublicSlug;
+  }
+});
+
+

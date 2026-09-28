@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   BookingStatus,
+  OperationalStatus,
   ReservationPaymentStatus,
   ReservationStatus,
 } from '@repo/db/prisma';
@@ -16,6 +17,7 @@ import {
   IpnProcessResultDto,
   IzipayIpnAnswerDto,
   IzipayIpnPayloadDto,
+  ipnAnswerSchema,
 } from './payments.dto.js';
 
 @Injectable()
@@ -28,7 +30,8 @@ export class PaymentsService {
   verifySignature(rawPayload: unknown, receivedHash: string | undefined): boolean {
     if (!receivedHash) return false;
     const payloadStr = typeof rawPayload === 'string' ? rawPayload : JSON.stringify(rawPayload);
-    const secret = this.config.izipaySecretKey;
+    // Credencial oficial de Izipay para IPN server-to-server: PASSWORD (o izipayPassword)
+    const secret = this.config.izipayPassword || this.config.izipaySecretKey;
     if (!secret) return false;
 
     try {
@@ -107,17 +110,28 @@ export class PaymentsService {
     const rawAnswer = payload['kr-answer'];
     const hash = headerHash || payload['kr-hash'];
 
-    // 1. Verificación criptográfica obligatoria de firma HMAC (Tickets A10, A14)
+    // 1. Verificación criptográfica obligatoria de firma HMAC sobre el string exacto (Tickets A10, A14, P1)
     const isValid = this.verifySignature(rawAnswer, hash);
     if (!isValid) {
       throw new BadRequestException('Firma HMAC del webhook inválida');
     }
 
-    const answer: IzipayIpnAnswerDto = typeof rawAnswer === 'string' ? JSON.parse(rawAnswer) : rawAnswer;
-    const orderDetails = answer.orderDetails;
-    if (!orderDetails || !orderDetails.orderId) {
-      throw new BadRequestException('Formato de IPN no contiene orderDetails.orderId');
+    // 2. Parseo y validación de estructura solo posterior a firma válida (Ticket P1)
+    let answerObj: any;
+    try {
+      answerObj = typeof rawAnswer === 'string' ? JSON.parse(rawAnswer) : rawAnswer;
+    } catch {
+      throw new BadRequestException('Payload kr-answer contiene JSON malformado');
     }
+
+    const parsedAnswer = ipnAnswerSchema.safeParse(answerObj);
+    if (!parsedAnswer.success) {
+      const issues = parsedAnswer.error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join(', ');
+      throw new BadRequestException(`Estructura de IPN inválida: ${issues}`);
+    }
+
+    const answer = parsedAnswer.data;
+    const orderDetails = answer.orderDetails;
 
     const reservation = await this.prisma.reservation.findFirst({
       where: {
@@ -132,7 +146,7 @@ export class PaymentsService {
       throw new NotFoundException(`Reserva "${orderDetails.orderId}" no encontrada`);
     }
 
-    // Si ya fue confirmada anteriormente, responder con idempotencia
+    // Si ya fue confirmada anteriormente, responder con idempotencia sin efectos colaterales
     if (reservation.paymentStatus === ReservationPaymentStatus.PAID) {
       return {
         success: true,
@@ -142,8 +156,8 @@ export class PaymentsService {
       };
     }
 
-    const isSuccess = answer.orderStatus === 'PAID' || answer.orderStatus === 'SUCCESS';
-    if (!isSuccess) {
+    // 3. Validación de estado documentado por Izipay: Solo 'PAID' es aceptado (Ticket P1)
+    if (answer.orderStatus !== 'PAID') {
       return {
         success: false,
         reservationCode: reservation.code || orderDetails.orderId,
@@ -152,20 +166,46 @@ export class PaymentsService {
       };
     }
 
-    // 2. Cotejo estricto de importe y moneda (Tickets A10, A14)
+    // 4. Validación de identificador de transacción/reconciliación (Ticket P1)
+    const transactionUuid = answer.transactions?.[0]?.uuid;
+    if (!transactionUuid) {
+      await this.prisma.reservationEvent.create({
+        data: {
+          reservationId: reservation.id,
+          actorId: 'system',
+          actorLabel: 'system:izipay-ipn',
+          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+          note: '[AUDIT: MISSING_TRANSACTION_UUID] Notificación PAID recibida sin UUID de transacción',
+        },
+      });
+      return {
+        success: false,
+        reservationCode: reservation.code || orderDetails.orderId,
+        status: 'REVIEW_REQUIRED',
+        reviewReason: 'MISSING_TRANSACTION_UUID',
+      };
+    }
+
+    // 5. Cotejo estricto de importe y moneda sin sobreescribir notas del cliente (Tickets A10, A14, P1)
     const expectedMinor = (reservation.totalMinor !== null && reservation.totalMinor !== undefined && reservation.totalMinor > 0)
       ? reservation.totalMinor
       : Math.round(reservation.totalPrice * 100);
     const receivedMinor = orderDetails.orderTotalAmount;
-    const receivedCurrency = (orderDetails.orderCurrency || 'USD').toUpperCase();
+    const receivedCurrency = orderDetails.orderCurrency.toUpperCase();
     const expectedCurrency = (reservation.currency || 'USD').toUpperCase();
 
     if (receivedCurrency !== expectedCurrency) {
       await this.prisma.reservation.update({
         where: { id: reservation.id },
+        data: { paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW },
+      });
+      await this.prisma.reservationEvent.create({
         data: {
-          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
-          specialRequirements: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}`,
+          reservationId: reservation.id,
+          actorId: 'system',
+          actorLabel: 'system:izipay-ipn',
+          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+          note: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}`,
         },
       });
       return {
@@ -179,9 +219,15 @@ export class PaymentsService {
     if (receivedMinor !== expectedMinor) {
       await this.prisma.reservation.update({
         where: { id: reservation.id },
+        data: { paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW },
+      });
+      await this.prisma.reservationEvent.create({
         data: {
-          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
-          specialRequirements: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c`,
+          reservationId: reservation.id,
+          actorId: 'system',
+          actorLabel: 'system:izipay-ipn',
+          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+          note: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c`,
         },
       });
       return {
@@ -192,31 +238,75 @@ export class PaymentsService {
       };
     }
 
-    const transactionUuid = answer.transactions?.[0]?.uuid || null;
+    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1)
+    let couponCapacityExhausted = false;
 
-    // 3. Transición atómica SQL con Outbox transaccional (Tickets A10, A11, A15, A16)
     await this.prisma.$transaction(async (tx) => {
-      // A. Actualizar estado de la reserva
-      await tx.reservation.update({
-        where: { id: reservation.id },
+      // A. Transición atómica PENDING -> PAID (gana exactamente una transacción)
+      const updateResult = await tx.reservation.updateMany({
+        where: {
+          id: reservation.id,
+          paymentStatus: {
+            in: [ReservationPaymentStatus.PENDING, ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW],
+          },
+        },
         data: {
           status: ReservationStatus.PAID,
           bookingStatus: BookingStatus.CONFIRMED,
           paymentStatus: ReservationPaymentStatus.PAID,
           paidMinor: receivedMinor,
-          paymentReference: transactionUuid || reservation.paymentReference,
+          paymentReference: transactionUuid,
         },
       });
 
-      // B. Confirmar consumo de cupón si aplica
-      if (reservation.couponId) {
-        await tx.coupon.update({
-          where: { id: reservation.couponId },
-          data: { timesUsed: { increment: 1 } },
-        });
+      if (updateResult.count === 0) {
+        // Carrera concurrente: otra petición completó la transición a PAID
+        return;
       }
 
-      // C. Inserción en Outbox de notificaciones
+      // B. Consumo atómico condicional de cupón con límite (Ticket P1)
+      if (reservation.couponId) {
+        const coupon = await tx.coupon.findUnique({ where: { id: reservation.couponId } });
+        if (coupon && coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
+          const claim = await tx.coupon.updateMany({
+            where: {
+              id: reservation.couponId,
+              timesUsed: { lt: coupon.usageLimit },
+            },
+            data: {
+              timesUsed: { increment: 1 },
+            },
+          });
+
+          if (claim.count === 0) {
+            // Capacidad de cupón agotada concurrentemente por otra reserva
+            couponCapacityExhausted = true;
+            await tx.reservation.update({
+              where: { id: reservation.id },
+              data: {
+                paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+              },
+            });
+            await tx.reservationEvent.create({
+              data: {
+                reservationId: reservation.id,
+                actorId: 'system',
+                actorLabel: 'system:izipay-ipn',
+                toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+                note: `[AUDIT: COUPON_OVERALLOCATED_REVIEW] Cupón "${coupon.code}" agotó su cupo (${coupon.usageLimit}) concurrentemente tras captura de pago.`,
+              },
+            });
+            return;
+          }
+        } else if (reservation.couponId) {
+          await tx.coupon.update({
+            where: { id: reservation.couponId },
+            data: { timesUsed: { increment: 1 } },
+          });
+        }
+      }
+
+      // C. Inserción única en Outbox transaccional de notificaciones
       await tx.paymentNotification.create({
         data: {
           legacyId: reservation.id,
@@ -229,10 +319,20 @@ export class PaymentsService {
             reservationCode: reservation.code,
             paidMinor: receivedMinor,
             currency: reservation.currency,
+            transactionUuid,
           },
         },
       });
     });
+
+    if (couponCapacityExhausted) {
+      return {
+        success: false,
+        reservationCode: reservation.code || orderDetails.orderId,
+        status: 'REVIEW_REQUIRED',
+        reviewReason: 'COUPON_CAPACITY_EXHAUSTED',
+      };
+    }
 
     return {
       success: true,

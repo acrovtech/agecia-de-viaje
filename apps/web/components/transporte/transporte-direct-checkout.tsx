@@ -226,6 +226,7 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [showIzipayModal, setShowIzipayModal] = useState<boolean>(false);
+  const checkoutAttemptIdRef = useRef<string | null>(null);
 
   const totalPrice = selectedVehicle?.price || currentTransfer?.sharedPrice || 0;
 
@@ -303,6 +304,12 @@ export function TransporteDirectCheckout({ transfers }: DirectCheckoutProps) {
         specialRequirements: notes,
         date: dateString,
         pax: selectedVehicle.maxPax || 1,
+        idempotencyKey: (() => {
+          if (!checkoutAttemptIdRef.current) {
+            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+          }
+          return checkoutAttemptIdRef.current;
+        })(),
       });
 
       if (!res.success || !res.formToken) {

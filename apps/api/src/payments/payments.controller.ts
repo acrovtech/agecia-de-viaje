@@ -1,5 +1,6 @@
 import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PublicRoute } from '../security/public-route.js';
 import { IpnProcessResultDto, IzipayIpnPayloadDto } from './payments.dto.js';
 import { PaymentsService } from './payments.service.js';
@@ -7,6 +8,7 @@ import { PaymentsService } from './payments.service.js';
 @Controller({ path: 'payments/izipay', version: '1' })
 @ApiTags('payments')
 @PublicRoute()
+@SkipThrottle()
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 

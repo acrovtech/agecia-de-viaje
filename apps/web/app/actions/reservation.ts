@@ -47,9 +47,32 @@ const CheckoutDataSchema = z.object({
   passengers: z.array(PassengerSchema).optional(),
   totalPrice: z.number().optional(),
   couponCode: z.string().optional(),
+  idempotencyKey: z.string().trim().min(8).max(128).optional(),
 });
 
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
+
+function getStorefrontSlug(): string {
+  const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
+  if (!slug) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
+    }
+    return 'incabound';
+  }
+  return slug;
+}
+
+function getApiInternalUrl(): string {
+  const url = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CONFIG_ERROR: API_INTERNAL_URL o NEXT_PUBLIC_API_URL es obligatorio en producción');
+    }
+    return 'http://127.0.0.1:3002';
+  }
+  return url;
+}
 
 const splitName = (p: { firstName?: string; lastName?: string; name?: string; docType?: string; docNumber?: string }): { firstName: string; lastName: string; documentType: string; documentNumber: string } => {
   let fName = p.firstName || '';
@@ -101,9 +124,9 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       return { success: false, error: 'No se enviaron servicios o tours para procesar la reserva.' };
     }
 
-    // 3. Resolución segura del tenant / storefront server-side
-    const storefront = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG || 'incabound';
-    const apiBaseUrl = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
+    // 3. Resolución segura del tenant / storefront server-side (falla cerrado en producción)
+    const storefront = getStorefrontSlug();
+    const apiBaseUrl = getApiInternalUrl();
 
     // 4. Mapear al DTO esperado por el dominio autoritativo NestJS
     const checkoutPayload = {
@@ -124,7 +147,8 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
       passengers: (data.passengers || []).map(splitName),
     };
 
-    const idempotencyKey = crypto.randomUUID();
+    // 5. Preservar la clave de idempotencia del cliente si se provee, o generar fallback
+    const idempotencyKey = data.idempotencyKey || `chk_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
 
     const response = await fetch(`${apiBaseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/checkout`, {
       method: 'POST',
@@ -156,7 +180,9 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     console.error('Error al procesar reserva con la API central:', error);
     return {
       success: false,
-      error: 'No se pudo conectar con el motor central de reservas. Verifique la conexión con el servidor.',
+      error: error.message?.startsWith('CONFIG_ERROR')
+        ? 'Configuración del sistema incompleta. Contacte con soporte.'
+        : 'No se pudo conectar con el motor central de reservas. Verifique la conexión con el servidor.',
     };
   }
 }

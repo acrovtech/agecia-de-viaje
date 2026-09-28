@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   ShieldCheck, ArrowRight, ArrowLeft, Loader2, Check, UserCheck, Users, 
@@ -223,6 +223,7 @@ export function CheckoutForm() {
   const [formToken, setFormToken] = useState<string | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [step2Error, setStep2Error] = useState<string | null>(null);
+  const checkoutAttemptIdRef = useRef<string | null>(null);
 
   // Estilos UI normalizados
   const inputBaseStyle = "w-full h-[38px] px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:border-[#062918] focus:ring-1 focus:ring-[#062918]/25 outline-none transition-all";
@@ -341,6 +342,12 @@ export function CheckoutForm() {
         pax: numPax,
         totalPrice: finalPayableTotal,
         couponCode: appliedCoupon?.code,
+        idempotencyKey: (() => {
+          if (!checkoutAttemptIdRef.current) {
+            checkoutAttemptIdRef.current = `chk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+          }
+          return checkoutAttemptIdRef.current;
+        })(),
       });
 
       if (result.success && result.formToken) {

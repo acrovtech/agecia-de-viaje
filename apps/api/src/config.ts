@@ -48,6 +48,7 @@ export type ApiConfig = Readonly<{
   authEnabled: boolean;
   checkoutEnabled: boolean;
   izipaySecretKey: string;
+  izipayHmacSha256: string;
   izipayShopId: string;
   izipayPassword: string;
   izipayApiUrl: string;
@@ -63,15 +64,28 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     throw new Error(`Configuración API inválida: ${fields.join(', ')}`);
   }
   const value = parsed.data;
-  const izipaySecretKey = value.IZIPAY_SECRET_KEY || env.IZIPAY_HMAC_SHA256 || '';
+  const izipayHmacSha256 = value.IZIPAY_HMAC_SHA256 || env.IZIPAY_HMAC_SHA256 || '';
   const izipayShopId = value.IZIPAY_SHOP_ID || env.IZIPAY_SHOP_ID || env.IZIPAY_USERNAME || '';
   const izipayPassword = value.IZIPAY_PASSWORD || value.IZIPAY_TEST_PASSWORD || env.IZIPAY_TEST_PASSWORD || env.IZIPAY_PASSWORD_TEST || '';
+  // Fallback for legacy configuration
+  const izipaySecretKey = value.IZIPAY_SECRET_KEY || izipayPassword || izipayHmacSha256 || '';
   const izipayApiUrl = value.IZIPAY_API_URL || env.IZIPAY_API_URL || 'https://api.micuentaweb.pe';
   const izipayCurrency = (value.IZIPAY_CURRENCY || env.IZIPAY_CURRENCY || 'USD').toUpperCase();
   const checkoutEnabled = value.API_CHECKOUT_ENABLED === 'true' || value.NODE_ENV === 'test';
 
-  if (checkoutEnabled && value.NODE_ENV === 'production' && !izipaySecretKey) {
-    throw new Error('Configuración API inválida: IZIPAY_HMAC_SHA256 / IZIPAY_SECRET_KEY requerido para checkout en producción');
+  if (checkoutEnabled && value.NODE_ENV === 'production') {
+    if (!izipayShopId) {
+      throw new Error('Configuración API inválida: IZIPAY_SHOP_ID requerido para checkout en producción');
+    }
+    if (!izipayPassword && !izipaySecretKey) {
+      throw new Error('Configuración API inválida: IZIPAY_PASSWORD requerido para verificación IPN en producción');
+    }
+    if (!izipayApiUrl) {
+      throw new Error('Configuración API inválida: IZIPAY_API_URL requerido para checkout en producción');
+    }
+    if (!value.API_PUBLIC_AGENCY_SLUGS || value.API_PUBLIC_AGENCY_SLUGS.length === 0) {
+      throw new Error('Configuración API inválida: API_PUBLIC_AGENCY_SLUGS requerido para checkout en producción');
+    }
   }
 
   return Object.freeze({
@@ -86,8 +100,9 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     authEnabled: value.API_AUTH_ENABLED === 'true',
     checkoutEnabled,
     izipaySecretKey,
+    izipayHmacSha256,
     izipayShopId,
-    izipayPassword,
+    izipayPassword: izipayPassword || izipaySecretKey,
     izipayApiUrl,
     izipayCurrency,
     izipayMode: value.IZIPAY_MODE,

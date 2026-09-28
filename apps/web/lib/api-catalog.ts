@@ -99,8 +99,27 @@ export interface ApiTransferSummary {
   currency: 'USD';
 }
 
-const API_BASE_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
-const STOREFRONT_SLUG = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG || 'incabound';
+function getApiBaseUrl(): string {
+  const url = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CONFIG_ERROR: API_INTERNAL_URL o NEXT_PUBLIC_API_URL es obligatorio en producción');
+    }
+    return 'http://127.0.0.1:3002';
+  }
+  return url;
+}
+
+function getStorefrontSlug(): string {
+  const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
+  if (!slug) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
+    }
+    return 'incabound';
+  }
+  return slug;
+}
 
 /**
  * Cliente de Catálogo para la API central NestJS.
@@ -111,18 +130,20 @@ export const apiCatalog = {
     return process.env.CATALOG_SOURCE === 'api';
   },
   getApiUrl(): string {
-    return API_BASE_URL;
+    return getApiBaseUrl();
   },
 
   getStorefront(): string {
-    return STOREFRONT_SLUG;
+    return getStorefrontSlug();
   },
 
   async getTourBySlug(slug: string): Promise<ApiTourDetail | null> {
     if (!slug) return null;
     const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
+    const baseUrl = getApiBaseUrl();
+    const storefront = getStorefrontSlug();
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/storefronts/${encodeURIComponent(STOREFRONT_SLUG)}/tours/${cleanSlug}`, {
+      const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/tours/${cleanSlug}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
@@ -133,14 +154,16 @@ export const apiCatalog = {
       }
       return await res.json();
     } catch (err) {
-      console.warn(`[apiCatalog] Network error reaching API at ${API_BASE_URL}:`, err);
+      console.warn(`[apiCatalog] Network error reaching API at ${baseUrl}:`, err);
       return null;
     }
   },
 
   async getTours(page = 1, limit = 20): Promise<{ data: ApiTourSummary[]; hasMore: boolean }> {
+    const baseUrl = getApiBaseUrl();
+    const storefront = getStorefrontSlug();
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/storefronts/${encodeURIComponent(STOREFRONT_SLUG)}/tours?page=${page}&limit=${limit}`, {
+      const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/tours?page=${page}&limit=${limit}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
@@ -151,14 +174,16 @@ export const apiCatalog = {
         hasMore: Boolean(body.pagination?.hasMore),
       };
     } catch (err) {
-      console.warn(`[apiCatalog] Network error reaching API at ${API_BASE_URL}:`, err);
+      console.warn(`[apiCatalog] Network error reaching API at ${baseUrl}:`, err);
       return { data: [], hasMore: false };
     }
   },
 
   async getTransfers(page = 1, limit = 50): Promise<ApiTransferSummary[]> {
+    const baseUrl = getApiBaseUrl();
+    const storefront = getStorefrontSlug();
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/storefronts/${encodeURIComponent(STOREFRONT_SLUG)}/transfers?page=${page}&limit=${limit}`, {
+      const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/transfers?page=${page}&limit=${limit}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
@@ -166,7 +191,7 @@ export const apiCatalog = {
       const body = await res.json();
       return body.data || [];
     } catch (err) {
-      console.warn(`[apiCatalog] Network error reaching API at ${API_BASE_URL}:`, err);
+      console.warn(`[apiCatalog] Network error reaching API at ${baseUrl}:`, err);
       return [];
     }
   },
@@ -174,8 +199,10 @@ export const apiCatalog = {
   async getTransferBySlug(slug: string): Promise<ApiTransferSummary | null> {
     if (!slug) return null;
     const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
+    const baseUrl = getApiBaseUrl();
+    const storefront = getStorefrontSlug();
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/storefronts/${encodeURIComponent(STOREFRONT_SLUG)}/transfers/${cleanSlug}`, {
+      const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/transfers/${cleanSlug}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
@@ -183,7 +210,7 @@ export const apiCatalog = {
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
-      console.warn(`[apiCatalog] Network error reaching API at ${API_BASE_URL}:`, err);
+      console.warn(`[apiCatalog] Network error reaching API at ${baseUrl}:`, err);
       return null;
     }
   },
