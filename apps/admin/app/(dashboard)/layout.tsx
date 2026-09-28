@@ -10,12 +10,17 @@ import { TitleProvider } from '@/components/ui/title-context';
 import { InactivityTimer } from '@/components/inactivity-timer';
 import { getRecentNotificationsAction } from '@/app/actions/reservation';
 import { verifyAdminSession } from '@/lib/auth-check';
+import { isApiAdmin } from '@/lib/admin-mode';
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (isApiAdmin()) {
+    redirect('/workspace');
+  }
+
   const session = await verifyAdminSession();
   if (!session) {
     redirect('/login');

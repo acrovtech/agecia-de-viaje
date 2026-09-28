@@ -11,7 +11,7 @@ test('central workspace ignores a legacy cookie', async () => {
   const response = await proxy(req('/workspace', 'GET', 'admin_session=legacy.jwt'));
   expect(response.headers.get('location')).toBe('https://admin.example.test/login');
 });
-test.each(['/reservas', '/usuarios', '/logs', '/tours/other-agency.svg', '/workspace/content/legacy', '/workspace/resources/legacy'])('unmigrated page %s cannot render in API mode', async (path) => {
+test.each(['/reservas', '/usuarios', '/logs', '/tours', '/transporte', '/cupones', '/tours/other-agency.svg'])('unmigrated page %s cannot render in API mode and redirects to /workspace', async (path) => {
   expect((await proxy(req(path))).headers.get('location')).toBe('https://admin.example.test/workspace');
 });
 test.each(['/api/upload', '/api/seed', '/reservas', '/icon.svg'])('legacy write surface %s is denied', async (path) => {
@@ -22,5 +22,11 @@ test('workspace and login reach their own server authorization', async () => {
   expect((await proxy(req('/workspace/content', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/workspace/resources', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/workspace/reservations', 'POST'))).headers.get('x-middleware-next')).toBe('1');
+  expect((await proxy(req('/workspace/nested/custom/route'))).headers.get('x-middleware-next')).toBe('1');
+  expect((await proxy(req('/workspace/content/legacy'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/login', 'POST', ''))).headers.get('x-middleware-next')).toBe('1');
+});
+test('workspace subroutes without valid token redirect to login', async () => {
+  expect((await proxy(req('/workspace/content', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
+  expect((await proxy(req('/workspace/nested/path', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
 });

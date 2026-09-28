@@ -49,6 +49,7 @@ describe('Admin Authorization Guards (verifyAdminSession, requireAdminSession & 
   beforeEach(() => {
     mockCookieMap = {};
     vi.restoreAllMocks();
+    vi.stubEnv('ADMIN_AUTH_MODE', 'legacy');
     (prisma.user.findUnique as any).mockImplementation(async ({ where }: any) => {
       const email = where.email || '';
       let role = 'CLIENT';
