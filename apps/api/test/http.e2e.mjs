@@ -1629,6 +1629,256 @@ test('stale payment session older than 14 minutes is regenerated', async () => {
   assert.ok(saved.paymentFormTokenCreatedAt > oldDate);
 });
 
+test('private tour checkout fails with 400 when requested pax tier is not configured', async () => {
+  const res = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-priv-unsupported-pax')
+    .send({
+      customerFirstName: 'Priv',
+      customerLastName: 'Tester',
+      customerEmail: 'privtester@example.test',
+      customerPhone: '+51999999933',
+      items: [{ slug: 'tour-a', serviceType: 'private', date: '2026-10-01', pax: 9 }],
+    })
+    .expect(400);
+
+  assert.equal(res.body.error.code, 'INVALID_REQUEST');
+});
+
+test('private tour checkout succeeds with exact configured pax tier', async () => {
+  const res = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-priv-exact-pax')
+    .send({
+      customerFirstName: 'PrivExact',
+      customerLastName: 'Tester',
+      customerEmail: 'privexact@example.test',
+      customerPhone: '+51999999934',
+      items: [{ slug: 'tour-a', serviceType: 'private', date: '2026-10-01', pax: 2 }],
+    })
+    .expect(201);
+
+  assert.equal(res.body.totalMinor, 10000); // 50 * 2 = 100 USD = 10000 minor
+  assert.ok(res.body.formToken);
+});
+
+test('signed PAID IPN without transaction UUID enters REVIEW and cannot obtain new formToken on retry', async () => {
+  const key = 'idemp-missing-uuid-ipn-1';
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'NoUuid',
+      customerLastName: 'Tester',
+      customerEmail: 'nouuid@example.test',
+      customerPhone: '+51999999935',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const orderId = checkout.body.reservationCode;
+
+  // Signed IPN with orderStatus PAID but missing transactions / UUID
+  const krNoUuid = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [],
+  };
+  const hashNoUuid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krNoUuid)).digest('hex');
+
+  const ipnRes = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krNoUuid, 'kr-hash': hashNoUuid })
+    .expect(200);
+
+  assert.equal(ipnRes.body.status, 'REVIEW_REQUIRED');
+
+  // Reservation in DB must be transitioned to PAYMENT_RECEIVED_REVIEW and not remain PENDING
+  const saved = reservations.find((r) => r.code === orderId);
+  assert.equal(saved.paymentStatus, 'PAYMENT_RECEIVED_REVIEW');
+  assert.equal(saved.paymentFormToken, null);
+
+  // Retry checkout with the same key must return formToken: null and cannot generate a new payment session
+  const retry = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', key)
+    .send({
+      customerFirstName: 'NoUuid',
+      customerLastName: 'Tester',
+      customerEmail: 'nouuid@example.test',
+      customerPhone: '+51999999935',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  assert.equal(retry.body.formToken, null);
+  assert.equal(retry.body.paymentStatus, 'PAYMENT_RECEIVED_REVIEW');
+});
+
+test('sequential IPN policy: committed PAID cannot be downgraded by subsequent mismatch', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-seq-paid-then-mismatch')
+    .send({
+      customerFirstName: 'SeqPaid',
+      customerLastName: 'Tester',
+      customerEmail: 'seqpaid@example.test',
+      customerPhone: '+51999999936',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const orderId = checkout.body.reservationCode;
+
+  // 1. First: Valid PAID IPN commits
+  const krValid = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-seq-valid-1' }],
+  };
+  const hashValid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krValid)).digest('hex');
+
+  await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krValid, 'kr-hash': hashValid })
+    .expect(200);
+
+  const saved1 = reservations.find((r) => r.code === orderId);
+  assert.equal(saved1.paymentStatus, 'PAID');
+
+  // 2. Later: Contradictory mismatch IPN arrives
+  const krMismatch = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 1200, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-seq-mismatch-1' }],
+  };
+  const hashMismatch = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krMismatch)).digest('hex');
+
+  const mismatchRes = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krMismatch, 'kr-hash': hashMismatch })
+    .expect(200);
+
+  assert.equal(mismatchRes.body.status, 'PAID');
+  const saved2 = reservations.find((r) => r.code === orderId);
+  assert.equal(saved2.paymentStatus, 'PAID'); // MUST remain PAID
+});
+
+test('sequential IPN policy: committed REVIEW cannot be upgraded by subsequent exact PAID', async () => {
+  const checkout = await request(app.getHttpServer())
+    .post('/v1/storefronts/agency-a/checkout')
+    .set('idempotency-key', 'idemp-seq-mismatch-then-paid')
+    .send({
+      customerFirstName: 'SeqReview',
+      customerLastName: 'Tester',
+      customerEmail: 'seqreview@example.test',
+      customerPhone: '+51999999937',
+      items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+    })
+    .expect(201);
+
+  const orderId = checkout.body.reservationCode;
+
+  // 1. First: Mismatch IPN commits and quarantines in REVIEW
+  const krMismatch = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 1500, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-seq-rev-mismatch-1' }],
+  };
+  const hashMismatch = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krMismatch)).digest('hex');
+
+  await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krMismatch, 'kr-hash': hashMismatch })
+    .expect(200);
+
+  const saved1 = reservations.find((r) => r.code === orderId);
+  assert.equal(saved1.paymentStatus, 'PAYMENT_RECEIVED_REVIEW');
+
+  // 2. Later: Exact PAID IPN arrives
+  const krValid = {
+    orderStatus: 'PAID',
+    orderDetails: { orderId, orderTotalAmount: 2000, orderCurrency: 'USD' },
+    transactions: [{ uuid: 'tx-seq-rev-valid-1' }],
+  };
+  const hashValid = crypto.createHmac('sha256', 'test_secret_key').update(JSON.stringify(krValid)).digest('hex');
+
+  const validRes = await request(app.getHttpServer())
+    .post('/v1/payments/izipay/ipn')
+    .send({ 'kr-answer': krValid, 'kr-hash': hashValid })
+    .expect(200);
+
+  assert.equal(validRes.body.status, 'REVIEW_REQUIRED');
+  const saved2 = reservations.find((r) => r.code === orderId);
+  assert.equal(saved2.paymentStatus, 'PAYMENT_RECEIVED_REVIEW'); // Remains quarantined
+});
+
+test('same idempotency key across different agencies creates independent reservations without collision', async () => {
+  const commonKey = 'shared-idemp-key-multi-agency-1';
+  const payload = {
+    customerFirstName: 'Multi',
+    customerLastName: 'Tenant',
+    customerEmail: 'multitenant@example.test',
+    customerPhone: '+51999999938',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+
+  const payloadB = {
+    ...payload,
+    items: [{ slug: 'tour-b', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+
+  const [resA, resB] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', commonKey).send(payload),
+    request(app.getHttpServer()).post('/v1/storefronts/agency-b/checkout').set('idempotency-key', commonKey).send(payloadB),
+  ]);
+
+  assert.equal(resA.status, 201);
+  assert.equal(resB.status, 201);
+  assert.notEqual(resA.body.reservationId, resB.body.reservationId);
+  assert.notEqual(resA.body.reservationCode, resB.body.reservationCode);
+});
+
+test('zero-total same-key concurrent retry returns same reservation and consumes coupon once', async () => {
+  // Free coupon with single use
+  coupons.push({
+    id: 'coup-single-free-1',
+    agencyId: 'a',
+    code: 'SINGLEFREE100',
+    discountType: 'PERCENT',
+    discountValue: 100,
+    timesUsed: 0,
+    usageLimit: 1,
+    isActive: true,
+  });
+
+  const key = 'idemp-zero-total-concurrent-race-1';
+  const payload = {
+    customerFirstName: 'FreeRace',
+    customerLastName: 'Tester',
+    customerEmail: 'freerace@example.test',
+    customerPhone: '+51999999939',
+    couponCode: 'SINGLEFREE100',
+    items: [{ slug: 'tour-a', serviceType: 'shared', date: '2026-10-01', pax: 1 }],
+  };
+
+  const [res1, res2] = await Promise.all([
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+    request(app.getHttpServer()).post('/v1/storefronts/agency-a/checkout').set('idempotency-key', key).send(payload),
+  ]);
+
+  assert.equal(res1.status, 201);
+  assert.equal(res2.status, 201);
+  assert.equal(res1.body.reservationId, res2.body.reservationId);
+  assert.equal(res1.body.totalMinor, 0);
+  assert.equal(res1.body.paymentStatus, 'PAID');
+  assert.equal(res1.body.bookingStatus, 'CONFIRMED');
+
+  const coupon = coupons.find((c) => c.code === 'SINGLEFREE100');
+  assert.equal(coupon.timesUsed, 1);
+});
+
+
 
 
 

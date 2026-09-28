@@ -34,6 +34,7 @@ const environmentSchema = z.object({
   IZIPAY_API_URL: z.string().optional(),
   IZIPAY_CURRENCY: z.string().default('USD'),
   IZIPAY_MODE: z.enum(['test', 'live']).default('test'),
+  PAYMENT_SESSION_REUSE_DURATION_MS: z.coerce.number().int().min(1000).default(14 * 60 * 1000),
 });
 
 export type ApiConfig = Readonly<{
@@ -54,6 +55,7 @@ export type ApiConfig = Readonly<{
   izipayApiUrl: string;
   izipayCurrency: string;
   izipayMode: 'test' | 'live';
+  paymentSessionReuseDurationMs: number;
 }>;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
@@ -130,5 +132,6 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     izipayApiUrl,
     izipayCurrency,
     izipayMode: value.IZIPAY_MODE,
+    paymentSessionReuseDurationMs: value.PAYMENT_SESSION_REUSE_DURATION_MS,
   });
 }

@@ -72,7 +72,10 @@ export class CheckoutService {
       return null;
     }
 
-    const FORM_TOKEN_TTL_MS = 14 * 60 * 1000; // 14 minutos (conservador frente a los 15m oficiales de Izipay)
+    // Política interna de retención/reuso de sesión SaaS (por defecto 14m).
+    // NOTA: Esta duración es una política interna configurable y NO una garantía oficial del proveedor Izipay.
+    // La expiración real de sesión del proveedor requiere verificación directa en sandbox.
+    const FORM_TOKEN_TTL_MS = this.config.paymentSessionReuseDurationMs ?? (14 * 60 * 1000);
 
     // 2. Comprobar si existe un formToken activo y no expirado
     const isTokenUsable = (token: string | null | undefined, createdAt: Date | null | undefined, status: string | null | undefined) => {
@@ -87,7 +90,7 @@ export class CheckoutService {
       return reservation.paymentFormToken!;
     }
 
-    // 3. Coordinación distribuida con lease en PostgreSQL (P1.3)
+    // 3. Coordinación distribuida con lease en PostgreSQL (P1.3, P1.4)
     // Coalesce local por proceso como optimización en memoria
     let inFlight = this.inFlightPaymentSessions.get(reservation.id);
     if (!inFlight) {
@@ -123,7 +126,7 @@ export class CheckoutService {
             // Este proceso ganó el lease exclusivo: invocar a la pasarela
             try {
               const session = await this.paymentsService.createPaymentSession({
-                orderId: reservation.code || `IB-${reservation.id.slice(0, 8)}`,
+                orderId: reservation.code || `AG-${reservation.id.slice(0, 8)}`,
                 amountMinor,
                 currency: 'USD',
                 customerEmail: reservation.customerEmail,
@@ -166,9 +169,17 @@ export class CheckoutService {
             }
           }
 
-          // Otro proceso/réplica posee el lease: esperar y consultar el resultado persistido
-          for (let poll = 0; poll < 15; poll++) {
-            await new Promise((r) => setTimeout(r, 200));
+          // Otro proceso/réplica posee el lease: esperar alineando con timeout del proveedor (10s) + margen
+          const currentLeaseState = await this.prisma.reservation.findUnique({
+            where: { id: reservation.id },
+            select: { paymentSessionExpiresAt: true },
+          });
+          const leaseExpiresTimestamp = currentLeaseState?.paymentSessionExpiresAt?.getTime() ?? (Date.now() + 14000);
+          const maxWaitDeadline = Math.min(leaseExpiresTimestamp, Date.now() + 14000);
+          const pollIntervalMs = 250;
+
+          while (Date.now() < maxWaitDeadline) {
+            await new Promise((r) => setTimeout(r, pollIntervalMs));
             const reloaded = await this.prisma.reservation.findUnique({
               where: { id: reservation.id },
               select: {
@@ -312,7 +323,7 @@ export class CheckoutService {
 
         return {
           reservationId: existing.id,
-          reservationCode: existing.code || `IB-${existing.id.slice(0, 8)}`,
+          reservationCode: existing.code || `AG-${existing.id.slice(0, 8)}`,
           totalMinor,
           subtotalMinor,
           discountMinor,
@@ -389,9 +400,9 @@ export class CheckoutService {
           if (!tour.hasPrivateService || !tour.privatePricing || tour.privatePricing.length === 0) {
             throw new BadRequestException(`El tour "${tour.title}" no ofrece modalidad privada`);
           }
-          const tier = tour.privatePricing.find((p) => p.pax === item.pax) || tour.privatePricing[tour.privatePricing.length - 1];
+          const tier = tour.privatePricing.find((p) => p.pax === item.pax);
           if (!tier) {
-            throw new BadRequestException(`El tour "${tour.title}" no tiene tarifas privadas configuradas`);
+            throw new BadRequestException(`El tour "${tour.title}" no tiene tarifa privada configurada para ${item.pax} pasajero(s)`);
           }
           unitPriceMinor = Math.round(tier.price * 100);
           itemSubtotalMinor = unitPriceMinor * item.pax;
@@ -529,20 +540,20 @@ export class CheckoutService {
     const totalMinor = Math.max(0, subtotalMinor - discountMinor);
     const isZeroTotal = totalMinor === 0;
 
-    const reservationCode = idempotencyKey
-      ? `IB-${crypto.createHash('sha256').update(idempotencyKey).digest('hex').slice(0, 12).toUpperCase()}`
-      : `IB-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+    // Código de reserva de negocio generado de forma criptográficamente única y desacoplado de la clave de idempotencia
+    // Previene colisiones cross-tenant cuando dos agencias reciben la misma clave de idempotencia (Ticket P1.4)
+    const reservationCode = `AG-${crypto.randomBytes(10).toString('hex').toUpperCase()}`;
 
     const firstItem = calculatedItems[0];
     if (!firstItem) {
       throw new BadRequestException('No se procesaron ítems para la reserva');
     }
 
-    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2, P1.3)
+    // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2, P1.3, P1.4)
     let reservation: any;
     try {
       if (isZeroTotal) {
-        // Flujo atómico transaccional para reservas bonificadas al 100% (P1.3)
+        // Flujo atómico transaccional para reservas bonificadas al 100% (P1.3, P1.4)
         reservation = await this.prisma.$transaction(async (tx) => {
           let appliedCouponCode = 'N/A';
           if (appliedCouponId) {
@@ -553,6 +564,15 @@ export class CheckoutService {
             appliedCouponCode = coupon.code;
             if (coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
               if (coupon.usageLimit <= 0) {
+                // Verificar si una petición idéntica concurrente ya confirmó la reserva
+                if (idempotencyKey) {
+                  const existingForSameKey = await tx.reservation.findFirst({
+                    where: { agencyId: agency.id, requestKey: idempotencyKey },
+                  });
+                  if (existingForSameKey) {
+                    return existingForSameKey;
+                  }
+                }
                 throw new ConflictException('El cupón ha alcanzado su límite de usos');
               }
               const claim = await tx.coupon.updateMany({
@@ -565,6 +585,15 @@ export class CheckoutService {
                 },
               });
               if (claim.count === 0) {
+                // Verificar si una petición idéntica concurrente ya confirmó la reserva
+                if (idempotencyKey) {
+                  const existingForSameKey = await tx.reservation.findFirst({
+                    where: { agencyId: agency.id, requestKey: idempotencyKey },
+                  });
+                  if (existingForSameKey) {
+                    return existingForSameKey;
+                  }
+                }
                 throw new ConflictException('El cupón ha alcanzado su límite de usos');
               }
             } else {
@@ -710,8 +739,8 @@ export class CheckoutService {
         });
       }
     } catch (createErr: any) {
-      // Manejo de carrera concurrente con misma clave
-      if (idempotencyKey && (createErr?.code === 'P2002' || String(createErr?.message).includes('unique constraint') || String(createErr?.message).includes('requestKey'))) {
+      // Manejo de carrera concurrente con misma clave (P1.3, P1.4)
+      if (idempotencyKey) {
         const winningRes = await this.prisma.reservation.findFirst({
           where: { agencyId: agency.id, requestKey: idempotencyKey },
           include: { items: { include: { tour: true, transfer: true } } },
@@ -720,11 +749,11 @@ export class CheckoutService {
           if (winningRes.requestHash && winningRes.requestHash !== requestHash) {
             throw new ConflictException('Idempotency key ya utilizada con datos divergentes');
           }
-          const formToken = await this.getOrCreatePaymentSession(winningRes, totalMinor);
+          const formToken = isZeroTotal ? null : await this.getOrCreatePaymentSession(winningRes, totalMinor);
           return {
             reservationId: winningRes.id,
             reservationCode: winningRes.code || reservationCode,
-            totalMinor,
+            totalMinor: winningRes.totalMinor ?? totalMinor,
             subtotalMinor,
             discountMinor,
             currency: 'USD',

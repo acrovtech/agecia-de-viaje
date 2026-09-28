@@ -231,51 +231,48 @@ export class PaymentsService {
       };
     }
 
-    // 4. Validación de identificador de transacción/reconciliación (Ticket P1)
+    // 4. Validación de identificador de transacción/reconciliación (Tickets P1, P1.4)
+    // Política de Semántica de Primera Transición Autoritativa:
+    // Una notificación PAID válida sin UUID de transacción no puede quedar PENDING ni pasar a PAID;
+    // debe transicionar atómicamente a PAYMENT_RECEIVED_REVIEW y crear su evento de auditoría en la misma transacción.
     const transactionUuid = answer.transactions?.[0]?.uuid;
     if (!transactionUuid) {
-      await this.prisma.reservationEvent.create({
-        data: {
-          reservationId: reservation.id,
-          actorId: 'system',
-          actorLabel: 'system:izipay-ipn',
-          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-          note: '[AUDIT: MISSING_TRANSACTION_UUID] Notificación PAID recibida sin UUID de transacción',
-        },
-      });
-      return {
-        success: false,
-        reservationCode: reservation.code || orderDetails.orderId,
-        status: 'REVIEW_REQUIRED',
-        reviewReason: 'MISSING_TRANSACTION_UUID',
-      };
-    }
+      const missingUuidTx = await this.prisma.$transaction(async (tx) => {
+        const update = await tx.reservation.updateMany({
+          where: {
+            id: reservation.id,
+            paymentStatus: ReservationPaymentStatus.PENDING,
+          },
+          data: {
+            status: ReservationStatus.PENDING,
+            bookingStatus: BookingStatus.PENDING,
+            paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+            paidMinor: orderDetails.orderTotalAmount,
+            paymentFormToken: null,
+            paymentSessionStatus: 'REVIEW',
+            paymentSessionOwner: null,
+            paymentSessionExpiresAt: null,
+          },
+        });
 
-    // 5. Cotejo estricto de importe y moneda sin sobreescribir notas del cliente (Tickets A10, A14, P1, P1.2)
-    const expectedMinor = (reservation.totalMinor !== null && reservation.totalMinor !== undefined && reservation.totalMinor > 0)
-      ? reservation.totalMinor
-      : Math.round(reservation.totalPrice * 100);
-    const receivedMinor = orderDetails.orderTotalAmount;
-    const receivedCurrency = orderDetails.orderCurrency.toUpperCase();
-    const expectedCurrency = (reservation.currency || 'USD').toUpperCase();
+        if (update.count === 0) {
+          return { transitionLost: true as const };
+        }
 
-    if (receivedCurrency !== expectedCurrency) {
-      const mismatch = await this.prisma.reservation.updateMany({
-        where: {
-          id: reservation.id,
-          paymentStatus: ReservationPaymentStatus.PENDING,
-        },
-        data: {
-          status: ReservationStatus.PENDING,
-          bookingStatus: BookingStatus.PENDING,
-          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
-          paidMinor: receivedMinor,
-          paymentReference: transactionUuid,
-        },
+        await tx.reservationEvent.create({
+          data: {
+            reservationId: reservation.id,
+            actorId: 'system',
+            actorLabel: 'system:izipay-ipn',
+            toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+            note: '[AUDIT: MISSING_TRANSACTION_UUID] Notificación PAID válida recibida sin UUID de transacción; puesta en revisión financiera',
+          },
+        });
+
+        return { transitionLost: false as const };
       });
 
-      if (mismatch.count === 0) {
-        // La reserva ya no está PENDING: verificar si ya fue confirmada PAID para evitar downgrade
+      if (missingUuidTx.transitionLost) {
         const reloaded = await this.prisma.reservation.findUnique({ where: { id: reservation.id } });
         if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
           return {
@@ -293,15 +290,81 @@ export class PaymentsService {
         };
       }
 
-      await this.prisma.reservationEvent.create({
-        data: {
-          reservationId: reservation.id,
-          actorId: 'system',
-          actorLabel: 'system:izipay-ipn',
-          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-          note: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}. Transacción: ${transactionUuid}`,
-        },
+      return {
+        success: false,
+        reservationCode: reservation.code || orderDetails.orderId,
+        status: 'REVIEW_REQUIRED',
+        reviewReason: 'MISSING_TRANSACTION_UUID',
+      };
+    }
+
+    // 5. Cotejo estricto de importe y moneda sin sobreescribir notas del cliente (Tickets A10, A14, P1, P1.2, P1.3, P1.4)
+    // Semántica de Primera Transición Autoritativa:
+    // - Si una notificación de discrepancia (monto/moneda) gana la primera transición condicional (desde PENDING),
+    //   la reserva queda en cuarentena REVIEW y una posterior notificación no puede levantarla automáticamente.
+    // - Si una notificación PAID exacta ya confirmó la reserva, una discrepancia tardía pierde la condición y no degrada PAID.
+    const expectedMinor = (reservation.totalMinor !== null && reservation.totalMinor !== undefined && reservation.totalMinor > 0)
+      ? reservation.totalMinor
+      : Math.round(reservation.totalPrice * 100);
+    const receivedMinor = orderDetails.orderTotalAmount;
+    const receivedCurrency = orderDetails.orderCurrency.toUpperCase();
+    const expectedCurrency = (reservation.currency || 'USD').toUpperCase();
+
+    if (receivedCurrency !== expectedCurrency) {
+      const currencyMismatchTx = await this.prisma.$transaction(async (tx) => {
+        const mismatch = await tx.reservation.updateMany({
+          where: {
+            id: reservation.id,
+            paymentStatus: ReservationPaymentStatus.PENDING,
+          },
+          data: {
+            status: ReservationStatus.PENDING,
+            bookingStatus: BookingStatus.PENDING,
+            paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+            paidMinor: receivedMinor,
+            paymentReference: transactionUuid,
+            paymentFormToken: null,
+            paymentSessionStatus: 'REVIEW',
+            paymentSessionOwner: null,
+            paymentSessionExpiresAt: null,
+          },
+        });
+
+        if (mismatch.count === 0) {
+          return { transitionLost: true as const };
+        }
+
+        await tx.reservationEvent.create({
+          data: {
+            reservationId: reservation.id,
+            actorId: 'system',
+            actorLabel: 'system:izipay-ipn',
+            toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+            note: `[AUDIT: CURRENCY_MISMATCH] Esperado ${expectedCurrency}, recibido ${receivedCurrency}. Transacción: ${transactionUuid}`,
+          },
+        });
+
+        return { transitionLost: false as const };
       });
+
+      if (currencyMismatchTx.transitionLost) {
+        const reloaded = await this.prisma.reservation.findUnique({ where: { id: reservation.id } });
+        if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
+          return {
+            success: true,
+            reservationCode: reloaded.code || orderDetails.orderId,
+            status: 'PAID',
+            paidMinor: reloaded.paidMinor,
+          };
+        }
+        return {
+          success: false,
+          reservationCode: reloaded?.code || orderDetails.orderId,
+          status: 'REVIEW_REQUIRED',
+          reviewReason: 'RESERVATION_UNDER_FINANCIAL_REVIEW',
+        };
+      }
+
       return {
         success: false,
         reservationCode: reservation.code || orderDetails.orderId,
@@ -311,22 +374,43 @@ export class PaymentsService {
     }
 
     if (receivedMinor !== expectedMinor) {
-      const mismatch = await this.prisma.reservation.updateMany({
-        where: {
-          id: reservation.id,
-          paymentStatus: ReservationPaymentStatus.PENDING,
-        },
-        data: {
-          status: ReservationStatus.PENDING,
-          bookingStatus: BookingStatus.PENDING,
-          paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
-          paidMinor: receivedMinor,
-          paymentReference: transactionUuid,
-        },
+      const amountMismatchTx = await this.prisma.$transaction(async (tx) => {
+        const mismatch = await tx.reservation.updateMany({
+          where: {
+            id: reservation.id,
+            paymentStatus: ReservationPaymentStatus.PENDING,
+          },
+          data: {
+            status: ReservationStatus.PENDING,
+            bookingStatus: BookingStatus.PENDING,
+            paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
+            paidMinor: receivedMinor,
+            paymentReference: transactionUuid,
+            paymentFormToken: null,
+            paymentSessionStatus: 'REVIEW',
+            paymentSessionOwner: null,
+            paymentSessionExpiresAt: null,
+          },
+        });
+
+        if (mismatch.count === 0) {
+          return { transitionLost: true as const };
+        }
+
+        await tx.reservationEvent.create({
+          data: {
+            reservationId: reservation.id,
+            actorId: 'system',
+            actorLabel: 'system:izipay-ipn',
+            toStatus: reservation.operationStatus || OperationalStatus.PENDING,
+            note: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c. Transacción: ${transactionUuid}`,
+          },
+        });
+
+        return { transitionLost: false as const };
       });
 
-      if (mismatch.count === 0) {
-        // La reserva ya no está PENDING: verificar si ya fue confirmada PAID para evitar downgrade
+      if (amountMismatchTx.transitionLost) {
         const reloaded = await this.prisma.reservation.findUnique({ where: { id: reservation.id } });
         if (reloaded?.paymentStatus === ReservationPaymentStatus.PAID) {
           return {
@@ -344,15 +428,6 @@ export class PaymentsService {
         };
       }
 
-      await this.prisma.reservationEvent.create({
-        data: {
-          reservationId: reservation.id,
-          actorId: 'system',
-          actorLabel: 'system:izipay-ipn',
-          toStatus: reservation.operationStatus || OperationalStatus.PENDING,
-          note: `[AUDIT: AMOUNT_MISMATCH] Esperado ${expectedMinor}c, recibido ${receivedMinor}c. Transacción: ${transactionUuid}`,
-        },
-      });
       return {
         success: false,
         reservationCode: reservation.code || orderDetails.orderId,
@@ -361,7 +436,7 @@ export class PaymentsService {
       };
     }
 
-    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1, P1.2, P1.3)
+    // 6. Transición atómica concurrente y consumo condicional de cupón (Tickets A10, A11, A15, A16, P1, P1.2, P1.3, P1.4)
     const txResult = await this.prisma.$transaction(async (tx) => {
       // A. Transición atómica PENDING -> PAID (sólo PENDING puede pasar a PAID automáticamente)
       const updateResult = await tx.reservation.updateMany({
@@ -375,6 +450,10 @@ export class PaymentsService {
           paymentStatus: ReservationPaymentStatus.PAID,
           paidMinor: receivedMinor,
           paymentReference: transactionUuid,
+          paymentFormToken: null,
+          paymentSessionStatus: 'PAID',
+          paymentSessionOwner: null,
+          paymentSessionExpiresAt: null,
         },
       });
 
@@ -383,7 +462,7 @@ export class PaymentsService {
         return { transitionLost: true as const };
       }
 
-      // B. Consumo atómico condicional de cupón con límite (Ticket P1, P1.2, P1.3)
+      // B. Consumo atómico condicional de cupón con límite (Ticket P1, P1.2, P1.3, P1.4)
       if (reservation.couponId) {
         const coupon = await tx.coupon.findUnique({ where: { id: reservation.couponId } });
         if (coupon && coupon.usageLimit !== null && coupon.usageLimit !== undefined) {
@@ -416,6 +495,10 @@ export class PaymentsService {
                 paymentStatus: ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW,
                 paidMinor: receivedMinor,
                 paymentReference: transactionUuid,
+                paymentFormToken: null,
+                paymentSessionStatus: 'REVIEW',
+                paymentSessionOwner: null,
+                paymentSessionExpiresAt: null,
               },
             });
             await tx.reservationEvent.create({
