@@ -279,6 +279,7 @@ if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl)) {
     assert.equal(retry.paymentStatus, ReservationPaymentStatus.PAYMENT_RECEIVED_REVIEW);
 
     // Cleanup
+    await prisma.paymentNotification.deleteMany({ where: { legacyId: checkout.reservationId } });
     await prisma.reservationEvent.deleteMany({ where: { reservationId: checkout.reservationId } });
     await prisma.reservationItem.deleteMany({ where: { tourId: tour.id } });
     await prisma.reservation.deleteMany({ where: { agencyId: agency.id } });
@@ -369,7 +370,7 @@ if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl)) {
       data: {
         agencyId: agency.id,
         code: `PG100-${Date.now().toString(36).toUpperCase()}`,
-        discountType: 'PERCENT',
+        discountType: 'PERCENTAGE',
         discountValue: 100,
         timesUsed: 0,
         usageLimit: 1, // Sólo 1 uso permitido

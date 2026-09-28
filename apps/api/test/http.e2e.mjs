@@ -1845,7 +1845,7 @@ test('zero-total same-key concurrent retry returns same reservation and consumes
     id: 'coup-single-free-1',
     agencyId: 'a',
     code: 'SINGLEFREE100',
-    discountType: 'PERCENT',
+    discountType: 'PERCENTAGE',
     discountValue: 100,
     timesUsed: 0,
     usageLimit: 1,
