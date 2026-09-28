@@ -5,29 +5,11 @@ import { PrismaClient, ReservationPaymentStatus } from '@repo/db/prisma';
 import { parseConfig } from '../dist/config.js';
 import { CheckoutService } from '../dist/checkout/checkout.service.js';
 import { PaymentsService } from '../dist/payments/payments.service.js';
+import { isSafeTestDatabaseUrl } from '../scripts/postgres-gate-safety.mjs';
 
 const testDbUrl = process.env.API_TEST_DATABASE_URL;
 
-// Validación estricta de seguridad de la base de datos de pruebas (Ticket P1.4)
-function isSafeTestDatabaseUrl(url) {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    const pathname = parsed.pathname.toLowerCase();
-    const hostname = parsed.hostname.toLowerCase();
-    // Debe contener 'test' en la ruta de la base de datos
-    if (!pathname.includes('test')) return false;
-    // Rechazar explícitamente dominios productivos conocidos
-    if (hostname.includes('supabase.co') || hostname.includes('rds.amazonaws.com') || hostname.includes('prod')) {
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl)) {
+if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl, process.env.DATABASE_URL)) {
   test('PostgreSQL concurrency integration test suite (SKIPPED: API_TEST_DATABASE_URL not configured with a valid disposable test database)', { skip: true }, () => {
     // Explicitly skipped when disposable test database is not provided.
     // NEVER run concurrency tests against production DATABASE_URL.
