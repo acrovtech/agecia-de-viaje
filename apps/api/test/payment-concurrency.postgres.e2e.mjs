@@ -8,8 +8,9 @@ import { PaymentsService } from '../dist/payments/payments.service.js';
 import { isSafeTestDatabaseUrl } from '../scripts/postgres-gate-safety.mjs';
 
 const testDbUrl = process.env.API_TEST_DATABASE_URL;
+const prodDbUrl = process.env.PROD_DATABASE_URL || (process.env.DATABASE_URL !== testDbUrl ? process.env.DATABASE_URL : undefined);
 
-if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl, process.env.DATABASE_URL)) {
+if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl, prodDbUrl)) {
   test('PostgreSQL concurrency integration test suite (SKIPPED: API_TEST_DATABASE_URL not configured with a valid disposable test database)', { skip: true }, () => {
     // Explicitly skipped when disposable test database is not provided.
     // NEVER run concurrency tests against production DATABASE_URL.

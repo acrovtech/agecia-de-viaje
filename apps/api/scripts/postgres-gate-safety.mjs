@@ -42,7 +42,7 @@ export function formatTargetSummary(target) {
   return `${target.hostname}:${target.port}/${target.database} (schema: ${target.schema})`;
 }
 
-export function validatePostgresTestTarget(testUrl, prodUrl = process.env.DATABASE_URL) {
+export function validatePostgresTestTarget(testUrl, prodUrl) {
   // 1. Mandatory test database URL
   if (!testUrl || typeof testUrl !== 'string' || testUrl.trim() === '') {
     return {
@@ -81,8 +81,12 @@ export function validatePostgresTestTarget(testUrl, prodUrl = process.env.DATABA
 
   // 3. Refuse the same production target:
   // If production DATABASE_URL is set, verify test URL does not point to the exact same host + port + db + schema
-  if (prodUrl && typeof prodUrl === 'string' && prodUrl.trim() !== '') {
-    const prodTarget = parsePostgresTarget(prodUrl);
+  const effectiveProdUrl = prodUrl !== undefined
+    ? prodUrl
+    : (process.env.PROD_DATABASE_URL || (process.env.DATABASE_URL !== testUrl ? process.env.DATABASE_URL : undefined));
+
+  if (effectiveProdUrl && typeof effectiveProdUrl === 'string' && effectiveProdUrl.trim() !== '') {
+    const prodTarget = parsePostgresTarget(effectiveProdUrl);
     if (prodTarget) {
       const isSameHost = testTarget.hostname === prodTarget.hostname;
       const isSamePort = testTarget.port === prodTarget.port;
@@ -106,7 +110,7 @@ export function validatePostgresTestTarget(testUrl, prodUrl = process.env.DATABA
   };
 }
 
-export function isSafeTestDatabaseUrl(testUrl, prodUrl = process.env.DATABASE_URL) {
+export function isSafeTestDatabaseUrl(testUrl, prodUrl) {
   const result = validatePostgresTestTarget(testUrl, prodUrl);
   return result.ok;
 }

@@ -1,11 +1,21 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { validatePostgresTestTarget } from './postgres-gate-safety.mjs';
 
-const rootDir = fileURLToPath(new URL('../../', import.meta.url));
+const rootDir = fileURLToPath(new URL('../../../', import.meta.url));
 const apiDir = fileURLToPath(new URL('../', import.meta.url));
-const migrationsDir = new URL('../../packages/db/prisma/migrations/', import.meta.url);
+const migrationsDir = new URL('../../../packages/db/prisma/migrations/', import.meta.url);
+
+const rootEnv = path.resolve(rootDir, '.env');
+if (existsSync(rootEnv)) {
+  try { process.loadEnvFile(rootEnv); } catch { /* ignore */ }
+}
+const apiEnv = path.resolve(apiDir, '.env');
+if (existsSync(apiEnv)) {
+  try { process.loadEnvFile(apiEnv); } catch { /* ignore */ }
+}
 
 // 1. Validate API_TEST_DATABASE_URL strictly without any fallback to DATABASE_URL
 const rawTestDbUrl = process.env.API_TEST_DATABASE_URL;
@@ -44,6 +54,7 @@ if (!hasMigrations) {
 // Does NOT mutate developer's persistent shell environment
 const childEnv = {
   ...process.env,
+  PROD_DATABASE_URL: process.env.DATABASE_URL,
   DATABASE_URL: testDbUrl,
   API_TEST_DATABASE_URL: testDbUrl,
   NODE_ENV: 'test',
