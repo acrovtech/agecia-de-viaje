@@ -41,6 +41,8 @@ const environmentSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET_NAME: z.string().optional(),
   R2_PUBLIC_DOMAIN: z.string().optional(),
+  STOREFRONT_BASE_DOMAIN: z.string().trim().toLowerCase().optional().default('platform.example'),
+  STOREFRONT_TRUST_FORWARDED_HOST: z.enum(['true', 'false']).default('false'),
 });
 
 export type ApiConfig = Readonly<{
@@ -68,6 +70,8 @@ export type ApiConfig = Readonly<{
   r2SecretAccessKey: string;
   r2BucketName: string;
   r2PublicDomain: string;
+  storefrontBaseDomain: string;
+  storefrontTrustForwardedHost: boolean;
 }>;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
@@ -164,5 +168,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     r2SecretAccessKey,
     r2BucketName,
     r2PublicDomain,
+    storefrontBaseDomain: (value.STOREFRONT_BASE_DOMAIN || "platform.example").trim().toLowerCase(),
+    storefrontTrustForwardedHost: value.STOREFRONT_TRUST_FORWARDED_HOST === "true",
   });
 }

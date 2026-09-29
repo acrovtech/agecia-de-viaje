@@ -121,6 +121,7 @@ export interface MarketingCampaignLogItem {
 export * from "./transfers-data";
 export * from "./schemas";
 export * from "./auth-security";
+export * from "./host-normalizer";
 
 /**
  * Traduce códigos de error conocidos de Prisma a mensajes claros en español.

@@ -50,9 +50,15 @@ const CheckoutDataSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(128).optional(),
 });
 
+import { resolveCurrentStorefront } from '@/lib/storefront-context';
+
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
 
-function getStorefrontSlug(): string {
+async function getStorefrontSlug(): Promise<string> {
+  const context = await resolveCurrentStorefront();
+  if (context?.slug) {
+    return context.slug;
+  }
   const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
   if (!slug) {
     if (process.env.NODE_ENV === 'production') {
@@ -125,7 +131,7 @@ export async function createReservationAndPaymentToken(rawData: unknown) {
     }
 
     // 3. Resolución segura del tenant / storefront server-side (falla cerrado en producción)
-    const storefront = getStorefrontSlug();
+    const storefront = await getStorefrontSlug();
     const apiBaseUrl = getApiInternalUrl();
 
     // 4. Mapear al DTO esperado por el dominio autoritativo NestJS

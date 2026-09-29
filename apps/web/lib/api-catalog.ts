@@ -1,3 +1,5 @@
+import { resolveCurrentStorefront } from './storefront-context';
+
 export interface TourCategory {
   id: string;
   name: string;
@@ -110,20 +112,36 @@ function getApiBaseUrl(): string {
   return url;
 }
 
-function getStorefrontSlug(): string {
-  const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
-  if (!slug) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
-    }
-    return 'incabound';
+/**
+ * Resuelve el slug de storefront para la petición actual de forma dinámica y segura.
+ * Prioriza el contexto derivado del host del request; permite override explícito por llamada.
+ */
+async function resolveStorefrontSlug(overrideSlug?: string): Promise<string | null> {
+  if (overrideSlug && overrideSlug.trim()) {
+    return overrideSlug.trim();
   }
-  return slug;
+
+  const context = await resolveCurrentStorefront();
+  if (context?.slug) {
+    return context.slug;
+  }
+
+  const legacySlug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
+  if (legacySlug && legacySlug.trim()) {
+    return legacySlug.trim();
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
+  }
+
+  return 'incabound';
 }
 
 /**
  * Cliente de Catálogo para la API central NestJS.
- * Garantiza consumo desacoplado mediante HTTP/OpenAPI con tipado estricto.
+ * Garantiza consumo desacoplado mediante HTTP/OpenAPI con tipado estricto
+ * y resolución dinámica de tenancy por hostname.
  */
 export const apiCatalog = {
   isEnabled(): boolean {
@@ -133,15 +151,24 @@ export const apiCatalog = {
     return getApiBaseUrl();
   },
 
-  getStorefront(): string {
-    return getStorefrontSlug();
+  async getStorefront(overrideSlug?: string): Promise<string> {
+    const slug = await resolveStorefrontSlug(overrideSlug);
+    if (!slug) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CONFIG_ERROR: Storefront host no reconocido en producción');
+      }
+      return 'incabound';
+    }
+    return slug;
   },
 
-  async getTourBySlug(slug: string): Promise<ApiTourDetail | null> {
+  async getTourBySlug(slug: string, storefrontOverride?: string): Promise<ApiTourDetail | null> {
     if (!slug) return null;
     const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
     const baseUrl = getApiBaseUrl();
-    const storefront = getStorefrontSlug();
+    const storefront = await resolveStorefrontSlug(storefrontOverride);
+    if (!storefront) return null;
+
     try {
       const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/tours/${cleanSlug}`, {
         headers: { Accept: 'application/json' },
@@ -159,9 +186,11 @@ export const apiCatalog = {
     }
   },
 
-  async getTours(page = 1, limit = 20): Promise<{ data: ApiTourSummary[]; hasMore: boolean }> {
+  async getTours(page = 1, limit = 20, storefrontOverride?: string): Promise<{ data: ApiTourSummary[]; hasMore: boolean }> {
     const baseUrl = getApiBaseUrl();
-    const storefront = getStorefrontSlug();
+    const storefront = await resolveStorefrontSlug(storefrontOverride);
+    if (!storefront) return { data: [], hasMore: false };
+
     try {
       const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/tours?page=${page}&limit=${limit}`, {
         headers: { Accept: 'application/json' },
@@ -179,9 +208,11 @@ export const apiCatalog = {
     }
   },
 
-  async getTransfers(page = 1, limit = 50): Promise<ApiTransferSummary[]> {
+  async getTransfers(page = 1, limit = 50, storefrontOverride?: string): Promise<ApiTransferSummary[]> {
     const baseUrl = getApiBaseUrl();
-    const storefront = getStorefrontSlug();
+    const storefront = await resolveStorefrontSlug(storefrontOverride);
+    if (!storefront) return [];
+
     try {
       const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/transfers?page=${page}&limit=${limit}`, {
         headers: { Accept: 'application/json' },
@@ -196,11 +227,13 @@ export const apiCatalog = {
     }
   },
 
-  async getTransferBySlug(slug: string): Promise<ApiTransferSummary | null> {
+  async getTransferBySlug(slug: string, storefrontOverride?: string): Promise<ApiTransferSummary | null> {
     if (!slug) return null;
     const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
     const baseUrl = getApiBaseUrl();
-    const storefront = getStorefrontSlug();
+    const storefront = await resolveStorefrontSlug(storefrontOverride);
+    if (!storefront) return null;
+
     try {
       const res = await fetch(`${baseUrl}/v1/storefronts/${encodeURIComponent(storefront)}/transfers/${cleanSlug}`, {
         headers: { Accept: 'application/json' },

@@ -9,6 +9,8 @@ import { CatalogService } from './catalog/catalog.service.js';
 import { CatalogController } from './catalog/catalog.controller.js';
 import { TenantService } from './tenant/tenant.service.js';
 import { TenantInterceptor } from './tenant/tenant.interceptor.js';
+import { StorefrontResolutionController } from './tenant/storefront-resolution.controller.js';
+import { StorefrontResolverService } from './tenant/storefront-resolver.service.js';
 import { CheckoutController } from './checkout/checkout.controller.js';
 import { CheckoutService } from './checkout/checkout.service.js';
 import { PaymentsController } from './payments/payments.controller.js';
@@ -46,6 +48,7 @@ export class AppModule {
       controllers: [
         HealthController,
         CatalogController,
+        StorefrontResolutionController,
         ...(config.authEnabled
           ? [
               AuthController,
@@ -67,6 +70,7 @@ export class AppModule {
         PrismaService,
         AuthService,
         TenantService,
+        StorefrontResolverService,
         CatalogService,
         CatalogWriteService,
         CatalogContentService,
