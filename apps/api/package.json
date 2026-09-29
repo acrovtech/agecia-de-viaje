@@ -9,10 +9,11 @@
     "start": "node dist/main.js",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs test/image-validator.mjs test/media.e2e.mjs",
+    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs test/image-validator.mjs test/media.e2e.mjs test/settings.e2e.mjs test/memberships-invitations.e2e.mjs",
     "test:admin": "node --test test/admin.smoke.mjs",
     "test:payments:postgres": "pnpm build && node scripts/test-payments-postgres.mjs",
     "test:media:postgres": "pnpm build && node scripts/test-media-postgres.mjs",
+    "test:agency-management:postgres": "pnpm build && node scripts/test-agency-management-postgres.mjs",
     "test:integration": "pnpm build && node --test test/postgres.e2e.mjs test/auth.postgres.e2e.mjs test/catalog-write.postgres.e2e.mjs test/catalog-content.postgres.e2e.mjs test/reservations.postgres.e2e.mjs test/payment-concurrency.postgres.e2e.mjs"
   },
   "dependencies": {

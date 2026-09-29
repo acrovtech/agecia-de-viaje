@@ -16,6 +16,7 @@ import { PaymentsService } from './payments/payments.service.js';
 import { AuthService } from './auth/auth.service.js';
 import { AuthController } from './auth/auth.controller.js';
 import { MembershipsController } from './auth/memberships.controller.js';
+import { MembershipsService } from './memberships/memberships.service.js';
 import { AdminCatalogController } from './catalog/admin-catalog.controller.js';
 import { CatalogWriteService } from './catalog/catalog-write.service.js';
 import { CatalogContentService } from './catalog/catalog-content.service.js';
@@ -26,6 +27,15 @@ import { MediaController } from './media/media.controller.js';
 import { MediaService } from './media/media.service.js';
 import { R2StorageAdapter } from './media/storage/r2-storage.adapter.js';
 import { STORAGE_ADAPTER } from './media/storage/storage-adapter.interface.js';
+import { SettingsController } from './settings/settings.controller.js';
+import { SettingsService } from './settings/settings.service.js';
+import { InvitationsController } from './invitations/invitations.controller.js';
+import { PublicInvitationsController } from './invitations/public-invitations.controller.js';
+import { InvitationsService } from './invitations/invitations.service.js';
+import {
+  DefaultInvitationDeliveryAdapter,
+  INVITATION_DELIVERY_ADAPTER,
+} from './invitations/invitation-delivery.adapter.js';
 
 @Module({})
 export class AppModule {
@@ -36,7 +46,19 @@ export class AppModule {
       controllers: [
         HealthController,
         CatalogController,
-        ...(config.authEnabled ? [AuthController, MembershipsController, AdminCatalogController, CatalogContentController, ReservationsController, MediaController] : []),
+        ...(config.authEnabled
+          ? [
+              AuthController,
+              MembershipsController,
+              SettingsController,
+              InvitationsController,
+              PublicInvitationsController,
+              AdminCatalogController,
+              CatalogContentController,
+              ReservationsController,
+              MediaController,
+            ]
+          : []),
         // Financial endpoints are enabled when checkout is activated and validated.
         ...(config.checkoutEnabled ? [CheckoutController, PaymentsController] : []),
       ],
@@ -54,6 +76,14 @@ export class AppModule {
         MediaService,
         R2StorageAdapter,
         { provide: STORAGE_ADAPTER, useExisting: R2StorageAdapter },
+        SettingsService,
+        MembershipsService,
+        InvitationsService,
+        DefaultInvitationDeliveryAdapter,
+        {
+          provide: INVITATION_DELIVERY_ADAPTER,
+          useExisting: DefaultInvitationDeliveryAdapter,
+        },
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AccessGuard },
         { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },

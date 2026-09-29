@@ -18,7 +18,7 @@ const sessionSchema = z.object({
 });
 export type CentralIdentity = z.infer<typeof identitySchema>;
 
-export async function centralRequest(path: string, token?: string, body?: unknown, method?: 'POST' | 'PUT') {
+export async function centralRequest(path: string, token?: string, body?: unknown, method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE') {
   if (!isApiAdmin()) throw new CentralApiError(403);
   const origin = process.env.ADMIN_API_URL;
   if (!origin) throw new CentralApiError(503);

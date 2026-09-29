@@ -46,6 +46,7 @@ model Agency {
   financialAudits     FinancialAudit[]
   configurationAudits ConfigurationAudit[]
   mediaAssets         MediaAsset[]
+  invitations         AgencyInvitation[]
 
   @@index([slug])
   @@index([subdomain])
@@ -816,6 +817,7 @@ model User {
   configurationAudits ConfigurationAudit[]
   complaintHistory    ComplaintHistory[]
   uploadedMedia       MediaAsset[]
+  sentInvitations     AgencyInvitation[]   @relation("SentAgencyInvitations")
 
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -1093,3 +1095,29 @@ model MediaAsset {
   @@index([agencyId, kind])
   @@index([objectKey])
 }
+
+// -----------------------------------------------------------------------------
+// INVITACIONES DE AGENCIA (MEMBERSHIP INVITATIONS)
+// -----------------------------------------------------------------------------
+
+model AgencyInvitation {
+  id          String           @id @default(cuid())
+  agencyId    String
+  agency      Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  email       String
+  role        AgencyMemberRole
+  tokenHash   String           @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  invitedById String
+  invitedBy   User             @relation("SentAgencyInvitations", fields: [invitedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([agencyId, email])
+  @@index([agencyId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+

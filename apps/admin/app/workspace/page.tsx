@@ -6,13 +6,33 @@ import { centralRequest, centralSession, CentralApiError } from '../../lib/centr
 import { logoutAction } from '../actions/auth';
 import { canEditCatalog, catalogDetailSchema, type CatalogDetail } from '../../lib/catalog-editor';
 import { CatalogForm } from './catalog-form';
+import { TeamManager } from './team-manager';
 
 export const dynamic = 'force-dynamic';
 
 const memberSchema = z.object({
-  data: z.array(z.object({ id: z.string(), role: z.string(), isActive: z.boolean(), user: z.object({ id: z.string(), name: z.string().nullable(), email: z.string() }) })),
+  data: z.array(z.object({
+    id: z.string(),
+    role: z.string(),
+    isActive: z.boolean(),
+    user: z.object({ id: z.string(), name: z.string().nullable(), email: z.string() })
+  })),
   nextCursor: z.string().nullable(),
 });
+
+const invitationSchema = z.object({
+  data: z.array(z.object({
+    id: z.string(),
+    email: z.string(),
+    role: z.string(),
+    expiresAt: z.string(),
+    acceptedAt: z.string().nullable(),
+    revokedAt: z.string().nullable(),
+    createdAt: z.string(),
+    invitedBy: z.object({ id: z.string(), name: z.string().nullable(), email: z.string() }).nullable().optional(),
+  })),
+});
+
 const catalogSchema = z.object({
   data: z.array(z.object({ id: z.string(), title: z.string(), slug: z.string(), hasSharedService: z.boolean(), sharedPrice: z.number().nullable(), isActive: z.boolean().optional(), isPublished: z.boolean() })),
   nextCursor: z.string().nullable(),
@@ -37,6 +57,7 @@ export default async function Workspace({ searchParams }: { searchParams: Promis
   let record: CatalogDetail | undefined;
   const cursor = typeof params.after === 'string' && params.after.length <= 128 ? params.after : undefined;
   let members: z.infer<typeof memberSchema> | undefined;
+  let invitations: z.infer<typeof invitationSchema> | undefined;
   let catalog: z.infer<typeof catalogSchema> | undefined;
   let errorMessage = '';
   if (editing) {
@@ -51,11 +72,19 @@ export default async function Workspace({ searchParams }: { searchParams: Promis
   else if (view === 'members' && !canSeeTeam) errorMessage = 'Tu rol no permite consultar el equipo.';
   else {
     try {
-      const resource = view === 'members' ? 'memberships' : `catalog/${view}`;
-      const suffix = cursor ? `?after=${encodeURIComponent(cursor)}` : '';
-      const body = await centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/${resource}${suffix}`, token);
-      if (view === 'members') members = memberSchema.parse(body);
-      else catalog = catalogSchema.parse(body);
+      if (view === 'members') {
+        const suffix = cursor ? `?after=${encodeURIComponent(cursor)}` : '';
+        const [membersBody, invitationsBody] = await Promise.all([
+          centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/memberships${suffix}`, token),
+          centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/invitations`, token),
+        ]);
+        members = memberSchema.parse(membersBody);
+        invitations = invitationSchema.parse(invitationsBody);
+      } else {
+        const suffix = cursor ? `?after=${encodeURIComponent(cursor)}` : '';
+        const body = await centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/catalog/${view}${suffix}`, token);
+        catalog = catalogSchema.parse(body);
+      }
     } catch (error) {
       if (error instanceof CentralApiError && error.status === 401) redirect('/login?expired=1');
       errorMessage = error instanceof CentralApiError && error.status === 403
@@ -75,13 +104,21 @@ export default async function Workspace({ searchParams }: { searchParams: Promis
       <Link href="/workspace/resources?kind=categories" className="px-4 py-2 rounded-lg text-sm bg-white border">Categorías</Link>
       <Link href="/workspace/resources?kind=vehicles" className="px-4 py-2 rounded-lg text-sm bg-white border">Vehículos</Link>
       {Object.entries(tabs).filter(([key]) => key !== 'members' || canSeeTeam).map(([key, label]) => <Link key={key} href={`/workspace?view=${key}`} aria-current={view === key ? 'page' : undefined} className={`px-4 py-2 rounded-lg text-sm ${view === key ? 'bg-[#062918] text-white' : 'bg-white border'}`}>{label}</Link>)}
+      <Link href="/workspace/settings" className="px-4 py-2 rounded-lg text-sm bg-white border">Configuración</Link>
     </nav>
     <section className="bg-white rounded-xl border p-5 space-y-4">
       <h2 className="text-xl font-semibold">{tabs[view]}</h2>
       {canEdit && !editing && <Link href={`/workspace?view=${view}&edit=new`} className="inline-block bg-[#062918] text-white rounded-lg px-4 py-2 text-sm">Crear {view === 'tours' ? 'tour' : 'traslado'}</Link>}
       {editing && canEdit && !errorMessage && <CatalogForm key={`${view}-${record?.id ?? 'new'}-${record?.updatedAt ?? ''}`} kind={view} record={record} />}
       {errorMessage && <p role="alert" className="text-red-700">{errorMessage}</p>}
-      {members && <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr className="border-b"><th className="py-3">Persona</th><th>Rol</th><th>Estado</th></tr></thead><tbody>{members.data.map((member) => <tr key={member.id} className="border-b"><td className="py-4">{member.user.name || member.user.email}<span className="block text-slate-500">{member.user.email}</span></td><td>{roleLabels[member.role] || member.role}</td><td>{member.isActive ? 'Activo' : 'Desactivado'}</td></tr>)}</tbody></table>{members.data.length === 0 && <p className="py-4">No hay miembros en esta página.</p>}</div>}
+      {members && invitations && (
+        <TeamManager
+          members={members.data}
+          invitations={invitations.data}
+          currentRole={identity.role}
+          currentUserId={identity.userId}
+        />
+      )}
       {catalog && <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr className="border-b"><th className="py-3">Servicio</th><th>Tarifa compartida de referencia</th>{view === 'transfers' && <th>Estado</th>}</tr></thead><tbody>{catalog.data.map((item) => <tr key={item.id} className="border-b"><td className="py-4">{canEdit ? <Link className="underline" href={`/workspace?view=${view}&edit=${encodeURIComponent(item.id)}`}>{item.title}</Link> : item.title}<span className="block text-slate-500">{item.slug} · {item.isPublished ? "Publicado" : "Borrador"}</span>{canEdit && <Link className="block underline text-sm mt-1" href={`/workspace/content?kind=${view}&id=${item.id}`}>Contenido, tarifas y publicación</Link>}</td><td>{item.hasSharedService && item.sharedPrice !== null ? new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'USD' }).format(item.sharedPrice) : 'No disponible'}</td>{view === 'transfers' && <td>{item.isActive ? 'Activo' : 'Desactivado'}</td>}</tr>)}</tbody></table>{catalog.data.length === 0 && <p className="py-4">No hay servicios en esta página.</p>}</div>}
       <div className="flex gap-4 text-sm underline">{cursor && <Link href={`/workspace?view=${view}`}>Primera página</Link>}{nextCursor && <Link href={`/workspace?view=${view}&after=${encodeURIComponent(nextCursor)}`}>Siguiente página</Link>}</div>
     </section>
