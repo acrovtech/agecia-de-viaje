@@ -52,8 +52,13 @@ export class R2StorageAdapter implements StorageAdapter {
           ContentType: params.contentType,
         })
       );
-    } catch (error: any) {
-      this.logger.error(`Error al subir objeto a R2 [key: ${params.key}]: ${error?.message || error}`);
+    } catch {
+      this.logger.error(
+        JSON.stringify({
+          event: 'r2_put_object_failed',
+          key: params.key,
+        })
+      );
       throw new ServiceUnavailableException('Fallo al persistir el objeto multimedia en Cloudflare R2');
     }
   }
@@ -67,8 +72,13 @@ export class R2StorageAdapter implements StorageAdapter {
           Key: key,
         })
       );
-    } catch (error: any) {
-      this.logger.error(`Error al eliminar objeto de R2 [key: ${key}]: ${error?.message || error}`);
+    } catch {
+      this.logger.error(
+        JSON.stringify({
+          event: 'r2_delete_object_failed',
+          key,
+        })
+      );
       throw new ServiceUnavailableException('Fallo al eliminar el objeto multimedia en Cloudflare R2');
     }
   }

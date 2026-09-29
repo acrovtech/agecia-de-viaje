@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import request from 'supertest';
+import { Logger } from '@nestjs/common';
 import { application, config } from './helpers.mjs';
 import { STORAGE_ADAPTER } from '../dist/media/storage/storage-adapter.interface.js';
 import { MockStorageAdapter } from '../dist/media/storage/mock-storage.adapter.js';
@@ -165,7 +166,7 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
     },
     $transaction: async (fn) => {
       if (state.shouldFailTransaction) {
-        throw new Error('Simulated PostgreSQL transaction error (deadlock/constraint)');
+        throw new Error(state.transactionErrorMessage || 'Simulated PostgreSQL transaction error (deadlock/constraint)');
       }
       return fn(mockPrisma);
     },
@@ -358,8 +359,9 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
         .field('kind', 'TOUR_BANNER')
         .attach('file', oversized, 'oversized.jpg');
 
-      // Controlled 4xx response (Multer LIMIT_FILE_SIZE mapped to 413 or 400)
-      assert.ok([400, 413].includes(res.status), `Expected 400 or 413, got ${res.status}`);
+      // Exact HTTP 413 Payload Too Large
+      assert.equal(res.status, 413, `Expected exact 413, got ${res.status}`);
+      assert.equal(res.body.error?.code, 'PAYLOAD_TOO_LARGE', 'Expected error.code to be PAYLOAD_TOO_LARGE');
       // Storage adapter was NEVER called
       assert.equal(storageAdapter.putCount, initialPutCount, 'Storage putObject must never be called for oversized file');
       // No MediaAsset was persisted
@@ -557,6 +559,55 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
       assert.equal(removedFromDb, undefined, 'MediaAsset must now be removed from DB');
     });
 
+    await t.test('8.4 Failure handling never logs raw database or provider exceptions containing sensitive sentinels', async () => {
+      const logs = [];
+      const originalError = Logger.prototype.error;
+      Logger.prototype.error = function (...args) {
+        logs.push(args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' '));
+        originalError.apply(this, args);
+      };
+
+      try {
+        // 1. Simulate DB failure with secret sentinel in DB exception
+        state.transactionErrorMessage = 'FATAL DB EXCEPTION: SUPER_SECRET_DB_VALUE';
+        state.shouldFailTransaction = true;
+
+        const res = await request(server)
+          .post(`/v1/agencies/${agencyA.id}/media`)
+          .set('Authorization', `Bearer ${tokenAdminA}`)
+          .field('kind', 'TOUR_CARD')
+          .attach('file', VALID_PNG, 'secret-db.png');
+
+        assert.equal(res.status, 503);
+        const leakedDbSentinel = logs.some((l) => l.includes('SUPER_SECRET_DB_VALUE'));
+        assert.equal(leakedDbSentinel, false, 'Raw database error or sentinel MUST NOT be logged');
+
+        // 2. Simulate storage failure with secret sentinel in storage exception
+        logs.length = 0;
+        state.shouldFailTransaction = false;
+        state.transactionErrorMessage = null;
+
+        storageAdapter.failureMessage = 'Simulated storage failure with SUPER_SECRET_STORAGE_TOKEN';
+        storageAdapter.shouldFail = true;
+
+        const resStorage = await request(server)
+          .post(`/v1/agencies/${agencyA.id}/media`)
+          .set('Authorization', `Bearer ${tokenAdminA}`)
+          .field('kind', 'TOUR_CARD')
+          .attach('file', VALID_PNG, 'secret-storage.png');
+
+        assert.equal(resStorage.status, 503);
+        const leakedStorageSentinel = logs.some((l) => l.includes('SUPER_SECRET_STORAGE_TOKEN'));
+        assert.equal(leakedStorageSentinel, false, 'Raw storage provider error or sentinel MUST NOT be logged');
+      } finally {
+        Logger.prototype.error = originalError;
+        state.shouldFailTransaction = false;
+        state.transactionErrorMessage = null;
+        storageAdapter.shouldFail = false;
+        storageAdapter.failureMessage = 'Simulated storage failure';
+      }
+    });
+
     // -------------------------------------------------------------------------
     // 9. Multi-Page Cursor Pagination (3 pages, limit=2)
     // -------------------------------------------------------------------------
@@ -697,8 +748,28 @@ test('R2 Storage Configuration: Fail-Closed Behavior (P2.3)', async (t) => {
         };
       },
     },
-    mediaAsset: {},
-    adminAuditLog: {},
+    mediaAsset: {
+      findFirst: async ({ where }) => {
+        return state.mediaAssets.find((m) => {
+          if (where.id && m.id !== where.id) return false;
+          if (where.agencyId && m.agencyId !== where.agencyId) return false;
+          return true;
+        }) ?? null;
+      },
+      delete: async ({ where }) => {
+        const idx = state.mediaAssets.findIndex((m) => m.id === where.id);
+        if (idx !== -1) {
+          return state.mediaAssets.splice(idx, 1)[0];
+        }
+        return null;
+      },
+    },
+    adminAuditLog: {
+      create: async ({ data }) => {
+        state.auditLogs.push(data);
+        return data;
+      },
+    },
     $transaction: async (fn) => fn(mockPrisma),
     $disconnect: async () => {},
   };
@@ -736,6 +807,43 @@ test('R2 Storage Configuration: Fail-Closed Behavior (P2.3)', async (t) => {
 
       // Verify no fake /uploads/ URL was returned
       assert.ok(!JSON.stringify(res.body).includes('/uploads/'), 'Must never return fake /uploads/ fallback');
+    });
+
+    await t.test('Unconfigured R2 fails closed with 503 on DELETE and preserves MediaAsset without audit creation', async () => {
+      // 1. Seed an existing MediaAsset in state for Agency A
+      const existingAsset = {
+        id: 'existing-asset-unconfigured-id',
+        agencyId: agencyA.id,
+        objectKey: `agencies/${agencyA.id}/tour-banner/existing.jpg`,
+        publicUrl: `https://pub.example.test/agencies/${agencyA.id}/tour-banner/existing.jpg`,
+        kind: 'TOUR_BANNER',
+        mimeType: 'image/jpeg',
+        byteSize: 1024,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      state.mediaAssets.push(existingAsset);
+
+      const initialAssetCount = state.mediaAssets.length;
+      const initialAuditCount = state.auditLogs.length;
+
+      // 2. Attempt DELETE while storage is unconfigured
+      const res = await request(server)
+        .delete(`/v1/agencies/${agencyA.id}/media/${existingAsset.id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      // 3. Must return exact 503 Service Unavailable
+      assert.equal(res.status, 503, `Expected 503, got ${res.status}`);
+
+      // 4. Verify MediaAsset still exists and no DB mutation occurred
+      const stillInDb = state.mediaAssets.find((m) => m.id === existingAsset.id);
+      assert.ok(stillInDb, 'MediaAsset must still exist in DB');
+      assert.equal(state.mediaAssets.length, initialAssetCount, 'No DB mutation must occur');
+
+      // 5. Verify no MEDIA_DELETE audit log was created
+      const deleteAudits = state.auditLogs.filter((l) => l.action === 'MEDIA_DELETE');
+      assert.equal(deleteAudits.length, 0, 'No MEDIA_DELETE audit log must be created');
+      assert.equal(state.auditLogs.length, initialAuditCount, 'Audit log table must not be mutated');
     });
   } finally {
     await app.close();

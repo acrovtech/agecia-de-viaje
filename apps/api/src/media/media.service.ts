@@ -118,8 +118,14 @@ export class MediaService {
         body: file.buffer,
         contentType: validated.mimeType,
       });
-    } catch (storageError) {
-      this.logger.error(`Storage adapter putObject failed for key ${objectKey}:`, storageError);
+    } catch {
+      this.logger.error(
+        JSON.stringify({
+          event: 'media_storage_put_failed',
+          agencyId: identity.agencyId,
+          objectKey,
+        })
+      );
       throw new ServiceUnavailableException('Error al almacenar el archivo en el proveedor de almacenamiento');
     }
 
@@ -163,22 +169,24 @@ export class MediaService {
 
         return created;
       });
-    } catch (dbError) {
+    } catch {
       this.logger.error(
-        `Database persistence failed after storage upload for key ${objectKey} (agency: ${identity.agencyId}). Initiating compensation deletion:`,
-        dbError
+        JSON.stringify({
+          event: 'media_db_persistence_failed',
+          agencyId: identity.agencyId,
+          objectKey,
+        })
       );
       // Best-effort compensation: remove orphan R2 object
       try {
         await this.storage.deleteObject(objectKey);
-      } catch (compensationError) {
+      } catch {
         // Operational log without secrets for manual/reconciliation audit
         this.logger.error(
           JSON.stringify({
             event: 'media_upload_compensation_failed',
             agencyId: identity.agencyId,
             objectKey,
-            error: compensationError instanceof Error ? compensationError.message : String(compensationError),
           })
         );
       }
@@ -245,17 +253,29 @@ export class MediaService {
       throw new NotFoundException('Archivo multimedia no encontrado en esta agencia');
     }
 
-    // 3. Delete from underlying storage first (idempotent cloud operation)
-    if (this.storage.isConfigured()) {
-      try {
-        await this.storage.deleteObject(asset.objectKey);
-      } catch (storageError) {
-        this.logger.error(`Storage adapter deleteObject failed for key ${asset.objectKey}:`, storageError);
-        throw new ServiceUnavailableException('Error al eliminar el archivo del proveedor de almacenamiento');
-      }
+    // 3. Fail-closed storage configuration check BEFORE touching storage or DB
+    if (!this.storage.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'El almacenamiento de medios en la nube (Cloudflare R2) no está configurado'
+      );
     }
 
-    // 4. Remove database record and log audit atomically
+    // 4. Delete from underlying storage first (idempotent cloud operation)
+    try {
+      await this.storage.deleteObject(asset.objectKey);
+    } catch {
+      this.logger.error(
+        JSON.stringify({
+          event: 'media_storage_delete_failed',
+          agencyId,
+          mediaId,
+          objectKey: asset.objectKey,
+        })
+      );
+      throw new ServiceUnavailableException('Error al eliminar el archivo del proveedor de almacenamiento');
+    }
+
+    // 5. Remove database record and log audit atomically
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.mediaAsset.delete({
@@ -278,10 +298,14 @@ export class MediaService {
           },
         });
       });
-    } catch (dbError) {
+    } catch {
       this.logger.error(
-        `Database deletion failed after storage deletion for asset ${asset.id} (key: ${asset.objectKey}):`,
-        dbError
+        JSON.stringify({
+          event: 'media_db_delete_failed',
+          agencyId,
+          mediaId,
+          objectKey: asset.objectKey,
+        })
       );
       throw new ServiceUnavailableException('No se pudo completar la eliminación en la base de datos');
     }
