@@ -9,12 +9,13 @@
     "start": "node dist/main.js",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs",
+    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs test/image-validator.mjs test/media.e2e.mjs",
     "test:admin": "node --test test/admin.smoke.mjs",
     "test:payments:postgres": "pnpm build && node scripts/test-payments-postgres.mjs",
     "test:integration": "pnpm build && node --test test/postgres.e2e.mjs test/auth.postgres.e2e.mjs test/catalog-write.postgres.e2e.mjs test/catalog-content.postgres.e2e.mjs test/reservations.postgres.e2e.mjs test/payment-concurrency.postgres.e2e.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1141.0",
     "@nestjs/common": "12.0.3",
     "@nestjs/core": "12.0.3",
     "@nestjs/platform-express": "12.0.3",
@@ -32,6 +33,7 @@
     "@eslint/js": "^9.39.1",
     "@nestjs/testing": "12.0.3",
     "@types/express": "5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.15.3",
     "eslint": "^9.39.1",
     "nodemon": "3.1.14",

@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import type { CatalogDetail, CatalogKind } from '../../lib/catalog-editor';
 import { saveCatalogAction } from './catalog-actions';
+import { MediaUploader } from '../../components/workspace/media-uploader';
 
 export function CatalogForm({ kind, record }: { kind: CatalogKind; record?: CatalogDetail }) {
   const [state, action, pending] = useActionState(saveCatalogAction, null);
@@ -24,7 +25,30 @@ export function CatalogForm({ kind, record }: { kind: CatalogKind; record?: Cata
     <fieldset disabled={pending} className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-4">{field('title', 'Nombre')}{field('slug', 'Nombre en la URL (ej. tour-cusco)', true, 160)}{field('duration', 'Duración')}{kind === 'tours' && field('region', 'Región', false)}</div>
       <label className="block text-sm font-medium">Descripción<textarea name="description" required={kind === 'tours'} maxLength={20000} rows={5} value={fields.description} onChange={(event) => setFields({ ...fields, description: event.target.value })} className={inputClass} /></label>
-      <div className="grid sm:grid-cols-2 gap-4">{field('bannerImage', 'URL de imagen principal', kind === 'tours', 2000)}{kind === 'tours' && field('cardImage', 'URL de imagen de tarjeta', true, 2000)}</div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <MediaUploader
+          name="bannerImage"
+          label="Imagen principal (Banner)"
+          kind={kind === 'tours' ? 'TOUR_BANNER' : 'TRANSFER'}
+          value={fields.bannerImage ?? ''}
+          onChange={(val) => setFields((prev) => ({ ...prev, bannerImage: val }))}
+          required={kind === 'tours'}
+          placeholder="https://..."
+          helpText="Banner horizontal"
+        />
+        {kind === 'tours' && (
+          <MediaUploader
+            name="cardImage"
+            label="Imagen de tarjeta (Card)"
+            kind="TOUR_CARD"
+            value={fields.cardImage ?? ''}
+            onChange={(val) => setFields((prev) => ({ ...prev, cardImage: val }))}
+            required={true}
+            placeholder="https://..."
+            helpText="Vista previa de catálogo"
+          />
+        )}
+      </div>
       {kind === 'transfers' && <div className="grid sm:grid-cols-2 gap-4">{field('origin', 'Origen')}{field('destination', 'Destino')}<label className="block text-sm font-medium">Tipo de viaje<select name="tripType" value={fields.tripType} onChange={(event) => setFields({ ...fields, tripType: event.target.value })} className={inputClass}><option>Solo ida</option><option>Ida y vuelta</option></select></label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isActive" checked={active} onChange={(event) => setActive(event.target.checked)} />Traslado activo</label></div>}
       <fieldset className="border rounded-lg p-4 space-y-3"><legend className="px-2 font-medium">Modalidad compartida</legend><label className="flex gap-2 items-center text-sm"><input type="checkbox" name="hasSharedService" checked={shared} onChange={(event) => setShared(event.target.checked)} />Disponible</label>{shared && <label className="block text-sm font-medium">Precio por persona (USD)<input name="sharedPrice" type="number" step="0.01" min="0.01" max="1000000" required value={fields.sharedPrice} onChange={(event) => setFields({ ...fields, sharedPrice: event.target.value })} className={inputClass} /></label>}</fieldset>
       <div className="flex items-center gap-4"><button disabled={pending} className="bg-[#062918] text-white rounded-lg px-5 py-2 disabled:opacity-50">{pending ? 'Guardando…' : 'Guardar servicio'}</button><Link href={`/workspace?view=${kind}`} className="text-sm underline">Volver al catálogo</Link></div>

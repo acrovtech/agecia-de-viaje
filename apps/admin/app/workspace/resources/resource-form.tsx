@@ -3,6 +3,7 @@ import { useActionState, useState } from 'react';
 import type { CategoryResource, VehicleResource } from '../../../lib/catalog-content';
 import { catalogContentAction } from '../content/actions';
 import { RowEditor, type Row } from '../content/row-editor';
+import { MediaUploader } from '../../../components/workspace/media-uploader';
 
 export function ResourceForm({ kind, record }: { kind: 'categories' | 'vehicles'; record?: CategoryResource | VehicleResource }) {
   const vehicle = record && 'code' in record ? record : undefined;
@@ -19,7 +20,17 @@ export function ResourceForm({ kind, record }: { kind: 'categories' | 'vehicles'
     {state?.error && <p role="alert" className="text-red-700">{state.error}</p>}
     <fieldset disabled={pending} className="space-y-4">
       {input('name', 'Nombre')}{kind === 'categories' ? input('slug', 'Nombre en la URL (ej. aventura)') : <>
-        {input('code', 'Código (ej. mi-agencia-sedan)')}{input('subtitle', 'Subtítulo', 'text', false)}<div className="grid sm:grid-cols-2 gap-4">{input('maxPax', 'Capacidad de pasajeros', 'number')}{input('maxLuggage', 'Capacidad de equipaje', 'number')}</div>{input('image', 'URL de imagen')}
+        {input('code', 'Código (ej. mi-agencia-sedan)')}{input('subtitle', 'Subtítulo', 'text', false)}<div className="grid sm:grid-cols-2 gap-4">{input('maxPax', 'Capacidad de pasajeros', 'number')}{input('maxLuggage', 'Capacidad de equipaje', 'number')}</div>
+        <MediaUploader
+          name="image"
+          label="Imagen del vehículo"
+          kind="VEHICLE"
+          value={fields.image ?? ''}
+          onChange={(val) => setFields((prev) => ({ ...prev, image: val }))}
+          required={false}
+          placeholder="https://..."
+          helpText="Foto lateral o frontal del vehículo"
+        />
         <label className="flex gap-2"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />Vehículo activo</label>
         <RowEditor title="Características" rows={features} onChange={setFeatures} limit={30} fields={[{ key: 'content', label: 'Característica' }]} />
       </>}

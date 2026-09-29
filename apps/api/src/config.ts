@@ -35,6 +35,12 @@ const environmentSchema = z.object({
   IZIPAY_CURRENCY: z.string().default('USD'),
   IZIPAY_MODE: z.enum(['test', 'live']).default('test'),
   PAYMENT_SESSION_REUSE_DURATION_MS: z.coerce.number().int().min(1000).default(14 * 60 * 1000),
+  MEDIA_UPLOAD_ENABLED: z.enum(['true', 'false']).default('true'),
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_DOMAIN: z.string().optional(),
 });
 
 export type ApiConfig = Readonly<{
@@ -56,6 +62,12 @@ export type ApiConfig = Readonly<{
   izipayCurrency: string;
   izipayMode: 'test' | 'live';
   paymentSessionReuseDurationMs: number;
+  mediaUploadEnabled: boolean;
+  r2AccountId: string;
+  r2AccessKeyId: string;
+  r2SecretAccessKey: string;
+  r2BucketName: string;
+  r2PublicDomain: string;
 }>;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
@@ -114,6 +126,19 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     }
   }
 
+  const mediaUploadEnabled = value.MEDIA_UPLOAD_ENABLED === 'true';
+  const r2AccountId = (value.R2_ACCOUNT_ID || env.R2_ACCOUNT_ID || '').trim();
+  const r2AccessKeyId = (value.R2_ACCESS_KEY_ID || env.R2_ACCESS_KEY_ID || '').trim();
+  const r2SecretAccessKey = (value.R2_SECRET_ACCESS_KEY || env.R2_SECRET_ACCESS_KEY || '').trim();
+  const r2BucketName = (value.R2_BUCKET_NAME || env.R2_BUCKET_NAME || '').trim();
+  let r2PublicDomain = (value.R2_PUBLIC_DOMAIN || env.R2_PUBLIC_DOMAIN || '').trim().replace(/\/+$/, '');
+  if (r2PublicDomain && !/^https?:\/\//i.test(r2PublicDomain)) {
+    r2PublicDomain = `https://${r2PublicDomain}`;
+  }
+  if (isProduction && r2PublicDomain.startsWith('http://')) {
+    r2PublicDomain = r2PublicDomain.replace(/^http:\/\//i, 'https://');
+  }
+
   return Object.freeze({
     environment: value.NODE_ENV,
     databaseUrl: value.DATABASE_URL,
@@ -133,5 +158,11 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     izipayCurrency,
     izipayMode: value.IZIPAY_MODE,
     paymentSessionReuseDurationMs: value.PAYMENT_SESSION_REUSE_DURATION_MS,
+    mediaUploadEnabled,
+    r2AccountId,
+    r2AccessKeyId,
+    r2SecretAccessKey,
+    r2BucketName,
+    r2PublicDomain,
   });
 }

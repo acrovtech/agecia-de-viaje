@@ -45,6 +45,7 @@ model Agency {
   complaints          Complaint[]
   financialAudits     FinancialAudit[]
   configurationAudits ConfigurationAudit[]
+  mediaAssets         MediaAsset[]
 
   @@index([slug])
   @@index([subdomain])
@@ -814,6 +815,7 @@ model User {
   financialAudits     FinancialAudit[]
   configurationAudits ConfigurationAudit[]
   complaintHistory    ComplaintHistory[]
+  uploadedMedia       MediaAsset[]
 
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -1066,4 +1068,28 @@ model OperationsJob {
   completedAt          DateTime?
   lastSuccessAt        DateTime?
   failureCode          String?
+}
+
+// -----------------------------------------------------------------------------
+// MEDIA ASSETS (ALMACENAMIENTO AUTORITATIVO MULTI-TENANT EN R2)
+// -----------------------------------------------------------------------------
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  objectKey    String   @unique
+  publicUrl    String
+  kind         String   // AGENCY_LOGO, AGENCY_ICON, TOUR_BANNER, TOUR_CARD, TOUR_GALLERY, TRANSFER, VEHICLE, BLOG
+  mimeType     String
+  byteSize     Int
+  originalName String?
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([agencyId, kind])
+  @@index([objectKey])
 }

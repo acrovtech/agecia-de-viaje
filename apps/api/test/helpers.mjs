@@ -15,9 +15,10 @@ function config(overrides = {}) {
   });
 }
 
-async function application(settings, prisma, controllers = []) {
+async function application(settings, prisma, controllers = [], customizeBuilder) {
   const builder = Test.createTestingModule({ imports: [AppModule.register(settings)], controllers });
   if (prisma) builder.overrideProvider(PrismaService).useValue(prisma);
+  if (typeof customizeBuilder === 'function') customizeBuilder(builder);
   const module = await builder.compile();
   const app = module.createNestApplication({ logger: false, bodyParser: false });
   configureApplication(app, settings);

@@ -1,49 +1,28 @@
 import { NextResponse } from 'next/server';
-import { uploadToR2 } from '@/lib/r2';
-import { verifyAdminSession } from '@/lib/auth-check';
 
-export async function POST(request: Request) {
-  try {
-    const isAuthenticated = await verifyAdminSession();
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado. Se requiere sesión de administrador.' },
-        { status: 401 }
-      );
-    }
+/**
+ * Legacy upload route - Permanently Disabled in Phase 2.3.
+ *
+ * All uploads must go through the authoritative central SaaS API:
+ * POST /v1/agencies/:agencyId/media
+ * with tenant-authenticated session token and role authorization.
+ */
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Legacy upload route is permanently disabled. Use central API media endpoints (/v1/agencies/:agencyId/media).',
+    },
+    { status: 410 }
+  );
+}
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-    const folder = (formData.get('folder') as string) || 'assets';
-
-    if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No se ha adjuntado ningún archivo.' },
-        { status: 400 }
-      );
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const result = await uploadToR2(buffer, file.name, file.type || 'image/jpeg', folder);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      url: result.url
-    });
-  } catch (error: any) {
-    console.error('Error en el endpoint de subida de imágenes:', error);
-    return NextResponse.json(
-      { success: false, error: 'Error interno del servidor al procesar la imagen.' },
-      { status: 500 }
-    );
-  }
+export async function GET() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Legacy upload route is permanently disabled. Use central API media endpoints (/v1/agencies/:agencyId/media).',
+    },
+    { status: 410 }
+  );
 }

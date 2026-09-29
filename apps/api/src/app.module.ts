@@ -22,6 +22,10 @@ import { CatalogContentService } from './catalog/catalog-content.service.js';
 import { CatalogContentController } from './catalog/catalog-content.controller.js';
 import { ReservationsService } from './reservations/reservations.service.js';
 import { ReservationsController } from './reservations/reservations.controller.js';
+import { MediaController } from './media/media.controller.js';
+import { MediaService } from './media/media.service.js';
+import { R2StorageAdapter } from './media/storage/r2-storage.adapter.js';
+import { STORAGE_ADAPTER } from './media/storage/storage-adapter.interface.js';
 
 @Module({})
 export class AppModule {
@@ -32,7 +36,7 @@ export class AppModule {
       controllers: [
         HealthController,
         CatalogController,
-        ...(config.authEnabled ? [AuthController, MembershipsController, AdminCatalogController, CatalogContentController, ReservationsController] : []),
+        ...(config.authEnabled ? [AuthController, MembershipsController, AdminCatalogController, CatalogContentController, ReservationsController, MediaController] : []),
         // Financial endpoints are enabled when checkout is activated and validated.
         ...(config.checkoutEnabled ? [CheckoutController, PaymentsController] : []),
       ],
@@ -47,6 +51,9 @@ export class AppModule {
         ReservationsService,
         CheckoutService,
         PaymentsService,
+        MediaService,
+        R2StorageAdapter,
+        { provide: STORAGE_ADAPTER, useExisting: R2StorageAdapter },
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AccessGuard },
         { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },

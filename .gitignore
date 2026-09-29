@@ -40,8 +40,8 @@ yarn-error.log*
 
 # Misc
 .DS_Store
-*.pem
-media/
+/media/
+!apps/api/src/media/**
 
 # Agents & Customizations (contains private keys / tokens)
 .agents/
