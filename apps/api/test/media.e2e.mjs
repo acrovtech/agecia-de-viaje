@@ -81,6 +81,7 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
     apiSessions: [],
     mediaAssets: [],
     auditLogs: [],
+    shouldFailTransaction: false,
   };
 
   const mockPrisma = {
@@ -129,10 +130,12 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
           if (where.kind && m.kind !== where.kind) return false;
           return true;
         });
-        results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id));
         if (cursor) {
           const idx = results.findIndex((r) => r.id === cursor.id);
-          if (idx !== -1) results = results.slice(idx + (skip || 0));
+          if (idx !== -1) {
+            results = results.slice(idx + (skip || 0));
+          }
         }
         return results.slice(0, take);
       },
@@ -160,7 +163,12 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
         return data;
       },
     },
-    $transaction: async (fn) => fn(mockPrisma),
+    $transaction: async (fn) => {
+      if (state.shouldFailTransaction) {
+        throw new Error('Simulated PostgreSQL transaction error (deadlock/constraint)');
+      }
+      return fn(mockPrisma);
+    },
     $disconnect: async () => {},
   };
 
@@ -335,6 +343,29 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
       assert.equal(res.status, 400);
     });
 
+    await t.test('4.5 Rejects oversized file (> 8 MiB) via multipart layer before storage', async () => {
+      // Craft an 8.01 MiB buffer
+      const oversized = Buffer.concat([
+        VALID_JPEG.subarray(0, 12),
+        Buffer.alloc(8 * 1024 * 1024 + 1024, 0x44),
+      ]);
+      const initialPutCount = storageAdapter.putCount;
+      const initialAssetCount = state.mediaAssets.length;
+
+      const res = await request(server)
+        .post(`/v1/agencies/${agencyA.id}/media`)
+        .set('Authorization', `Bearer ${tokenAdminA}`)
+        .field('kind', 'TOUR_BANNER')
+        .attach('file', oversized, 'oversized.jpg');
+
+      // Controlled 4xx response (Multer LIMIT_FILE_SIZE mapped to 413 or 400)
+      assert.ok([400, 413].includes(res.status), `Expected 400 or 413, got ${res.status}`);
+      // Storage adapter was NEVER called
+      assert.equal(storageAdapter.putCount, initialPutCount, 'Storage putObject must never be called for oversized file');
+      // No MediaAsset was persisted
+      assert.equal(state.mediaAssets.length, initialAssetCount, 'No MediaAsset must be persisted');
+    });
+
     // -------------------------------------------------------------------------
     // 5. Cross-Tenant Boundaries & Role Enforcement on Upload
     // -------------------------------------------------------------------------
@@ -444,7 +475,7 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
     });
 
     // -------------------------------------------------------------------------
-    // 8. Storage Failure Propagation
+    // 8. Storage Failure & R2 Upload Compensation
     // -------------------------------------------------------------------------
     await t.test('8.1 Storage adapter put failure returns 503 and does not persist asset', async () => {
       storageAdapter.shouldFail = true;
@@ -462,6 +493,163 @@ test('Tenant-Safe Media Storage & R2 Upload Pipeline (P2.3)', async (t) => {
       assert.equal(state.mediaAssets.length, initialCount, 'No asset record must be persisted if storage fails');
 
       storageAdapter.shouldFail = false;
+    });
+
+    await t.test('8.2 DB failure after storage put triggers R2 compensation delete', async () => {
+      state.shouldFailTransaction = true;
+      const initialAssetCount = state.mediaAssets.length;
+      const initialDeleteCount = storageAdapter.deleteCount;
+      const initialPutCount = storageAdapter.putCount;
+
+      const res = await request(server)
+        .post(`/v1/agencies/${agencyA.id}/media`)
+        .set('Authorization', `Bearer ${tokenAdminA}`)
+        .field('kind', 'TOUR_GALLERY')
+        .attach('file', VALID_JPEG, 'compensate.jpg');
+
+      // Must fail closed with 503
+      assert.equal(res.status, 503);
+      // DB record must NOT be persisted
+      assert.equal(state.mediaAssets.length, initialAssetCount, 'No MediaAsset must be persisted in DB');
+      // Storage putObject was invoked
+      assert.equal(storageAdapter.putCount, initialPutCount + 1, 'Storage putObject must have been called');
+      // Storage compensation deleteObject was invoked
+      assert.ok(storageAdapter.deleteCount > initialDeleteCount, 'Storage deleteObject must be called for compensation');
+
+      state.shouldFailTransaction = false;
+    });
+
+    await t.test('8.3 DB failure during deletion leaves DB record for idempotent retry', async () => {
+      // 1. Upload a fresh asset for Agency A
+      const uploadRes = await request(server)
+        .post(`/v1/agencies/${agencyA.id}/media`)
+        .set('Authorization', `Bearer ${tokenAdminA}`)
+        .field('kind', 'VEHICLE')
+        .attach('file', VALID_PNG, 'retry-test.png');
+
+      assert.equal(uploadRes.status, 201);
+      const assetToDel = uploadRes.body;
+      assert.ok(storageAdapter.hasObject(assetToDel.objectKey));
+
+      // 2. Simulate DB transaction failure during delete
+      state.shouldFailTransaction = true;
+      const failDelRes = await request(server)
+        .delete(`/v1/agencies/${agencyA.id}/media/${assetToDel.id}`)
+        .set('Authorization', `Bearer ${tokenAdminA}`);
+
+      assert.equal(failDelRes.status, 503);
+
+      // Verify the MediaAsset DB record REMAINS
+      const stillInDb = state.mediaAssets.find((m) => m.id === assetToDel.id);
+      assert.ok(stillInDb, 'MediaAsset record must remain in DB when DB transaction fails');
+
+      // 3. Clear DB failure and retry deletion (idempotent cloud deletion)
+      state.shouldFailTransaction = false;
+      const retryDelRes = await request(server)
+        .delete(`/v1/agencies/${agencyA.id}/media/${assetToDel.id}`)
+        .set('Authorization', `Bearer ${tokenAdminA}`);
+
+      assert.equal(retryDelRes.status, 200);
+      assert.equal(retryDelRes.body.success, true);
+
+      // Verify record is now removed from DB
+      const removedFromDb = state.mediaAssets.find((m) => m.id === assetToDel.id);
+      assert.equal(removedFromDb, undefined, 'MediaAsset must now be removed from DB');
+    });
+
+    // -------------------------------------------------------------------------
+    // 9. Multi-Page Cursor Pagination (3 pages, limit=2)
+    // -------------------------------------------------------------------------
+    await t.test('9.1 Cursor pagination returns complete sequence with no duplicates or missing records', async () => {
+      // Clear previous assets for clean pagination test
+      state.mediaAssets.length = 0;
+
+      // Seed 5 assets for Agency A with distinct timestamps
+      const now = Date.now();
+      const seededA = [];
+      for (let i = 0; i < 5; i++) {
+        const item = {
+          id: `med-page-${i}`,
+          agencyId: agencyA.id,
+          objectKey: `agencies/${agencyA.id}/tour-card/page-test-${i}.webp`,
+          publicUrl: `https://cdn.example.test/agencies/${agencyA.id}/tour-card/page-test-${i}.webp`,
+          kind: 'TOUR_CARD',
+          mimeType: 'image/webp',
+          byteSize: 1024,
+          originalName: `page-${i}.webp`,
+          uploadedById: `user-${agencyA.id}-admin`,
+          createdAt: new Date(now - i * 1000), // descending order
+          updatedAt: new Date(now - i * 1000),
+        };
+        state.mediaAssets.push(item);
+        seededA.push(item);
+      }
+
+      // Seed 1 asset for Agency B
+      const seededB = {
+        id: 'med-page-b',
+        agencyId: agencyB.id,
+        objectKey: `agencies/${agencyB.id}/tour-card/page-test-b.webp`,
+        publicUrl: `https://cdn.example.test/agencies/${agencyB.id}/tour-card/page-test-b.webp`,
+        kind: 'TOUR_CARD',
+        mimeType: 'image/webp',
+        byteSize: 1024,
+        originalName: 'page-b.webp',
+        uploadedById: `user-${agencyB.id}-admin`,
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
+      };
+      state.mediaAssets.push(seededB);
+
+      // Page 1: limit=2
+      const page1 = await request(server)
+        .get(`/v1/agencies/${agencyA.id}/media?limit=2`)
+        .set('Authorization', `Bearer ${tokenAdminA}`);
+
+      assert.equal(page1.status, 200);
+      assert.equal(page1.body.data.length, 2, 'Page 1 must return 2 assets');
+      assert.ok(page1.body.nextCursor, 'Page 1 must have nextCursor');
+      assert.equal(page1.body.nextCursor, page1.body.data[1].id, 'nextCursor must be the LAST returned item');
+
+      // Page 2: limit=2, cursor=page1.nextCursor
+      const page2 = await request(server)
+        .get(`/v1/agencies/${agencyA.id}/media?limit=2&cursor=${page1.body.nextCursor}`)
+        .set('Authorization', `Bearer ${tokenAdminA}`);
+
+      assert.equal(page2.status, 200);
+      assert.equal(page2.body.data.length, 2, 'Page 2 must return 2 assets');
+      assert.ok(page2.body.nextCursor, 'Page 2 must have nextCursor');
+      assert.equal(page2.body.nextCursor, page2.body.data[1].id, 'nextCursor must be the LAST returned item');
+
+      // Page 3: limit=2, cursor=page2.nextCursor
+      const page3 = await request(server)
+        .get(`/v1/agencies/${agencyA.id}/media?limit=2&cursor=${page2.body.nextCursor}`)
+        .set('Authorization', `Bearer ${tokenAdminA}`);
+
+      assert.equal(page3.status, 200);
+      assert.equal(page3.body.data.length, 1, 'Page 3 must return the final 1 asset');
+      assert.equal(page3.body.nextCursor, null, 'Page 3 nextCursor must be null (no more pages)');
+
+      // Verify all IDs across all 3 pages
+      const allIds = [
+        ...page1.body.data.map((d) => d.id),
+        ...page2.body.data.map((d) => d.id),
+        ...page3.body.data.map((d) => d.id),
+      ];
+
+      // Exactly 5 unique assets
+      assert.equal(allIds.length, 5, 'Must return exactly 5 items across 3 pages');
+      const uniqueIds = new Set(allIds);
+      assert.equal(uniqueIds.size, 5, 'All 5 items must be distinct with zero duplicates');
+
+      // Verify all belong strictly to Agency A
+      assert.ok(
+        allIds.every((id) => seededA.some((a) => a.id === id)),
+        'Every returned item must be one of Agency A seeded assets'
+      );
+
+      // Agency B asset must never appear
+      assert.ok(!uniqueIds.has(seededB.id), 'Agency B asset must never appear in Agency A results');
     });
 
   } finally {

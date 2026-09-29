@@ -128,39 +128,62 @@ export class MediaService {
       ? file.originalname.slice(0, 200).replace(/[^\w.\-\s]/g, '_')
       : null;
 
-    const record = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.mediaAsset.create({
-        data: {
-          agencyId: identity.agencyId,
-          objectKey,
-          publicUrl,
-          kind: mediaKind,
-          mimeType: validated.mimeType,
-          byteSize: validated.byteSize,
-          originalName: sanitizedOriginalName,
-          uploadedById: identity.userId,
-        },
-      });
-
-      await tx.adminAuditLog.create({
-        data: {
-          userId: identity.userId,
-          entity: 'MediaAsset',
-          entityId: created.id,
-          action: 'MEDIA_UPLOAD',
-          details: {
+    let record: any;
+    try {
+      record = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.mediaAsset.create({
+          data: {
             agencyId: identity.agencyId,
-            membershipId: identity.membershipId,
-            role: identity.role,
-            kind: mediaKind,
             objectKey,
+            publicUrl,
+            kind: mediaKind,
+            mimeType: validated.mimeType,
             byteSize: validated.byteSize,
+            originalName: sanitizedOriginalName,
+            uploadedById: identity.userId,
           },
-        },
-      });
+        });
 
-      return created;
-    });
+        await tx.adminAuditLog.create({
+          data: {
+            userId: identity.userId,
+            entity: 'MediaAsset',
+            entityId: created.id,
+            action: 'MEDIA_UPLOAD',
+            details: {
+              agencyId: identity.agencyId,
+              membershipId: identity.membershipId,
+              role: identity.role,
+              kind: mediaKind,
+              objectKey,
+              byteSize: validated.byteSize,
+            },
+          },
+        });
+
+        return created;
+      });
+    } catch (dbError) {
+      this.logger.error(
+        `Database persistence failed after storage upload for key ${objectKey} (agency: ${identity.agencyId}). Initiating compensation deletion:`,
+        dbError
+      );
+      // Best-effort compensation: remove orphan R2 object
+      try {
+        await this.storage.deleteObject(objectKey);
+      } catch (compensationError) {
+        // Operational log without secrets for manual/reconciliation audit
+        this.logger.error(
+          JSON.stringify({
+            event: 'media_upload_compensation_failed',
+            agencyId: identity.agencyId,
+            objectKey,
+            error: compensationError instanceof Error ? compensationError.message : String(compensationError),
+          })
+        );
+      }
+      throw new ServiceUnavailableException('No se pudo registrar el archivo multimedia en la base de datos');
+    }
 
     return this.serializeAsset(record);
   }
@@ -186,14 +209,16 @@ export class MediaService {
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
-    let nextCursor: string | null = null;
-    if (rows.length > limit) {
-      const nextItem = rows.pop();
-      nextCursor = nextItem ? nextItem.id : null;
+    const hasMore = rows.length > limit;
+    if (hasMore) {
+      rows.pop(); // Remove the extra (limit + 1)-th row from current page slice
     }
+
+    // nextCursor is the ID of the last item in the returned slice (null if no more pages or empty)
+    const nextCursor = hasMore && rows.length > 0 ? rows[rows.length - 1]!.id : null;
 
     return {
       data: rows.map((r) => this.serializeAsset(r)),
@@ -220,7 +245,7 @@ export class MediaService {
       throw new NotFoundException('Archivo multimedia no encontrado en esta agencia');
     }
 
-    // 3. Delete from underlying storage
+    // 3. Delete from underlying storage first (idempotent cloud operation)
     if (this.storage.isConfigured()) {
       try {
         await this.storage.deleteObject(asset.objectKey);
@@ -231,27 +256,35 @@ export class MediaService {
     }
 
     // 4. Remove database record and log audit atomically
-    await this.prisma.$transaction(async (tx) => {
-      await tx.mediaAsset.delete({
-        where: { id: asset.id },
-      });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.mediaAsset.delete({
+          where: { id: asset.id },
+        });
 
-      await tx.adminAuditLog.create({
-        data: {
-          userId: identity.userId,
-          entity: 'MediaAsset',
-          entityId: asset.id,
-          action: 'MEDIA_DELETE',
-          details: {
-            agencyId: identity.agencyId,
-            membershipId: identity.membershipId,
-            role: identity.role,
-            kind: asset.kind,
-            objectKey: asset.objectKey,
+        await tx.adminAuditLog.create({
+          data: {
+            userId: identity.userId,
+            entity: 'MediaAsset',
+            entityId: asset.id,
+            action: 'MEDIA_DELETE',
+            details: {
+              agencyId: identity.agencyId,
+              membershipId: identity.membershipId,
+              role: identity.role,
+              kind: asset.kind,
+              objectKey: asset.objectKey,
+            },
           },
-        },
+        });
       });
-    });
+    } catch (dbError) {
+      this.logger.error(
+        `Database deletion failed after storage deletion for asset ${asset.id} (key: ${asset.objectKey}):`,
+        dbError
+      );
+      throw new ServiceUnavailableException('No se pudo completar la eliminación en la base de datos');
+    }
 
     return { success: true, id: mediaId };
   }

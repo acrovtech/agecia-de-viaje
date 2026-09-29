@@ -7,6 +7,9 @@ export class MockStorageAdapter implements StorageAdapter {
   public shouldFail = false;
   public failureMessage = 'Simulated storage failure';
 
+  public putCount = 0;
+  public deleteCount = 0;
+
   isConfigured(): boolean {
     return true;
   }
@@ -15,6 +18,7 @@ export class MockStorageAdapter implements StorageAdapter {
     if (this.shouldFail) {
       throw new Error(this.failureMessage);
     }
+    this.putCount++;
     this.objects.set(params.key, { body: params.body, contentType: params.contentType });
   }
 
@@ -22,6 +26,7 @@ export class MockStorageAdapter implements StorageAdapter {
     if (this.shouldFail) {
       throw new Error(this.failureMessage);
     }
+    this.deleteCount++;
     this.objects.delete(key);
   }
 

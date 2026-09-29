@@ -27,7 +27,7 @@ import {
   MediaAssetListResponseDto,
   MediaAssetResponseDto,
 } from './media.dto.js';
-import { MEDIA_KINDS } from './media.types.js';
+import { MEDIA_KINDS, MAX_MEDIA_FILE_SIZE_BYTES } from './media.types.js';
 
 export interface UploadedMulterFile {
   buffer: Buffer;
@@ -59,7 +59,16 @@ export class MediaController {
     },
   })
   @ApiOkResponse({ type: MediaAssetResponseDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_MEDIA_FILE_SIZE_BYTES,
+        files: 1,
+        fields: 5,
+        parts: 10,
+      },
+    })
+  )
   async upload(
     @Req() req: AuthenticatedRequest,
     @Param('agencyId') agencyId: string,

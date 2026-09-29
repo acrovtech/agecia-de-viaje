@@ -7,9 +7,13 @@ export class ApiErrorFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
-    const status = exception instanceof HttpException
+    let status = exception instanceof HttpException
       ? exception.getStatus()
-      : ((exception as any)?.status || (exception as any)?.statusCode || 500);
+      : ((exception as any)?.status || (exception as any)?.statusCode);
+    if (!status && (exception as any)?.name === 'MulterError') {
+      status = (exception as any)?.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    }
+    status = status || 500;
     const requestId = response.getHeader('X-Request-Id');
     if (status >= 500) {
       // Prisma/provider exceptions may contain credentials, SQL and personal data.
