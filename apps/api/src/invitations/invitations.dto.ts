@@ -18,7 +18,10 @@ export const acceptInvitationSchema = z
     password: z
       .string()
       .min(8, 'La contraseña debe tener al menos 8 caracteres')
-      .max(72, 'La contraseña no puede exceder 72 bytes'),
+      .refine(
+        (val) => Buffer.byteLength(val, 'utf8') <= 72,
+        'La contraseña no puede exceder 72 bytes en formato UTF-8'
+      ),
   })
   .strict();
 

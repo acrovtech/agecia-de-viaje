@@ -8,7 +8,9 @@ export const updateAgencyProfileSchema = z
     address: z.string().trim().max(300).nullable().optional(),
     logoUrl: z.string().trim().url('URL de logo inválida').nullable().optional().or(z.literal('')),
     iconUrl: z.string().trim().url('URL de icono inválida').nullable().optional().or(z.literal('')),
-    expectedUpdatedAt: z.string().datetime().optional(),
+    expectedUpdatedAt: z
+      .string()
+      .datetime({ message: 'expectedUpdatedAt debe ser una fecha ISO válida' }),
   })
   .strict();
 
@@ -23,7 +25,10 @@ export const updateLegalProfileSchema = z
     legalRepresentative: z.string().trim().max(200).nullable().optional().or(z.literal('')),
     contactEmail: z.string().trim().email('Correo de contacto no válido').nullable().optional().or(z.literal('')),
     contactPhone: z.string().trim().max(50).nullable().optional().or(z.literal('')),
-    expectedUpdatedAt: z.string().datetime().optional(),
+    expectedUpdatedAt: z
+      .string()
+      .datetime({ message: 'expectedUpdatedAt debe ser una fecha ISO válida o null' })
+      .nullable(),
   })
   .strict();
 

@@ -216,15 +216,15 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
     },
     $queryRaw: async (queryParts, ...params) => {
       // Simulate PostgreSQL row lock queries for owner protection or invitation acceptance
-      const queryStr = String(queryParts[0]);
-      if (queryStr.includes('AgencyMembership') && queryStr.includes('OWNER')) {
+      const fullQuery = Array.isArray(queryParts) ? queryParts.join(' ') : String(queryParts);
+      if (fullQuery.includes('AgencyMembership') && fullQuery.includes('OWNER')) {
         const agencyId = params[0];
         const activeOwners = state.memberships.filter(
           (m) => m.agencyId === agencyId && m.role === 'OWNER' && m.isActive
         );
         return activeOwners.map((o) => ({ id: o.id }));
       }
-      if (queryStr.includes('AgencyInvitation')) {
+      if (fullQuery.includes('AgencyInvitation')) {
         const tokenHash = params[0];
         const inv = state.invitations.find((i) => i.tokenHash === tokenHash);
         return inv ? [inv] : [];
@@ -374,15 +374,47 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
     assert.equal(lookupRes.body.role, 'OPERATOR');
     assert.equal(lookupRes.body.isExistingUser, false);
 
-    // Accept invitation as new user
-    const acceptRes = await request(app.getHttpServer())
+    // Password validation: multibyte Unicode password (40 chars <= 72, but 80 bytes > 72 UTF-8 bytes) -> rejected 400
+    const unicodePass = 'ñ'.repeat(40);
+    const unicodeRes = await request(app.getHttpServer())
       .post(`/v1/invitations/${rawToken}/accept`)
       .send({
         name: 'Fresh Hire',
-        password: 'SecurePassword123!',
+        password: unicodePass,
       });
-    assert.equal(acceptRes.status, 200);
-    assert.equal(acceptRes.body.success, true);
+    assert.equal(unicodeRes.status, 400);
+    assert.equal(unicodeRes.body.error?.code, 'INVALID_REQUEST');
+    // Password content must NEVER be exposed in error response
+    assert.ok(!JSON.stringify(unicodeRes.body).includes(unicodePass), 'Password must not be exposed in error response');
+
+    // Password exceeding 72 ASCII bytes (73 bytes) -> rejected 400
+    const longAsciiRes = await request(app.getHttpServer())
+      .post(`/v1/invitations/${rawToken}/accept`)
+      .send({
+        name: 'Fresh Hire',
+        password: 'A'.repeat(73),
+      });
+    assert.equal(longAsciiRes.status, 400);
+
+    // Password under 8 characters -> rejected 400
+    const shortPassRes = await request(app.getHttpServer())
+      .post(`/v1/invitations/${rawToken}/accept`)
+      .send({
+        name: 'Fresh Hire',
+        password: 'Short1',
+      });
+    assert.equal(shortPassRes.status, 400);
+
+    // Safe boundary accepted: exactly 72 ASCII characters / bytes
+    const safeBoundaryPass = 'A'.repeat(72);
+    const acceptBoundaryProbe = await request(app.getHttpServer())
+      .post(`/v1/invitations/${rawToken}/accept`)
+      .send({
+        name: 'Fresh Hire',
+        password: safeBoundaryPass,
+      });
+    assert.equal(acceptBoundaryProbe.status, 200);
+    assert.equal(acceptBoundaryProbe.body.success, true);
 
     // Replay protection: cannot accept same invitation twice
     const replayRes = await request(app.getHttpServer())
@@ -473,6 +505,21 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
     assert.ok(actions.includes('MEMBERSHIP_ROLE_CHANGED'), 'MEMBERSHIP_ROLE_CHANGED should be logged');
     assert.ok(actions.includes('MEMBERSHIP_DEACTIVATED'), 'MEMBERSHIP_DEACTIVATED should be logged');
     assert.ok(actions.includes('INVITATION_ACCEPTED'), 'INVITATION_ACCEPTED should be logged');
+  });
+
+  // 9. DEDICATED INVITATION ACCEPT RATE LIMIT THROTTLE (10 attempts / 60s)
+  await t.test('9. Public invitation acceptance endpoint enforces dedicated rate limit (10 attempts / 60s)', async () => {
+    let throttled429 = false;
+    for (let i = 0; i < 15; i++) {
+      const res = await request(app.getHttpServer())
+        .post('/v1/invitations/throttle-probe-token/accept')
+        .send({ password: 'ProbePassword123!' });
+      if (res.status === 429) {
+        throttled429 = true;
+        break;
+      }
+    }
+    assert.ok(throttled429, 'Expected HTTP 429 Too Many Requests when exceeding acceptance throttle');
   });
 
   await app.close();

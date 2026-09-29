@@ -109,7 +109,8 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
       update: async ({ where, data }) => {
         const agency = state.agencies.find((a) => a.id === where.id);
         if (!agency) throw new Error('Agency not found');
-        Object.assign(agency, data, { updatedAt: new Date() });
+        const newUpdatedAt = new Date();
+        Object.assign(agency, data, { updatedAt: newUpdatedAt });
         return { ...agency };
       },
     },
@@ -168,6 +169,15 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
         };
       },
     },
+    $queryRaw: async (queryParts, ...params) => {
+      const fullQuery = Array.isArray(queryParts) ? queryParts.join(' ') : String(queryParts);
+      if (fullQuery.includes('Agency') && fullQuery.includes('FOR UPDATE')) {
+        const agencyId = params[0];
+        const agency = state.agencies.find((a) => a.id === agencyId);
+        return agency ? [{ id: agency.id, updatedAt: agency.updatedAt }] : [];
+      }
+      return [];
+    },
     $transaction: async (fn) => fn(mockPrisma),
   };
 
@@ -204,32 +214,43 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
 
   // 2. WRITE AGENCY PROFILE: OWNER & ADMIN can write; EDITOR, OPERATOR, VIEWER rejected with 403
   await t.test('2. Role matrix for updating agency profile', async () => {
+    // Missing expectedUpdatedAt is rejected with 400
+    const missingVer = await request(app.getHttpServer())
+      .put('/v1/agencies/agency-a-id/settings/profile')
+      .set('Authorization', `Bearer ${adminAToken}`)
+      .send({ name: 'Without expectedUpdatedAt' });
+    assert.equal(missingVer.status, 400);
+
     // EDITOR cannot update
     const editorRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${editorAToken}`)
-      .send({ name: 'Hacked Name' });
+      .send({ name: 'Hacked Name', expectedUpdatedAt: agencyA.updatedAt.toISOString() });
     assert.equal(editorRes.status, 403);
 
     // OPERATOR cannot update
     const opRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${operatorAToken}`)
-      .send({ name: 'Hacked Name' });
+      .send({ name: 'Hacked Name', expectedUpdatedAt: agencyA.updatedAt.toISOString() });
     assert.equal(opRes.status, 403);
 
     // VIEWER cannot update
     const viewRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${viewerAToken}`)
-      .send({ name: 'Hacked Name' });
+      .send({ name: 'Hacked Name', expectedUpdatedAt: agencyA.updatedAt.toISOString() });
     assert.equal(viewRes.status, 403);
 
     // ADMIN can update
     const adminRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${adminAToken}`)
-      .send({ name: 'Agencia A Renombrada por Admin', phone: '+51 999 888 777' });
+      .send({
+        name: 'Agencia A Renombrada por Admin',
+        phone: '+51 999 888 777',
+        expectedUpdatedAt: agencyA.updatedAt.toISOString(),
+      });
     assert.equal(adminRes.status, 200);
     assert.equal(adminRes.body.name, 'Agencia A Renombrada por Admin');
     assert.equal(adminRes.body.phone, '+51 999 888 777');
@@ -238,7 +259,10 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
     const ownerRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${ownerAToken}`)
-      .send({ name: 'Agencia A Oficial' });
+      .send({
+        name: 'Agencia A Oficial',
+        expectedUpdatedAt: agencyA.updatedAt.toISOString(),
+      });
     assert.equal(ownerRes.status, 200);
     assert.equal(ownerRes.body.name, 'Agencia A Oficial');
   });
@@ -253,19 +277,19 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
     const writeRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${ownerBToken}`)
-      .send({ name: 'Cross-tenant Overwrite' });
+      .send({ name: 'Cross-tenant Overwrite', expectedUpdatedAt: agencyA.updatedAt.toISOString() });
     assert.equal(writeRes.status, 403);
   });
 
   // 4. CROSS-TENANT MEDIA PROTECTION
   await t.test('4. Cross-tenant media protection: rejects foreign media URLs', async () => {
-    // Media URL belonging to Agency B in path
     const foreignRes = await request(app.getHttpServer())
       .put('/v1/agencies/agency-a-id/settings/profile')
       .set('Authorization', `Bearer ${ownerAToken}`)
       .send({
         name: 'Agencia A',
         logoUrl: 'https://r2.test/agencies/agency-b-id/agency_logo/stolen.webp',
+        expectedUpdatedAt: agencyA.updatedAt.toISOString(),
       });
     assert.equal(foreignRes.status, 403);
   });
@@ -301,6 +325,7 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
         ruc: '2012345678', // 10 digits
         legalName: 'TEST SAC',
         fiscalAddress: 'Fiscal 123',
+        expectedUpdatedAt: legalA.updatedAt.toISOString(),
       });
     assert.equal(inv10.status, 400);
 
@@ -312,6 +337,7 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
         ruc: '201234567890', // 12 digits
         legalName: 'TEST SAC',
         fiscalAddress: 'Fiscal 123',
+        expectedUpdatedAt: legalA.updatedAt.toISOString(),
       });
     assert.equal(inv12.status, 400);
 
@@ -323,6 +349,7 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
         ruc: '2012345678A',
         legalName: 'TEST SAC',
         fiscalAddress: 'Fiscal 123',
+        expectedUpdatedAt: legalA.updatedAt.toISOString(),
       });
     assert.equal(invAlpha.status, 400);
 
@@ -335,10 +362,35 @@ test('Agency Self-Service Settings (Part A)', async (t) => {
         legalName: 'AGENCIA A ACTUALIZADA SAC',
         fiscalAddress: 'Av. Sol 500, Cusco',
         tradeName: 'A Tours',
+        expectedUpdatedAt: legalA.updatedAt.toISOString(),
       });
     assert.equal(validUpdate.status, 200);
     assert.equal(validUpdate.body.ruc, '20987654321');
     assert.equal(validUpdate.body.legalName, 'AGENCIA A ACTUALIZADA SAC');
+
+    // Stale legal profile update
+    const staleLegal = await request(app.getHttpServer())
+      .put('/v1/agencies/agency-a-id/settings/legal')
+      .set('Authorization', `Bearer ${ownerAToken}`)
+      .send({
+        ruc: '20987654321',
+        legalName: 'AGENCIA A STALE SAC',
+        fiscalAddress: 'Av. Sol 500, Cusco',
+        expectedUpdatedAt: new Date('2021-01-01').toISOString(),
+      });
+    assert.equal(staleLegal.status, 409);
+
+    // Initial creation race: if client expects null but profile exists -> 409
+    const expectNullRace = await request(app.getHttpServer())
+      .put('/v1/agencies/agency-a-id/settings/legal')
+      .set('Authorization', `Bearer ${ownerAToken}`)
+      .send({
+        ruc: '20987654321',
+        legalName: 'AGENCIA A NEW SAC',
+        fiscalAddress: 'Av. Sol 500, Cusco',
+        expectedUpdatedAt: null,
+      });
+    assert.equal(expectNullRace.status, 409);
 
     // Cross-tenant legal check
     const crossLegal = await request(app.getHttpServer())

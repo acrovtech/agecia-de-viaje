@@ -59,49 +59,59 @@ export class SettingsService {
     }
     const dto = parsed.data;
 
-    const currentAgency = await this.prisma.agency.findUnique({
-      where: { id: agencyId },
-    });
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Authoritative row lock on Agency inside PostgreSQL transaction
+      const lockedRows = await tx.$queryRaw<Array<{ id: string; updatedAt: Date }>>`
+        SELECT id, "updatedAt"
+        FROM "Agency"
+        WHERE id = ${agencyId}
+        FOR UPDATE;
+      `;
 
-    if (!currentAgency) {
-      throw new NotFoundException('Agencia no encontrada');
-    }
+      if (!lockedRows || lockedRows.length === 0) {
+        throw new NotFoundException('Agencia no encontrada');
+      }
 
-    // Optimistic concurrency check
-    if (dto.expectedUpdatedAt) {
+      const currentAgency = await tx.agency.findUnique({
+        where: { id: agencyId },
+      });
+
+      if (!currentAgency) {
+        throw new NotFoundException('Agencia no encontrada');
+      }
+
+      // 2. Transactional optimistic concurrency check
       const currentIso = currentAgency.updatedAt.toISOString();
       if (currentIso !== dto.expectedUpdatedAt) {
         throw new ConflictException(
           'El perfil de la agencia fue modificado por otro usuario (actualización desactualizada)'
         );
       }
-    }
 
-    // Validate media URLs: verify they do not belong to another agency
-    await this.validateMediaUrl(dto.logoUrl, identity.agencyId);
-    await this.validateMediaUrl(dto.iconUrl, identity.agencyId);
+      // 3. Validate media URLs
+      await this.validateMediaUrl(dto.logoUrl, identity.agencyId, tx);
+      await this.validateMediaUrl(dto.iconUrl, identity.agencyId, tx);
 
-    const before = {
-      name: currentAgency.name,
-      phone: currentAgency.phone,
-      email: currentAgency.email,
-      address: currentAgency.address,
-      logoUrl: currentAgency.logoUrl,
-      iconUrl: currentAgency.iconUrl,
-    };
+      const before = {
+        name: currentAgency.name,
+        phone: currentAgency.phone,
+        email: currentAgency.email,
+        address: currentAgency.address,
+        logoUrl: currentAgency.logoUrl,
+        iconUrl: currentAgency.iconUrl,
+      };
 
-    const updateData = {
-      name: dto.name,
-      phone: dto.phone !== undefined ? (dto.phone || null) : currentAgency.phone,
-      email: dto.email !== undefined ? (dto.email || null) : currentAgency.email,
-      address: dto.address !== undefined ? (dto.address || null) : currentAgency.address,
-      logoUrl: dto.logoUrl !== undefined ? (dto.logoUrl || null) : currentAgency.logoUrl,
-      iconUrl: dto.iconUrl !== undefined ? (dto.iconUrl || null) : currentAgency.iconUrl,
-    };
+      const updateData = {
+        name: dto.name,
+        phone: dto.phone !== undefined ? (dto.phone || null) : currentAgency.phone,
+        email: dto.email !== undefined ? (dto.email || null) : currentAgency.email,
+        address: dto.address !== undefined ? (dto.address || null) : currentAgency.address,
+        logoUrl: dto.logoUrl !== undefined ? (dto.logoUrl || null) : currentAgency.logoUrl,
+        iconUrl: dto.iconUrl !== undefined ? (dto.iconUrl || null) : currentAgency.iconUrl,
+      };
 
-    const after = { ...updateData };
+      const after = { ...updateData };
 
-    const updated = await this.prisma.$transaction(async (tx) => {
       const agencyRecord = await tx.agency.update({
         where: { id: agencyId },
         data: updateData,
@@ -132,8 +142,6 @@ export class SettingsService {
 
       return agencyRecord;
     });
-
-    return updated;
   }
 
   async getLegalProfile(agencyId: string) {
@@ -171,32 +179,50 @@ export class SettingsService {
     }
     const dto = parsed.data;
 
-    const existing = await this.prisma.legalProfile.findUnique({
-      where: { agencyId },
-    });
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Authoritative row lock on Agency row inside PostgreSQL transaction
+      const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM "Agency"
+        WHERE id = ${agencyId}
+        FOR UPDATE;
+      `;
 
-    // Optimistic concurrency check
-    if (dto.expectedUpdatedAt && existing) {
-      const currentIso = existing.updatedAt.toISOString();
-      if (currentIso !== dto.expectedUpdatedAt) {
-        throw new ConflictException(
-          'El perfil legal fue modificado por otro usuario (actualización desactualizada)'
-        );
+      if (!lockedRows || lockedRows.length === 0) {
+        throw new NotFoundException('Agencia no encontrada');
       }
-    }
 
-    const before = (existing?.data as Record<string, any>) || {};
-    const after = {
-      ruc: dto.ruc,
-      legalName: dto.legalName,
-      tradeName: dto.tradeName || null,
-      fiscalAddress: dto.fiscalAddress,
-      legalRepresentative: dto.legalRepresentative || null,
-      contactEmail: dto.contactEmail || null,
-      contactPhone: dto.contactPhone || null,
-    };
+      // 2. Load current LegalProfile inside the same transaction
+      const existing = await tx.legalProfile.findUnique({
+        where: { agencyId },
+      });
 
-    const saved = await this.prisma.$transaction(async (tx) => {
+      // 3. Concurrency check: initial creation vs update
+      if (dto.expectedUpdatedAt === null) {
+        if (existing) {
+          throw new ConflictException(
+            'El perfil legal ya fue creado por otro usuario (actualización desactualizada)'
+          );
+        }
+      } else {
+        if (!existing || existing.updatedAt.toISOString() !== dto.expectedUpdatedAt) {
+          throw new ConflictException(
+            'El perfil legal fue modificado por otro usuario (actualización desactualizada)'
+          );
+        }
+      }
+
+      const before = (existing?.data as Record<string, any>) || {};
+      const after = {
+        ruc: dto.ruc,
+        legalName: dto.legalName,
+        tradeName: dto.tradeName || null,
+        fiscalAddress: dto.fiscalAddress,
+        legalRepresentative: dto.legalRepresentative || null,
+        contactEmail: dto.contactEmail || null,
+        contactPhone: dto.contactPhone || null,
+      };
+
       const record = await tx.legalProfile.upsert({
         where: { agencyId },
         create: {
@@ -218,16 +244,18 @@ export class SettingsService {
         },
       });
 
-      return record;
+      return {
+        ...after,
+        updatedAt: record.updatedAt.toISOString(),
+      };
     });
-
-    return {
-      ...after,
-      updatedAt: saved.updatedAt.toISOString(),
-    };
   }
 
-  private async validateMediaUrl(url: string | null | undefined, agencyId: string) {
+  private async validateMediaUrl(
+    url: string | null | undefined,
+    agencyId: string,
+    db: any = this.prisma
+  ) {
     if (!url) return;
 
     // 1. Path-based check: agencies/{foreignAgencyId}/...
@@ -237,7 +265,7 @@ export class SettingsService {
     }
 
     // 2. Database lookup check: if asset exists in MediaAsset, ensure tenant matches
-    const asset = await this.prisma.mediaAsset.findFirst({
+    const asset = await db.mediaAsset.findFirst({
       where: {
         OR: [{ publicUrl: url }, { objectKey: url }],
       },

@@ -283,6 +283,145 @@ test('Agency Self-Service Settings, Memberships & Invitations Real PostgreSQL Ga
         /No tienes permiso/i
       );
     });
+
+    // -------------------------------------------------------------------------
+    // 6. CONCURRENCY GATE: Agency Profile Simultaneous Update with same expectedUpdatedAt
+    // -------------------------------------------------------------------------
+    await t.test('6. Concurrency Gate: Agency profile simultaneous update with same expectedUpdatedAt', async () => {
+      // 1. Read current updatedAt
+      const currentAgency = await prisma.agency.findUniqueOrThrow({
+        where: { id: agencyA.id },
+      });
+      const initialTimestamp = currentAgency.updatedAt.toISOString();
+
+      // 2. Issue two concurrent updateProfile() calls using exact same expectedUpdatedAt
+      const name1 = `Winner Agency ${suffix}`;
+      const name2 = `Loser Agency ${suffix}`;
+
+      const updateResults = await Promise.allSettled([
+        settingsService.updateProfile(identityA1, agencyA.id, {
+          name: name1,
+          expectedUpdatedAt: initialTimestamp,
+        }),
+        settingsService.updateProfile(identityA2, agencyA.id, {
+          name: name2,
+          expectedUpdatedAt: initialTimestamp,
+        }),
+      ]);
+
+      const fulfilled = updateResults.filter((r) => r.status === 'fulfilled');
+      const rejected = updateResults.filter((r) => r.status === 'rejected');
+
+      // Exactly one succeeds, exactly one fails with 409 Conflict
+      assert.equal(fulfilled.length, 1, 'Exactly one concurrent profile update must succeed');
+      assert.equal(rejected.length, 1, 'The competing profile update must be rejected with 409 Conflict');
+      assert.equal(rejected[0].reason.status, 409, 'Rejection should be HTTP 409 Conflict');
+      assert.match(
+        rejected[0].reason.message,
+        /modificado por otro usuario/i,
+        'Error message must indicate stale update'
+      );
+
+      // Final DB value equals the successful winner
+      const finalAgency = await prisma.agency.findUniqueOrThrow({
+        where: { id: agencyA.id },
+      });
+      assert.equal(finalAgency.name, fulfilled[0].value.name);
+    });
+
+    // -------------------------------------------------------------------------
+    // 7. CONCURRENCY GATE: Legal Profile Initial Creation Race (expectedUpdatedAt = null)
+    // -------------------------------------------------------------------------
+    await t.test('7. Concurrency Gate: Legal profile simultaneous initial create with expectedUpdatedAt = null', async () => {
+      // Ensure no LegalProfile exists for agencyA yet
+      await prisma.legalProfile.deleteMany({
+        where: { agencyId: agencyA.id },
+      });
+
+      // Two concurrent requests both expect no profile yet (expectedUpdatedAt: null)
+      const ruc1 = '20123456781';
+      const ruc2 = '20123456782';
+
+      const createResults = await Promise.allSettled([
+        settingsService.updateLegalProfile(identityA1, agencyA.id, {
+          ruc: ruc1,
+          legalName: `Initial Legal Winner ${suffix}`,
+          fiscalAddress: 'Av. Concurrente 100',
+          expectedUpdatedAt: null,
+        }),
+        settingsService.updateLegalProfile(identityA2, agencyA.id, {
+          ruc: ruc2,
+          legalName: `Initial Legal Loser ${suffix}`,
+          fiscalAddress: 'Av. Concurrente 200',
+          expectedUpdatedAt: null,
+        }),
+      ]);
+
+      const fulfilled = createResults.filter((r) => r.status === 'fulfilled');
+      const rejected = createResults.filter((r) => r.status === 'rejected');
+
+      // Exactly one creates; the other receives 409 Conflict instead of overwriting
+      assert.equal(fulfilled.length, 1, 'Exactly one initial legal profile create must succeed');
+      assert.equal(rejected.length, 1, 'The competing initial create must be rejected with 409 Conflict');
+      assert.equal(rejected[0].reason.status, 409, 'Rejection should be HTTP 409 Conflict');
+      assert.match(
+        rejected[0].reason.message,
+        /ya fue creado por otro usuario/i,
+        'Error message must indicate already created conflict'
+      );
+
+      // Exactly 1 LegalProfile exists in DB, matching winner
+      const finalLegal = await prisma.legalProfile.findUniqueOrThrow({
+        where: { agencyId: agencyA.id },
+      });
+      assert.equal(finalLegal.data.ruc, fulfilled[0].value.ruc);
+    });
+
+    // -------------------------------------------------------------------------
+    // 8. CONCURRENCY GATE: Legal Profile Simultaneous Update with same expectedUpdatedAt
+    // -------------------------------------------------------------------------
+    await t.test('8. Concurrency Gate: Legal profile simultaneous update with same expectedUpdatedAt', async () => {
+      // 1. Read existing LegalProfile updatedAt
+      const currentLegal = await prisma.legalProfile.findUniqueOrThrow({
+        where: { agencyId: agencyA.id },
+      });
+      const legalTimestamp = currentLegal.updatedAt.toISOString();
+
+      // 2. Issue two concurrent updates with exact same expectedUpdatedAt
+      const updateLegalResults = await Promise.allSettled([
+        settingsService.updateLegalProfile(identityA1, agencyA.id, {
+          ruc: currentLegal.data.ruc,
+          legalName: `Legal Update Alpha ${suffix}`,
+          fiscalAddress: 'Calle Berlin 100',
+          expectedUpdatedAt: legalTimestamp,
+        }),
+        settingsService.updateLegalProfile(identityA2, agencyA.id, {
+          ruc: currentLegal.data.ruc,
+          legalName: `Legal Update Beta ${suffix}`,
+          fiscalAddress: 'Calle Berlin 200',
+          expectedUpdatedAt: legalTimestamp,
+        }),
+      ]);
+
+      const fulfilled = updateLegalResults.filter((r) => r.status === 'fulfilled');
+      const rejected = updateLegalResults.filter((r) => r.status === 'rejected');
+
+      // Exactly one succeeds; the other receives 409 Conflict
+      assert.equal(fulfilled.length, 1, 'Exactly one concurrent legal update must succeed');
+      assert.equal(rejected.length, 1, 'The competing legal update must be rejected with 409 Conflict');
+      assert.equal(rejected[0].reason.status, 409, 'Rejection should be HTTP 409 Conflict');
+      assert.match(
+        rejected[0].reason.message,
+        /modificado por otro usuario/i,
+        'Error message must indicate stale update'
+      );
+
+      // DB value matches winner
+      const freshLegal = await prisma.legalProfile.findUniqueOrThrow({
+        where: { agencyId: agencyA.id },
+      });
+      assert.equal(freshLegal.data.legalName, fulfilled[0].value.legalName);
+    });
   } finally {
     // Cleanup created test records
     try {

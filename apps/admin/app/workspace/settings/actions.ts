@@ -27,7 +27,10 @@ export async function updateAgencyProfileAction(
     const address = formData.get('address')?.toString().trim() || null;
     const logoUrl = formData.get('logoUrl')?.toString().trim() || null;
     const iconUrl = formData.get('iconUrl')?.toString().trim() || null;
-    const expectedUpdatedAt = formData.get('expectedUpdatedAt')?.toString() || undefined;
+    const expectedUpdatedAt = formData.get('expectedUpdatedAt')?.toString()?.trim();
+    if (!expectedUpdatedAt) {
+      return { error: 'Fecha de versión requerida para control de concurrencia.' };
+    }
 
     const payload = {
       name,
@@ -36,7 +39,7 @@ export async function updateAgencyProfileAction(
       address,
       logoUrl,
       iconUrl,
-      ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
+      expectedUpdatedAt,
     };
 
     const res = await centralRequest(
@@ -91,7 +94,8 @@ export async function updateLegalProfileAction(
     const legalRepresentative = formData.get('legalRepresentative')?.toString().trim() || null;
     const contactEmail = formData.get('contactEmail')?.toString().trim() || null;
     const contactPhone = formData.get('contactPhone')?.toString().trim() || null;
-    const expectedUpdatedAt = formData.get('expectedUpdatedAt')?.toString() || undefined;
+    const rawExpected = formData.get('expectedUpdatedAt')?.toString()?.trim();
+    const expectedUpdatedAt = rawExpected ? rawExpected : null;
 
     const payload = {
       ruc,
@@ -101,7 +105,7 @@ export async function updateLegalProfileAction(
       legalRepresentative,
       contactEmail,
       contactPhone,
-      ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
+      expectedUpdatedAt,
     };
 
     const res = await centralRequest(
