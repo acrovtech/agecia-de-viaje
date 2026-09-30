@@ -41,6 +41,25 @@ const detailSelect = {
   customerEmail: true, customerPhone: true, pickupHotel: true, pickupTime: true, specialRequirements: true,
   passengers: { select: { firstName: true, lastName: true, docType: true, docNumber: true } },
   events: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { id: true, actorLabel: true, fromStatus: true, toStatus: true, note: true, createdAt: true } },
+  resourceAssignments: {
+    select: {
+      id: true,
+      resourceType: true,
+      notes: true,
+      serviceResource: {
+        select: { id: true, displayName: true, phone: true, type: true },
+      },
+      fleetVehicle: {
+        select: {
+          id: true,
+          internalLabel: true,
+          plate: true,
+          capacity: true,
+          vehicleType: { select: { id: true, name: true, maxPax: true } },
+        },
+      },
+    },
+  },
 } satisfies Prisma.ReservationSelect;
 
 @Injectable()
@@ -94,7 +113,29 @@ export class ReservationsService {
   async detail(agencyId: string, reservationId: string) {
     const row = await this.prisma.reservation.findFirst({ where: { agencyId, id: parse(id, reservationId) }, select: detailSelect });
     if (!row) throw new NotFoundException();
-    return row;
+    const guideAssign = row.resourceAssignments.find((a) => a.resourceType === 'GUIDE');
+    const driverAssign = row.resourceAssignments.find((a) => a.resourceType === 'DRIVER');
+    const vehicleAssign = row.resourceAssignments.find((a) => a.resourceType === 'VEHICLE');
+    return {
+      ...row,
+      assignments: {
+        guide: guideAssign?.serviceResource
+          ? { id: guideAssign.serviceResource.id, displayName: guideAssign.serviceResource.displayName, phone: guideAssign.serviceResource.phone }
+          : null,
+        driver: driverAssign?.serviceResource
+          ? { id: driverAssign.serviceResource.id, displayName: driverAssign.serviceResource.displayName, phone: driverAssign.serviceResource.phone }
+          : null,
+        vehicle: vehicleAssign?.fleetVehicle
+          ? {
+              id: vehicleAssign.fleetVehicle.id,
+              internalLabel: vehicleAssign.fleetVehicle.internalLabel,
+              plate: vehicleAssign.fleetVehicle.plate,
+              vehicleTypeName: vehicleAssign.fleetVehicle.vehicleType.name,
+              capacity: vehicleAssign.fleetVehicle.capacity ?? vehicleAssign.fleetVehicle.vehicleType.maxPax,
+            }
+          : null,
+      },
+    };
   }
 
   private audit(tx: Prisma.TransactionClient, who: ApiIdentity, reservationId: string, action: string) {

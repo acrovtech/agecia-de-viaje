@@ -101,6 +101,7 @@ export default async function Workspace({ searchParams }: { searchParams: Promis
     {params.saved === '1' && <p role="status" className="p-3 rounded-lg bg-green-50 text-green-800">Servicio guardado.</p>}
     <nav aria-label="Secciones de agencia" className="flex flex-wrap gap-2">
       {['OWNER', 'ADMIN', 'OPERATOR'].includes(identity.role) && <Link href="/workspace/reservations" className="px-4 py-2 rounded-lg text-sm bg-white border">Reservas</Link>}
+      {['OWNER', 'ADMIN', 'OPERATOR'].includes(identity.role) && <Link href="/workspace/operations" className="px-4 py-2 rounded-lg text-sm bg-white border">Operaciones</Link>}
       <Link href="/workspace/resources?kind=categories" className="px-4 py-2 rounded-lg text-sm bg-white border">Categorías</Link>
       <Link href="/workspace/resources?kind=vehicles" className="px-4 py-2 rounded-lg text-sm bg-white border">Vehículos</Link>
       {Object.entries(tabs).filter(([key]) => key !== 'members' || canSeeTeam).map(([key, label]) => <Link key={key} href={`/workspace?view=${key}`} aria-current={view === key ? 'page' : undefined} className={`px-4 py-2 rounded-lg text-sm ${view === key ? 'bg-[#062918] text-white' : 'bg-white border'}`}>{label}</Link>)}

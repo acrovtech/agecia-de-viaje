@@ -17,6 +17,8 @@ export {
   ReservationPaymentStatus,
   OrderState,
   PaymentState,
+  ServiceResourceType,
+  AssignmentResourceType,
 } from "@prisma/client";
 
 export type {
@@ -39,6 +41,9 @@ export type {
   Reservation,
   ReservationItem,
   ReservationPassenger,
+  ServiceResource,
+  FleetVehicle,
+  ReservationResourceAssignment,
   Coupon,
   MarketingCampaignLog,
   FinancialAudit,

@@ -38,6 +38,8 @@ import {
   DefaultInvitationDeliveryAdapter,
   INVITATION_DELIVERY_ADAPTER,
 } from './invitations/invitation-delivery.adapter.js';
+import { OperationsController } from './operations/operations.controller.js';
+import { OperationsService } from './operations/operations.service.js';
 
 @Module({})
 export class AppModule {
@@ -59,6 +61,7 @@ export class AppModule {
               AdminCatalogController,
               CatalogContentController,
               ReservationsController,
+              OperationsController,
               MediaController,
             ]
           : []),
@@ -75,6 +78,7 @@ export class AppModule {
         CatalogWriteService,
         CatalogContentService,
         ReservationsService,
+        OperationsService,
         CheckoutService,
         PaymentsService,
         MediaService,

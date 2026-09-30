@@ -4,9 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { centralRequest, centralSession, CentralApiError } from '../../../lib/central-api';
 import { isApiAdmin } from '../../../lib/admin-mode';
-import { canOperateReservations, operationLabels, priceLabel, reservationSummarySchema, reservationDetailSchema } from '../../../lib/reservations';
+import { canOperateReservations, operationLabels, priceLabel, reservationSummarySchema, reservationDetailSchema, serviceResourceSchema, fleetVehicleSchema } from '../../../lib/reservations';
 import { tourContentSchema, transferContentSchema } from '../../../lib/catalog-content';
-import { BookingForm, StatusForm } from './forms';
+import { BookingForm, StatusForm, OperationsAssignmentForm } from './forms';
 
 export const dynamic = 'force-dynamic';
 const validId = (v: unknown): v is string => typeof v === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(v);
@@ -23,10 +23,21 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
     const base = `/v1/agencies/${encodeURIComponent(identity.agencyId)}`;
     if (params.id !== undefined) {
       if (!validId(params.id)) throw new CentralApiError(404);
-      const row = reservationDetailSchema.parse(await centralRequest(`${base}/reservations/${params.id}`, token));
+      const [resRow, guidesBody, driversBody, vehiclesBody] = await Promise.all([
+        centralRequest(`${base}/reservations/${params.id}`, token),
+        centralRequest(`${base}/operations/resources?type=GUIDE&isActive=true`, token).catch(() => ({ data: [] })),
+        centralRequest(`${base}/operations/resources?type=DRIVER&isActive=true`, token).catch(() => ({ data: [] })),
+        centralRequest(`${base}/operations/vehicles?isActive=true`, token).catch(() => ({ data: [] })),
+      ]);
+      const row = reservationDetailSchema.parse(resRow);
+      const guides = z.object({ data: z.array(serviceResourceSchema) }).parse(guidesBody).data;
+      const drivers = z.object({ data: z.array(serviceResourceSchema) }).parse(driversBody).data;
+      const vehicles = z.object({ data: z.array(fleetVehicleSchema) }).parse(vehiclesBody).data;
+
       content = <>
         <section className="bg-white border rounded-xl p-5 space-y-3"><h2 className="text-xl font-semibold">{row.code ?? row.id}</h2><p>{row.serviceTitle ?? 'Reserva anterior'} · {row.date.slice(0, 10)} · {row.pax} pasajeros</p><p>Estado operativo: <strong>{row.operationStatus ? operationLabels[row.operationStatus] : 'Reserva anterior: solo consulta'}</strong></p><p>Pago: {paymentLabels[row.paymentStatus] ?? row.paymentStatus}</p><p className="font-semibold">Total acordado: {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}</p>{row.unitPriceMinor !== null && <p>Tarifa guardada: {priceLabel(row.unitPriceMinor, row.currency)} {row.pricingUnit === 'GROUP' ? 'por vehículo' : 'por persona'}</p>}{row.vehicleName && <p>Vehículo: {row.vehicleName}</p>}<p>{row.customerFirstName} {row.customerLastName} · {row.customerEmail} · {row.customerPhone}</p>{row.pickupHotel && <p>Recojo: {row.pickupHotel} {row.pickupTime}</p>}{row.specialRequirements && <p className="whitespace-pre-wrap">Observaciones: {row.specialRequirements}</p>}</section>
         <section className="bg-white border rounded-xl p-5 space-y-2"><h2 className="font-semibold text-lg">Pasajeros</h2>{row.passengers.map((p, i) => <p key={i}>{i + 1}. {p.firstName} {p.lastName}{p.docNumber ? ` · ${p.docType}: ${p.docNumber}` : ''}</p>)}{!row.passengers.length && <p>Sin pasajeros registrados.</p>}</section>
+        <OperationsAssignmentForm key={`ops-${row.updatedAt}`} reservation={row} guides={guides} drivers={drivers} vehicles={vehicles} />
         <StatusForm key={row.updatedAt} reservation={row} />
         <section className="bg-white border rounded-xl p-5 space-y-3"><h2 className="font-semibold text-lg">Historial operativo</h2>{!row.events.length && <p>Esta reserva anterior no tiene historial en el nuevo módulo.</p>}{row.events.map((event) => <article key={event.id} className="border-b pb-3"><p>{event.fromStatus ? `${operationLabels[event.fromStatus]} → ` : ''}{operationLabels[event.toStatus]} · {new Date(event.createdAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p><p className="text-sm text-slate-600">{event.actorLabel}</p><p className="whitespace-pre-wrap">{event.note}</p></article>)}</section>
       </>;
@@ -57,5 +68,5 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
     if (error instanceof CentralApiError && error.status === 401) redirect('/login?expired=1');
     content = <p role="alert" className="text-red-700">No pudimos cargar la reserva o el servicio. Comprueba que esté disponible en tu agencia y vuelve a intentar.</p>;
   }
-  return <main className="max-w-5xl mx-auto p-5 md:p-8 space-y-6"><nav className="flex gap-5"><Link className="underline" href="/workspace">Catálogo y equipo</Link><Link className="underline" href="/workspace/reservations">Reservas</Link></nav><h1 className="text-3xl font-semibold text-[#062918]">Reservas de tu agencia</h1>{params.saved === '1' && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">Reserva guardada.</p>}{content}</main>;
+  return <main className="max-w-5xl mx-auto p-5 md:p-8 space-y-6"><nav className="flex gap-5"><Link className="underline" href="/workspace">Catálogo y equipo</Link><Link className="underline" href="/workspace/reservations">Reservas</Link><Link className="underline" href="/workspace/operations">Operaciones</Link></nav><h1 className="text-3xl font-semibold text-[#062918]">Reservas de tu agencia</h1>{params.saved === '1' && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">Reserva guardada.</p>}{content}</main>;
 }

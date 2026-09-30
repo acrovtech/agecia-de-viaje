@@ -44,3 +44,26 @@ export async function transitionReservationAction(_prev: { error: string } | nul
   revalidatePath('/workspace/reservations');
   redirect(`/workspace/reservations?id=${id}&saved=1`);
 }
+
+export async function assignReservationResourcesAction(_prev: { error: string } | null, form: FormData): Promise<{ error: string }> {
+  const id = form.get('id');
+  if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) return { error: 'Reserva inválida.' };
+  const expectedUpdatedAt = form.get('expectedUpdatedAt');
+  const guideId = form.get('guideId') && String(form.get('guideId')) !== 'none' ? String(form.get('guideId')) : null;
+  const driverId = form.get('driverId') && String(form.get('driverId')) !== 'none' ? String(form.get('driverId')) : null;
+  const vehicleId = form.get('vehicleId') && String(form.get('vehicleId')) !== 'none' ? String(form.get('vehicleId')) : null;
+  const note = form.get('note') ? String(form.get('note')).trim() : undefined;
+
+  try {
+    const { token, base } = await session();
+    await centralRequest(
+      `${base}/${id}/assignments`,
+      token,
+      { expectedUpdatedAt, guideId, driverId, vehicleId, note },
+      'PUT',
+    );
+  } catch (error) { return { error: errorMessage(error) }; }
+  revalidatePath('/workspace/reservations');
+  redirect(`/workspace/reservations?id=${id}&saved=1`);
+}
+

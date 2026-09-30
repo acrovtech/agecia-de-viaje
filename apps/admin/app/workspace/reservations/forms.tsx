@@ -1,8 +1,8 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { quoteReservationAction, createReservationAction, transitionReservationAction } from './actions';
-import { operationLabels, priceLabel, type ReservationQuote, type ReservationDetail } from '../../../lib/reservations';
+import { quoteReservationAction, createReservationAction, transitionReservationAction, assignReservationResourcesAction } from './actions';
+import { operationLabels, priceLabel, type ReservationQuote, type ReservationDetail, type ServiceResourceItem, type FleetVehicleItem } from '../../../lib/reservations';
 
 const inputClass = 'block w-full rounded-lg border p-2 mt-1 bg-white';
 const buttonClass = 'rounded-lg bg-[#062918] px-4 py-2 text-white disabled:opacity-50';
@@ -67,3 +67,116 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
     {state?.error && <p role="alert" className="text-red-700">{state.error}</p>}
   </form>;
 }
+
+export function OperationsAssignmentForm({
+  reservation,
+  guides,
+  drivers,
+  vehicles,
+}: {
+  reservation: ReservationDetail;
+  guides: ServiceResourceItem[];
+  drivers: ServiceResourceItem[];
+  vehicles: FleetVehicleItem[];
+}) {
+  const [state, action, pending] = useActionState(assignReservationResourcesAction, null);
+  const assignments = reservation.assignments;
+  const isReadOnly = reservation.operationStatus === 'CANCELLED' || reservation.operationStatus === 'COMPLETED';
+
+  return (
+    <section className="bg-white border rounded-xl p-5 space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">Operaciones y Asignación de Recursos</h2>
+        <p className="text-sm text-slate-600">
+          Asigna guía, conductor y vehículo de flota para la ejecución de este servicio en la fecha {reservation.date.slice(0, 10)}.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3 bg-slate-50 p-4 rounded-lg text-sm">
+        <div>
+          <span className="text-slate-500 block">Guía asignado</span>
+          <strong className="text-slate-800">
+            {assignments?.guide ? `${assignments.guide.displayName}${assignments.guide.phone ? ` (${assignments.guide.phone})` : ''}` : 'Sin asignar'}
+          </strong>
+        </div>
+        <div>
+          <span className="text-slate-500 block">Conductor asignado</span>
+          <strong className="text-slate-800">
+            {assignments?.driver ? `${assignments.driver.displayName}${assignments.driver.phone ? ` (${assignments.driver.phone})` : ''}` : 'Sin asignar'}
+          </strong>
+        </div>
+        <div>
+          <span className="text-slate-500 block">Vehículo de flota</span>
+          <strong className="text-slate-800">
+            {assignments?.vehicle
+              ? `${assignments.vehicle.internalLabel} [${assignments.vehicle.plate}] · ${assignments.vehicle.vehicleTypeName}`
+              : 'Sin asignar'}
+          </strong>
+        </div>
+      </div>
+
+      {isReadOnly ? (
+        <p className="text-sm bg-amber-50 text-amber-800 p-3 rounded-lg">
+          {reservation.operationStatus === 'CANCELLED'
+            ? 'Reserva cancelada: las asignaciones están congeladas y no admiten modificaciones.'
+            : 'Reserva completada: las asignaciones se conservan como registro histórico.'}
+        </p>
+      ) : (
+        <form action={action} className="space-y-4">
+          <input type="hidden" name="id" value={reservation.id} />
+          <input type="hidden" name="expectedUpdatedAt" value={reservation.updatedAt} />
+
+          <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-3">
+            <label className="block">
+              Guía
+              <select name="guideId" defaultValue={assignments?.guide?.id ?? 'none'} className={inputClass}>
+                <option value="none">-- Sin guía asignado --</option>
+                {guides.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.displayName} {g.phone ? `(${g.phone})` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              Conductor
+              <select name="driverId" defaultValue={assignments?.driver?.id ?? 'none'} className={inputClass}>
+                <option value="none">-- Sin conductor asignado --</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.displayName} {d.phone ? `(${d.phone})` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              Vehículo de flota
+              <select name="vehicleId" defaultValue={assignments?.vehicle?.id ?? 'none'} className={inputClass}>
+                <option value="none">-- Sin vehículo asignado --</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.internalLabel} [{v.plate}] · {v.vehicleType.name} (cap: {v.capacity ?? v.vehicleType.maxPax})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </fieldset>
+
+          <label className="block">
+            Nota de asignación u observaciones operativas (opcional)
+            <input type="text" name="note" maxLength={1000} placeholder="Ej: Confirmado vía WhatsApp con el conductor." className={inputClass} />
+          </label>
+
+          {state?.error && <p role="alert" className="text-red-700 text-sm">{state.error}</p>}
+
+          <button className={buttonClass} disabled={pending}>
+            {pending ? 'Guardando asignación…' : 'Guardar asignación de recursos'}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+

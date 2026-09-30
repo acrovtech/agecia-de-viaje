@@ -47,6 +47,9 @@ model Agency {
   configurationAudits ConfigurationAudit[]
   mediaAssets         MediaAsset[]
   invitations         AgencyInvitation[]
+  serviceResources    ServiceResource[]
+  fleetVehicles       FleetVehicle[]
+  resourceAssignments ReservationResourceAssignment[]
 
   @@index([slug])
   @@index([subdomain])
@@ -286,6 +289,7 @@ model VehicleType {
   prices            TransferVehiclePrice[]
   reservations      Reservation[]
   reservationItems  ReservationItem[]
+  fleetVehicles     FleetVehicle[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -621,6 +625,7 @@ model Reservation {
   paymentSessionExpiresAt     DateTime?
   paymentSessionStatus        String?
   events                      ReservationEvent[]
+  resourceAssignments         ReservationResourceAssignment[]
 
   @@unique([agencyId, requestKey])
   @@index([agencyId])
@@ -818,6 +823,8 @@ model User {
   complaintHistory    ComplaintHistory[]
   uploadedMedia       MediaAsset[]
   sentInvitations     AgencyInvitation[]   @relation("SentAgencyInvitations")
+  serviceResources    ServiceResource[]
+  assignedResourceAssignments ReservationResourceAssignment[] @relation("AssignedByUser")
 
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -1120,4 +1127,88 @@ model AgencyInvitation {
   @@index([tokenHash])
   @@index([expiresAt])
 }
+
+// -----------------------------------------------------------------------------
+// OPERACIONES Y ASIGNACIÓN DE RECURSOS (OPERATIONS & SERVICE RESOURCE ASSIGNMENT)
+// -----------------------------------------------------------------------------
+
+enum ServiceResourceType {
+  GUIDE
+  DRIVER
+}
+
+enum AssignmentResourceType {
+  GUIDE
+  DRIVER
+  VEHICLE
+}
+
+model ServiceResource {
+  id             String              @id @default(cuid())
+  agencyId       String
+  agency         Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  type           ServiceResourceType
+  displayName    String
+  phone          String?
+  email          String?
+  documentNumber String?
+  userId         String?
+  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  assignments    ReservationResourceAssignment[]
+
+  @@index([agencyId, type, isActive])
+  @@index([agencyId])
+  @@index([userId])
+}
+
+model FleetVehicle {
+  id            String       @id @default(cuid())
+  agencyId      String
+  agency        Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  vehicleTypeId String
+  vehicleType   VehicleType  @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict)
+  internalLabel String
+  plate         String
+  capacity      Int?
+  isActive      Boolean      @default(true)
+  notes         String?      @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  assignments   ReservationResourceAssignment[]
+
+  @@unique([agencyId, plate])
+  @@index([agencyId, isActive])
+  @@index([vehicleTypeId])
+}
+
+model ReservationResourceAssignment {
+  id                String                 @id @default(cuid())
+  agencyId          String
+  agency            Agency                 @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  reservationId     String
+  reservation       Reservation            @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  resourceType      AssignmentResourceType
+  serviceResourceId String?
+  serviceResource   ServiceResource?       @relation(fields: [serviceResourceId], references: [id], onDelete: Restrict)
+  fleetVehicleId    String?
+  fleetVehicle      FleetVehicle?          @relation(fields: [fleetVehicleId], references: [id], onDelete: Restrict)
+  assignedById      String
+  assignedBy        User                   @relation("AssignedByUser", fields: [assignedById], references: [id], onDelete: Restrict)
+  serviceDate       DateTime
+  notes             String?                @db.Text
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@unique([reservationId, resourceType])
+  @@index([serviceResourceId, serviceDate])
+  @@index([fleetVehicleId, serviceDate])
+  @@index([agencyId, serviceDate])
+  @@index([reservationId])
+}
+
 
