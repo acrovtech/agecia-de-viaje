@@ -105,6 +105,7 @@ export default async function Workspace({ searchParams }: { searchParams: Promis
       <Link href="/workspace/resources?kind=categories" className="px-4 py-2 rounded-lg text-sm bg-white border">Categorías</Link>
       <Link href="/workspace/resources?kind=vehicles" className="px-4 py-2 rounded-lg text-sm bg-white border">Vehículos</Link>
       {Object.entries(tabs).filter(([key]) => key !== 'members' || canSeeTeam).map(([key, label]) => <Link key={key} href={`/workspace?view=${key}`} aria-current={view === key ? 'page' : undefined} className={`px-4 py-2 rounded-lg text-sm ${view === key ? 'bg-[#062918] text-white' : 'bg-white border'}`}>{label}</Link>)}
+      {canSeeTeam && <Link href="/workspace/notifications" className="px-4 py-2 rounded-lg text-sm bg-white border">Notificaciones</Link>}
       <Link href="/workspace/settings" className="px-4 py-2 rounded-lg text-sm bg-white border">Configuración</Link>
     </nav>
     <section className="bg-white rounded-xl border p-5 space-y-4">

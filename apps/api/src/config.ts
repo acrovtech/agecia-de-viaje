@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { z } from 'zod';
 import { normalizeHost } from './tenant/host-normalizer.js';
 
@@ -44,6 +45,15 @@ const environmentSchema = z.object({
   R2_PUBLIC_DOMAIN: z.string().optional(),
   STOREFRONT_BASE_DOMAIN: z.string().trim().toLowerCase().optional(),
   STOREFRONT_TRUST_FORWARDED_HOST: z.enum(['true', 'false']).default('false'),
+  EMAIL_DELIVERY_ENABLED: z.enum(['true', 'false']).default('false'),
+  NOTIFICATION_PAYLOAD_KEY: z.string().optional(),
+  EMAIL_FROM_ADDRESS: z.string().optional(),
+  EMAIL_FROM_NAME: z.string().optional(),
+  EMAIL_SMTP_HOST: z.string().optional(),
+  EMAIL_SMTP_PORT: z.coerce.number().int().optional(),
+  EMAIL_SMTP_USER: z.string().optional(),
+  EMAIL_SMTP_PASSWORD: z.string().optional(),
+  EMAIL_SMTP_SECURE: z.enum(['true', 'false']).default('false'),
 });
 
 export type ApiConfig = Readonly<{
@@ -73,6 +83,15 @@ export type ApiConfig = Readonly<{
   r2PublicDomain: string;
   storefrontBaseDomain: string;
   storefrontTrustForwardedHost: boolean;
+  emailDeliveryEnabled: boolean;
+  notificationPayloadKey: Buffer | null;
+  emailFromAddress: string;
+  emailFromName: string;
+  emailSmtpHost?: string;
+  emailSmtpPort?: number;
+  emailSmtpUser?: string;
+  emailSmtpPassword?: string;
+  emailSmtpSecure?: boolean;
 }>;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
@@ -193,5 +212,36 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
       return '';
     })(),
     storefrontTrustForwardedHost: value.STOREFRONT_TRUST_FORWARDED_HOST === 'true',
+    emailDeliveryEnabled: value.EMAIL_DELIVERY_ENABLED === 'true',
+    notificationPayloadKey: (() => {
+      const raw = (value.NOTIFICATION_PAYLOAD_KEY || env.NOTIFICATION_PAYLOAD_KEY || '').trim();
+      if (raw) {
+        let buf = Buffer.from(raw, 'base64');
+        if (buf.length !== 32 && /^[0-9a-fA-F]{64}$/.test(raw)) {
+          buf = Buffer.from(raw, 'hex');
+        }
+        if (buf.length !== 32) {
+          throw new Error('Configuración API inválida: NOTIFICATION_PAYLOAD_KEY debe tener exactamente 32 bytes (base64 o hex)');
+        }
+        return buf;
+      }
+      if (isProduction && value.EMAIL_DELIVERY_ENABLED === 'true') {
+        throw new Error(
+          'Configuración API inválida: NOTIFICATION_PAYLOAD_KEY requerido cuando EMAIL_DELIVERY_ENABLED está habilitado en producción',
+        );
+      }
+      if (isProduction) {
+        return null;
+      }
+      // Dev/test fallback key (32 bytes sha256)
+      return crypto.createHash('sha256').update('dev-test-notification-payload-key-32b').digest();
+    })(),
+    emailFromAddress: (value.EMAIL_FROM_ADDRESS || env.EMAIL_FROM_ADDRESS || 'noreply@travelagency.pe').trim(),
+    emailFromName: (value.EMAIL_FROM_NAME || env.EMAIL_FROM_NAME || 'Travel Agency').trim(),
+    emailSmtpHost: (value.EMAIL_SMTP_HOST || env.EMAIL_SMTP_HOST || '').trim() || undefined,
+    emailSmtpPort: value.EMAIL_SMTP_PORT,
+    emailSmtpUser: (value.EMAIL_SMTP_USER || env.EMAIL_SMTP_USER || '').trim() || undefined,
+    emailSmtpPassword: (value.EMAIL_SMTP_PASSWORD || env.EMAIL_SMTP_PASSWORD || '').trim() || undefined,
+    emailSmtpSecure: value.EMAIL_SMTP_SECURE === 'true',
   });
 }

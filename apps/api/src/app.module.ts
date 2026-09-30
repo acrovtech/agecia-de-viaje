@@ -40,6 +40,10 @@ import {
 } from './invitations/invitation-delivery.adapter.js';
 import { OperationsController } from './operations/operations.controller.js';
 import { OperationsService } from './operations/operations.service.js';
+import { NotificationsController } from './notifications/notifications.controller.js';
+import { NotificationsService } from './notifications/notifications.service.js';
+import { EMAIL_TRANSPORT_ADAPTER } from './notifications/transport/email-transport.interface.js';
+import { DisabledEmailTransportAdapter } from './notifications/transport/disabled-transport.adapter.js';
 
 @Module({})
 export class AppModule {
@@ -63,6 +67,7 @@ export class AppModule {
               ReservationsController,
               OperationsController,
               MediaController,
+              NotificationsController,
             ]
           : []),
         // Financial endpoints are enabled when checkout is activated and validated.
@@ -91,6 +96,12 @@ export class AppModule {
         {
           provide: INVITATION_DELIVERY_ADAPTER,
           useExisting: DefaultInvitationDeliveryAdapter,
+        },
+        NotificationsService,
+        DisabledEmailTransportAdapter,
+        {
+          provide: EMAIL_TRANSPORT_ADAPTER,
+          useClass: DisabledEmailTransportAdapter,
         },
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AccessGuard },

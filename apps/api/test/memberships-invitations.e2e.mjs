@@ -214,6 +214,16 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
         return row;
       },
     },
+    transactionalNotification: {
+      upsert: async ({ create }) => {
+        return { id: `notif-${randomUUID().slice(0, 8)}`, ...create, createdAt: new Date(), updatedAt: new Date() };
+      },
+      create: async ({ data }) => {
+        return { id: `notif-${randomUUID().slice(0, 8)}`, ...data, createdAt: new Date(), updatedAt: new Date() };
+      },
+      findUnique: async () => null,
+      findMany: async () => [],
+    },
     $queryRaw: async (queryParts, ...params) => {
       // Simulate PostgreSQL row lock queries for owner protection or invitation acceptance
       const fullQuery = Array.isArray(queryParts) ? queryParts.join(' ') : String(queryParts);

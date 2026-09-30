@@ -19,6 +19,9 @@ export {
   PaymentState,
   ServiceResourceType,
   AssignmentResourceType,
+  NotificationKind,
+  NotificationAudience,
+  NotificationState,
 } from "@prisma/client";
 
 export type {
@@ -44,6 +47,7 @@ export type {
   ServiceResource,
   FleetVehicle,
   ReservationResourceAssignment,
+  TransactionalNotification,
   Coupon,
   MarketingCampaignLog,
   FinancialAudit,

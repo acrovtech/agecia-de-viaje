@@ -50,6 +50,7 @@ model Agency {
   serviceResources    ServiceResource[]
   fleetVehicles       FleetVehicle[]
   resourceAssignments ReservationResourceAssignment[]
+  transactionalNotifications TransactionalNotification[]
 
   @@index([slug])
   @@index([subdomain])
@@ -1210,5 +1211,61 @@ model ReservationResourceAssignment {
   @@index([agencyId, serviceDate])
   @@index([reservationId])
 }
+
+// -----------------------------------------------------------------------------
+// NOTIFICACIONES TRANSACCIONALES (OUTBOX)
+// -----------------------------------------------------------------------------
+
+enum NotificationKind {
+  MEMBERSHIP_INVITATION
+  RESERVATION_CREATED
+  RESERVATION_CONFIRMED
+  RESERVATION_CANCELLED
+}
+
+enum NotificationAudience {
+  CUSTOMER
+  INTERNAL
+  ADMIN
+}
+
+enum NotificationState {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  DEAD_LETTER
+}
+
+model TransactionalNotification {
+  id                String               @id @default(cuid())
+  agencyId          String
+  agency            Agency               @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  kind              NotificationKind
+  audience          NotificationAudience
+  recipient         String
+  subject           String
+  state             NotificationState    @default(PENDING)
+  idempotencyKey    String
+  encryptedPayload  String               @db.Text
+  attempts          Int                  @default(0)
+  maxAttempts       Int                  @default(5)
+  nextAttemptAt     DateTime             @default(now())
+  claimedBy         String?
+  claimExpiresAt    DateTime?
+  firstAttemptAt    DateTime?
+  lastAttemptAt     DateTime?
+  sentAt            DateTime?
+  failureCode       String?
+  providerMessageId String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([agencyId, idempotencyKey])
+  @@index([agencyId, createdAt])
+  @@index([state, nextAttemptAt])
+  @@index([state, claimExpiresAt])
+}
+
 
 

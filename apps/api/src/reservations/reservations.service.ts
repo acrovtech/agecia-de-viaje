@@ -1,10 +1,12 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { Prisma, type OperationalStatus } from '@repo/db/prisma';
 import { z } from 'zod';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';
 import { money, parse, conflict } from '../catalog/catalog-write.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { DisabledEmailTransportAdapter } from '../notifications/transport/disabled-transport.adapter.js';
 
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,128}$/);
 const name = z.string().trim().min(1).max(100);
@@ -64,7 +66,52 @@ const detailSelect = {
 
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly notifications: NotificationsService;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    notificationsService?: NotificationsService,
+  ) {
+    this.notifications =
+      notificationsService ??
+      new NotificationsService(
+        prisma,
+        {
+          environment: 'test',
+          databaseUrl: '',
+          port: 3002,
+          host: '127.0.0.1',
+          corsOrigins: [],
+          publicAgencySlugs: [],
+          docsEnabled: false,
+          rateLimit: 120,
+          authEnabled: true,
+          checkoutEnabled: false,
+          izipaySecretKey: '',
+          izipayHmacSha256: '',
+          izipayShopId: '',
+          izipayPassword: '',
+          izipayApiUrl: '',
+          izipayCurrency: 'USD',
+          izipayMode: 'test',
+          paymentSessionReuseDurationMs: 840000,
+          mediaUploadEnabled: false,
+          r2AccountId: '',
+          r2AccessKeyId: '',
+          r2SecretAccessKey: '',
+          r2BucketName: '',
+          r2PublicDomain: '',
+          storefrontBaseDomain: 'platform.example',
+          storefrontTrustForwardedHost: false,
+          emailDeliveryEnabled: false,
+          notificationPayloadKey: createHash('sha256').update('dev-test-notification-payload-key-32b').digest(),
+          emailFromAddress: 'noreply@travelagency.pe',
+          emailFromName: 'Travel Agency',
+        },
+        new DisabledEmailTransportAdapter(),
+      );
+  }
 
   private async price(tx: Prisma.TransactionClient, agencyId: string, input: z.infer<typeof selection>) {
     if (input.date < today()) throw new BadRequestException('La fecha debe ser hoy o posterior.');
@@ -171,6 +218,26 @@ export class ReservationsService {
           events: { create: { actorId: who.userId, actorLabel: who.email, toStatus: 'PENDING', note: 'Reserva manual creada.' } },
         }, select: { id: true } });
         await this.audit(tx, who, row.id, 'SAAS_RESERVATION_CREATE');
+        await this.notifications.queueNotification(tx, {
+          agencyId: who.agencyId,
+          kind: 'RESERVATION_CREATED',
+          audience: 'CUSTOMER',
+          recipient: data.customerEmail,
+          subject: `Registro de reserva ${row.id}`,
+          idempotencyKey: `reservation:${row.id}:created`,
+          payload: {
+            reservationId: row.id,
+            reservationCode: row.id,
+            customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
+            serviceTitle: quote.title,
+            date: quote.date,
+            pax: quote.pax,
+            pickupHotel: data.pickupHotel || null,
+            pickupTime: data.pickupTime || null,
+            totalPrice: quote.totalMinor / 100,
+            currency: quote.currency,
+          },
+        });
         return row.id;
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
@@ -189,7 +256,20 @@ export class ReservationsService {
     const allowed: Record<OperationalStatus, OperationalStatus[]> = { PENDING: ['CONFIRMED', 'CANCELLED'], CONFIRMED: ['COMPLETED', 'CANCELLED'], COMPLETED: [], CANCELLED: [] };
     try {
       await this.prisma.$transaction(async (tx) => {
-        const row = await tx.reservation.findFirst({ where: { id: reservationId, agencyId: who.agencyId }, select: { operationStatus: true, updatedAt: true, date: true, source: true } });
+        const row = await tx.reservation.findFirst({
+          where: { id: reservationId, agencyId: who.agencyId },
+          select: {
+            operationStatus: true,
+            updatedAt: true,
+            date: true,
+            source: true,
+            customerEmail: true,
+            customerFirstName: true,
+            customerLastName: true,
+            serviceTitle: true,
+            pax: true,
+          },
+        });
         if (!row) throw new NotFoundException();
         if (row.updatedAt.toISOString() !== data.expectedUpdatedAt) throw new ConflictException();
         if (row.source !== 'MANUAL_SAAS' || !row.operationStatus || !allowed[row.operationStatus].includes(data.status)) throw new BadRequestException('Transición no permitida.');
@@ -202,6 +282,33 @@ export class ReservationsService {
         if (changed.count !== 1) throw new ConflictException();
         await tx.reservationEvent.create({ data: { reservationId, actorId: who.userId, actorLabel: who.email, fromStatus: row.operationStatus, toStatus: data.status, note: data.note } });
         await this.audit(tx, who, reservationId, 'SAAS_RESERVATION_STATUS');
+
+        if (data.status === 'CONFIRMED' || data.status === 'CANCELLED') {
+          const kind = data.status === 'CONFIRMED' ? 'RESERVATION_CONFIRMED' : 'RESERVATION_CANCELLED';
+          const subject = data.status === 'CONFIRMED'
+            ? `Reserva CONFIRMADA ${reservationId}`
+            : `Reserva Cancelada ${reservationId}`;
+          const idempotencyKey = `reservation:${reservationId}:status:${data.status}:${row.updatedAt.getTime()}`;
+
+          await this.notifications.queueNotification(tx, {
+            agencyId: who.agencyId,
+            kind,
+            audience: 'CUSTOMER',
+            recipient: row.customerEmail,
+            subject,
+            idempotencyKey,
+            payload: {
+              reservationId,
+              reservationCode: reservationId,
+              customerName: `${row.customerFirstName} ${row.customerLastName}`.trim(),
+              serviceTitle: row.serviceTitle,
+              date: row.date.toISOString().slice(0, 10),
+              pax: row.pax,
+              note: data.note,
+              status: data.status,
+            },
+          });
+        }
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) { conflict(error); }
     return this.detail(who.agencyId, reservationId);

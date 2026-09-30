@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { compare, hash } from 'bcryptjs';
@@ -22,17 +23,62 @@ import {
   type InvitationDeliveryAdapter,
 } from './invitation-delivery.adapter.js';
 import type { AgencyMemberRole } from '@repo/db/prisma';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { DisabledEmailTransportAdapter } from '../notifications/transport/disabled-transport.adapter.js';
 
 const digestToken = (rawToken: string) =>
   createHash('sha256').update(rawToken).digest('hex');
 
 @Injectable()
 export class InvitationsService {
+  private readonly notifications: NotificationsService;
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(INVITATION_DELIVERY_ADAPTER)
-    private readonly deliveryAdapter: InvitationDeliveryAdapter
-  ) {}
+    private readonly deliveryAdapter: InvitationDeliveryAdapter,
+    @Optional()
+    notificationsService?: NotificationsService,
+  ) {
+    this.notifications =
+      notificationsService ??
+      new NotificationsService(
+        prisma,
+        {
+          environment: 'test',
+          databaseUrl: '',
+          port: 3002,
+          host: '127.0.0.1',
+          corsOrigins: [],
+          publicAgencySlugs: [],
+          docsEnabled: false,
+          rateLimit: 120,
+          authEnabled: true,
+          checkoutEnabled: false,
+          izipaySecretKey: '',
+          izipayHmacSha256: '',
+          izipayShopId: '',
+          izipayPassword: '',
+          izipayApiUrl: '',
+          izipayCurrency: 'USD',
+          izipayMode: 'test',
+          paymentSessionReuseDurationMs: 840000,
+          mediaUploadEnabled: false,
+          r2AccountId: '',
+          r2AccessKeyId: '',
+          r2SecretAccessKey: '',
+          r2BucketName: '',
+          r2PublicDomain: '',
+          storefrontBaseDomain: 'platform.example',
+          storefrontTrustForwardedHost: false,
+          emailDeliveryEnabled: false,
+          notificationPayloadKey: createHash('sha256').update('dev-test-notification-payload-key-32b').digest(),
+          emailFromAddress: 'noreply@travelagency.pe',
+          emailFromName: 'Travel Agency',
+        },
+        new DisabledEmailTransportAdapter(),
+      );
+  }
 
   async createInvitation(
     identity: ApiIdentity,
@@ -148,6 +194,24 @@ export class InvitationsService {
             email: dto.email,
             role: dto.role,
           },
+        },
+      });
+
+      // Atomically queue encrypted transactional notification
+      const idempotencyKey = `invitation:${inv.id}:${tokenHash.slice(0, 16)}`;
+      await this.notifications.queueNotification(tx, {
+        agencyId,
+        kind: 'MEMBERSHIP_INVITATION',
+        audience: 'INTERNAL',
+        recipient: dto.email,
+        subject: `Invitación para unirte al equipo de ${agency.name}`,
+        idempotencyKey,
+        payload: {
+          rawToken,
+          invitationId: inv.id,
+          role: dto.role,
+          agencyName: agency.name,
+          expiresAt: expiresAt.toISOString(),
         },
       });
 
