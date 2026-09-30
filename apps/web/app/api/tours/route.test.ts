@@ -7,6 +7,12 @@ const agencies = [
   { id: 'agency-inactive-id', slug: 'agency-inactive', subdomain: 'agency-inactive', customDomain: 'www.inactive.com', isActive: false },
 ];
 
+const categories = [
+  { id: 'cat-a-pub-id', agencyId: 'agency-a-id', name: 'Category A Public' },
+  { id: 'cat-a-draft-id', agencyId: 'agency-a-id', name: 'Category A Draft' },
+  { id: 'cat-b-id', agencyId: 'agency-b-id', name: 'Category Agency B' },
+];
+
 const tours = [
   {
     id: 'tour-a-id',
@@ -16,9 +22,21 @@ const tours = [
     isPublished: true,
     region: 'Cusco',
     menuGroup: 'Full Day',
-    categories: [{ id: 'cat-a-id', name: 'Category Agency A' }],
+    categories: [{ id: 'cat-a-pub-id', name: 'Category A Public' }],
     privatePricing: [],
     createdAt: new Date('2026-01-01'),
+  },
+  {
+    id: 'tour-a-draft-id',
+    agencyId: 'agency-a-id',
+    slug: 'draft-tour-a',
+    title: 'Draft Tour Agency A',
+    isPublished: false,
+    region: 'Cusco',
+    menuGroup: 'Full Day',
+    categories: [{ id: 'cat-a-draft-id', name: 'Category A Draft' }],
+    privatePricing: [],
+    createdAt: new Date('2026-01-03'),
   },
   {
     id: 'tour-b-id',
@@ -32,11 +50,6 @@ const tours = [
     privatePricing: [],
     createdAt: new Date('2026-01-02'),
   },
-];
-
-const categories = [
-  { id: 'cat-a-id', agencyId: 'agency-a-id', name: 'Category Agency A' },
-  { id: 'cat-b-id', agencyId: 'agency-b-id', name: 'Category Agency B' },
 ];
 
 vi.mock('@repo/db', async (importOriginal) => {
@@ -79,6 +92,15 @@ vi.mock('@repo/db', async (importOriginal) => {
         findMany: vi.fn(async ({ where }) => {
           return categories.filter((c) => {
             if (where.agencyId && c.agencyId !== where.agencyId) return false;
+            if (where.tours?.some) {
+              const hasMatchingTour = tours.some((t) => {
+                if (t.agencyId !== where.agencyId) return false;
+                if (where.tours.some.agencyId && t.agencyId !== where.tours.some.agencyId) return false;
+                if (where.tours.some.isPublished !== undefined && t.isPublished !== where.tours.some.isPublished) return false;
+                return t.categories.some((cat) => cat.id === c.id);
+              });
+              if (!hasMatchingTour) return false;
+            }
             return true;
           });
         }),
@@ -205,7 +227,7 @@ describe('Dynamic Storefront & Domain Resolution Web Suite (Phase 2.5)', () => {
     expect(resMenu.status).toBe(404);
   });
 
-  it('5. Published Agency A domain resolves to Agency A data only', async () => {
+  it('5. Published Agency A domain resolves to Agency A data only with published categories', async () => {
     const { GET } = await import('./route');
 
     const req = new Request('https://www.agency-a.com/api/tours', {
@@ -218,6 +240,8 @@ describe('Dynamic Storefront & Domain Resolution Web Suite (Phase 2.5)', () => {
     expect(data.tours).toHaveLength(1);
     expect(data.tours[0].id).toBe('tour-a-id');
     expect(data.tours[0].agencyId).toBe('agency-a-id');
+    expect(data.categories).toHaveLength(1);
+    expect(data.categories[0].id).toBe('cat-a-pub-id');
     expect(data.categories[0].agencyId).toBe('agency-a-id');
   });
 
@@ -234,6 +258,8 @@ describe('Dynamic Storefront & Domain Resolution Web Suite (Phase 2.5)', () => {
     expect(data.tours).toHaveLength(1);
     expect(data.tours[0].id).toBe('tour-b-id');
     expect(data.tours[0].agencyId).toBe('agency-b-id');
+    expect(data.categories).toHaveLength(1);
+    expect(data.categories[0].id).toBe('cat-b-id');
     expect(data.categories[0].agencyId).toBe('agency-b-id');
   });
 
@@ -308,5 +334,25 @@ describe('Dynamic Storefront & Domain Resolution Web Suite (Phase 2.5)', () => {
     const { apiCatalog } = await import('../../../lib/api-catalog');
 
     await expect(apiCatalog.getStorefront()).rejects.toThrow(/STOREFRONT_NOT_FOUND/);
+  });
+
+  it('11. Category isolation: returns published categories only, excludes draft-only and foreign categories', async () => {
+    const { GET } = await import('./route');
+
+    const req = new Request('https://www.agency-a.com/api/tours', {
+      headers: { host: 'www.agency-a.com' },
+    });
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    const categoryIds = data.categories.map((c: { id: string }) => c.id);
+
+    // Published Agency A category is returned
+    expect(categoryIds).toContain('cat-a-pub-id');
+    // Agency A draft-only category is NOT returned
+    expect(categoryIds).not.toContain('cat-a-draft-id');
+    // Agency B category is NOT returned
+    expect(categoryIds).not.toContain('cat-b-id');
   });
 });

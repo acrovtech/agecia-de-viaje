@@ -79,6 +79,12 @@ export async function GET(req: Request) {
     const categories = await prisma.category.findMany({
       where: {
         agencyId: agency.id,
+        tours: {
+          some: {
+            agencyId: agency.id,
+            isPublished: true,
+          },
+        },
       },
       orderBy: {
         name: 'asc',
