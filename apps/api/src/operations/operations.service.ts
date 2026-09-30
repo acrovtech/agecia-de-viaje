@@ -465,11 +465,15 @@ export class OperationsService {
               throw new BadRequestException('El vehículo no coincide con la categoría contratada en la reserva.');
             }
 
-            // Capacity check
-            const authoritativeCapacity = vehicle.capacity ?? vehicle.vehicleType.maxPax;
-            if (authoritativeCapacity < reservation.pax) {
+            // Capacity check: physical capacity cannot expand commercial capacity of booked vehicleTypeId
+            const physicalCapacity = vehicle.capacity ?? vehicle.vehicleType.maxPax;
+            const effectiveCapacity = reservation.vehicleTypeId
+              ? Math.min(physicalCapacity, vehicle.vehicleType.maxPax)
+              : physicalCapacity;
+
+            if (effectiveCapacity < reservation.pax) {
               throw new BadRequestException(
-                `Capacidad insuficiente: el vehículo tiene capacidad para ${authoritativeCapacity} y la reserva requiere ${reservation.pax} pasajeros.`,
+                `Capacidad insuficiente: el vehículo tiene capacidad efectiva para ${effectiveCapacity} y la reserva requiere ${reservation.pax} pasajeros.`,
               );
             }
 
@@ -650,6 +654,7 @@ export class OperationsService {
         pickupTime: true,
         transferId: true,
         tourId: true,
+        vehicleTypeId: true,
         resourceAssignments: {
           include: {
             serviceResource: { select: { id: true, displayName: true, phone: true, type: true } },
@@ -669,12 +674,15 @@ export class OperationsService {
       const driverAssign = r.resourceAssignments.find((a) => a.resourceType === 'DRIVER');
       const vehicleAssign = r.resourceAssignments.find((a) => a.resourceType === 'VEHICLE');
 
-      const isTransfer = Boolean(r.transferId || r.serviceType === 'private');
-      const isTour = Boolean(r.tourId);
+      // Conservative dispatch requirement semantics:
+      // - TOUR (shared or private): guide/driver/vehicle are supported if assigned, but never marked missing.
+      // - PRIVATE TRANSFER: driver and physical FleetVehicle are required for dispatch completeness; guide is not required.
+      // - SHARED TRANSFER: resources are not marked mandatory in this phase.
+      const isPrivateTransfer = Boolean((r.transferId || (!r.tourId && r.vehicleTypeId)) && r.serviceType === 'private');
 
-      const guideMissing = isTour && !guideAssign;
-      const driverMissing = isTransfer && !driverAssign;
-      const vehicleMissing = (isTransfer || r.serviceType === 'private') && !vehicleAssign;
+      const guideMissing = false;
+      const driverMissing = isPrivateTransfer && !driverAssign;
+      const vehicleMissing = isPrivateTransfer && !vehicleAssign;
 
       return {
         reservationId: r.id,

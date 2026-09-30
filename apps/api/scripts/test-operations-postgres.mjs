@@ -49,9 +49,12 @@ try {
 const hasOperationsMigration = migrationEntries.some((name) =>
   name.includes('operations_resource_assignment')
 );
-if (!hasOperationsMigration) {
+const hasIntegrityMigration = migrationEntries.some((name) =>
+  name.includes('operations_assignment_integrity')
+);
+if (!hasOperationsMigration || !hasIntegrityMigration) {
   console.error(
-    '[GATE ERROR] Migration 20260930000000_operations_resource_assignment not found in packages/db/prisma/migrations/.'
+    '[GATE ERROR] Required operations migrations (operations_resource_assignment, operations_assignment_integrity) not found in packages/db/prisma/migrations/.'
   );
   process.exitCode = 1;
   process.exit(1);

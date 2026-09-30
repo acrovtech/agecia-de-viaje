@@ -582,6 +582,342 @@ test('Operations & Service Resource Assignment Real PostgreSQL Gate (P2.6)', asy
       });
       assert.ok(audit, 'AdminAuditLog must exist for resource assignment');
     });
+
+    // -------------------------------------------------------------------------
+    // TEST 14: Commercial vehicle capacity hardening: physical capacity cannot expand commercial maxPax
+    // -------------------------------------------------------------------------
+    await t.test('14. Commercial vehicle capacity hardening: physical capacity cannot expand commercial maxPax', async () => {
+      // 1. Create a commercial VehicleType with maxPax = 3
+      const vtSedan = await prisma.vehicleType.create({
+        data: {
+          agencyId: agencyA.id,
+          name: 'Sedan Comercial 3 Pax',
+          code: `sedan-${randomUUID().slice(0, 6)}`,
+          maxPax: 3,
+          maxLuggage: 2,
+          image: 'https://example.com/sedan.jpg',
+          features: ['A/C'],
+          isActive: true,
+        },
+      });
+
+      // 2. Create FleetVehicle with physical capacity 10 in this category
+      const expandedUnit = await prisma.fleetVehicle.create({
+        data: {
+          agencyId: agencyA.id,
+          vehicleTypeId: vtSedan.id,
+          internalLabel: 'Hiace 10 Pax en Tarifa Sedan 3',
+          plate: `EXP-${randomUUID().slice(0, 4)}`,
+          capacity: 10,
+          isActive: true,
+        },
+      });
+
+      // 3. Create reservation with vehicleTypeId = vtSedan.id and pax = 4
+      const resPax4 = await prisma.reservation.create({
+        data: {
+          agencyId: agencyA.id,
+          source: 'MANUAL_SAAS',
+          operationStatus: 'CONFIRMED',
+          vehicleTypeId: vtSedan.id,
+          serviceType: 'private',
+          date: new Date('2026-11-01T00:00:00.000Z'),
+          pax: 4,
+          unitPriceMinor: 10000,
+          totalMinor: 10000,
+          totalPrice: 100,
+          currency: 'USD',
+          customerFirstName: 'Carlos',
+          customerLastName: 'Pax4',
+          customerEmail: 'pax4@test.com',
+          customerPhone: '984111222',
+        },
+      });
+
+      // Must be rejected because effective capacity is min(10, 3) = 3 < 4
+      await assert.rejects(
+        async () => {
+          await operations.assignResources(identityA, resPax4.id, {
+            expectedUpdatedAt: resPax4.updatedAt.toISOString(),
+            vehicleId: expandedUnit.id,
+          });
+        },
+        (err) => err.status === 400 && err.message.includes('Capacidad insuficiente')
+      );
+
+      // 4. Create reservation with vehicleTypeId = vtSedan.id and pax = 3
+      const resPax3 = await prisma.reservation.create({
+        data: {
+          agencyId: agencyA.id,
+          source: 'MANUAL_SAAS',
+          operationStatus: 'CONFIRMED',
+          vehicleTypeId: vtSedan.id,
+          serviceType: 'private',
+          date: new Date('2026-11-01T00:00:00.000Z'),
+          pax: 3,
+          unitPriceMinor: 10000,
+          totalMinor: 10000,
+          totalPrice: 100,
+          currency: 'USD',
+          customerFirstName: 'Carlos',
+          customerLastName: 'Pax3',
+          customerEmail: 'pax3@test.com',
+          customerPhone: '984111222',
+        },
+      });
+
+      // Succeeds because effective capacity min(10, 3) = 3 >= 3
+      const assigned = await operations.assignResources(identityA, resPax3.id, {
+        expectedUpdatedAt: resPax3.updatedAt.toISOString(),
+        vehicleId: expandedUnit.id,
+      });
+      assert.equal(assigned.vehicle?.id, expandedUnit.id);
+
+      // 5. Reservation without vehicleTypeId with pax = 5 uses physical capacity (10) normally
+      const resNoVt = await prisma.reservation.create({
+        data: {
+          agencyId: agencyA.id,
+          source: 'MANUAL_SAAS',
+          operationStatus: 'CONFIRMED',
+          vehicleTypeId: null,
+          serviceType: 'private',
+          date: new Date('2026-11-02T00:00:00.000Z'),
+          pax: 5,
+          unitPriceMinor: 10000,
+          totalMinor: 10000,
+          totalPrice: 100,
+          currency: 'USD',
+          customerFirstName: 'Carlos',
+          customerLastName: 'NoVt',
+          customerEmail: 'novt@test.com',
+          customerPhone: '984111222',
+        },
+      });
+
+      const assignedNoVt = await operations.assignResources(identityA, resNoVt.id, {
+        expectedUpdatedAt: resNoVt.updatedAt.toISOString(),
+        vehicleId: expandedUnit.id,
+      });
+      assert.equal(assignedNoVt.vehicle?.id, expandedUnit.id);
+    });
+
+    // -------------------------------------------------------------------------
+    // TEST 15: PostgreSQL CHECK constraint rejects malformed assignment shapes
+    // -------------------------------------------------------------------------
+    await t.test('15. PostgreSQL CHECK constraint rejects malformed assignment shapes', async () => {
+      // 1. GUIDE with only fleetVehicleId -> must fail CHECK
+      await assert.rejects(
+        async () => {
+          await prisma.reservationResourceAssignment.create({
+            data: {
+              agencyId: agencyA.id,
+              reservationId: resA2.id,
+              resourceType: 'GUIDE',
+              serviceResourceId: null,
+              fleetVehicleId: vehicleA.id,
+              assignedById: userA.id,
+              serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+            },
+          });
+        },
+        (err) => Boolean(err)
+      );
+
+      // 2. DRIVER with only fleetVehicleId -> must fail CHECK
+      await assert.rejects(
+        async () => {
+          await prisma.reservationResourceAssignment.create({
+            data: {
+              agencyId: agencyA.id,
+              reservationId: resA2.id,
+              resourceType: 'DRIVER',
+              serviceResourceId: null,
+              fleetVehicleId: vehicleA.id,
+              assignedById: userA.id,
+              serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+            },
+          });
+        },
+        (err) => Boolean(err)
+      );
+
+      // 3. VEHICLE with only serviceResourceId -> must fail CHECK
+      await assert.rejects(
+        async () => {
+          await prisma.reservationResourceAssignment.create({
+            data: {
+              agencyId: agencyA.id,
+              reservationId: resA2.id,
+              resourceType: 'VEHICLE',
+              serviceResourceId: guideA.id,
+              fleetVehicleId: null,
+              assignedById: userA.id,
+              serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+            },
+          });
+        },
+        (err) => Boolean(err)
+      );
+
+      // 4. GUIDE with both serviceResourceId and fleetVehicleId -> must fail CHECK
+      await assert.rejects(
+        async () => {
+          await prisma.reservationResourceAssignment.create({
+            data: {
+              agencyId: agencyA.id,
+              reservationId: resA2.id,
+              resourceType: 'GUIDE',
+              serviceResourceId: guideA.id,
+              fleetVehicleId: vehicleA.id,
+              assignedById: userA.id,
+              serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+            },
+          });
+        },
+        (err) => Boolean(err)
+      );
+
+      // 5. VEHICLE with both IDs null -> must fail CHECK
+      await assert.rejects(
+        async () => {
+          await prisma.reservationResourceAssignment.create({
+            data: {
+              agencyId: agencyA.id,
+              reservationId: resA2.id,
+              resourceType: 'VEHICLE',
+              serviceResourceId: null,
+              fleetVehicleId: null,
+              assignedById: userA.id,
+              serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+            },
+          });
+        },
+        (err) => Boolean(err)
+      );
+
+      // 6. Valid service-generated assignment continues to pass
+      const valid = await prisma.reservationResourceAssignment.create({
+        data: {
+          agencyId: agencyA.id,
+          reservationId: resA2.id,
+          resourceType: 'GUIDE',
+          serviceResourceId: guideA.id,
+          fleetVehicleId: null,
+          assignedById: userA.id,
+          serviceDate: new Date('2026-11-10T00:00:00.000Z'),
+        },
+      });
+      assert.ok(valid.id, 'Valid assignment must succeed');
+      await prisma.reservationResourceAssignment.delete({ where: { id: valid.id } });
+    });
+
+    // -------------------------------------------------------------------------
+    // TEST 16: Dispatch requirement semantics (Tour vs Private Transfer)
+    // -------------------------------------------------------------------------
+    await t.test('16. Dispatch requirement semantics (Tour vs Private Transfer)', async () => {
+      // Re-activate guideA and vehicleA (which were deactivated in test 12)
+      await prisma.serviceResource.update({
+        where: { id: guideA.id },
+        data: { isActive: true },
+      });
+      await prisma.fleetVehicle.update({
+        where: { id: vehicleA.id },
+        data: { isActive: true },
+      });
+
+      const dispatchDateStr = '2026-11-15';
+      const dispatchDate = new Date(`${dispatchDateStr}T00:00:00.000Z`);
+
+      // 1. Private Tour without assignments: guideMissing=false, driverMissing=false, vehicleMissing=false, any=false
+      const pTour = await prisma.reservation.create({
+        data: {
+          agencyId: agencyA.id,
+          source: 'MANUAL_SAAS',
+          operationStatus: 'CONFIRMED',
+          tourId: null,
+          serviceTitle: 'Tour Valle Sagrado Privado',
+          serviceType: 'private',
+          date: dispatchDate,
+          pax: 2,
+          unitPriceMinor: 10000,
+          totalMinor: 10000,
+          totalPrice: 100,
+          currency: 'USD',
+          customerFirstName: 'Tour',
+          customerLastName: 'Client',
+          customerEmail: 'tour@test.com',
+          customerPhone: '984111222',
+        },
+      });
+
+      // 2. Private Transfer without assignments: driverMissing=true, vehicleMissing=true, any=true
+      const pTransfer = await prisma.reservation.create({
+        data: {
+          agencyId: agencyA.id,
+          source: 'MANUAL_SAAS',
+          operationStatus: 'CONFIRMED',
+          transferId: null,
+          vehicleTypeId: vehicleTypeVanA.id,
+          serviceTitle: 'Traslado Privado Aeropuerto',
+          serviceType: 'private',
+          date: dispatchDate,
+          pax: 2,
+          unitPriceMinor: 5000,
+          totalMinor: 5000,
+          totalPrice: 50,
+          currency: 'USD',
+          customerFirstName: 'Transfer',
+          customerLastName: 'Client',
+          customerEmail: 'transfer@test.com',
+          customerPhone: '984111222',
+        },
+      });
+
+      const dispatchInitial = await operations.getDispatch(agencyA.id, { date: dispatchDateStr });
+
+      const tourItem = dispatchInitial.data.find((d) => d.reservationId === pTour.id);
+      assert.ok(tourItem);
+      assert.equal(tourItem.missing.guide, false);
+      assert.equal(tourItem.missing.driver, false);
+      assert.equal(tourItem.missing.vehicle, false);
+      assert.equal(tourItem.missing.any, false);
+
+      const transferItem = dispatchInitial.data.find((d) => d.reservationId === pTransfer.id);
+      assert.ok(transferItem);
+      assert.equal(transferItem.missing.guide, false);
+      assert.equal(transferItem.missing.driver, true);
+      assert.equal(transferItem.missing.vehicle, true);
+      assert.equal(transferItem.missing.any, true);
+
+      // 3. Assign driver + vehicle to private transfer -> driverMissing=false, vehicleMissing=false, any=false
+      await operations.assignResources(identityA, pTransfer.id, {
+        expectedUpdatedAt: pTransfer.updatedAt.toISOString(),
+        driverId: driverA.id,
+        vehicleId: vehicleA.id,
+      });
+
+      // 4. Assign optional guide to tour -> guide displayed, missing flags remain false
+      await operations.assignResources(identityA, pTour.id, {
+        expectedUpdatedAt: pTour.updatedAt.toISOString(),
+        guideId: guideA.id,
+      });
+
+      const dispatchUpdated = await operations.getDispatch(agencyA.id, { date: dispatchDateStr });
+
+      const updatedTransfer = dispatchUpdated.data.find((d) => d.reservationId === pTransfer.id);
+      assert.ok(updatedTransfer);
+      assert.equal(updatedTransfer.missing.driver, false);
+      assert.equal(updatedTransfer.missing.vehicle, false);
+      assert.equal(updatedTransfer.missing.any, false);
+      assert.equal(updatedTransfer.driver?.id, driverA.id);
+      assert.equal(updatedTransfer.vehicle?.id, vehicleA.id);
+
+      const updatedTour = dispatchUpdated.data.find((d) => d.reservationId === pTour.id);
+      assert.ok(updatedTour);
+      assert.equal(updatedTour.guide?.id, guideA.id);
+      assert.equal(updatedTour.missing.guide, false);
+      assert.equal(updatedTour.missing.any, false);
+    });
   } finally {
     // -------------------------------------------------------------------------
     // Cleanup: Tear down test records in reverse dependency order
