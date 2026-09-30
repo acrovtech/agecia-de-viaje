@@ -1,46 +1,34 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
-import { getAuthoritativeHost } from '../../../../lib/storefront-context';
+import { getAuthoritativeHost, resolveCurrentStorefront } from '../../../../lib/storefront-context';
 
 export const dynamic = 'force-dynamic';
 
 async function resolveStorefrontAgency(req: Request) {
   const host = getAuthoritativeHost(req.headers);
 
-  // 1. Host dinámico autoritativo (si no es loopback genérico)
-  if (host && host !== 'localhost' && host !== '127.0.0.1' && host !== '[::1]') {
-    // Coincidencia exacta con customDomain
-    let agency = await prisma.agency.findFirst({
-      where: { customDomain: host, isActive: true },
+  // 1. Resolver autoritativamente mediante el servicio central (valida exactitud, isActive, y API_PUBLIC_AGENCY_SLUGS)
+  const storefrontContext = await resolveCurrentStorefront(host || undefined);
+  if (storefrontContext?.slug) {
+    const agency = await prisma.agency.findUnique({
+      where: { slug: storefrontContext.slug, isActive: true },
       select: { id: true, slug: true },
     });
     if (agency) return agency;
-
-    // Subdominio de plataforma
-    const baseDomain = process.env.STOREFRONT_BASE_DOMAIN || 'platform.example';
-    if (host.endsWith(`.${baseDomain}`)) {
-      const subLabel = host.slice(0, -(baseDomain.length + 1));
-      if (subLabel && !subLabel.includes('.') && /^[a-z0-9-]+$/.test(subLabel)) {
-        agency = await prisma.agency.findFirst({
-          where: { subdomain: subLabel, isActive: true },
-          select: { id: true, slug: true },
-        });
-        if (agency) return agency;
-      }
-    }
   }
 
-  // 2. Fallback por variable de entorno (desarrollo / compatibilidad)
+  // 2. En producción, NUNCA usar fallback a variables de entorno estáticas para hosts no resueltos
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
+  // 3. Fallback ÚNICAMENTE en desarrollo local / test cuando no hay resolución de host
   const legacySlug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
   if (legacySlug && legacySlug.trim()) {
     return prisma.agency.findUnique({
       where: { slug: legacySlug.trim(), isActive: true },
       select: { id: true, slug: true },
     });
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    return null;
   }
 
   return prisma.agency.findUnique({
@@ -53,7 +41,7 @@ export async function GET(req: Request) {
   try {
     const agency = await resolveStorefrontAgency(req);
     if (!agency) {
-      return NextResponse.json({ error: 'Configuración de storefront no definida' }, { status: process.env.NODE_ENV === 'production' ? 500 : 404 });
+      return NextResponse.json({ error: 'Storefront no encontrado o inactivo' }, { status: 404 });
     }
 
     const tours = await prisma.tour.findMany({

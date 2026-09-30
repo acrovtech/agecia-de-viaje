@@ -39,10 +39,12 @@ export function getAuthoritativeHost(
 
   if (trustForwarded) {
     if (headersSource instanceof Headers) {
-      rawHost = headersSource.get('x-forwarded-host');
+      const val = headersSource.get('x-forwarded-host');
+      if (val) rawHost = val.split(',')[0]?.trim() || null;
     } else {
       const val = headersSource['x-forwarded-host'];
-      rawHost = typeof val === 'string' ? val : Array.isArray(val) ? val[0] || null : null;
+      const raw = typeof val === 'string' ? val : Array.isArray(val) ? val[0] || null : null;
+      if (raw) rawHost = raw.split(',')[0]?.trim() || null;
     }
   }
 

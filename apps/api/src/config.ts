@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeHost } from './tenant/host-normalizer.js';
 
 export const API_CONFIG = Symbol('API_CONFIG');
 
@@ -41,7 +42,7 @@ const environmentSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET_NAME: z.string().optional(),
   R2_PUBLIC_DOMAIN: z.string().optional(),
-  STOREFRONT_BASE_DOMAIN: z.string().trim().toLowerCase().optional().default('platform.example'),
+  STOREFRONT_BASE_DOMAIN: z.string().trim().toLowerCase().optional(),
   STOREFRONT_TRUST_FORWARDED_HOST: z.enum(['true', 'false']).default('false'),
 });
 
@@ -168,7 +169,29 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     r2SecretAccessKey,
     r2BucketName,
     r2PublicDomain,
-    storefrontBaseDomain: (value.STOREFRONT_BASE_DOMAIN || "platform.example").trim().toLowerCase(),
-    storefrontTrustForwardedHost: value.STOREFRONT_TRUST_FORWARDED_HOST === "true",
+    storefrontBaseDomain: (() => {
+      let baseDomain = (value.STOREFRONT_BASE_DOMAIN || '').trim().toLowerCase();
+      if (isProduction) {
+        if (baseDomain === 'platform.example') {
+          throw new Error(
+            'Configuración API inválida: STOREFRONT_BASE_DOMAIN no puede ser el marcador de posición "platform.example" en producción',
+          );
+        }
+      } else if (!baseDomain) {
+        baseDomain = 'platform.example';
+      }
+
+      if (baseDomain) {
+        const normalized = normalizeHost(baseDomain);
+        if (!normalized || baseDomain.includes('/') || baseDomain.includes(':')) {
+          throw new Error(
+            `Configuración API inválida: STOREFRONT_BASE_DOMAIN "${baseDomain}" no es un nombre de host válido`,
+          );
+        }
+        return normalized;
+      }
+      return '';
+    })(),
+    storefrontTrustForwardedHost: value.STOREFRONT_TRUST_FORWARDED_HOST === 'true',
   });
 }

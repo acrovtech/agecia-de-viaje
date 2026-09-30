@@ -50,7 +50,7 @@ const CheckoutDataSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(128).optional(),
 });
 
-import { resolveCurrentStorefront } from '@/lib/storefront-context';
+import { resolveCurrentStorefront } from '../../lib/storefront-context';
 
 export type CheckoutData = z.infer<typeof CheckoutDataSchema>;
 
@@ -59,14 +59,17 @@ async function getStorefrontSlug(): Promise<string> {
   if (context?.slug) {
     return context.slug;
   }
-  const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
-  if (!slug) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
-    }
-    return 'incabound';
+
+  // En producción, NUNCA permitir que una reserva caiga en otro tenant mediante fallback estático
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('No se pudo determinar la agencia para procesar la reserva: storefront no reconocido');
   }
-  return slug;
+
+  const slug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
+  if (slug && slug.trim()) {
+    return slug.trim();
+  }
+  return 'incabound';
 }
 
 function getApiInternalUrl(): string {

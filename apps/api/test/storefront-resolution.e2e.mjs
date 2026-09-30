@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
-import { application, config } from './helpers.mjs';
+import { application, config, parseConfig } from './helpers.mjs';
 
 test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
   const agencyA = {
@@ -66,6 +66,9 @@ test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
       findUnique: async ({ where }) => {
         return state.agencies.find((a) => (where.id ? a.id === where.id : a.slug === where.slug)) ?? null;
       },
+    },
+    tour: {
+      findMany: async () => [],
     },
     $queryRaw: async () => [],
     $transaction: async (fn) => fn(mockPrisma),
@@ -227,6 +230,69 @@ test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
 
     assert.equal(mismatchRes.status, 403);
     assert.equal(mismatchRes.body.error?.code, 'FORBIDDEN');
+  });
+
+  // 8. TENANT INTERCEPTOR BACKWARD COMPATIBILITY
+  await t.test('8. TenantInterceptor preserves server-to-server calls via internal API hostname', async () => {
+    // Internal API call using cluster hostname or loopback IP with route slug
+    const res = await request(app.getHttpServer())
+      .get('/v1/storefronts/agency-a/tours')
+      .set('Host', '127.0.0.1:3002');
+
+    assert.equal(res.status, 200);
+
+    const internalRes = await request(app.getHttpServer())
+      .get('/v1/storefronts/agency-a/tours')
+      .set('Host', 'api.internal.local');
+
+    assert.equal(internalRes.status, 200);
+  });
+
+  // 9. STOREFRONT_BASE_DOMAIN CONFIG VALIDATION IN PRODUCTION
+  await t.test('9. STOREFRONT_BASE_DOMAIN validation in production rejects placeholder and invalid hostnames', () => {
+    // Rejects placeholder "platform.example" in production
+    assert.throws(
+      () => {
+        parseConfig({
+          NODE_ENV: 'production',
+          DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+          API_CHECKOUT_ENABLED: 'false',
+          API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+          STOREFRONT_BASE_DOMAIN: 'platform.example',
+        });
+      },
+      (err) => {
+        assert.ok(err.message.includes('STOREFRONT_BASE_DOMAIN'));
+        return true;
+      }
+    );
+
+    // Rejects scheme or path in STOREFRONT_BASE_DOMAIN
+    assert.throws(
+      () => {
+        parseConfig({
+          NODE_ENV: 'production',
+          DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+          API_CHECKOUT_ENABLED: 'false',
+          API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+          STOREFRONT_BASE_DOMAIN: 'https://travel.example.com',
+        });
+      },
+      (err) => {
+        assert.ok(err.message.includes('STOREFRONT_BASE_DOMAIN'));
+        return true;
+      }
+    );
+
+    // Accepts valid production base domain
+    const validConfig = parseConfig({
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
+      API_CHECKOUT_ENABLED: 'false',
+      API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+      STOREFRONT_BASE_DOMAIN: 'travel.example.com',
+    });
+    assert.equal(validConfig.storefrontBaseDomain, 'travel.example.com');
   });
 
   await app.close();

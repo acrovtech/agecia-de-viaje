@@ -126,13 +126,15 @@ async function resolveStorefrontSlug(overrideSlug?: string): Promise<string | nu
     return context.slug;
   }
 
+  // En producción, NUNCA usar variables de entorno estáticas como fallback de un host no reconocido.
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
+  // Fallback ÚNICAMENTE en desarrollo local / tests
   const legacySlug = process.env.STOREFRONT_SLUG || process.env.NEXT_PUBLIC_AGENCY_SLUG;
   if (legacySlug && legacySlug.trim()) {
     return legacySlug.trim();
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('CONFIG_ERROR: STOREFRONT_SLUG o NEXT_PUBLIC_AGENCY_SLUG es obligatorio en producción');
   }
 
   return 'incabound';
@@ -155,7 +157,7 @@ export const apiCatalog = {
     const slug = await resolveStorefrontSlug(overrideSlug);
     if (!slug) {
       if (process.env.NODE_ENV === 'production') {
-        throw new Error('CONFIG_ERROR: Storefront host no reconocido en producción');
+        throw new Error('STOREFRONT_NOT_FOUND: Storefront host no reconocido en producción');
       }
       return 'incabound';
     }
