@@ -377,7 +377,7 @@ export default async function OperationsPage({
             {canMutate && (
               <Link
                 href="/workspace/operations?view=personnel&edit=new"
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none"
+                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Registrar colaborador</span>
@@ -471,7 +471,7 @@ export default async function OperationsPage({
             {canMutate && (
               <Link
                 href="/workspace/operations?view=fleet&edit=new"
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none"
+                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Registrar unidad</span>

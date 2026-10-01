@@ -642,7 +642,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
               type="button"
               disabled={currentStepIndex === 0}
               onClick={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1.5 h-8 px-3 border border-[#e5e7eb] rounded-md text-xs font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Paso anterior</span>
@@ -654,7 +654,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
                 onClick={() =>
                   setCurrentStepIndex((prev) => Math.min(steps.length - 1, prev + 1))
                 }
-                className="inline-flex items-center gap-1.5 h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none cursor-pointer transition-colors"
               >
                 <span>Siguiente paso</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -663,7 +663,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none cursor-pointer disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none cursor-pointer disabled:opacity-50 transition-colors"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isPending ? 'Guardando…' : 'Finalizar y Guardar'}</span>

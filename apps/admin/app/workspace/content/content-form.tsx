@@ -50,7 +50,7 @@ export function PublicationForm({
 
       <button
         disabled={pending}
-        className={`h-9 px-4 text-xs font-semibold rounded-lg shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
+        className={`h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
           isPublished
             ? 'bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#111111] shadow-cal-ring'
             : 'bg-[#111111] hover:bg-[#242424] text-white'

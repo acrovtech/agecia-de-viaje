@@ -271,7 +271,7 @@ export function TeamManager({
             <button
               type="submit"
               disabled={isPending || !inviteEmail}
-              className="h-10 px-4 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-lg shadow-none transition-colors disabled:opacity-50 cursor-pointer"
+              className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-md shadow-none transition-colors disabled:opacity-50 cursor-pointer"
             >
               {isPending ? 'Enviando…' : 'Crear Invitación'}
             </button>

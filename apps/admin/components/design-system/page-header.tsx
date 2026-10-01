@@ -23,7 +23,7 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps) {
   return (
-    <header className={`border-b border-[#e5e7eb] pb-4 mb-6 space-y-2.5 ${className}`}>
+    <header className={`mb-5 space-y-2.5 ${className}`}>
       {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

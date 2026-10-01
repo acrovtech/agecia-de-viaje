@@ -95,7 +95,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onClose}
-            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="h-8 px-3 text-xs font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-md transition-colors cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -104,7 +104,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onConfirm}
-            className={`h-9 px-4 text-xs sm:text-sm font-semibold text-white rounded-lg shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
+            className={`h-8 px-3.5 text-xs font-semibold text-white rounded-md shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
               isDestructive
                 ? 'bg-[#dc2626] hover:bg-[#b91c1c] focus-visible:ring-[#dc2626]'
                 : 'bg-[#111111] hover:bg-[#242424] focus-visible:ring-[#111111]'

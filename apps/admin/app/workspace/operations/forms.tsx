@@ -9,7 +9,7 @@ const inputClass =
 const textareaClass =
   'block w-full rounded-lg border border-[#e5e7eb] p-3 mt-1 bg-white text-sm text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
 const buttonClass =
-  'h-9 px-4 rounded-lg bg-[#111111] hover:bg-[#242424] text-white disabled:opacity-50 text-xs sm:text-sm font-semibold cursor-pointer shadow-none transition-colors';
+  'h-8 px-3 rounded-md bg-[#111111] hover:bg-[#242424] text-white disabled:opacity-50 text-xs font-semibold cursor-pointer shadow-none transition-colors';
 const labelClass = 'block text-xs font-medium text-[#374151]';
 
 export function ServiceResourceForm({

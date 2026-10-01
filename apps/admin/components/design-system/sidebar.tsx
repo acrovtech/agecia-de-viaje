@@ -182,11 +182,11 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
 
   return (
     <aside
-      className={`flex flex-col h-full bg-[#f8f9fa] border-r border-[#e5e7eb] text-[#111111] select-none ${className}`}
+      className={`flex flex-col h-full bg-[#f8f9fa] text-[#111111] select-none ${className}`}
       aria-label="Barra lateral de administración"
     >
       {/* Top Header: Platform Glyph + Tenant Context */}
-      <div className="p-3.5 border-b border-[#e5e7eb]">
+      <div className="p-3.5">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#111111] text-white flex items-center justify-center font-bold text-xs shadow-none shrink-0 tracking-wider">
             {PRODUCT_SHORT_NAME[0]}
@@ -219,7 +219,7 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={isCurrent(item.href) ? 'page' : undefined}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs sm:text-[13px] font-medium transition-colors cursor-pointer ${
                     active
                       ? 'bg-[#f3f4f6] text-[#111111]'
                       : 'text-[#374151] hover:text-[#111111] hover:bg-[#f3f4f6]/60'
@@ -268,10 +268,10 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
       </nav>
 
       {/* User Footer: Role badge, email, and Logout */}
-      <div className="p-3 border-t border-[#e5e7eb]">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-[#f3f4f6] text-[#111111] border border-[#e5e7eb] flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-7 h-7 rounded-md bg-[#f3f4f6] text-[#111111] flex items-center justify-center font-bold text-xs shrink-0">
               {identity.email[0]?.toUpperCase()}
             </div>
             <div className="min-w-0">

@@ -79,7 +79,7 @@ export function AppShell({ identity, children }: AppShellProps) {
       </div>
 
       {/* Elevated White MAIN SURFACE */}
-      <div className="flex-1 flex flex-col min-w-0 md:p-3 lg:p-4 md:h-screen md:overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 md:p-1 md:h-screen md:overflow-hidden">
         <main className="flex-1 flex flex-col min-w-0 bg-white md:rounded-2xl md:shadow-cal-surface md:overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
             {children}

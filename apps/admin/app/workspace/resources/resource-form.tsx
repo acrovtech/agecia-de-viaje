@@ -139,7 +139,7 @@ export function ResourceForm({
 
         <button
           disabled={pending}
-          className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-lg shadow-none disabled:opacity-50 cursor-pointer"
+          className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-md shadow-none disabled:opacity-50 cursor-pointer"
         >
           {pending ? 'Guardando…' : 'Guardar recurso'}
         </button>

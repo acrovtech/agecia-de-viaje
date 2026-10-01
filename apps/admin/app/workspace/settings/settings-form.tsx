@@ -235,7 +235,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar información general'}
                 </button>
@@ -291,7 +291,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar identidad visual'}
                 </button>
@@ -354,7 +354,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar dominios'}
                 </button>
@@ -478,7 +478,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isLegalPending}
-                  className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
                 >
                   {isLegalPending ? 'Guardando…' : 'Guardar perfil legal'}
                 </button>

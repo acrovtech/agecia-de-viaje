@@ -58,7 +58,7 @@ export default async function ResourcesPage({
             allowed && (
               <Link
                 href={`${path}&edit=new`}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none transition-colors"
+                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Crear {kind === 'categories' ? 'categoría' : 'vehículo'}</span>

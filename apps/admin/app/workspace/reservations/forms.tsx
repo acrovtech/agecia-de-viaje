@@ -210,7 +210,7 @@ export function BookingForm({
           <button
             type="submit"
             disabled={isQuoting || !date}
-            className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+            className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
           >
             {isQuoting ? 'Calculando tarifa…' : 'Cotizar servicio'}
           </button>
@@ -596,7 +596,7 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
 
         <button
           type="submit"
-          className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+          className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
           disabled={pending}
         >
           {pending ? 'Guardando…' : 'Aplicar cambio de estado'}
@@ -741,7 +741,7 @@ export function OperationsAssignmentForm({
 
           <button
             type="submit"
-            className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+            className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
             disabled={pending}
           >
             {pending ? 'Guardando asignación…' : 'Guardar asignación de recursos'}
