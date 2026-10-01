@@ -20,16 +20,16 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 ${className}`}
+      className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-xl border border-dashed border-[#e5e7eb] bg-[#f8f9fa]/50 ${className}`}
     >
-      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-400 mb-3.5">
+      <div className="w-10 h-10 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center text-[#6b7280] mb-3">
         <Icon className="w-5 h-5" aria-hidden="true" />
       </div>
-      <h3 className="text-sm sm:text-base font-semibold text-slate-900">
+      <h3 className="text-sm sm:text-base font-semibold text-[#111111]">
         {title}
       </h3>
       {description && (
-        <p className="text-xs sm:text-sm text-slate-500 max-w-sm mt-1 mb-4 leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#6b7280] max-w-sm mt-1 mb-4 leading-relaxed">
           {description}
         </p>
       )}

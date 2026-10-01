@@ -21,8 +21,8 @@ import { RadioCardGroup } from '../../../components/design-system/radio-card';
 import { Calculator, CheckCircle2, User, Phone, Mail, MapPin, Clock, ArrowLeft, ArrowRight, ShieldAlert } from 'lucide-react';
 
 const inputClass =
-  'block w-full rounded-lg border border-slate-200 p-2.5 mt-1 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all';
-const labelClass = 'block text-xs font-semibold text-slate-700 tracking-tight';
+  'h-10 block w-full rounded-lg border border-[#e5e7eb] px-3 text-sm text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
 
 const bookingSteps: StepItem[] = [
   { id: 'service', label: '1. Servicio' },
@@ -100,12 +100,12 @@ export function BookingForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200/80 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#e5e7eb] pb-3">
         <div>
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
             Nueva Reserva Manual
           </span>
-          <h2 className="text-xl font-bold text-slate-900">{service.title}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-[#111111]">{service.title}</h2>
         </div>
         <EditorModeSwitch
           mode={mode}
@@ -127,17 +127,17 @@ export function BookingForm({
       )}
 
       {/* STEP 1: COTIZACIÓN OFICIAL */}
-      <form action={quoteAction} className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-xs">
-        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+      <form action={quoteAction} className="border border-[#e5e7eb] rounded-xl p-5 bg-white space-y-4 shadow-none">
+        <div className="border-b border-[#e5e7eb] pb-3 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-semibold text-[#111111]">
               {mode === 'guided' ? 'Paso 1: Modalidad y Fecha' : '1. Parámetros del servicio y cotización'}
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#6b7280]">
               Verifica tarifas vigentes antes de generar la reserva.
             </p>
           </div>
-          <Calculator className="w-4 h-4 text-slate-400" />
+          <Calculator className="w-4 h-4 text-[#898989]" />
         </div>
 
         <input type="hidden" name="payload" value={JSON.stringify(selection)} />
@@ -201,7 +201,7 @@ export function BookingForm({
         </fieldset>
 
         {quoteState?.error && (
-          <p role="alert" className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+          <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
             {quoteState.error}
           </p>
         )}
@@ -210,11 +210,11 @@ export function BookingForm({
           <button
             type="submit"
             disabled={isQuoting || !date}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+            className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
           >
             {isQuoting ? 'Calculando tarifa…' : 'Cotizar servicio'}
           </button>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-[#898989]">
             Cálculo verificado por el backend central
           </span>
         </div>
@@ -279,33 +279,33 @@ function CreateForm({
   };
 
   return (
-    <form action={action} className="space-y-6 border border-slate-200 rounded-xl p-5 bg-white shadow-xs">
-      <div className="border-b border-slate-100 pb-3">
-        <h3 className="text-base font-bold text-slate-900">
+    <form action={action} className="space-y-6 border border-[#e5e7eb] rounded-xl p-5 bg-white shadow-none">
+      <div className="border-b border-[#e5e7eb] pb-3">
+        <h3 className="text-base font-semibold tracking-tight text-[#111111]">
           2. Datos del Cliente, Pasajeros y Emisión
         </h3>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#6b7280]">
           Completa la información para registrar la reserva en estado PENDIENTE.
         </p>
       </div>
 
       {/* Snapshot de Tarifa Cotizada */}
-      <div className="bg-emerald-50/70 border border-emerald-200/80 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-[#f8f9fa] border border-[#e5e7eb] p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5 text-xs">
-          <span className="font-bold text-emerald-950 block">
+          <span className="font-semibold text-[#111111] block">
             {quote.title}
           </span>
-          <span className="text-emerald-800">
+          <span className="text-[#6b7280]">
             {date} · {pax} pasajeros · {modality === 'shared' ? 'Compartida' : 'Privada'}
             {quote.vehicleName ? ` · ${quote.vehicleName}` : ''}
           </span>
-          <div className="text-[11px] text-emerald-700">
+          <div className="text-[11px] text-[#898989]">
             Tarifa: {priceLabel(quote.unitPriceMinor)} {quote.pricingUnit === 'GROUP' ? 'por vehículo' : 'por persona'}
           </div>
         </div>
         <div className="text-right">
-          <span className="text-xs text-emerald-700 block font-medium">Total Cotizado</span>
-          <span className="text-xl font-bold text-emerald-950">
+          <span className="text-xs text-[#6b7280] block font-medium">Total Cotizado</span>
+          <span className="text-xl font-semibold tracking-tight text-[#111111]">
             {priceLabel(quote.totalMinor)}
           </span>
         </div>
@@ -316,7 +316,7 @@ function CreateForm({
       <fieldset disabled={isPending} className="space-y-5">
         {/* Contacto del Cliente */}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] mb-3 flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" />
             <span>Contacto del Cliente Principal</span>
           </h4>
@@ -372,7 +372,7 @@ function CreateForm({
 
         {/* Recojo y Logística */}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] mb-3 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5" />
             <span>Recojo y Observaciones</span>
           </h4>
@@ -412,11 +412,11 @@ function CreateForm({
 
         {/* Pasajeros */}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] mb-2 flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" />
             <span>Manifiesto de Pasajeros ({passengers.length})</span>
           </h4>
-          <p className="text-[11px] text-slate-400 mb-3">
+          <p className="text-[11px] text-[#898989] mb-3">
             El documento de identidad es opcional en esta fase inicial.
           </p>
 
@@ -424,7 +424,7 @@ function CreateForm({
             {passengers.map((p, index) => (
               <div
                 key={index}
-                className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 grid gap-3 sm:grid-cols-4"
+                className="p-3.5 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] grid gap-3 sm:grid-cols-4"
               >
                 <label className={labelClass}>
                   Nombres
@@ -498,11 +498,11 @@ function CreateForm({
         </div>
 
         {/* Declaración de emisión */}
-        <label className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/80 text-xs text-slate-700 cursor-pointer">
+        <label className="flex items-start gap-2.5 p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#374151] cursor-pointer">
           <input
             type="checkbox"
             required
-            className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900 border-slate-300 mt-0.5"
+            className="w-4 h-4 rounded text-[#111111] focus:ring-[#111111] border-[#e5e7eb] mt-0.5"
           />
           <span>
             Confirmo que revisé servicio, fecha, pasajeros e importe. Se creará una reserva operativa en estado PENDIENTE sin registrar cobros (pagos diferidos / frozen).
@@ -510,7 +510,7 @@ function CreateForm({
         </label>
 
         {state?.error && (
-          <p role="alert" className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+          <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
             {state.error}
           </p>
         )}
@@ -518,7 +518,7 @@ function CreateForm({
         <button
           type="submit"
           disabled={isPending}
-          className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto px-6 py-2.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs sm:text-sm font-semibold shadow-none disabled:opacity-50 cursor-pointer"
         >
           {isPending ? 'Emitiendo reserva…' : 'Crear reserva pendiente'}
         </button>
@@ -539,12 +539,12 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
   if (reservation.source !== 'MANUAL_SAAS' || !allowed.length) return null;
 
   return (
-    <form action={action} className="space-y-4 border border-slate-200 rounded-xl p-5 bg-white shadow-xs">
-      <div className="border-b border-slate-100 pb-2">
-        <h2 className="text-base font-bold text-slate-900">
+    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white shadow-none">
+      <div className="border-b border-[#e5e7eb] pb-2">
+        <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Transición de Estado Operativo
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#6b7280]">
           Confirmar requiere haber coordinado la disponibilidad. Este cambio no registra cobros ni reembolsos. Cancelar o completar es definitivo.
         </p>
       </div>
@@ -579,24 +579,24 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
           />
         </label>
 
-        <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-[#374151] cursor-pointer">
           <input
             type="checkbox"
             required
-            className="w-4 h-4 rounded text-slate-900 border-slate-300"
+            className="w-4 h-4 rounded text-[#111111] border-[#e5e7eb]"
           />
           <span>Confirmo el cambio de estado operativo.</span>
         </label>
 
         {state?.error && (
-          <p role="alert" className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+          <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
             {state.error}
           </p>
         )}
 
         <button
           type="submit"
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+          className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
           disabled={pending}
         >
           {pending ? 'Guardando…' : 'Aplicar cambio de estado'}
@@ -623,36 +623,36 @@ export function OperationsAssignmentForm({
     reservation.operationStatus === 'CANCELLED' || reservation.operationStatus === 'COMPLETED';
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-xs">
-      <div className="border-b border-slate-100 pb-2">
-        <h2 className="text-base font-bold text-slate-900">
+    <section className="bg-white border border-[#e5e7eb] rounded-xl p-5 space-y-4 shadow-none">
+      <div className="border-b border-[#e5e7eb] pb-2">
+        <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Asignación de Recursos Operativos
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#6b7280]">
           Asigna guía, conductor y vehículo de flota para la ejecución de este servicio en la fecha {reservation.date.slice(0, 10)}.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+      <div className="grid gap-3 sm:grid-cols-3 bg-[#f8f9fa] p-4 rounded-xl border border-[#e5e7eb] text-xs">
         <div>
-          <span className="text-slate-400 block font-medium">Guía asignado</span>
-          <strong className="text-slate-900 text-sm">
+          <span className="text-[#898989] block font-medium">Guía asignado</span>
+          <strong className="text-[#111111] text-sm font-semibold">
             {assignments?.guide
               ? `${assignments.guide.displayName}${assignments.guide.phone ? ` (${assignments.guide.phone})` : ''}`
               : 'Sin asignar'}
           </strong>
         </div>
         <div>
-          <span className="text-slate-400 block font-medium">Conductor asignado</span>
-          <strong className="text-slate-900 text-sm">
+          <span className="text-[#898989] block font-medium">Conductor asignado</span>
+          <strong className="text-[#111111] text-sm font-semibold">
             {assignments?.driver
               ? `${assignments.driver.displayName}${assignments.driver.phone ? ` (${assignments.driver.phone})` : ''}`
               : 'Sin asignar'}
           </strong>
         </div>
         <div>
-          <span className="text-slate-400 block font-medium">Vehículo de flota</span>
-          <strong className="text-slate-900 text-sm">
+          <span className="text-[#898989] block font-medium">Vehículo de flota</span>
+          <strong className="text-[#111111] text-sm font-semibold">
             {assignments?.vehicle
               ? `${assignments.vehicle.internalLabel} [${assignments.vehicle.plate}] · ${assignments.vehicle.vehicleTypeName}`
               : 'Sin asignar'}
@@ -661,7 +661,7 @@ export function OperationsAssignmentForm({
       </div>
 
       {isReadOnly ? (
-        <p className="text-xs bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-200">
+        <p className="text-xs bg-[#f8f9fa] text-[#374151] p-3 rounded-lg border border-[#e5e7eb]">
           {reservation.operationStatus === 'CANCELLED'
             ? 'Reserva cancelada: las asignaciones están congeladas.'
             : 'Reserva completada: las asignaciones se conservan como registro histórico.'}
@@ -734,14 +734,14 @@ export function OperationsAssignmentForm({
           </label>
 
           {state?.error && (
-            <p role="alert" className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+            <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
               {state.error}
             </p>
           )}
 
           <button
             type="submit"
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+            className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
             disabled={pending}
           >
             {pending ? 'Guardando asignación…' : 'Guardar asignación de recursos'}

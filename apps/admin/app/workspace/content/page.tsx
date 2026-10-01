@@ -88,7 +88,7 @@ export default async function ContentPage({
           actions={
             <Link
               href={`/workspace?view=${kind}`}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6b7280] hover:text-[#111111] transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Volver al catálogo</span>
@@ -99,9 +99,9 @@ export default async function ContentPage({
         {params.saved === '1' && (
           <div
             role="status"
-            className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium flex items-center gap-2"
+            className="p-3 rounded-lg bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] text-xs font-medium flex items-center gap-2"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#16a34a] shrink-0" />
             <span>Contenido guardado con éxito.</span>
           </div>
         )}

@@ -45,8 +45,8 @@ export function ResourceForm({
         };
 
   const inputClass =
-    'block w-full border border-slate-200 rounded-lg p-2.5 mt-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900';
-  const labelClass = 'block text-xs font-semibold text-slate-700 tracking-tight';
+    'h-10 block w-full border border-[#e5e7eb] rounded-lg px-3 mt-1 text-sm text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+  const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
 
   const input = (key: string, label: string, type = 'text', required = true) => (
     <label className={labelClass} key={key}>
@@ -76,14 +76,14 @@ export function ResourceForm({
         })}
       />
 
-      <div className="border-b border-slate-100 pb-2">
-        <h3 className="text-base font-bold text-slate-900">
+      <div className="border-b border-[#e5e7eb] pb-2">
+        <h3 className="text-base font-semibold tracking-tight text-[#111111]">
           {record ? 'Editar' : 'Crear'} {kind === 'categories' ? 'categoría' : 'vehículo comercial'}
         </h3>
       </div>
 
       {state?.error && (
-        <p role="alert" className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+        <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
           {state.error}
         </p>
       )}
@@ -112,12 +112,12 @@ export function ResourceForm({
               placeholder="https://..."
               helpText="Foto lateral o frontal de la unidad"
             />
-            <label className="flex items-center gap-2 text-xs text-slate-800 font-medium cursor-pointer">
+            <label className="flex items-center gap-2 text-xs text-[#374151] font-medium cursor-pointer">
               <input
                 type="checkbox"
                 checked={active}
                 onChange={(event) => setActive(event.target.checked)}
-                className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
+                className="w-4 h-4 rounded text-[#111111] focus:ring-[#111111] border-[#e5e7eb]"
               />
               <span>Vehículo activo para cotizaciones comerciales</span>
             </label>
@@ -132,14 +132,14 @@ export function ResourceForm({
         )}
 
         {record && (
-          <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <p className="text-xs text-[#6b7280] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb]">
             Nota: Al modificar este recurso, los servicios vinculados volverán a estado borrador para su revisión antes de republicar.
           </p>
         )}
 
         <button
           disabled={pending}
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs disabled:opacity-50 cursor-pointer"
+          className="h-9 px-4 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-lg shadow-none disabled:opacity-50 cursor-pointer"
         >
           {pending ? 'Guardando…' : 'Guardar recurso'}
         </button>

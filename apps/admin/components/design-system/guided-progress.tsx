@@ -25,43 +25,43 @@ export function GuidedProgress({
   return (
     <nav
       aria-label="Progreso guiado"
-      className={`border-b border-slate-200/80 pb-3 mb-6 overflow-x-auto no-scrollbar ${className}`}
+      className={`border-b border-[#e5e7eb] pb-3 mb-6 overflow-x-auto no-scrollbar ${className}`}
     >
-      <ol className="flex items-center gap-2 min-w-max">
+      <ol className="flex items-center gap-1.5 min-w-max">
         {steps.map((step, idx) => {
           const isCurrent = idx === currentStepIndex;
           const isPassed = idx < currentStepIndex;
 
           return (
-            <li key={step.id} className="flex items-center gap-2">
+            <li key={step.id} className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onStepClick(idx)}
                 aria-current={isCurrent ? 'step' : undefined}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-slate-900 text-white shadow-xs font-semibold'
+                    ? 'bg-[#111111] text-white shadow-none font-medium'
                     : isPassed
-                      ? 'bg-slate-100 text-slate-800 hover:bg-slate-200/80'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                      ? 'bg-[#f3f4f6] text-[#111111] hover:bg-[#e5e7eb]'
+                      : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#f8f9fa]'
                 }`}
               >
                 <span
-                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-medium ${
                     isCurrent
-                      ? 'bg-white text-slate-900'
+                      ? 'bg-white text-[#111111]'
                       : isPassed
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-500'
+                        ? 'bg-[#111111] text-white'
+                        : 'bg-[#e5e7eb] text-[#6b7280]'
                   }`}
                 >
-                  {isPassed ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : idx + 1}
+                  {isPassed ? <Check className="w-2.5 h-2.5 stroke-[2.5]" /> : idx + 1}
                 </span>
                 <span>{step.label}</span>
               </button>
 
               {idx < steps.length - 1 && (
-                <div className="w-3 h-[1px] bg-slate-200" aria-hidden="true" />
+                <div className="w-2.5 h-[1px] bg-[#e5e7eb]" aria-hidden="true" />
               )}
             </li>
           );

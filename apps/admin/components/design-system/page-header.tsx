@@ -23,19 +23,19 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps) {
   return (
-    <header className={`border-b border-slate-200/80 pb-5 mb-6 space-y-3 ${className}`}>
+    <header className={`border-b border-[#e5e7eb] pb-4 mb-6 space-y-2.5 ${className}`}>
       {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1 min-w-0">
+        <div className="space-y-0.5 min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 truncate">
+            <h1 className="text-xl sm:text-[22px] font-semibold tracking-tight text-[#111111] truncate">
               {title}
             </h1>
             {badges}
           </div>
           {description && (
-            <p className="text-sm text-slate-500 max-w-3xl leading-relaxed">
+            <p className="text-sm text-[#6b7280] max-w-3xl leading-relaxed">
               {description}
             </p>
           )}

@@ -37,16 +37,16 @@ function RetryButton({ notificationId }: { notificationId: string }) {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50 cursor-pointer"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#f3f4f6] text-[#111111] border border-[#e5e7eb] hover:bg-[#e5e7eb] transition-colors disabled:opacity-50 cursor-pointer"
       >
         <RefreshCw className={`w-3 h-3 ${isPending ? 'animate-spin' : ''}`} />
         <span>{isPending ? 'Reintentando…' : 'Reintentar'}</span>
       </button>
       {state?.error && (
-        <span className="text-[11px] text-rose-600 font-medium">{state.error}</span>
+        <span className="text-[11px] text-[#dc2626] font-medium">{state.error}</span>
       )}
       {state?.success && (
-        <span className="text-[11px] text-emerald-600 font-medium">Encolado</span>
+        <span className="text-[11px] text-[#16a34a] font-medium">Encolado</span>
       )}
     </form>
   );
@@ -61,7 +61,7 @@ export function NotificationsTable({
 }) {
   if (notifications.length === 0) {
     return (
-      <div className="py-12 text-center text-slate-400 text-xs">
+      <div className="py-12 text-center text-[#898989] text-xs">
         No hay notificaciones transaccionales registradas recientemente en tu agencia.
       </div>
     );
@@ -71,7 +71,7 @@ export function NotificationsTable({
     <div className="overflow-x-auto">
       <table className="w-full text-xs text-left border-collapse">
         <thead>
-          <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+          <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
             <th className="py-3 px-4 font-semibold">Tipo / Asunto</th>
             <th className="py-3 px-4 font-semibold">Destinatario</th>
             <th className="py-3 px-4 font-semibold">Estado Outbox</th>
@@ -81,31 +81,31 @@ export function NotificationsTable({
             {canRetry && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#e5e7eb]">
           {notifications.map((item) => {
             const isRetryable =
               canRetry && (item.state === 'FAILED' || item.state === 'DEAD_LETTER');
 
             return (
-              <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+              <tr key={item.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
                 <td className="py-3.5 px-4">
-                  <div className="font-bold text-slate-900 text-sm max-w-sm truncate">
+                  <div className="font-medium text-[#111111] text-sm max-w-sm truncate">
                     {item.subject}
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  <div className="text-[11px] text-[#6b7280] font-mono mt-0.5">
                     {item.kind} · {item.audience}
                   </div>
                 </td>
-                <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700">
+                <td className="py-3.5 px-4 font-mono text-[11px] text-[#374151]">
                   {item.recipient}
                 </td>
                 <td className="py-3.5 px-4">
                   <StatusBadge status={item.state} />
                 </td>
-                <td className="py-3.5 px-4 text-slate-700 font-mono font-medium">
+                <td className="py-3.5 px-4 text-[#374151] font-mono font-medium">
                   {item.attempts} / {item.maxAttempts}
                 </td>
-                <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                <td className="py-3.5 px-4 text-[#6b7280] text-[11px]">
                   {item.sentAt
                     ? `Enviado: ${new Date(item.sentAt).toLocaleString('es-PE', {
                         timeZone: 'America/Lima',
@@ -118,7 +118,7 @@ export function NotificationsTable({
                           timeZone: 'America/Lima',
                         })}`}
                 </td>
-                <td className="py-3.5 px-4 font-mono text-slate-500 text-[11px]">
+                <td className="py-3.5 px-4 font-mono text-[#6b7280] text-[11px]">
                   {item.failureCode || '-'}
                 </td>
                 {canRetry && (
@@ -126,7 +126,7 @@ export function NotificationsTable({
                     {isRetryable ? (
                       <RetryButton notificationId={item.id} />
                     ) : (
-                      <span className="text-slate-300 text-[11px]">-</span>
+                      <span className="text-[#898989] text-[11px]">-</span>
                     )}
                   </td>
                 )}

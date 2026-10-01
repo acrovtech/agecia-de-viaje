@@ -118,34 +118,34 @@ export default async function NotificationsPage({
       />
 
       {/* Live Email Transport Banner */}
-      <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/70 flex items-start gap-3 shadow-xs">
-        <div className="p-1 rounded-lg bg-sky-100 text-sky-700 shrink-0 mt-0.5">
+      <div className="p-4 rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] flex items-start gap-3 shadow-none">
+        <div className="p-1 rounded-lg bg-[#f3f4f6] text-[#6b7280] shrink-0 mt-0.5">
           <Info className="w-4 h-4" />
         </div>
         <div className="flex-1 text-xs">
-          <span className="font-semibold text-sky-950 block text-xs">
+          <span className="font-semibold text-[#111111] block text-xs">
             LIVE EMAIL TRANSPORT: NOT CONFIGURED
           </span>
-          <p className="text-sky-800 mt-0.5 leading-relaxed">
+          <p className="text-[#6b7280] mt-0.5 leading-relaxed">
             El sistema de outbox transaccional duradero y cifrado (AES-256-GCM) almacena todos los correos generados por eventos de invitaciones y reservas. La entrega real se ejecutará cuando se conecte el proveedor de transporte en vivo en una fase posterior. Los envíos manuales y reintentos están asegurados con comprobación atómica.
           </p>
         </div>
       </div>
 
       {errorMessage && (
-        <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200">
+        <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-3 rounded-xl border border-[#fecaca]">
           {errorMessage}
         </p>
       )}
 
       {/* State Filter Pills */}
-      <div className="flex flex-wrap gap-2 text-xs border-b border-slate-200/80 pb-3">
+      <div className="flex flex-wrap gap-2 text-xs border-b border-[#e5e7eb] pb-3">
         <Link
           href="/workspace/notifications"
-          className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
             !stateFilter
-              ? 'bg-slate-900 text-white font-semibold shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              ? 'bg-[#111111] text-white'
+              : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
           }`}
         >
           Todas
@@ -154,10 +154,10 @@ export default async function NotificationsPage({
           <Link
             key={st}
             href={`/workspace/notifications?state=${st}`}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               stateFilter === st
-                ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+                ? 'bg-[#111111] text-white'
+                : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
             }`}
           >
             {st}
@@ -167,15 +167,15 @@ export default async function NotificationsPage({
 
       {/* Notifications Table */}
       {notificationsData && (
-        <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
           <NotificationsTable
             notifications={notificationsData.data as NotificationItem[]}
             canRetry={['OWNER', 'ADMIN'].includes(identity.role)}
           />
 
-          <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
             <div>{notificationsData.data.length} registros listados</div>
-            <div className="flex gap-4 font-semibold">
+            <div className="flex gap-4 font-medium text-[#111111]">
               {cursor && (
                 <Link
                   href={`/workspace/notifications${stateFilter ? `?state=${stateFilter}` : ''}`}

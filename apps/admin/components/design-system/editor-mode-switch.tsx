@@ -20,7 +20,7 @@ export function EditorModeSwitch({
     <div
       role="group"
       aria-label="Modo de edición"
-      className={`inline-flex items-center rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs ${className}`}
+      className={`inline-flex items-center rounded-lg bg-[#f3f4f6] p-0.5 border border-[#e5e7eb] text-xs ${className}`}
     >
       <button
         type="button"
@@ -29,11 +29,11 @@ export function EditorModeSwitch({
         onClick={() => onChange('complete')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
           mode === 'complete'
-            ? 'bg-white text-slate-900 shadow-xs font-semibold'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+            ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.04)] font-medium'
+            : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]/50'
         }`}
       >
-        <LayoutGrid className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+        <LayoutGrid className="w-3.5 h-3.5 text-[#6b7280]" aria-hidden="true" />
         <span>Completo</span>
       </button>
 
@@ -44,11 +44,11 @@ export function EditorModeSwitch({
         onClick={() => onChange('guided')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
           mode === 'guided'
-            ? 'bg-white text-slate-900 shadow-xs font-semibold'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+            ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.04)] font-medium'
+            : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]/50'
         }`}
       >
-        <Compass className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+        <Compass className="w-3.5 h-3.5 text-[#6b7280]" aria-hidden="true" />
         <span>Configuración Guiada</span>
       </button>
     </div>

@@ -58,7 +58,7 @@ export default async function ResourcesPage({
             allowed && (
               <Link
                 href={`${path}&edit=new`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Crear {kind === 'categories' ? 'categoría' : 'vehículo'}</span>
@@ -70,31 +70,31 @@ export default async function ResourcesPage({
         {params.saved === '1' && (
           <div
             role="status"
-            className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium flex items-center gap-2"
+            className="p-3 rounded-xl bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] text-xs font-medium flex items-center gap-2"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#16a34a] shrink-0" />
             <span>Recurso guardado con éxito.</span>
           </div>
         )}
 
         {/* Tab switcher */}
-        <div className="flex gap-2 border-b border-slate-200/80 pb-3">
+        <div className="flex gap-2 border-b border-[#e5e7eb] pb-3">
           <Link
             href="/workspace/resources?kind=categories"
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               kind === 'categories'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-[#111111] text-white'
+                : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
             }`}
           >
             Categorías comerciales
           </Link>
           <Link
             href="/workspace/resources?kind=vehicles"
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               kind === 'vehicles'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-[#111111] text-white'
+                : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
             }`}
           >
             Vehículos comerciales
@@ -102,7 +102,7 @@ export default async function ResourcesPage({
         </div>
 
         {allowed && (selected || params.edit === 'new') && (
-          <div className="max-w-2xl bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
+          <div className="max-w-2xl bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-none">
             <ResourceForm
               key={`${selected?.id ?? 'new'}-${selected?.updatedAt ?? ''}`}
               kind={kind}
@@ -112,11 +112,11 @@ export default async function ResourcesPage({
         )}
 
         {/* Table List */}
-        <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4 font-semibold">Nombre</th>
                   <th className="py-3 px-4 font-semibold">Identificador</th>
                   {kind === 'vehicles' && (
@@ -128,17 +128,17 @@ export default async function ResourcesPage({
                   {allowed && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#e5e7eb]">
                 {result.data.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                  <tr key={row.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                    <td className="py-3.5 px-4 font-medium text-[#111111] text-sm">
                       {row.name}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                    <td className="py-3.5 px-4 text-[#6b7280] font-mono text-[11px]">
                       {'slug' in row ? `/${row.slug}` : row.code}
                     </td>
                     {kind === 'vehicles' && (
-                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                      <td className="py-3.5 px-4 text-[#111111] font-medium">
                         {'maxPax' in row ? `${row.maxPax} pax` : '-'}
                       </td>
                     )}
@@ -153,7 +153,7 @@ export default async function ResourcesPage({
                       <td className="py-3.5 px-4 text-right">
                         <Link
                           href={`${path}&after=${encodeURIComponent(after)}&edit=${row.id}`}
-                          className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                          className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-[#f3f4f6] hover:bg-[#e5e7eb] rounded-lg transition-colors"
                         >
                           Editar
                         </Link>

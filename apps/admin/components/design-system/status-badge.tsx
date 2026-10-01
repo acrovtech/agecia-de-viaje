@@ -57,11 +57,11 @@ const statusMap: Record<
 };
 
 const variantClasses: Record<StatusVariant, string> = {
-  success: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-  warning: 'bg-amber-50 text-amber-700 border-amber-200/80',
-  danger: 'bg-rose-50 text-rose-700 border-rose-200/80',
-  info: 'bg-sky-50 text-sky-700 border-sky-200/80',
-  neutral: 'bg-slate-100 text-slate-600 border-slate-200',
+  success: 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]',
+  warning: 'bg-[#fffbeb] text-[#92400e] border-[#fde68a]',
+  danger: 'bg-[#fef2f2] text-[#991b1b] border-[#fecaca]',
+  info: 'bg-[#f8fafc] text-[#334155] border-[#e2e8f0]',
+  neutral: 'bg-[#f3f4f6] text-[#374151] border-[#e5e7eb]',
 };
 
 export function StatusBadge({ status, label, variant, size = 'sm' }: StatusBadgeProps) {
@@ -78,7 +78,7 @@ export function StatusBadge({ status, label, variant, size = 'sm' }: StatusBadge
   const sizeClasses =
     size === 'sm'
       ? 'px-2 py-0.5 text-xs font-medium gap-1'
-      : 'px-2.5 py-1 text-xs font-semibold gap-1.5';
+      : 'px-2.5 py-1 text-xs font-medium gap-1.5';
 
   return (
     <span

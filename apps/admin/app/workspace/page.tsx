@@ -170,14 +170,14 @@ export default async function WorkspacePage({
     return (
       <div className="space-y-6">
         <PageHeader
-          title={`Espacio de ${identity.agencyName}`}
-          description="Panel de control operativo y estado comercial de tu agencia."
+          title="Inicio"
+          description={`Resumen operativo de ${identity.agencyName}`}
           badges={<StatusBadge status="ACTIVE" label="Agencia Activa" />}
           actions={
             <div className="flex items-center gap-2">
               <Link
                 href="/workspace/reservations?new=1"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nueva reserva</span>
@@ -186,164 +186,94 @@ export default async function WorkspacePage({
           }
         />
 
-        {/* Live Email Transport Notification Banner */}
-        <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/70 flex items-start gap-3">
-          <div className="p-1 rounded-lg bg-sky-100 text-sky-700 shrink-0 mt-0.5">
-            <Bell className="w-4 h-4" />
-          </div>
-          <div className="flex-1 text-xs">
-            <span className="font-semibold text-sky-900 block">
-              LIVE EMAIL TRANSPORT: NOT CONFIGURED
+        {/* Live Email Transport Quiet System Notice */}
+        <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-xs text-[#374151]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-[#898989] shrink-0" aria-hidden="true" />
+            <span className="font-medium truncate">
+              Correo transaccional pendiente de configurar
             </span>
-            <p className="text-sky-700 mt-0.5 leading-relaxed">
-              El outbox transaccional duradero está activo y cifrado. Los correos de invitaciones y reservas quedan encolados de forma segura en la base de datos hasta la conexión del proveedor de mensajería en vivo.
-            </p>
+            <span className="hidden sm:inline text-[#6b7280]">
+              — Outbox duradero y cifrado activo (LIVE EMAIL TRANSPORT: NOT CONFIGURED)
+            </span>
           </div>
           <Link
             href="/workspace/notifications"
-            className="text-xs font-semibold text-sky-800 hover:text-sky-950 underline underline-offset-2 shrink-0 self-center"
+            className="text-xs font-medium text-[#111111] hover:underline underline-offset-2 shrink-0 ml-3"
           >
             Ver outbox
           </Link>
         </div>
 
-        {/* Action Metrics Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-medium">Servicios Hoy ({today})</span>
-              <CalendarCheck2 className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{reservationsToday}</div>
-            <p className="text-[11px] text-slate-500">
-              {dispatchTotal} servicios programados en despacho
+        {/* Flat Operational Metrics Row (Whitespace + Typography + Hairline Divider) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-3 border-b border-[#e5e7eb]">
+          <div className="space-y-1">
+            <span className="text-xs text-[#6b7280] font-medium block">Servicios hoy</span>
+            <div className="text-2xl font-semibold text-[#111111] tracking-tight">{reservationsToday}</div>
+            <p className="text-[11px] text-[#6b7280]">
+              {dispatchTotal === 0 ? 'Sin servicios programados' : `${dispatchTotal} programados en despacho`}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-medium">Operaciones por Atender</span>
-              <Compass className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{dispatchIncomplete}</div>
-            <p className="text-[11px] text-slate-500">
-              {dispatchIncomplete > 0 ? 'Falta asignar guía/conductor/vehículo' : 'Despacho completo'}
+          <div className="space-y-1">
+            <span className="text-xs text-[#6b7280] font-medium block">Operaciones pendientes</span>
+            <div className="text-2xl font-semibold text-[#111111] tracking-tight">{dispatchIncomplete}</div>
+            <p className="text-[11px] text-[#6b7280]">
+              {dispatchIncomplete > 0 ? 'Falta asignar recursos' : 'Despacho completo'}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-medium">Reservas Pendientes</span>
-              <Clock className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{pendingReservations}</div>
-            <p className="text-[11px] text-slate-500">Pendientes de coordinar o confirmar</p>
+          <div className="space-y-1">
+            <span className="text-xs text-[#6b7280] font-medium block">Reservas pendientes</span>
+            <div className="text-2xl font-semibold text-[#111111] tracking-tight">{pendingReservations}</div>
+            <p className="text-[11px] text-[#6b7280]">Pendientes de coordinar</p>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-medium">Valor Comercial Reservado</span>
-              <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                FROZEN
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-[#6b7280] font-medium block">Valor reservado</span>
+              <span className="text-[10px] uppercase font-medium px-1.5 py-0.2 rounded bg-[#f3f4f6] text-[#6b7280] border border-[#e5e7eb]">
+                Frozen
               </span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{formattedBookedValue}</div>
-            <p className="text-[11px] text-slate-400">
-              Importe acordado en reservas (pagos diferidos)
+            <div className="text-2xl font-semibold text-[#111111] tracking-tight">{formattedBookedValue}</div>
+            <p className="text-[11px] text-[#898989]">
+              Importe pactado (pagos diferidos)
             </p>
           </div>
         </div>
 
-        {/* Quick Operations Navigation */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 pt-2">
-          <Link
-            href="/workspace/reservations"
-            className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-between group"
-          >
+        {/* Recent Reservations Snapshot (One Grouped List Container) */}
+        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+          <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-900 block">
-                Gestión de Reservas
-              </span>
-              <span className="text-[11px] text-slate-500">
-                {reservations.length} reservas registradas
-              </span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          <Link
-            href="/workspace/operations"
-            className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-between group"
-          >
-            <div>
-              <span className="text-xs font-semibold text-slate-900 block">
-                Despacho y Recursos
-              </span>
-              <span className="text-[11px] text-slate-500">Guías, conductores y flota</span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          <Link
-            href="/workspace?view=tours"
-            className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-between group"
-          >
-            <div>
-              <span className="text-xs font-semibold text-slate-900 block">
-                Catálogo de Tours
-              </span>
-              <span className="text-[11px] text-slate-500">{tours.length} tours configurados</span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          <Link
-            href="/workspace?view=transfers"
-            className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-between group"
-          >
-            <div>
-              <span className="text-xs font-semibold text-slate-900 block">
-                Catálogo de Traslados
-              </span>
-              <span className="text-[11px] text-slate-500">
-                {transfers.length} traslados configurados
-              </span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-
-        {/* Recent Reservations Snapshot */}
-        <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Reservas Recientes</h3>
-              <p className="text-xs text-slate-500">Últimos servicios registrados en tu agencia</p>
+              <h3 className="text-sm font-semibold text-[#111111]">Reservas Recientes</h3>
+              <p className="text-xs text-[#6b7280]">Últimos servicios registrados en tu agencia</p>
             </div>
             <Link
               href="/workspace/reservations"
-              className="text-xs font-semibold text-slate-700 hover:text-slate-900 underline underline-offset-2"
+              className="text-xs font-medium text-[#111111] hover:underline underline-offset-2"
             >
-              Ver todas las reservas
+              Ver todas
             </Link>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 px-4 font-semibold">Código</th>
-                  <th className="py-2.5 px-4 font-semibold">Servicio</th>
-                  <th className="py-2.5 px-4 font-semibold">Cliente</th>
-                  <th className="py-2.5 px-4 font-semibold">Fecha</th>
-                  <th className="py-2.5 px-4 font-semibold">Estado</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Total</th>
+                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 px-4 font-medium">Código</th>
+                  <th className="py-2.5 px-4 font-medium">Servicio</th>
+                  <th className="py-2.5 px-4 font-medium">Cliente</th>
+                  <th className="py-2.5 px-4 font-medium">Fecha</th>
+                  <th className="py-2.5 px-4 font-medium">Estado</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#e5e7eb]">
                 {reservations.slice(0, 5).map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-900">
+                  <tr key={row.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-[#111111]">
                       <Link
                         href={`/workspace/reservations?id=${row.id}`}
                         className="hover:underline font-mono"
@@ -351,25 +281,25 @@ export default async function WorkspacePage({
                         {row.code ?? row.id.slice(0, 8)}
                       </Link>
                     </td>
-                    <td className="py-3 px-4 text-slate-800 font-medium">
+                    <td className="py-3 px-4 text-[#111111] font-medium">
                       {row.serviceTitle ?? 'Servicio'}
                     </td>
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-4 text-[#374151]">
                       {row.customerFirstName} {row.customerLastName}
                     </td>
-                    <td className="py-3 px-4 text-slate-500">{row.date.slice(0, 10)}</td>
+                    <td className="py-3 px-4 text-[#6b7280]">{row.date.slice(0, 10)}</td>
                     <td className="py-3 px-4">
                       <StatusBadge status={row.operationStatus || 'PENDING'} />
                     </td>
-                    <td className="py-3 px-4 text-right font-semibold text-slate-900">
+                    <td className="py-3 px-4 text-right font-semibold text-[#111111]">
                       ${((row.totalMinor ?? Math.round(row.totalPrice * 100)) / 100).toFixed(2)} USD
                     </td>
                   </tr>
                 ))}
                 {reservations.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-slate-400">
-                      Aún no hay reservas registradas en tu agencia.
+                    <td colSpan={6} className="py-8 text-center text-[#898989]">
+                      No hay reservas todavía
                     </td>
                   </tr>
                 )}
@@ -525,7 +455,7 @@ export default async function WorkspacePage({
               canEdit && (
                 <Link
                   href={`/workspace?view=${view}&edit=new`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Crear {view === 'tours' ? 'tour' : 'traslado'}</span>
@@ -537,47 +467,47 @@ export default async function WorkspacePage({
           {params.saved === '1' && (
             <div
               role="status"
-              className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium flex items-center gap-2"
+              className="p-3 rounded-lg bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] text-xs font-medium flex items-center gap-2"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#166534] shrink-0" />
               <span>Servicio guardado con éxito.</span>
             </div>
           )}
 
           {errorMessage && (
-            <p role="alert" className="text-red-700 bg-red-50 p-4 rounded-xl border border-red-200">
+            <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-3 rounded-lg border border-rose-200">
               {errorMessage}
             </p>
           )}
 
-          {/* Catalog Table */}
+          {/* Catalog Table (Grouped List Container) */}
           {catalog && (
-            <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+            <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
-                      <th className="py-3 px-4 font-semibold">Servicio</th>
-                      <th className="py-3 px-4 font-semibold">Modalidad</th>
-                      <th className="py-3 px-4 font-semibold">Tarifa Compartida</th>
-                      <th className="py-3 px-4 font-semibold">Estado</th>
+                    <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                      <th className="py-2.5 px-4 font-medium">Servicio</th>
+                      <th className="py-2.5 px-4 font-medium">Modalidad</th>
+                      <th className="py-2.5 px-4 font-medium">Tarifa Compartida</th>
+                      <th className="py-2.5 px-4 font-medium">Estado</th>
                       {view === 'transfers' && (
-                        <th className="py-3 px-4 font-semibold">Operatividad</th>
+                        <th className="py-2.5 px-4 font-medium">Operatividad</th>
                       )}
-                      <th className="py-3 px-4 font-semibold text-right">Acciones</th>
+                      <th className="py-2.5 px-4 font-medium text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#e5e7eb]">
                     {catalog.data.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 text-sm">{item.title}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">/{item.slug}</div>
+                      <tr key={item.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-[#111111] text-sm">{item.title}</div>
+                          <div className="text-[11px] text-[#6b7280] font-mono">/{item.slug}</div>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600">
+                        <td className="py-3 px-4 text-[#374151]">
                           {item.hasSharedService ? 'Compartido' : 'Solo privado'}
                         </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-800">
+                        <td className="py-3 px-4 font-medium text-[#111111]">
                           {item.hasSharedService && item.sharedPrice !== null
                             ? new Intl.NumberFormat('es-PE', {
                                 style: 'currency',
@@ -585,19 +515,19 @@ export default async function WorkspacePage({
                               }).format(item.sharedPrice)
                             : 'Por cotizar'}
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3 px-4">
                           <StatusBadge status={item.isPublished ? 'PUBLISHED' : 'DRAFT'} />
                         </td>
                         {view === 'transfers' && (
-                          <td className="py-3.5 px-4">
+                          <td className="py-3 px-4">
                             <StatusBadge status={item.isActive ? 'ACTIVE' : 'INACTIVE'} />
                           </td>
                         )}
-                        <td className="py-3.5 px-4 text-right space-x-2">
+                        <td className="py-3 px-4 text-right space-x-2">
                           {canEdit && (
                             <Link
                               href={`/workspace?view=${view}&edit=${encodeURIComponent(item.id)}`}
-                              className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-md transition-colors"
                             >
                               Editar
                             </Link>
@@ -605,9 +535,9 @@ export default async function WorkspacePage({
                           {canEdit && (
                             <Link
                               href={`/workspace/content?kind=${view}&id=${item.id}`}
-                              className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 underline underline-offset-2 transition-colors"
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#6b7280] hover:text-[#111111] hover:underline underline-offset-2 transition-colors"
                             >
-                              Contenido y tarifas
+                              Contenido
                             </Link>
                           )}
                         </td>
@@ -615,7 +545,7 @@ export default async function WorkspacePage({
                     ))}
                     {catalog.data.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                        <td colSpan={6} className="py-8 text-center text-[#898989]">
                           No hay servicios registrados en esta página.
                         </td>
                       </tr>
@@ -624,18 +554,18 @@ export default async function WorkspacePage({
                 </table>
               </div>
 
-              <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+              <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
                 <div>{catalog.data.length} servicios en esta página</div>
-                <div className="flex gap-3 font-semibold">
+                <div className="flex gap-3 font-medium">
                   {cursor && (
-                    <Link href={`/workspace?view=${view}`} className="hover:underline">
+                    <Link href={`/workspace?view=${view}`} className="hover:underline text-[#111111]">
                       Primera página
                     </Link>
                   )}
                   {nextCursor && (
                     <Link
                       href={`/workspace?view=${view}&after=${encodeURIComponent(nextCursor)}`}
-                      className="hover:underline"
+                      className="hover:underline text-[#111111]"
                     >
                       Siguiente página
                     </Link>

@@ -170,77 +170,77 @@ export default async function ReservationsPage({
           {/* Overview Grid: Customer, Passengers, Service, Commercial */}
           <div className="grid gap-5 md:grid-cols-2">
             {/* Card 1: Cliente y Contacto */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-5 space-y-3 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" />
                 <span>Cliente Titular</span>
               </h3>
               <div className="space-y-1 text-sm">
-                <div className="font-bold text-slate-900 text-base">
+                <div className="font-semibold text-[#111111] text-base">
                   {row.customerFirstName} {row.customerLastName}
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 text-xs">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-2 text-[#374151] text-xs">
+                  <Mail className="w-3.5 h-3.5 text-[#898989]" />
                   <span>{row.customerEmail}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 text-xs">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-2 text-[#374151] text-xs">
+                  <Phone className="w-3.5 h-3.5 text-[#898989]" />
                   <span>{row.customerPhone}</span>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Instantánea Comercial (FROZEN / DEFERRED) */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-5 space-y-3 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5" />
                 <span>Instantánea Comercial</span>
               </h3>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-slate-900">
+                <div className="text-2xl font-semibold tracking-tight text-[#111111]">
                   {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}
                 </div>
                 {row.unitPriceMinor !== null && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[#6b7280]">
                     Tarifa guardada: {priceLabel(row.unitPriceMinor, row.currency)}{' '}
                     {row.pricingUnit === 'GROUP' ? 'por vehículo' : 'por persona'}
                   </p>
                 )}
-                <div className="pt-2 text-[11px] text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                <div className="pt-2 text-[11px] text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb]">
                   Estado de pagos: <strong>FROZEN / PROVIDER DEFERRED</strong>. No se procesan cobros en pasarela en esta versión.
                 </div>
               </div>
             </div>
 
             {/* Card 3: Servicio y Recojo */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-5 space-y-3 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>Logística y Recojo</span>
               </h3>
-              <div className="space-y-2 text-xs text-slate-700">
+              <div className="space-y-2 text-xs text-[#374151]">
                 <div>
-                  <span className="text-slate-400 block font-medium">Hotel o punto de encuentro:</span>
-                  <span className="font-semibold text-slate-900 text-sm">
+                  <span className="text-[#898989] block font-medium">Hotel o punto de encuentro:</span>
+                  <span className="font-medium text-[#111111] text-sm">
                     {row.pickupHotel || 'No especificado'}
                   </span>
                 </div>
                 {row.pickupTime && (
                   <div>
-                    <span className="text-slate-400 block font-medium">Hora de recojo:</span>
-                    <span className="font-semibold text-slate-900">{row.pickupTime}</span>
+                    <span className="text-[#898989] block font-medium">Hora de recojo:</span>
+                    <span className="font-medium text-[#111111]">{row.pickupTime}</span>
                   </div>
                 )}
                 {row.vehicleName && (
                   <div>
-                    <span className="text-slate-400 block font-medium">Categoría de vehículo:</span>
-                    <span className="font-semibold text-slate-900">{row.vehicleName}</span>
+                    <span className="text-[#898989] block font-medium">Categoría de vehículo:</span>
+                    <span className="font-medium text-[#111111]">{row.vehicleName}</span>
                   </div>
                 )}
                 {row.specialRequirements && (
                   <div>
-                    <span className="text-slate-400 block font-medium">Observaciones:</span>
-                    <p className="whitespace-pre-wrap text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200 mt-1">
+                    <span className="text-[#898989] block font-medium">Observaciones:</span>
+                    <p className="whitespace-pre-wrap text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb] mt-1">
                       {row.specialRequirements}
                     </p>
                   </div>
@@ -249,8 +249,8 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 4: Manifiesto de Pasajeros */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-5 space-y-3 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 <span>Manifiesto de Pasajeros ({row.passengers.length})</span>
               </h3>
@@ -258,18 +258,18 @@ export default async function ReservationsPage({
                 {row.passengers.map((p, i) => (
                   <div
                     key={i}
-                    className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs"
+                    className="p-2.5 rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] flex items-center justify-between text-xs"
                   >
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-medium text-[#111111]">
                       {i + 1}. {p.firstName} {p.lastName}
                     </span>
-                    <span className="text-slate-500 font-mono text-[11px]">
+                    <span className="text-[#6b7280] font-mono text-[11px]">
                       {p.docNumber ? `${p.docType}: ${p.docNumber}` : 'Sin documento'}
                     </span>
                   </div>
                 ))}
                 {!row.passengers.length && (
-                  <p className="text-xs text-slate-400">Sin pasajeros registrados.</p>
+                  <p className="text-xs text-[#898989]">Sin pasajeros registrados.</p>
                 )}
               </div>
             </div>
@@ -288,30 +288,30 @@ export default async function ReservationsPage({
           <StatusForm key={row.updatedAt} reservation={row} />
 
           {/* Historial Operativo */}
-          <div className="bg-white border border-slate-200/90 rounded-xl p-5 space-y-4 shadow-xs">
-            <h3 className="text-sm font-bold text-slate-900">Historial Operativo</h3>
+          <div className="bg-white border border-[#e5e7eb] rounded-xl p-5 space-y-4 shadow-none">
+            <h3 className="text-sm font-semibold text-[#111111]">Historial Operativo</h3>
             {!row.events.length && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#898989]">
                 Esta reserva no tiene eventos registrados aún.
               </p>
             )}
             <div className="space-y-3">
               {row.events.map((event) => (
-                <div key={event.id} className="border-l-2 border-slate-200 pl-3 py-1 space-y-1">
+                <div key={event.id} className="border-l-2 border-[#e5e7eb] pl-3 py-1 space-y-1">
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-medium text-[#111111]">
                       {event.fromStatus ? `${operationLabels[event.fromStatus]} → ` : ''}
                       {operationLabels[event.toStatus]}
                     </span>
-                    <span className="text-slate-400 text-[11px]">
+                    <span className="text-[#898989] text-[11px]">
                       {new Date(event.createdAt).toLocaleString('es-PE', {
                         timeZone: 'America/Lima',
                       })}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium">{event.actorLabel}</p>
+                  <p className="text-[11px] text-[#6b7280]">{event.actorLabel}</p>
                   {event.note && (
-                    <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">
+                    <p className="text-xs text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb] whitespace-pre-wrap">
                       {event.note}
                     </p>
                   )}
@@ -366,7 +366,7 @@ export default async function ReservationsPage({
           <div className="max-w-4xl mx-auto space-y-6">
             <Link
               href={`/workspace/reservations?new=1&kind=${kind}`}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6b7280] hover:text-[#111111]"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Elegir otro servicio</span>
@@ -422,19 +422,19 @@ export default async function ReservationsPage({
             ]}
           />
 
-          <div className="flex gap-2 border-b border-slate-200 pb-3">
+          <div className="flex gap-2 border-b border-[#e5e7eb] pb-3">
             <Link
               href="/workspace/reservations?new=1&kind=tours"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                kind === 'tours' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                kind === 'tours' ? 'bg-[#111111] text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
               }`}
             >
               Tours
             </Link>
             <Link
               href="/workspace/reservations?new=1&kind=transfers"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                kind === 'transfers' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                kind === 'transfers' ? 'bg-[#111111] text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
               }`}
             >
               Traslados
@@ -446,15 +446,15 @@ export default async function ReservationsPage({
               <Link
                 key={r.id}
                 href={`/workspace/reservations?new=1&kind=${kind}&serviceId=${r.id}`}
-                className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-between group shadow-xs"
+                className="p-4 rounded-xl border border-[#e5e7eb] bg-white hover:border-[#111111] hover:bg-[#f8f9fa] transition-all flex items-center justify-between group shadow-none"
               >
                 <div>
-                  <span className="font-bold text-sm text-slate-900 block group-hover:text-blue-700 transition-colors">
+                  <span className="font-medium text-sm text-[#111111] block group-hover:text-black transition-colors">
                     {r.title}
                   </span>
-                  {r.slug && <span className="text-xs text-slate-500 font-mono">/{r.slug}</span>}
+                  {r.slug && <span className="text-xs text-[#6b7280] font-mono">/{r.slug}</span>}
                 </div>
-                <Plus className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                <Plus className="w-4 h-4 text-[#898989] group-hover:text-[#111111] transition-colors" />
               </Link>
             ))}
           </div>
@@ -509,8 +509,8 @@ export default async function ReservationsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestión de Reservas"
-        description="Listado operativo de reservas de clientes de tu agencia."
+        title="Reservas"
+        description="Gestiona las reservas de tu agencia."
         breadcrumbs={[
           { label: 'Inicio', href: '/workspace' },
           { label: 'Reservas', isCurrent: true },
@@ -518,10 +518,10 @@ export default async function ReservationsPage({
         actions={
           <Link
             href="/workspace/reservations?new=1"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Crear reserva manual</span>
+            <span>Nueva reserva</span>
           </Link>
         }
       />
@@ -529,21 +529,21 @@ export default async function ReservationsPage({
       {params.saved === '1' && (
         <div
           role="status"
-          className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium flex items-center gap-2"
+          className="p-3 rounded-lg bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] text-xs font-medium flex items-center gap-2"
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-[#166534] shrink-0" />
           <span>Reserva guardada con éxito.</span>
         </div>
       )}
 
       {/* Filter Tabs by Operation Status */}
-      <div className="flex flex-wrap gap-2 text-xs border-b border-slate-200/80 pb-3">
+      <div className="flex flex-wrap gap-2 text-xs border-b border-[#e5e7eb] pb-3">
         <Link
           href="/workspace/reservations"
           className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
             !params.status
-              ? 'bg-slate-900 text-white font-semibold shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              ? 'bg-[#111111] text-white'
+              : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
           }`}
         >
           Todas
@@ -556,8 +556,8 @@ export default async function ReservationsPage({
               href={`/workspace/reservations?status=${statusKey}`}
               className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                 isActive
-                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+                  ? 'bg-[#111111] text-white'
+                  : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
               }`}
             >
               {label}
@@ -566,45 +566,45 @@ export default async function ReservationsPage({
         })}
       </div>
 
-      {/* Modern Data Table */}
-      <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+      {/* Grouped List / Modern Data Table */}
+      <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4 font-semibold">Código / Servicio</th>
-                <th className="py-3 px-4 font-semibold">Cliente</th>
-                <th className="py-3 px-4 font-semibold">Fecha del Servicio</th>
-                <th className="py-3 px-4 font-semibold">Estado Operativo</th>
-                <th className="py-3 px-4 font-semibold text-right">Total Acordado</th>
+              <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                <th className="py-2.5 px-4 font-medium">Código / Servicio</th>
+                <th className="py-2.5 px-4 font-medium">Cliente</th>
+                <th className="py-2.5 px-4 font-medium">Fecha del Servicio</th>
+                <th className="py-2.5 px-4 font-medium">Estado Operativo</th>
+                <th className="py-2.5 px-4 font-medium text-right">Total Acordado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#e5e7eb]">
               {list.data.map((row) => {
                 const publicCode = row.code ?? row.id.slice(0, 8);
                 return (
-                  <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-4 pr-3">
+                  <tr key={row.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                    <td className="py-3 px-4 pr-3">
                       <Link
                         href={`/workspace/reservations?id=${row.id}`}
-                        className="font-bold text-slate-900 text-sm hover:underline font-mono"
+                        className="font-semibold text-[#111111] text-sm hover:underline font-mono"
                       >
                         {publicCode}
                       </Link>
-                      <p className="text-slate-500 text-xs mt-0.5">
+                      <p className="text-[#6b7280] text-xs mt-0.5">
                         {row.serviceTitle ?? 'Reserva anterior'}
                       </p>
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-slate-800">
+                    <td className="py-3 px-4 font-medium text-[#111111]">
                       {row.customerFirstName} {row.customerLastName}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">
+                    <td className="py-3 px-4 text-[#6b7280] font-mono text-[11px]">
                       {row.date.slice(0, 10)}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       <StatusBadge status={row.operationStatus || 'PENDING'} />
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                    <td className="py-3 px-4 text-right font-semibold text-[#111111]">
                       {priceLabel(
                         row.totalMinor ?? Math.round(row.totalPrice * 100),
                         row.currency,
@@ -615,8 +615,8 @@ export default async function ReservationsPage({
               })}
               {list.data.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
-                    No hay reservas registradas para este filtro.
+                  <td colSpan={5} className="py-8 text-center text-[#898989]">
+                    No hay reservas todavía
                   </td>
                 </tr>
               )}
@@ -624,21 +624,21 @@ export default async function ReservationsPage({
           </table>
         </div>
 
-        <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+        <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
           <div>{list.data.length} reservas listadas</div>
-          <div className="flex gap-4 font-semibold">
+          <div className="flex gap-4 font-medium">
             {params.after && (
               <Link
                 href={`/workspace/reservations${
                   params.status ? `?status=${encodeURIComponent(String(params.status))}` : ''
                 }`}
-                className="hover:underline"
+                className="hover:underline text-[#111111]"
               >
                 Primera página
               </Link>
             )}
             {list.nextCursor && (
-              <Link href={`/workspace/reservations?${nextParams}`} className="hover:underline">
+              <Link href={`/workspace/reservations?${nextParams}`} className="hover:underline text-[#111111]">
                 Siguiente página
               </Link>
             )}

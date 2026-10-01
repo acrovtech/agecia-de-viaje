@@ -24,7 +24,7 @@ export function StickySaveBar({
 }: StickySaveBarProps) {
   return (
     <div
-      className={`sticky bottom-0 left-0 right-0 -mx-4 -mb-5 sm:-mx-6 sm:-mb-6 md:-mx-8 md:-mb-8 px-4 sm:px-6 md:px-8 py-3.5 bg-white/95 backdrop-blur-xs border-t border-slate-200/90 flex flex-wrap items-center justify-between gap-3 shadow-md z-30 transition-all ${className}`}
+      className={`sticky bottom-0 left-0 right-0 -mx-4 -mb-5 sm:-mx-6 sm:-mb-6 md:-mx-8 md:-mb-8 px-4 sm:px-6 md:px-8 py-3 bg-white/95 backdrop-blur-xs border-t border-[#e5e7eb] flex flex-wrap items-center justify-between gap-3 shadow-[0_-1px_3px_rgba(0,0,0,0.03)] z-30 transition-all ${className}`}
     >
       <div className="flex items-center gap-2 min-w-0">
         {error ? (
@@ -32,12 +32,12 @@ export function StickySaveBar({
             {error}
           </p>
         ) : isSaved ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
+          <span className="inline-flex items-center gap-1.5 text-xs text-[#166534] font-medium">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Cambios guardados con éxito</span>
           </span>
         ) : (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[#6b7280]">
             {isPending ? 'Guardando información…' : 'Cambios sin guardar'}
           </span>
         )}
@@ -49,7 +49,7 @@ export function StickySaveBar({
             type="button"
             disabled={isPending}
             onClick={onCancel}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
+            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -58,7 +58,7 @@ export function StickySaveBar({
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-9 px-4 bg-[#111111] hover:bg-[#242424] active:bg-[#242424] text-white text-xs sm:text-sm font-semibold rounded-lg shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           <span>{isPending ? 'Guardando…' : saveLabel}</span>

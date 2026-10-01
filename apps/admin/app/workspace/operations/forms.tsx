@@ -4,8 +4,13 @@ import { useActionState } from 'react';
 import { saveServiceResourceAction, saveFleetVehicleAction } from './actions';
 import type { ServiceResourceItem, FleetVehicleItem } from '../../../lib/reservations';
 
-const inputClass = 'block w-full rounded-lg border p-2 mt-1 bg-white';
-const buttonClass = 'rounded-lg bg-[#062918] px-4 py-2 text-white disabled:opacity-50 text-sm';
+const inputClass =
+  'h-10 block w-full rounded-lg border border-[#e5e7eb] px-3 mt-1 bg-white text-sm text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+const textareaClass =
+  'block w-full rounded-lg border border-[#e5e7eb] p-3 mt-1 bg-white text-sm text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+const buttonClass =
+  'h-9 px-4 rounded-lg bg-[#111111] hover:bg-[#242424] text-white disabled:opacity-50 text-xs sm:text-sm font-semibold cursor-pointer shadow-none transition-colors';
+const labelClass = 'block text-xs font-medium text-[#374151]';
 
 export function ServiceResourceForm({
   resource,
@@ -16,14 +21,14 @@ export function ServiceResourceForm({
   const isEdit = Boolean(resource?.id);
 
   return (
-    <form action={action} className="space-y-4 border rounded-xl p-5 bg-white max-w-xl">
-      <h3 className="font-semibold text-lg">
+    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white max-w-xl shadow-none">
+      <h3 className="font-semibold text-base text-[#111111]">
         {isEdit ? `Editar recurso: ${resource?.displayName}` : 'Registrar nuevo guía o conductor'}
       </h3>
       <input type="hidden" name="id" value={resource?.id ?? 'new'} />
 
       {!isEdit && (
-        <label className="block">
+        <label className={labelClass}>
           Tipo de recurso
           <select name="type" defaultValue="GUIDE" className={inputClass}>
             <option value="GUIDE">Guía de turismo</option>
@@ -32,7 +37,7 @@ export function ServiceResourceForm({
         </label>
       )}
 
-      <label className="block">
+      <label className={labelClass}>
         Nombre completo / Nombre público
         <input
           name="displayName"
@@ -47,7 +52,7 @@ export function ServiceResourceForm({
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
+        <label className={labelClass}>
           Teléfono (WhatsApp / Coordinación)
           <input
             name="phone"
@@ -59,7 +64,7 @@ export function ServiceResourceForm({
           />
         </label>
 
-        <label className="block">
+        <label className={labelClass}>
           Correo electrónico (opcional)
           <input
             name="email"
@@ -72,7 +77,7 @@ export function ServiceResourceForm({
         </label>
       </div>
 
-      <label className="block">
+      <label className={labelClass}>
         Documento de identidad / RUC / Licencia (opcional)
         <input
           name="documentNumber"
@@ -84,17 +89,22 @@ export function ServiceResourceForm({
         />
       </label>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-xs text-[#374151] cursor-pointer">
         <input
           name="isActive"
           type="checkbox"
           value="true"
+          className="w-4 h-4 rounded text-[#111111] border-[#e5e7eb]"
           defaultChecked={resource ? resource.isActive : true}
         />
         Recurso activo para nuevas asignaciones
       </label>
 
-      {state?.error && <p role="alert" className="text-red-700 text-sm">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
+          {state.error}
+        </p>
+      )}
 
       <div className="flex gap-3">
         <button className={buttonClass} disabled={pending}>
@@ -116,13 +126,13 @@ export function FleetVehicleForm({
   const isEdit = Boolean(vehicle?.id);
 
   return (
-    <form action={action} className="space-y-4 border rounded-xl p-5 bg-white max-w-xl">
-      <h3 className="font-semibold text-lg">
+    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white max-w-xl shadow-none">
+      <h3 className="font-semibold text-base text-[#111111]">
         {isEdit ? `Editar vehículo: ${vehicle?.internalLabel}` : 'Registrar nueva unidad física en flota'}
       </h3>
       <input type="hidden" name="id" value={vehicle?.id ?? 'new'} />
 
-      <label className="block">
+      <label className={labelClass}>
         Categoría de vehículo (Tarifario / Catálogo)
         <select
           name="vehicleTypeId"
@@ -139,7 +149,7 @@ export function FleetVehicleForm({
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
+        <label className={labelClass}>
           Etiqueta interna / Nombre de unidad
           <input
             name="internalLabel"
@@ -153,7 +163,7 @@ export function FleetVehicleForm({
           />
         </label>
 
-        <label className="block">
+        <label className={labelClass}>
           Placa de rodaje / Matrícula
           <input
             name="plate"
@@ -168,7 +178,7 @@ export function FleetVehicleForm({
         </label>
       </div>
 
-      <label className="block">
+      <label className={labelClass}>
         Capacidad específica de pasajeros (dejar vacío para usar la de la categoría)
         <input
           name="capacity"
@@ -181,28 +191,34 @@ export function FleetVehicleForm({
         />
       </label>
 
-      <label className="block">
+      <label className={labelClass}>
         Notas operativas (año, SOAT, mantenimiento, etc.)
         <textarea
           name="notes"
           maxLength={2000}
+          rows={3}
           defaultValue={vehicle?.notes ?? ''}
           placeholder="Detalles mecánicos, vigencia de revisiones técnicas..."
-          className={inputClass}
+          className={textareaClass}
         />
       </label>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-xs text-[#374151] cursor-pointer">
         <input
           name="isActive"
           type="checkbox"
           value="true"
+          className="w-4 h-4 rounded text-[#111111] border-[#e5e7eb]"
           defaultChecked={vehicle ? vehicle.isActive : true}
         />
         Unidad activa para asignación de servicios
       </label>
 
-      {state?.error && <p role="alert" className="text-red-700 text-sm">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-2.5 rounded-lg border border-[#fecaca]">
+          {state.error}
+        </p>
+      )}
 
       <div className="flex gap-3">
         <button className={buttonClass} disabled={pending}>

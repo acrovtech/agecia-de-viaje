@@ -76,26 +76,26 @@ export function RadioCardGroup({
                   onChange(option.value);
                 }
               }}
-              className={`relative flex flex-col justify-between p-4 rounded-xl border text-left cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
+              className={`relative flex flex-col justify-between p-4 rounded-lg border text-left cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 ${
                 isSelected
-                  ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
-                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                  ? 'border-[#111111] bg-[#f8f9fa] shadow-none ring-1 ring-[#111111]'
+                  : 'border-[#e5e7eb] bg-white hover:border-[#898989] hover:bg-[#f8f9fa]/50'
               } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-900">
+                    <span className="font-semibold text-sm text-[#111111]">
                       {option.title}
                     </span>
                     {option.badge && (
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                      <span className="text-[10px] uppercase font-medium tracking-wider px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#374151] border border-[#e5e7eb]">
                         {option.badge}
                       </span>
                     )}
                   </div>
                   {option.description && (
-                    <p className="text-xs text-slate-500 leading-normal">
+                    <p className="text-xs text-[#6b7280] leading-normal">
                       {option.description}
                     </p>
                   )}
@@ -104,8 +104,8 @@ export function RadioCardGroup({
                 <div
                   className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                     isSelected
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-300 bg-white'
+                      ? 'border-[#111111] bg-[#111111] text-white'
+                      : 'border-[#e5e7eb] bg-white'
                   }`}
                 >
                   {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}

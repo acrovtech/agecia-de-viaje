@@ -60,22 +60,22 @@ export function ConfirmDialog({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <div
-              className={`p-2 rounded-xl shrink-0 ${
-                isDestructive ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-700'
+              className={`p-2 rounded-lg shrink-0 ${
+                isDestructive ? 'bg-[#fef2f2] text-[#991b1b]' : 'bg-[#f3f4f6] text-[#111111]'
               }`}
             >
               <AlertTriangle className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 id="confirm-dialog-title" className="text-base font-bold text-slate-900">
+              <h3 id="confirm-dialog-title" className="text-base font-semibold text-[#111111]">
                 {title}
               </h3>
-              <p id="confirm-dialog-desc" className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+              <p id="confirm-dialog-desc" className="text-xs sm:text-sm text-[#6b7280] mt-1 leading-relaxed">
                 {description}
               </p>
             </div>
@@ -83,7 +83,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+            className="text-[#898989] hover:text-[#111111] p-1 rounded-md transition-colors"
             aria-label="Cerrar ventana"
           >
             <X className="w-4 h-4" />
@@ -95,7 +95,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -104,10 +104,10 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onConfirm}
-            className={`px-4 py-2 text-xs font-semibold text-white rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${
+            className={`h-9 px-4 text-xs sm:text-sm font-semibold text-white rounded-lg shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
               isDestructive
-                ? 'bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-500'
-                : 'bg-slate-900 hover:bg-slate-800 focus-visible:ring-slate-900'
+                ? 'bg-[#dc2626] hover:bg-[#b91c1c] focus-visible:ring-[#dc2626]'
+                : 'bg-[#111111] hover:bg-[#242424] focus-visible:ring-[#111111]'
             }`}
           >
             {isPending ? 'Procesando…' : confirmLabel}
