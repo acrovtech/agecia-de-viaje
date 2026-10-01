@@ -285,7 +285,7 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
       .set('Authorization', `Bearer ${adminA.token}`)
       .send({ email: 'new-op@agency-a.test', role: 'OPERATOR' });
     assert.equal(adminToOp.status, 201);
-    assert.equal(adminToOp.body.deliveryStatus, 'DELIVERY_NOT_CONFIGURED');
+    assert.equal(adminToOp.body.notificationState, 'PENDING');
 
     // OWNER can invite ADMIN
     const ownerToAdmin = await request(app.getHttpServer())
@@ -293,7 +293,7 @@ test('Membership Management & Invitation Lifecycle (Parts B & C)', async (t) => 
       .set('Authorization', `Bearer ${ownerA.token}`)
       .send({ email: 'sub-admin@agency-a.test', role: 'ADMIN' });
     assert.equal(ownerToAdmin.status, 201);
-    assert.equal(ownerToAdmin.body.deliveryStatus, 'DELIVERY_NOT_CONFIGURED');
+    assert.equal(ownerToAdmin.body.notificationState, 'PENDING');
   });
 
   // 2. OWNER PROTECTION: Cannot demote, deactivate, or delete the final active OWNER

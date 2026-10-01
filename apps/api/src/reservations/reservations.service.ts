@@ -108,6 +108,7 @@ export class ReservationsService {
           notificationPayloadKey: createHash('sha256').update('dev-test-notification-payload-key-32b').digest(),
           emailFromAddress: 'noreply@travelagency.pe',
           emailFromName: 'Travel Agency',
+          adminPublicOrigin: 'http://localhost:3001',
         },
         new DisabledEmailTransportAdapter(),
       );
@@ -216,18 +217,19 @@ export class ReservationsService {
           pickupHotel: data.pickupHotel || null, pickupTime: data.pickupTime || null, specialRequirements: data.specialRequirements || null,
           passengers: { create: data.passengers }, requestKey: data.requestKey, requestHash,
           events: { create: { actorId: who.userId, actorLabel: who.email, toStatus: 'PENDING', note: 'Reserva manual creada.' } },
-        }, select: { id: true } });
+        }, select: { id: true, code: true } });
         await this.audit(tx, who, row.id, 'SAAS_RESERVATION_CREATE');
+        const reservationCode = row.code ?? row.id;
         await this.notifications.queueNotification(tx, {
           agencyId: who.agencyId,
           kind: 'RESERVATION_CREATED',
           audience: 'CUSTOMER',
           recipient: data.customerEmail,
-          subject: `Registro de reserva ${row.id}`,
+          subject: `Registro de reserva ${reservationCode}`,
           idempotencyKey: `reservation:${row.id}:created`,
           payload: {
             reservationId: row.id,
-            reservationCode: row.id,
+            reservationCode,
             customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
             serviceTitle: quote.title,
             date: quote.date,
@@ -263,6 +265,7 @@ export class ReservationsService {
             updatedAt: true,
             date: true,
             source: true,
+            code: true,
             customerEmail: true,
             customerFirstName: true,
             customerLastName: true,
@@ -285,9 +288,10 @@ export class ReservationsService {
 
         if (data.status === 'CONFIRMED' || data.status === 'CANCELLED') {
           const kind = data.status === 'CONFIRMED' ? 'RESERVATION_CONFIRMED' : 'RESERVATION_CANCELLED';
+          const resCode = row.code ?? reservationId;
           const subject = data.status === 'CONFIRMED'
-            ? `Reserva CONFIRMADA ${reservationId}`
-            : `Reserva Cancelada ${reservationId}`;
+            ? `Reserva CONFIRMADA ${resCode}`
+            : `Reserva Cancelada ${resCode}`;
           const idempotencyKey = `reservation:${reservationId}:status:${data.status}:${row.updatedAt.getTime()}`;
 
           await this.notifications.queueNotification(tx, {
@@ -299,7 +303,7 @@ export class ReservationsService {
             idempotencyKey,
             payload: {
               reservationId,
-              reservationCode: reservationId,
+              reservationCode: resCode,
               customerName: `${row.customerFirstName} ${row.customerLastName}`.trim(),
               serviceTitle: row.serviceTitle,
               date: row.date.toISOString().slice(0, 10),

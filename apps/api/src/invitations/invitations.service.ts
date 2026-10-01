@@ -18,10 +18,6 @@ import {
   type CreateInvitationDto,
   type AcceptInvitationDto,
 } from './invitations.dto.js';
-import {
-  INVITATION_DELIVERY_ADAPTER,
-  type InvitationDeliveryAdapter,
-} from './invitation-delivery.adapter.js';
 import type { AgencyMemberRole } from '@repo/db/prisma';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DisabledEmailTransportAdapter } from '../notifications/transport/disabled-transport.adapter.js';
@@ -35,13 +31,19 @@ export class InvitationsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(INVITATION_DELIVERY_ADAPTER)
-    private readonly deliveryAdapter: InvitationDeliveryAdapter,
     @Optional()
-    notificationsService?: NotificationsService,
+    notificationsServiceOrAdapter?: any,
+    @Optional()
+    maybeNotificationsService?: NotificationsService,
   ) {
+    const notifService =
+      maybeNotificationsService ??
+      (notificationsServiceOrAdapter?.queueNotification
+        ? notificationsServiceOrAdapter
+        : undefined);
+
     this.notifications =
-      notificationsService ??
+      notifService ??
       new NotificationsService(
         prisma,
         {
@@ -75,6 +77,7 @@ export class InvitationsService {
           notificationPayloadKey: createHash('sha256').update('dev-test-notification-payload-key-32b').digest(),
           emailFromAddress: 'noreply@travelagency.pe',
           emailFromName: 'Travel Agency',
+          adminPublicOrigin: 'http://localhost:3001',
         },
         new DisabledEmailTransportAdapter(),
       );
@@ -197,7 +200,7 @@ export class InvitationsService {
         },
       });
 
-      // Atomically queue encrypted transactional notification
+      // Atomically queue encrypted transactional notification (SINGLE delivery path)
       const idempotencyKey = `invitation:${inv.id}:${tokenHash.slice(0, 16)}`;
       await this.notifications.queueNotification(tx, {
         agencyId,
@@ -218,14 +221,9 @@ export class InvitationsService {
       return inv;
     });
 
-    // Send invitation delivery (narrow adapter)
-    const deliveryResult = await this.deliveryAdapter.sendInvitation({
-      toEmail: dto.email,
-      agencyName: agency.name,
-      invitationRole: dto.role,
-      rawToken,
-      expiresAt,
-    });
+    // BLOCKER 5: The transactional outbox is the SINGLE authoritative delivery path.
+    // No synchronous deliveryAdapter.sendInvitation() call. The queued notification
+    // will be processed by the outbox worker when email delivery is enabled.
 
     const isNonProdOrTest =
       process.env.NODE_ENV !== 'production' ||
@@ -238,8 +236,7 @@ export class InvitationsService {
       role: invitation.role,
       expiresAt: invitation.expiresAt,
       createdAt: invitation.createdAt,
-      deliveryStatus: deliveryResult.status,
-      deliveryMessage: deliveryResult.message,
+      notificationState: 'PENDING' as const,
       ...(isNonProdOrTest ? { _devRawToken: rawToken } : {}),
     };
   }

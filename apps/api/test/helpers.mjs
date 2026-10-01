@@ -11,6 +11,7 @@ function config(overrides = {}) {
     IZIPAY_SECRET_KEY: 'test_secret_key',
     API_PUBLIC_AGENCY_SLUGS: 'agency-a,agency-b,inactive',
     API_CORS_ORIGINS: 'https://agency-a.example', API_RATE_LIMIT: '10000',
+    NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
     ...overrides,
   });
 }

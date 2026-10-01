@@ -11,7 +11,7 @@ import { AgencyRoles } from '../security/public-route.js';
 import type { AuthenticatedRequest } from '../auth/auth.controller.js';
 import { NotificationsService } from './notifications.service.js';
 
-@Controller('v1/agencies/:agencyId/notifications')
+@Controller({ path: 'agencies/:agencyId/notifications', version: '1' })
 @AgencyRoles('OWNER', 'ADMIN')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}

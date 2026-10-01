@@ -259,6 +259,7 @@ test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
           API_CHECKOUT_ENABLED: 'false',
           API_PUBLIC_AGENCY_SLUGS: 'agency-a',
           STOREFRONT_BASE_DOMAIN: 'platform.example',
+          NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
         });
       },
       (err) => {
@@ -276,6 +277,7 @@ test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
           API_CHECKOUT_ENABLED: 'false',
           API_PUBLIC_AGENCY_SLUGS: 'agency-a',
           STOREFRONT_BASE_DOMAIN: 'https://travel.example.com',
+          NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
         });
       },
       (err) => {
@@ -291,6 +293,7 @@ test('Dynamic Storefront & Domain Resolution (P2.5)', async (t) => {
       API_CHECKOUT_ENABLED: 'false',
       API_PUBLIC_AGENCY_SLUGS: 'agency-a',
       STOREFRONT_BASE_DOMAIN: 'travel.example.com',
+      NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
     });
     assert.equal(validConfig.storefrontBaseDomain, 'travel.example.com');
   });

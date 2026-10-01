@@ -49,11 +49,9 @@ const environmentSchema = z.object({
   NOTIFICATION_PAYLOAD_KEY: z.string().optional(),
   EMAIL_FROM_ADDRESS: z.string().optional(),
   EMAIL_FROM_NAME: z.string().optional(),
-  EMAIL_SMTP_HOST: z.string().optional(),
-  EMAIL_SMTP_PORT: z.coerce.number().int().optional(),
-  EMAIL_SMTP_USER: z.string().optional(),
-  EMAIL_SMTP_PASSWORD: z.string().optional(),
-  EMAIL_SMTP_SECURE: z.enum(['true', 'false']).default('false'),
+  // SMTP fields reserved for future provider implementation; not plumbed into runtime config.
+  // EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_USER, EMAIL_SMTP_PASSWORD, EMAIL_SMTP_SECURE
+  ADMIN_PUBLIC_ORIGIN: z.string().optional(),
 });
 
 export type ApiConfig = Readonly<{
@@ -84,14 +82,10 @@ export type ApiConfig = Readonly<{
   storefrontBaseDomain: string;
   storefrontTrustForwardedHost: boolean;
   emailDeliveryEnabled: boolean;
-  notificationPayloadKey: Buffer | null;
+  notificationPayloadKey: Buffer;
   emailFromAddress: string;
   emailFromName: string;
-  emailSmtpHost?: string;
-  emailSmtpPort?: number;
-  emailSmtpUser?: string;
-  emailSmtpPassword?: string;
-  emailSmtpSecure?: boolean;
+  adminPublicOrigin: string;
 }>;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
@@ -163,6 +157,39 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     r2PublicDomain = r2PublicDomain.replace(/^http:\/\//i, 'https://');
   }
 
+  // BLOCKER 2: EMAIL_DELIVERY_ENABLED=true must fail startup in production because
+  // no real EmailTransportAdapter (SMTP/Resend/SES) is implemented yet.
+  // Automated tests may inject MemoryTestEmailTransportAdapter directly.
+  if (isProduction && value.EMAIL_DELIVERY_ENABLED === 'true') {
+    throw new Error(
+      'Configuración API inválida: EMAIL_DELIVERY_ENABLED no puede ser true en producción. ' +
+      'No existe un proveedor de transporte de correo configurado. Desactive la entrega de correo ' +
+      'hasta que un adaptador de producción esté implementado.',
+    );
+  }
+
+  // Parse ADMIN_PUBLIC_ORIGIN
+  const adminPublicOriginRaw = (value.ADMIN_PUBLIC_ORIGIN || env.ADMIN_PUBLIC_ORIGIN || '').trim();
+  let adminPublicOrigin = '';
+  if (adminPublicOriginRaw) {
+    try {
+      const parsed = new URL(adminPublicOriginRaw);
+      if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== adminPublicOriginRaw) {
+        throw new Error('invalid');
+      }
+      if (isProduction && parsed.protocol !== 'https:') {
+        throw new Error('must be https in production');
+      }
+      adminPublicOrigin = parsed.origin;
+    } catch {
+      throw new Error(
+        'Configuración API inválida: ADMIN_PUBLIC_ORIGIN debe ser un origen HTTP(S) válido sin ruta ni credenciales',
+      );
+    }
+  } else if (!isProduction) {
+    adminPublicOrigin = 'http://localhost:3001';
+  }
+
   return Object.freeze({
     environment: value.NODE_ENV,
     databaseUrl: value.DATABASE_URL,
@@ -213,6 +240,9 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
     })(),
     storefrontTrustForwardedHost: value.STOREFRONT_TRUST_FORWARDED_HOST === 'true',
     emailDeliveryEnabled: value.EMAIL_DELIVERY_ENABLED === 'true',
+    // BLOCKER 1: NOTIFICATION_PAYLOAD_KEY is ALWAYS required in production because
+    // encrypted outbox creation is part of normal domain transactions (invitations, reservations)
+    // regardless of EMAIL_DELIVERY_ENABLED.
     notificationPayloadKey: (() => {
       const raw = (value.NOTIFICATION_PAYLOAD_KEY || env.NOTIFICATION_PAYLOAD_KEY || '').trim();
       if (raw) {
@@ -225,23 +255,18 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
         }
         return buf;
       }
-      if (isProduction && value.EMAIL_DELIVERY_ENABLED === 'true') {
-        throw new Error(
-          'Configuración API inválida: NOTIFICATION_PAYLOAD_KEY requerido cuando EMAIL_DELIVERY_ENABLED está habilitado en producción',
-        );
-      }
       if (isProduction) {
-        return null;
+        throw new Error(
+          'Configuración API inválida: NOTIFICATION_PAYLOAD_KEY requerido en producción. ' +
+          'La clave de encriptación del outbox es necesaria para las transacciones de invitaciones y reservas, ' +
+          'independientemente de EMAIL_DELIVERY_ENABLED.',
+        );
       }
       // Dev/test fallback key (32 bytes sha256)
       return crypto.createHash('sha256').update('dev-test-notification-payload-key-32b').digest();
     })(),
     emailFromAddress: (value.EMAIL_FROM_ADDRESS || env.EMAIL_FROM_ADDRESS || 'noreply@travelagency.pe').trim(),
     emailFromName: (value.EMAIL_FROM_NAME || env.EMAIL_FROM_NAME || 'Travel Agency').trim(),
-    emailSmtpHost: (value.EMAIL_SMTP_HOST || env.EMAIL_SMTP_HOST || '').trim() || undefined,
-    emailSmtpPort: value.EMAIL_SMTP_PORT,
-    emailSmtpUser: (value.EMAIL_SMTP_USER || env.EMAIL_SMTP_USER || '').trim() || undefined,
-    emailSmtpPassword: (value.EMAIL_SMTP_PASSWORD || env.EMAIL_SMTP_PASSWORD || '').trim() || undefined,
-    emailSmtpSecure: value.EMAIL_SMTP_SECURE === 'true',
+    adminPublicOrigin,
   });
 }

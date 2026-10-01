@@ -34,10 +34,6 @@ import { SettingsService } from './settings/settings.service.js';
 import { InvitationsController } from './invitations/invitations.controller.js';
 import { PublicInvitationsController } from './invitations/public-invitations.controller.js';
 import { InvitationsService } from './invitations/invitations.service.js';
-import {
-  DefaultInvitationDeliveryAdapter,
-  INVITATION_DELIVERY_ADAPTER,
-} from './invitations/invitation-delivery.adapter.js';
 import { OperationsController } from './operations/operations.controller.js';
 import { OperationsService } from './operations/operations.service.js';
 import { NotificationsController } from './notifications/notifications.controller.js';
@@ -92,11 +88,6 @@ export class AppModule {
         SettingsService,
         MembershipsService,
         InvitationsService,
-        DefaultInvitationDeliveryAdapter,
-        {
-          provide: INVITATION_DELIVERY_ADAPTER,
-          useExisting: DefaultInvitationDeliveryAdapter,
-        },
         NotificationsService,
         DisabledEmailTransportAdapter,
         {

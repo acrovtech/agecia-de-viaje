@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
+import request from 'supertest';
 import { PrismaClient } from '@repo/db/prisma';
 import { validatePostgresTestTarget } from '../scripts/postgres-gate-safety.mjs';
 import { NotificationsService } from '../dist/notifications/notifications.service.js';
@@ -8,6 +9,7 @@ import { MemoryTestEmailTransportAdapter } from '../dist/notifications/transport
 import { InvitationsService } from '../dist/invitations/invitations.service.js';
 import { ReservationsService } from '../dist/reservations/reservations.service.js';
 import { DefaultInvitationDeliveryAdapter } from '../dist/invitations/invitation-delivery.adapter.js';
+import { application, config, parseConfig } from './helpers.mjs';
 
 test('Transactional Notification Outbox & Email Delivery PostgreSQL Gate (P2.7)', async (t) => {
   const rawTestDbUrl = process.env.API_TEST_DATABASE_URL;
@@ -61,6 +63,7 @@ test('Transactional Notification Outbox & Email Delivery PostgreSQL Gate (P2.7)'
     notificationPayloadKey: testKey,
     emailFromAddress: 'noreply@travelagency.pe',
     emailFromName: 'Travel Agency',
+    adminPublicOrigin: 'https://admin.agency-test.com',
   };
 
   const testTransport = new MemoryTestEmailTransportAdapter();
@@ -242,9 +245,8 @@ test('Transactional Notification Outbox & Email Delivery PostgreSQL Gate (P2.7)'
       const sentMsg = testTransport.getLastMessage();
       assert.ok(sentMsg, 'Email message must have been sent via transport');
       assert.match(sentMsg.html, new RegExp(agencyA.name), 'Email must contain Agency A name');
-      assert.match(sentMsg.html, new RegExp(agencyA.subdomain), 'Email must contain Agency A canonical subdomain');
+      assert.match(sentMsg.html, /https:\/\/admin\.agency-test\.com\/invitations\/accept/, 'Email must contain admin acceptance URL');
       assert.doesNotMatch(sentMsg.html, new RegExp(agencyB.name), 'Email must NOT contain Agency B name');
-      assert.doesNotMatch(sentMsg.html, new RegExp(agencyB.subdomain), 'Email must NOT contain Agency B subdomain');
     });
 
     // -------------------------------------------------------------------------
@@ -780,7 +782,7 @@ test('Transactional Notification Outbox & Email Delivery PostgreSQL Gate (P2.7)'
 
       await assert.rejects(
         () => notificationsService.manualRetry(identityA, agencyA.id, job.id),
-        /No se puede reintentar una notificación ya enviada/,
+        /No se puede reintentar/,
       );
     });
 
@@ -809,6 +811,663 @@ test('Transactional Notification Outbox & Email Delivery PostgreSQL Gate (P2.7)'
         /Notificación no encontrada/,
         'Cross-tenant retry must fail closed with NotFoundException',
       );
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 19: (Req 1) production-style config requires NOTIFICATION_PAYLOAD_KEY and fails on EMAIL_DELIVERY_ENABLED=true
+    // -------------------------------------------------------------------------
+    await t.test('19. production-style configuration requires NOTIFICATION_PAYLOAD_KEY and fails on EMAIL_DELIVERY_ENABLED=true', async () => {
+      // 1. Missing NOTIFICATION_PAYLOAD_KEY in production must fail startup even if EMAIL_DELIVERY_ENABLED=false
+      assert.throws(
+        () => parseConfig({
+          NODE_ENV: 'production',
+          DATABASE_URL: databaseUrl,
+          EMAIL_DELIVERY_ENABLED: 'false',
+        }),
+        /NOTIFICATION_PAYLOAD_KEY requerido en producción/,
+      );
+
+      // 2. EMAIL_DELIVERY_ENABLED=true in production must fail startup because no real transport is configured
+      assert.throws(
+        () => parseConfig({
+          NODE_ENV: 'production',
+          DATABASE_URL: databaseUrl,
+          EMAIL_DELIVERY_ENABLED: 'true',
+          NOTIFICATION_PAYLOAD_KEY: Buffer.alloc(32).toString('base64'),
+        }),
+        /EMAIL_DELIVERY_ENABLED no puede ser true en producción/,
+      );
+
+      // 3. Valid production configuration with EMAIL_DELIVERY_ENABLED=false and valid 32-byte key succeeds
+      const prodConfig = parseConfig({
+        NODE_ENV: 'production',
+        DATABASE_URL: databaseUrl,
+        EMAIL_DELIVERY_ENABLED: 'false',
+        NOTIFICATION_PAYLOAD_KEY: Buffer.alloc(32).toString('base64'),
+        STOREFRONT_BASE_DOMAIN: 'realagency.com',
+      });
+      assert.equal(prodConfig.emailDeliveryEnabled, false);
+      assert.equal(prodConfig.notificationPayloadKey.length, 32);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 20: (Req 2) disabled delivery does not break invitation creation
+    // -------------------------------------------------------------------------
+    await t.test('20. disabled delivery does not break invitation creation', async () => {
+      const disabledConfig = {
+        ...testConfig,
+        emailDeliveryEnabled: false,
+      };
+      const disabledNotifService = new NotificationsService(prisma, disabledConfig, testTransport);
+      const disabledInviteService = new InvitationsService(prisma, disabledNotifService);
+
+      const email = `disabled-invite-${randomUUID().slice(0, 8)}@test.com`;
+      const res = await disabledInviteService.createInvitation(identityA, agencyA.id, {
+        email,
+        role: 'EDITOR',
+      });
+
+      assert.ok(res.id);
+      assert.equal(res.notificationState, 'PENDING');
+
+      const notif = await prisma.transactionalNotification.findFirst({
+        where: { agencyId: agencyA.id, recipient: email },
+      });
+      assert.ok(notif, 'TransactionalNotification must be queued in DB even when delivery is disabled');
+      assert.equal(notif.state, 'PENDING');
+      assert.equal(notif.attempts, 0);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 21: (Req 3) disabled delivery does not break reservation creation
+    // -------------------------------------------------------------------------
+    await t.test('21. disabled delivery does not break reservation creation', async () => {
+      const disabledConfig = {
+        ...testConfig,
+        emailDeliveryEnabled: false,
+      };
+      const disabledNotifService = new NotificationsService(prisma, disabledConfig, testTransport);
+      const disabledResService = new ReservationsService(prisma, disabledNotifService);
+
+      const today = new Date().toISOString().slice(0, 10);
+      const quoteRes = await disabledResService.quote(agencyA.id, {
+        kind: 'TOUR',
+        serviceId: tourA.id,
+        modality: 'shared',
+        date: today,
+        pax: 1,
+        vehicleId: null,
+      });
+
+      const customerEmail = `guest-disabled-${randomUUID().slice(0, 8)}@test.com`;
+      const res = await disabledResService.create(identityA, {
+        selection: {
+          kind: 'TOUR',
+          serviceId: tourA.id,
+          modality: 'shared',
+          date: today,
+          pax: 1,
+          vehicleId: null,
+        },
+        requestKey: randomUUID(),
+        quoteHash: quoteRes.quoteHash,
+        customerFirstName: 'Ana',
+        customerLastName: 'Torres',
+        customerEmail,
+        customerPhone: '+51911223344',
+        passengers: [
+          { firstName: 'Ana', lastName: 'Torres', docType: 'DNI', docNumber: '88776655' },
+        ],
+        pickupHotel: 'Hotel Cusco Plaza',
+        pickupTime: '08:30',
+        specialRequirements: '',
+      });
+
+      assert.ok(res.id);
+      const notif = await prisma.transactionalNotification.findFirst({
+        where: { agencyId: agencyA.id, recipient: customerEmail },
+      });
+      assert.ok(notif, 'Customer notification must be queued even when email delivery is disabled');
+      assert.equal(notif.state, 'PENDING');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 22: (Req 4) disabled worker execution does not consume attempts or convert queued jobs to DEAD_LETTER
+    // -------------------------------------------------------------------------
+    await t.test('22. disabled worker execution does not consume attempts or convert queued jobs to DEAD_LETTER', async () => {
+      const disabledConfig = {
+        ...testConfig,
+        emailDeliveryEnabled: false,
+      };
+      const disabledNotifService = new NotificationsService(prisma, disabledConfig, testTransport);
+
+      let queuedJob;
+      await prisma.$transaction(async (tx) => {
+        queuedJob = await disabledNotifService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'no-delivery@test.com',
+          subject: 'No Delivery',
+          payload: { foo: 'bar' },
+          idempotencyKey: `no-burn-${randomUUID()}`,
+        });
+      });
+
+      // 1. processBatch should return empty and not claim jobs
+      const batchResult = await disabledNotifService.processBatch('worker-disabled', 10, 300);
+      assert.deepEqual(batchResult, []);
+
+      // 2. Direct processJob call when disabled returns skipped and does not update state
+      const processResult = await disabledNotifService.processJob('worker-disabled', queuedJob);
+      assert.equal(processResult.skipped, true);
+      assert.equal(processResult.state, 'PENDING');
+
+      const after = await prisma.transactionalNotification.findUnique({
+        where: { id: queuedJob.id },
+      });
+      assert.equal(after.state, 'PENDING');
+      assert.equal(after.attempts, 0);
+      assert.equal(after.claimedBy, null);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 23: (Req 5) stale worker with expired/reclaimed lease cannot send
+    // -------------------------------------------------------------------------
+    await t.test('23. stale worker with expired/reclaimed lease cannot send', async () => {
+      testTransport.clear();
+
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await notificationsService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'stale-lease@test.com',
+          subject: 'Stale Worker Test',
+          payload: { role: 'VIEWER' },
+          idempotencyKey: `stale-${randomUUID()}`,
+        });
+      });
+
+      // Worker A claims job
+      const claimedA = await notificationsService.claimJobs('worker-A', 10, 300);
+      const jobA = claimedA.find((j) => j.id === job.id);
+      assert.ok(jobA);
+
+      // Simulate lease expiration
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { claimExpiresAt: new Date(Date.now() - 5000) },
+      });
+
+      // Worker B reclaims job
+      const claimedB = await notificationsService.claimJobs('worker-B', 10, 300);
+      const jobB = claimedB.find((j) => j.id === job.id);
+      assert.ok(jobB);
+      assert.equal(jobB.claimedBy, 'worker-B');
+
+      // Worker A attempts to process the job after losing lease
+      const resultA = await notificationsService.processJob('worker-A', jobA);
+      assert.equal(resultA.success, false);
+      assert.equal(resultA.skipped, true);
+      assert.equal(testTransport.getSentMessages().length, 0, 'Worker A must NOT have sent any email');
+
+      // Worker B processes legitimately
+      const resultB = await notificationsService.processJob('worker-B', jobB);
+      assert.equal(resultB.success, true);
+      assert.equal(resultB.state, 'SENT');
+      assert.equal(testTransport.getSentMessages().length, 1, 'Worker B legitimately sends email');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 24: (Req 6) two concurrent manual retries -> exactly one succeeds
+    // -------------------------------------------------------------------------
+    await t.test('24. two concurrent manual retries of one DEAD_LETTER notification: exactly one succeeds', async () => {
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await notificationsService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'concurrent-retry@test.com',
+          subject: 'Concurrent Retry Test',
+          payload: { test: true },
+          idempotencyKey: `concurrent-retry-${randomUUID()}`,
+        });
+      });
+
+      // Set to DEAD_LETTER
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'DEAD_LETTER', failureCode: 'TEMPORARY_PROVIDER_FAILURE', attempts: 5 },
+      });
+
+      // Two simultaneous retry requests
+      const results = await Promise.allSettled([
+        notificationsService.manualRetry(identityA, agencyA.id, job.id),
+        notificationsService.manualRetry(identityA, agencyA.id, job.id),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+
+      assert.equal(fulfilled.length, 1, 'Exactly one concurrent retry must succeed');
+      assert.equal(rejected.length, 1, 'Concurrent loser must be rejected');
+      assert.match(rejected[0].reason.message, /No se puede reintentar/, 'Rejected call gets ConflictException');
+
+      // Exactly one audit log row
+      const auditCount = await prisma.adminAuditLog.count({
+        where: { action: 'MANUAL_RETRY_NOTIFICATION', entityId: job.id },
+      });
+      assert.equal(auditCount, 1, 'Exactly one audit log entry created for concurrent retry');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 25: (Req 7) PENDING / PROCESSING / SENT manual retry rejected
+    // -------------------------------------------------------------------------
+    await t.test('25. PENDING / PROCESSING / SENT manual retry rejected with 409 Conflict', async () => {
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await notificationsService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'state-checks@test.com',
+          subject: 'State Check Test',
+          payload: { test: true },
+          idempotencyKey: `state-check-${randomUUID()}`,
+        });
+      });
+
+      // 1. PENDING -> reject
+      await assert.rejects(
+        () => notificationsService.manualRetry(identityA, agencyA.id, job.id),
+        /No se puede reintentar la notificación en estado PENDING/,
+      );
+
+      // 2. PROCESSING -> reject
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'PROCESSING', claimedBy: 'w1', claimExpiresAt: new Date(Date.now() + 60000) },
+      });
+      await assert.rejects(
+        () => notificationsService.manualRetry(identityA, agencyA.id, job.id),
+        /No se puede reintentar la notificación en estado PROCESSING/,
+      );
+
+      // 3. SENT -> reject
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'SENT', sentAt: new Date(), claimedBy: null, claimExpiresAt: null },
+      });
+      await assert.rejects(
+        () => notificationsService.manualRetry(identityA, agencyA.id, job.id),
+        /No se puede reintentar la notificación en estado SENT/,
+      );
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 26: (Req 8) FAILED and DEAD_LETTER manual retry allowed under bounded policy
+    // -------------------------------------------------------------------------
+    await t.test('26. FAILED and DEAD_LETTER manual retry allowed under bounded policy', async () => {
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await notificationsService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'bounded-retry@test.com',
+          subject: 'Bounded Retry Test',
+          payload: { test: true },
+          idempotencyKey: `bounded-retry-${randomUUID()}`,
+          maxAttempts: 5,
+        });
+      });
+
+      // 1. FAILED can be retried
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'FAILED', failureCode: 'TEMPORARY_PROVIDER_FAILURE' },
+      });
+      const retried1 = await notificationsService.manualRetry(identityA, agencyA.id, job.id);
+      assert.equal(retried1.state, 'PENDING');
+      assert.equal(retried1.maxAttempts, 8); // 5 + 3
+
+      // 2. DEAD_LETTER retry 2
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'DEAD_LETTER', failureCode: 'TEMPORARY_PROVIDER_FAILURE' },
+      });
+      const retried2 = await notificationsService.manualRetry(identityA, agencyA.id, job.id);
+      assert.equal(retried2.state, 'PENDING');
+      assert.equal(retried2.maxAttempts, 11); // 8 + 3
+
+      // 3. DEAD_LETTER retry 3 (reaches limit: maxAllowedAttempts = 14)
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'DEAD_LETTER', failureCode: 'TEMPORARY_PROVIDER_FAILURE' },
+      });
+      const retried3 = await notificationsService.manualRetry(identityA, agencyA.id, job.id);
+      assert.equal(retried3.state, 'PENDING');
+      assert.equal(retried3.maxAttempts, 14); // 11 + 3
+
+      // 4. Retry 4 exceeds MAX_MANUAL_RETRIES allowance -> rejected
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'DEAD_LETTER', failureCode: 'TEMPORARY_PROVIDER_FAILURE' },
+      });
+      await assert.rejects(
+        () => notificationsService.manualRetry(identityA, agencyA.id, job.id),
+        /Límite de reintentos manuales alcanzado/,
+      );
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 27: (Req 9) retry state update and audit are atomic
+    // -------------------------------------------------------------------------
+    await t.test('27. retry state update and audit are atomic', async () => {
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await notificationsService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'atomic-audit@test.com',
+          subject: 'Atomic Audit Test',
+          payload: { test: true },
+          idempotencyKey: `atomic-audit-${randomUUID()}`,
+        });
+      });
+
+      await prisma.transactionalNotification.update({
+        where: { id: job.id },
+        data: { state: 'DEAD_LETTER' },
+      });
+
+      const auditBefore = await prisma.adminAuditLog.count({
+        where: { entityId: job.id },
+      });
+      assert.equal(auditBefore, 0);
+
+      await notificationsService.manualRetry(identityA, agencyA.id, job.id);
+
+      const [updatedJob, auditAfter] = await Promise.all([
+        prisma.transactionalNotification.findUnique({ where: { id: job.id } }),
+        prisma.adminAuditLog.findFirst({ where: { entityId: job.id } }),
+      ]);
+
+      assert.equal(updatedJob.state, 'PENDING');
+      assert.ok(auditAfter, 'Audit log must exist in same state');
+      assert.equal(auditAfter.action, 'MANUAL_RETRY_NOTIFICATION');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 28: (Req 10) invitation creation no longer invokes synchronous legacy delivery adapter
+    // -------------------------------------------------------------------------
+    await t.test('28. invitation creation no longer invokes synchronous legacy delivery adapter', async () => {
+      let legacySendCalled = false;
+      const spyAdapter = {
+        sendInvitation: async () => {
+          legacySendCalled = true;
+          return { success: true };
+        },
+      };
+
+      const customInviteService = new InvitationsService(prisma, spyAdapter, notificationsService);
+      const email = `spy-legacy-${randomUUID().slice(0, 8)}@test.com`;
+      const res = await customInviteService.createInvitation(identityA, agencyA.id, {
+        email,
+        role: 'VIEWER',
+      });
+
+      assert.ok(res.id);
+      assert.equal(res.notificationState, 'PENDING');
+      assert.equal(legacySendCalled, false, 'Legacy sendInvitation MUST NOT be called');
+
+      const notif = await prisma.transactionalNotification.findFirst({
+        where: { agencyId: agencyA.id, recipient: email },
+      });
+      assert.ok(notif, 'Outbox row is the sole delivery path');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 29: (Req 11) invitation rendered URL points to a real configured acceptance origin/path
+    // -------------------------------------------------------------------------
+    await t.test('29. invitation rendered URL points to a real configured acceptance origin/path', async () => {
+      testTransport.clear();
+
+      const inviteEmail = `accept-url-${randomUUID().slice(0, 8)}@test.com`;
+      await invitationsService.createInvitation(identityA, agencyA.id, {
+        email: inviteEmail,
+        role: 'ADMIN',
+      });
+
+      const claimed = await notificationsService.claimJobs('worker-url-check', 10, 300);
+      const job = claimed.find((j) => j.recipient === inviteEmail);
+      assert.ok(job);
+
+      const processRes = await notificationsService.processJob('worker-url-check', job);
+      assert.equal(processRes.success, true);
+
+      const sentMsg = testTransport.getLastMessage();
+      assert.ok(sentMsg);
+      const expectedPrefix = 'https://admin.agency-test.com/invitations/accept?token=';
+      assert.match(sentMsg.html, new RegExp(expectedPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'HTML must contain admin accept URL');
+      assert.match(sentMsg.text, new RegExp(expectedPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'Text must contain admin accept URL');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 30: (Req 12) placeholder/unconfigured production origin fails closed
+    // -------------------------------------------------------------------------
+    await t.test('30. placeholder/unconfigured production origin fails closed', async () => {
+      testTransport.clear();
+
+      // NotificationsService configured WITHOUT adminPublicOrigin
+      const unconfiguredConfig = {
+        ...testConfig,
+        adminPublicOrigin: '',
+      };
+      const unconfiguredService = new NotificationsService(prisma, unconfiguredConfig, testTransport);
+
+      let job;
+      await prisma.$transaction(async (tx) => {
+        job = await unconfiguredService.queueNotification(tx, {
+          agencyId: agencyA.id,
+          kind: 'MEMBERSHIP_INVITATION',
+          audience: 'INTERNAL',
+          recipient: 'fail-closed@test.com',
+          subject: 'Fail Closed Test',
+          payload: { rawToken: 'sample-raw-token-123456789' },
+          idempotencyKey: `fail-closed-${randomUUID()}`,
+        });
+      });
+
+      const claimed = await unconfiguredService.claimJobs('worker-fail-closed', 10, 300);
+      const myJob = claimed.find((j) => j.id === job.id);
+      assert.ok(myJob);
+
+      const processRes = await unconfiguredService.processJob('worker-fail-closed', myJob);
+      assert.equal(processRes.success, false);
+      assert.equal(processRes.state, 'DEAD_LETTER');
+
+      const inDb = await prisma.transactionalNotification.findUnique({
+        where: { id: job.id },
+      });
+      assert.equal(inDb.state, 'DEAD_LETTER');
+      assert.equal(inDb.failureCode, 'CONFIG_ERROR');
+      assert.equal(testTransport.getSentMessages().length, 0, 'No email sent when origin cannot be constructed');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 31: (Req 13) reservation email uses Reservation.code when present
+    // -------------------------------------------------------------------------
+    await t.test('31. reservation email uses Reservation.code when present', async () => {
+      testTransport.clear();
+
+      const today = new Date().toISOString().slice(0, 10);
+      const quoteRes = await reservationsService.quote(agencyA.id, {
+        kind: 'TOUR',
+        serviceId: tourA.id,
+        modality: 'shared',
+        date: today,
+        pax: 1,
+        vehicleId: null,
+      });
+
+      const customerEmail = `res-code-${randomUUID().slice(0, 8)}@test.com`;
+      const reservation = await reservationsService.create(identityA, {
+        selection: {
+          kind: 'TOUR',
+          serviceId: tourA.id,
+          modality: 'shared',
+          date: today,
+          pax: 1,
+          vehicleId: null,
+        },
+        requestKey: randomUUID(),
+        quoteHash: quoteRes.quoteHash,
+        customerFirstName: 'Mateo',
+        customerLastName: 'Rios',
+        customerEmail,
+        customerPhone: '+51999888777',
+        passengers: [
+          { firstName: 'Mateo', lastName: 'Rios', docType: 'DNI', docNumber: '11223344' },
+        ],
+        pickupHotel: 'Hotel Cusco Plaza',
+        pickupTime: '08:30',
+        specialRequirements: '',
+      });
+
+      // Verify the reservation row in DB has a generated code
+      const dbReservation = await prisma.reservation.findUnique({
+        where: { id: reservation.id },
+        select: { id: true, code: true },
+      });
+      assert.ok(dbReservation.code, 'Reservation.code must exist');
+
+      // Claim and process the queued notification
+      const claimed = await notificationsService.claimJobs('worker-res-code', 10, 300);
+      const job = claimed.find((j) => j.recipient === customerEmail);
+      assert.ok(job);
+
+      const processRes = await notificationsService.processJob('worker-res-code', job);
+      assert.equal(processRes.success, true);
+
+      const sentMsg = testTransport.getLastMessage();
+      assert.ok(sentMsg);
+      // The email subject and body must contain the public reservation code (e.g., RSV-...)
+      assert.match(sentMsg.subject, new RegExp(dbReservation.code));
+      assert.match(sentMsg.text, new RegExp(dbReservation.code));
+      assert.match(sentMsg.html, new RegExp(dbReservation.code));
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 32: (Req 14) HTTP notification endpoints resolve at /v1/... and cross-tenant returns 403
+    // -------------------------------------------------------------------------
+    await t.test('32. HTTP notification endpoints resolve at /v1/... and cross-tenant returns 403', async () => {
+      const app = await application(
+        config({
+          API_AUTH_ENABLED: 'true',
+          API_PUBLIC_AGENCY_SLUGS: `${agencyA.slug},${agencyB.slug}`,
+          ADMIN_PUBLIC_ORIGIN: 'https://admin.agency-test.com',
+          DATABASE_URL: databaseUrl,
+        }),
+        prisma,
+      );
+
+      try {
+        // Setup session for Owner A
+        const userRowA = await prisma.user.findUnique({ where: { id: userA.id } });
+        const rawTokenA = randomBytes(32).toString('base64url');
+        const tokenHashA = createHash('sha256').update(rawTokenA).digest('hex');
+        const membershipA = await prisma.agencyMembership.findFirst({
+          where: { agencyId: agencyA.id, userId: userA.id },
+        });
+        await prisma.apiSession.create({
+          data: {
+            membershipId: membershipA.id,
+            tokenHash: tokenHashA,
+            passwordHash: createHash('sha256').update(userRowA.password).digest('hex'),
+            tokenVersion: userRowA.tokenVersion,
+            expiresAt: new Date(Date.now() + 3600_000),
+          },
+        });
+
+        // Setup session for Owner B
+        const userRowB = await prisma.user.findUnique({ where: { id: userB.id } });
+        const rawTokenB = randomBytes(32).toString('base64url');
+        const tokenHashB = createHash('sha256').update(rawTokenB).digest('hex');
+        const membershipB = await prisma.agencyMembership.findFirst({
+          where: { agencyId: agencyB.id, userId: userB.id },
+        });
+        await prisma.apiSession.create({
+          data: {
+            membershipId: membershipB.id,
+            tokenHash: tokenHashB,
+            passwordHash: createHash('sha256').update(userRowB.password).digest('hex'),
+            tokenVersion: userRowB.tokenVersion,
+            expiresAt: new Date(Date.now() + 3600_000),
+          },
+        });
+
+        // Seed a notification for Agency A
+        let notifA;
+        await prisma.$transaction(async (tx) => {
+          notifA = await notificationsService.queueNotification(tx, {
+            agencyId: agencyA.id,
+            kind: 'MEMBERSHIP_INVITATION',
+            audience: 'INTERNAL',
+            recipient: 'http-test@agency-a.test',
+            subject: 'HTTP Route Test',
+            payload: { role: 'OPERATOR' },
+            idempotencyKey: `http-test-${randomUUID()}`,
+          });
+        });
+
+        // 1. GET /v1/agencies/:agencyId/notifications -> 200 for Owner A
+        const listRes = await request(app.getHttpServer())
+          .get(`/v1/agencies/${agencyA.id}/notifications`)
+          .set('Authorization', `Bearer ${rawTokenA}`);
+        assert.equal(listRes.status, 200);
+        assert.ok(Array.isArray(listRes.body.data));
+
+        // 2. GET /v1/agencies/:agencyId/notifications/:id -> 200 for Owner A
+        const detailRes = await request(app.getHttpServer())
+          .get(`/v1/agencies/${agencyA.id}/notifications/${notifA.id}`)
+          .set('Authorization', `Bearer ${rawTokenA}`);
+        assert.equal(detailRes.status, 200);
+        assert.equal(detailRes.body.id, notifA.id);
+
+        // 3. POST /v1/agencies/:agencyId/notifications/:id/retry -> 200/201 for FAILED
+        await prisma.transactionalNotification.update({
+          where: { id: notifA.id },
+          data: { state: 'FAILED', failureCode: 'TEMPORARY_PROVIDER_FAILURE' },
+        });
+        const retryRes = await request(app.getHttpServer())
+          .post(`/v1/agencies/${agencyA.id}/notifications/${notifA.id}/retry`)
+          .set('Authorization', `Bearer ${rawTokenA}`);
+        assert.ok([200, 201].includes(retryRes.status), `Expected 200 or 201, got ${retryRes.status}`);
+        assert.equal(retryRes.body.state, 'PENDING');
+
+        // 4. Cross-tenant access: Owner B attempts to access Agency A's endpoints -> 403 Forbidden
+        const crossListRes = await request(app.getHttpServer())
+          .get(`/v1/agencies/${agencyA.id}/notifications`)
+          .set('Authorization', `Bearer ${rawTokenB}`);
+        assert.equal(crossListRes.status, 403, 'Cross-tenant list must return 403');
+
+        const crossDetailRes = await request(app.getHttpServer())
+          .get(`/v1/agencies/${agencyA.id}/notifications/${notifA.id}`)
+          .set('Authorization', `Bearer ${rawTokenB}`);
+        assert.equal(crossDetailRes.status, 403, 'Cross-tenant detail must return 403');
+
+        const crossRetryRes = await request(app.getHttpServer())
+          .post(`/v1/agencies/${agencyA.id}/notifications/${notifA.id}/retry`)
+          .set('Authorization', `Bearer ${rawTokenB}`);
+        assert.equal(crossRetryRes.status, 403, 'Cross-tenant retry must return 403');
+      } finally {
+        await app.close();
+      }
     });
 
   } finally {

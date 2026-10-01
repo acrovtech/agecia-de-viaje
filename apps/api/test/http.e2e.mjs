@@ -1097,6 +1097,7 @@ test('production checkout fails startup when credentials are incomplete', () => 
         NODE_ENV: 'production',
         DATABASE_URL: 'postgresql://prod:prod@127.0.0.1:5432/api_prod',
         API_CHECKOUT_ENABLED: 'true',
+        NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
       });
     },
     (err) => {
@@ -1420,6 +1421,7 @@ test('explicit production IZIPAY_PASSWORD required and does not accept TEST pass
         IZIPAY_API_URL: 'https://api.micuentaweb.pe',
         API_PUBLIC_AGENCY_SLUGS: 'agency-a',
         IZIPAY_TEST_PASSWORD: 'test_password_only',
+        NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
       });
     },
     (err) => {
@@ -1436,6 +1438,7 @@ test('explicit production IZIPAY_PASSWORD required and does not accept TEST pass
     IZIPAY_PASSWORD: 'explicit_production_password',
     IZIPAY_API_URL: 'https://api.micuentaweb.pe',
     API_PUBLIC_AGENCY_SLUGS: 'agency-a',
+    NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=',
   });
   assert.equal(cfg.izipayPassword, 'explicit_production_password');
 });

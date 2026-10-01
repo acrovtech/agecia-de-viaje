@@ -71,6 +71,7 @@ const childEnv = {
   NODE_ENV: 'test',
   NOTIFICATION_PAYLOAD_KEY: 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=', // 32 bytes valid base64
   EMAIL_DELIVERY_ENABLED: 'true',
+  ADMIN_PUBLIC_ORIGIN: 'https://admin.agency-test.com',
   NOTIFICATION_TEST_FAST_BACKOFF: 'true',
 };
 
