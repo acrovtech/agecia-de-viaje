@@ -1,0 +1,301 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
+import {
+  Home,
+  CalendarCheck2,
+  Compass,
+  Layers,
+  MapPin,
+  Car,
+  Users2,
+  Bell,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Building2,
+  Tag,
+  Truck,
+} from 'lucide-react';
+import { logoutAction } from '../../app/actions/auth';
+import { PRODUCT_SHORT_NAME } from '../../lib/brand';
+
+export interface NavIdentity {
+  userId: string;
+  email: string;
+  agencyId: string;
+  role: 'OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER';
+  agencyName: string;
+  agencySlug: string;
+}
+
+interface SidebarProps {
+  identity: NavIdentity;
+  onNavigate?: () => void;
+  className?: string;
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[];
+  badge?: string;
+  children?: {
+    label: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[];
+  }[];
+}
+
+const navItems: NavItem[] = [
+  {
+    label: 'Inicio',
+    href: '/workspace',
+    icon: Home,
+  },
+  {
+    label: 'Reservas',
+    href: '/workspace/reservations',
+    icon: CalendarCheck2,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+  },
+  {
+    label: 'Operaciones',
+    href: '/workspace/operations',
+    icon: Compass,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+  },
+  {
+    label: 'Catálogo',
+    href: '/workspace?view=tours',
+    icon: Layers,
+    children: [
+      {
+        label: 'Tours',
+        href: '/workspace?view=tours',
+        icon: MapPin,
+      },
+      {
+        label: 'Traslados',
+        href: '/workspace?view=transfers',
+        icon: Car,
+      },
+    ],
+  },
+  {
+    label: 'Recursos',
+    href: '/workspace/resources?kind=categories',
+    icon: Truck,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR'],
+    children: [
+      {
+        label: 'Categorías comerciales',
+        href: '/workspace/resources?kind=categories',
+        icon: Tag,
+      },
+      {
+        label: 'Vehículos comerciales',
+        href: '/workspace/resources?kind=vehicles',
+        icon: Car,
+      },
+      {
+        label: 'Flota operativa',
+        href: '/workspace/operations?view=fleet',
+        icon: Truck,
+        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+      },
+      {
+        label: 'Guías y Conductores',
+        href: '/workspace/operations?view=personnel',
+        icon: Users2,
+        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+      },
+    ],
+  },
+  {
+    label: 'Equipo',
+    href: '/workspace?view=members',
+    icon: Users2,
+    roles: ['OWNER', 'ADMIN'],
+  },
+  {
+    label: 'Notificaciones',
+    href: '/workspace/notifications',
+    icon: Bell,
+    roles: ['OWNER', 'ADMIN'],
+  },
+  {
+    label: 'Configuración',
+    href: '/workspace/settings',
+    icon: Settings,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
+  },
+];
+
+const roleNames: Record<string, string> = {
+  OWNER: 'Propietario',
+  ADMIN: 'Administrador',
+  EDITOR: 'Editor',
+  OPERATOR: 'Operador',
+  VIEWER: 'Consulta',
+};
+
+export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const isCurrent = (href: string) => {
+    const [pathPart, queryPart] = href.split('?');
+    if (pathname !== pathPart) return false;
+
+    if (queryPart) {
+      const targetParams = new URLSearchParams(queryPart);
+      for (const [key, value] of targetParams.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
+    }
+
+    // Exact match for base path when no query
+    if (pathname === '/workspace' && !searchParams.get('view')) return true;
+    if (pathname === '/workspace' && searchParams.get('view')) return false;
+
+    return true;
+  };
+
+  const isParentActive = (item: NavItem) => {
+    if (isCurrent(item.href)) return true;
+    if (item.children) {
+      return item.children.some((child) => isCurrent(child.href));
+    }
+    return false;
+  };
+
+  const canAccess = (roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[]) => {
+    if (!roles) return true;
+    return roles.includes(identity.role);
+  };
+
+  return (
+    <aside
+      className={`flex flex-col h-full bg-slate-50/70 border-r border-slate-200/90 text-slate-800 select-none ${className}`}
+      aria-label="Barra lateral de administración"
+    >
+      {/* Top Header: Platform Glyph + Tenant Context */}
+      <div className="p-3.5 border-b border-slate-200/80">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 tracking-wider">
+            {PRODUCT_SHORT_NAME[0]}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-900 truncate">
+                {identity.agencyName}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono truncate">
+              <Building2 className="w-3 h-3 shrink-0" />
+              <span>{identity.agencySlug}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation list */}
+      <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-1 no-scrollbar">
+        {navItems
+          .filter((item) => canAccess(item.roles))
+          .map((item) => {
+            const active = isParentActive(item);
+            const Icon = item.icon;
+
+            return (
+              <div key={item.label} className="space-y-0.5">
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={isCurrent(item.href) ? 'page' : undefined}
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                    active
+                      ? 'bg-slate-200/70 text-slate-900 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon className="w-4 h-4 shrink-0 text-slate-500" />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  {item.children && (
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  )}
+                </Link>
+
+                {/* Sub-items */}
+                {item.children && active && (
+                  <div className="pl-6 pr-1 space-y-0.5 pt-0.5 pb-1">
+                    {item.children
+                      .filter((child) => canAccess(child.roles))
+                      .map((child) => {
+                        const childActive = isCurrent(child.href);
+                        const ChildIcon = child.icon;
+
+                        return (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            onClick={onNavigate}
+                            aria-current={childActive ? 'page' : undefined}
+                            className={`flex items-center gap-2 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                              childActive
+                                ? 'bg-slate-200/90 text-slate-900 font-semibold'
+                                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60'
+                            }`}
+                          >
+                            <ChildIcon className="w-3 h-3 text-slate-400" />
+                            <span className="truncate">{child.label}</span>
+                          </Link>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+      </nav>
+
+      {/* User Footer: Role badge, email, and Logout */}
+      <div className="p-3 border-t border-slate-200/80 bg-white/50">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+              {identity.email[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-slate-900 truncate">
+                {identity.email}
+              </p>
+              <span className="inline-block text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                {roleNames[identity.role] || identity.role}
+              </span>
+            </div>
+          </div>
+
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              title="Cerrar sesión"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </aside>
+  );
+}

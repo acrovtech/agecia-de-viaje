@@ -443,7 +443,7 @@ export function DashboardClient({
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                   {recentReservations.map((res) => {
-                    const serviceTitle = res.tour ? res.tour.title : res.transfer ? res.transfer.title : 'RESERVA INCA BOUND';
+                    const serviceTitle = res.tour ? res.tour.title : res.transfer ? res.transfer.title : 'RESERVA GENERAL';
                     return (
                       <tr key={res.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-4 py-3 text-left">

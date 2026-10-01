@@ -7,6 +7,17 @@ import {
   updateLegalProfileAction,
   type SettingsActionState,
 } from './actions';
+import {
+  Building2,
+  Palette,
+  Globe,
+  FileText,
+  CreditCard,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+} from 'lucide-react';
 
 interface AgencyProfileData {
   id: string;
@@ -44,331 +55,483 @@ export function SettingsForm({
   initialLegal,
   canEdit,
 }: SettingsFormProps) {
-  const [profileState, profileAction, isProfilePending] = useActionState<SettingsActionState | null, FormData>(
-    updateAgencyProfileAction,
-    null
+  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'domains' | 'legal' | 'payments'>(
+    'general',
   );
-  const [legalState, legalAction, isLegalPending] = useActionState<SettingsActionState | null, FormData>(
-    updateLegalProfileAction,
-    null
-  );
+
+  const [profileState, profileAction, isProfilePending] = useActionState<
+    SettingsActionState | null,
+    FormData
+  >(updateAgencyProfileAction, null);
+
+  const [legalState, legalAction, isLegalPending] = useActionState<
+    SettingsActionState | null,
+    FormData
+  >(updateLegalProfileAction, null);
 
   const [logoUrl, setLogoUrl] = useState(initialProfile.logoUrl || '');
   const [iconUrl, setIconUrl] = useState(initialProfile.iconUrl || '');
 
+  const inputClass =
+    'mt-1 block w-full rounded-lg border border-slate-200 p-2.5 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500';
+  const labelClass = 'block text-xs font-semibold text-slate-700 tracking-tight';
+
   return (
-    <div className="space-y-8">
-      {/* SECCIÓN 1: PERFIL DE LA AGENCIA / BRANDING */}
-      <section className="bg-white rounded-xl border p-6 space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-800">
-            Perfil de la Agencia y Marca
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Información visible para los viajeros y personalización de identidad corporativa.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Category Tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-3 text-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('general')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+            activeTab === 'general'
+              ? 'bg-slate-900 text-white font-semibold shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>General y Contacto</span>
+        </button>
 
-        {profileState?.error && (
-          <div role="alert" className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {profileState.error}
-          </div>
-        )}
-        {profileState?.success && (
-          <div role="status" className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
-            Perfil de la agencia actualizado correctamente.
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => setActiveTab('branding')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+            activeTab === 'branding'
+              ? 'bg-slate-900 text-white font-semibold shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <Palette className="w-3.5 h-3.5" />
+          <span>Marca e Identidad</span>
+        </button>
 
-        <form action={profileAction} className="space-y-5">
-          <input
-            type="hidden"
-            name="expectedUpdatedAt"
-            value={profileState?.updatedAt || initialProfile.updatedAt}
-          />
-          <input type="hidden" name="logoUrl" value={logoUrl} />
-          <input type="hidden" name="iconUrl" value={iconUrl} />
+        <button
+          type="button"
+          onClick={() => setActiveTab('domains')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+            activeTab === 'domains'
+              ? 'bg-slate-900 text-white font-semibold shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>Dominios y Vitrina</span>
+        </button>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Nombre de la Empresa / Marca *
-              </label>
-              <input
-                type="text"
-                name="name"
-                required
-                disabled={!canEdit || isProfilePending}
-                defaultValue={initialProfile.name}
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('legal')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+            activeTab === 'legal'
+              ? 'bg-slate-900 text-white font-semibold shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Perfil Legal y Fiscal</span>
+        </button>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Identificador de Sistema (Slug)
-              </label>
-              <input
-                type="text"
-                disabled
-                value={initialProfile.slug}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-500 cursor-not-allowed"
-              />
-              <span className="text-xs text-slate-400">
-                El slug y los dominios son gestionados a nivel plataforma.
-              </span>
-            </div>
-          </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('payments')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+            activeTab === 'payments'
+              ? 'bg-slate-900 text-white font-semibold shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Pagos (Frozen)</span>
+        </button>
+      </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Teléfono de Contacto
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                disabled={!canEdit || isProfilePending}
-                defaultValue={initialProfile.phone || ''}
-                placeholder="+51 987 654 321"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Correo Electrónico de Contacto
-              </label>
-              <input
-                type="email"
-                name="email"
-                disabled={!canEdit || isProfilePending}
-                defaultValue={initialProfile.email || ''}
-                placeholder="contacto@tuagencia.com"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Dirección Física / Oficina
-            </label>
-            <input
-              type="text"
-              name="address"
-              disabled={!canEdit || isProfilePending}
-              defaultValue={initialProfile.address || ''}
-              placeholder="Av. Sol 123, Cusco, Perú"
-              className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-            />
-          </div>
-
-          <div className="border-t pt-5 space-y-4">
-            <h3 className="text-md font-medium text-slate-800">
-              Identidad Visual (Logotipo e Ícono)
-            </h3>
+      {/* TAB 1: GENERAL Y CONTACTO */}
+      {activeTab === 'general' && (
+        <section className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-5 shadow-xs max-w-3xl">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900">Perfil Comercial y Contacto</h3>
             <p className="text-xs text-slate-500">
-              Utiliza el cargador seguro para subir imágenes con aislamiento multinquilino a Cloudflare R2.
+              Datos públicos principales mostrados a los clientes en la vitrina web.
             </p>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <MediaUploader
-                  name="agencyLogoUploader"
-                  label="Logotipo Principal de la Agencia"
-                  kind="AGENCY_LOGO"
-                  value={logoUrl}
-                  onChange={(val) => setLogoUrl(val)}
-                  required={false}
-                  placeholder="https://..."
-                  helpText="Recomendado: PNG o WebP con fondo transparente."
-                />
-              </div>
-
-              <div>
-                <MediaUploader
-                  name="agencyIconUploader"
-                  label="Ícono o Favicon de la Agencia"
-                  kind="AGENCY_ICON"
-                  value={iconUrl}
-                  onChange={(val) => setIconUrl(val)}
-                  required={false}
-                  placeholder="https://..."
-                  helpText="Recomendado: Imagen cuadrada de al menos 128x128 px."
-                />
-              </div>
-            </div>
           </div>
 
-          {canEdit && (
-            <div className="pt-3">
-              <button
-                type="submit"
-                disabled={isProfilePending}
-                className="px-5 py-2.5 bg-[#062918] text-white text-sm font-medium rounded-lg hover:bg-[#0a3f25] disabled:opacity-50"
-              >
-                {isProfilePending ? 'Guardando cambios…' : 'Guardar Perfil de Agencia'}
-              </button>
-            </div>
+          {profileState?.error && (
+            <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-3 rounded-lg border border-rose-200">
+              {profileState.error}
+            </p>
           )}
-        </form>
-      </section>
+          {profileState?.success && (
+            <p role="status" className="text-xs text-emerald-800 bg-emerald-50 p-3 rounded-lg border border-emerald-200 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{profileState.success}</span>
+            </p>
+          )}
 
-      {/* SECCIÓN 2: PERFIL LEGAL (RUC / FISCAL) */}
-      <section className="bg-white rounded-xl border p-6 space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-800">
-            Perfil Legal y Tributario
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Datos fiscales para facturación, libro de reclamaciones y contratos de viaje.
-          </p>
-        </div>
+          <form action={profileAction} className="space-y-4">
+            <input type="hidden" name="expectedUpdatedAt" value={initialProfile.updatedAt} />
+            <input type="hidden" name="logoUrl" value={logoUrl} />
+            <input type="hidden" name="iconUrl" value={iconUrl} />
 
-        {legalState?.error && (
-          <div role="alert" className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {legalState.error}
-          </div>
-        )}
-        {legalState?.success && (
-          <div role="status" className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
-            Perfil legal guardado exitosamente.
-          </div>
-        )}
-
-        <form action={legalAction} className="space-y-5">
-          <input
-            type="hidden"
-            name="expectedUpdatedAt"
-            value={legalState?.updatedAt || initialLegal.updatedAt || ''}
-          />
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                RUC (Registro Único de Contribuyentes) *
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className={labelClass}>
+                Nombre de la Agencia *
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  disabled={!canEdit || isProfilePending}
+                  defaultValue={initialProfile.name}
+                  className={inputClass}
+                />
               </label>
-              <input
-                type="text"
-                name="ruc"
-                required
-                maxLength={11}
-                pattern="\d{11}"
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.ruc}
-                placeholder="20123456789 (11 dígitos)"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-              <span className="text-xs text-slate-500">
-                Validación estructural de 11 dígitos numéricos.
-              </span>
+
+              <label className={labelClass}>
+                Identificador único (slug)
+                <input
+                  type="text"
+                  disabled
+                  value={initialProfile.slug}
+                  className="mt-1 block w-full rounded-lg border border-slate-200 p-2.5 text-xs sm:text-sm bg-slate-50 text-slate-500 font-mono"
+                />
+              </label>
+
+              <label className={labelClass}>
+                Correo electrónico público
+                <input
+                  type="email"
+                  name="email"
+                  disabled={!canEdit || isProfilePending}
+                  defaultValue={initialProfile.email || ''}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                Teléfono de atención
+                <input
+                  type="tel"
+                  name="phone"
+                  disabled={!canEdit || isProfilePending}
+                  defaultValue={initialProfile.phone || ''}
+                  className={inputClass}
+                />
+              </label>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Razón Social *
-              </label>
+            <label className={labelClass}>
+              Dirección comercial / Oficina
               <input
                 type="text"
-                name="legalName"
-                required
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.legalName}
-                placeholder="VIAJES Y TURISMO S.A.C."
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
+                name="address"
+                disabled={!canEdit || isProfilePending}
+                defaultValue={initialProfile.address || ''}
+                className={inputClass}
               />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Nombre Comercial
-              </label>
-              <input
-                type="text"
-                name="tradeName"
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.tradeName}
-                placeholder="Tu Agencia Tours"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Representante Legal
-              </label>
-              <input
-                type="text"
-                name="legalRepresentative"
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.legalRepresentative}
-                placeholder="Juan Pérez"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Domicilio Fiscal *
             </label>
-            <input
-              type="text"
-              name="fiscalAddress"
-              required
-              disabled={!canEdit || isLegalPending}
-              defaultValue={initialLegal.fiscalAddress}
-              placeholder="Av. Pardo 456, Miraflores, Lima, Perú"
-              className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-            />
+
+            {canEdit && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isProfilePending}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  {isProfilePending ? 'Guardando…' : 'Guardar información general'}
+                </button>
+              </div>
+            )}
+          </form>
+        </section>
+      )}
+
+      {/* TAB 2: MARCA E IDENTIDAD */}
+      {activeTab === 'branding' && (
+        <section className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-5 shadow-xs max-w-3xl">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900">Marca e Identidad Visual</h3>
+            <p className="text-xs text-slate-500">
+              Logotipo, isotipo y recursos gráficos de tu agencia.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Correo Electrónico Legal / Fiscal
-              </label>
-              <input
-                type="email"
-                name="contactEmail"
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.contactEmail}
-                placeholder="facturacion@tuagencia.com"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
+          <form action={profileAction} className="space-y-5">
+            <input type="hidden" name="expectedUpdatedAt" value={initialProfile.updatedAt} />
+            <input type="hidden" name="name" value={initialProfile.name} />
+            <input type="hidden" name="email" value={initialProfile.email || ''} />
+            <input type="hidden" name="phone" value={initialProfile.phone || ''} />
+            <input type="hidden" name="address" value={initialProfile.address || ''} />
+            <input type="hidden" name="subdomain" value={initialProfile.subdomain || ''} />
+            <input type="hidden" name="customDomain" value={initialProfile.customDomain || ''} />
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <MediaUploader
+                name="logoUrl"
+                label="Logotipo principal"
+                kind="AGENCY_LOGO"
+                value={logoUrl}
+                onChange={setLogoUrl}
+                placeholder="https://..."
+                helpText="Recomendado en formato PNG o SVG con fondo transparente."
+              />
+
+              <MediaUploader
+                name="iconUrl"
+                label="Isotipo / Favicon"
+                kind="AGENCY_ICON"
+                value={iconUrl}
+                onChange={setIconUrl}
+                placeholder="https://..."
+                helpText="Ícono cuadrado para la pestaña del navegador."
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Teléfono Legal / Fiscal
-              </label>
-              <input
-                type="tel"
-                name="contactPhone"
-                disabled={!canEdit || isLegalPending}
-                defaultValue={initialLegal.contactPhone}
-                placeholder="+51 1 234 5678"
-                className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5 text-sm disabled:bg-slate-100"
-              />
-            </div>
+            {canEdit && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isProfilePending}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  {isProfilePending ? 'Guardando…' : 'Guardar identidad visual'}
+                </button>
+              </div>
+            )}
+          </form>
+        </section>
+      )}
+
+      {/* TAB 3: DOMINIOS Y VITRINA */}
+      {activeTab === 'domains' && (
+        <section className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-5 shadow-xs max-w-3xl">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900">Dominios y Presencia Web</h3>
+            <p className="text-xs text-slate-500">
+              Enlace de catálogo y configuración de dominio personalizado.
+            </p>
           </div>
 
-          {canEdit && (
-            <div className="pt-3">
-              <button
-                type="submit"
-                disabled={isLegalPending}
-                className="px-5 py-2.5 bg-[#062918] text-white text-sm font-medium rounded-lg hover:bg-[#0a3f25] disabled:opacity-50"
-              >
-                {isLegalPending ? 'Guardando cambios…' : 'Guardar Perfil Legal'}
-              </button>
+          <form action={profileAction} className="space-y-4">
+            <input type="hidden" name="expectedUpdatedAt" value={initialProfile.updatedAt} />
+            <input type="hidden" name="name" value={initialProfile.name} />
+            <input type="hidden" name="logoUrl" value={logoUrl} />
+            <input type="hidden" name="iconUrl" value={iconUrl} />
+
+            <div className="space-y-4">
+              <label className={labelClass}>
+                Subdominio de la plataforma
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="text"
+                    name="subdomain"
+                    disabled={!canEdit || isProfilePending}
+                    defaultValue={initialProfile.subdomain || ''}
+                    placeholder="mi-agencia"
+                    className="flex-1 rounded-lg border border-slate-200 p-2.5 text-xs sm:text-sm font-mono"
+                  />
+                  <span className="text-xs text-slate-400 font-mono">.plataforma.com</span>
+                </div>
+              </label>
+
+              <label className={labelClass}>
+                Dominio personalizado (CNAME)
+                <input
+                  type="text"
+                  name="customDomain"
+                  disabled={!canEdit || isProfilePending}
+                  defaultValue={initialProfile.customDomain || ''}
+                  placeholder="tours.miagencia.com"
+                  className={inputClass}
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Apunta tu registro CNAME hacia el proxy central para activar la vitrina.
+                </span>
+              </label>
             </div>
+
+            {canEdit && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isProfilePending}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  {isProfilePending ? 'Guardando…' : 'Guardar dominios'}
+                </button>
+              </div>
+            )}
+          </form>
+        </section>
+      )}
+
+      {/* TAB 4: PERFIL LEGAL Y FISCAL */}
+      {activeTab === 'legal' && (
+        <section className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-5 shadow-xs max-w-3xl">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900">Perfil Legal y Tributario</h3>
+            <p className="text-xs text-slate-500">
+              Información fiscal requerida para comprobantes y cumplimiento normativo.
+            </p>
+          </div>
+
+          {legalState?.error && (
+            <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-3 rounded-lg border border-rose-200">
+              {legalState.error}
+            </p>
           )}
-        </form>
-      </section>
+          {legalState?.success && (
+            <p role="status" className="text-xs text-emerald-800 bg-emerald-50 p-3 rounded-lg border border-emerald-200 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{legalState.success}</span>
+            </p>
+          )}
+
+          <form action={legalAction} className="space-y-4">
+            <input type="hidden" name="expectedUpdatedAt" value={initialLegal.updatedAt || ''} />
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className={labelClass}>
+                RUC / Identificación Fiscal *
+                <input
+                  type="text"
+                  name="ruc"
+                  required
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.ruc}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                Razón Social *
+                <input
+                  type="text"
+                  name="legalName"
+                  required
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.legalName}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                Nombre Comercial
+                <input
+                  type="text"
+                  name="tradeName"
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.tradeName}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                Representante Legal
+                <input
+                  type="text"
+                  name="legalRepresentative"
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.legalRepresentative}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+
+            <label className={labelClass}>
+              Domicilio Fiscal *
+              <input
+                type="text"
+                name="fiscalAddress"
+                required
+                disabled={!canEdit || isLegalPending}
+                defaultValue={initialLegal.fiscalAddress}
+                className={inputClass}
+              />
+            </label>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className={labelClass}>
+                Correo Fiscal
+                <input
+                  type="email"
+                  name="contactEmail"
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.contactEmail}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                Teléfono Fiscal
+                <input
+                  type="tel"
+                  name="contactPhone"
+                  disabled={!canEdit || isLegalPending}
+                  defaultValue={initialLegal.contactPhone}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+
+            {canEdit && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLegalPending}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  {isLegalPending ? 'Guardando…' : 'Guardar perfil legal'}
+                </button>
+              </div>
+            )}
+          </form>
+        </section>
+      )}
+
+      {/* TAB 5: PAGOS (FROZEN / PROVIDER DEFERRED) */}
+      {activeTab === 'payments' && (
+        <section className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-4 shadow-xs max-w-3xl">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Pasarelas de Pago</h3>
+              <p className="text-xs text-slate-500">
+                Estado de integración con proveedores de cobro en línea.
+              </p>
+            </div>
+            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+              FROZEN / PROVIDER DEFERRED
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 text-xs text-amber-900 space-y-2">
+            <div className="flex items-center gap-2 font-bold">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Integración de Pasarelas Diferida</span>
+            </div>
+            <p className="leading-relaxed">
+              La conexión activa con proveedores de pago (Izipay, Culqi, Mercado Pago) se encuentra actualmente en estado congelado/diferido. Todas las reservas emitidas registran importes pactados en estado pendiente sin realizar cobros automáticos en tarjeta.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="p-3.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+              <div>
+                <span className="font-semibold text-slate-900 block">Izipay Perú</span>
+                <span className="text-slate-400">Tarjetas de crédito/débito y PagoEfectivo</span>
+              </div>
+              <span className="text-slate-400 font-mono text-[11px]">Diferido</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+              <div>
+                <span className="font-semibold text-slate-900 block">Culqi</span>
+                <span className="text-slate-400">Tarjetas, Yape y transferencias</span>
+              </div>
+              <span className="text-slate-400 font-mono text-[11px]">Diferido</span>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

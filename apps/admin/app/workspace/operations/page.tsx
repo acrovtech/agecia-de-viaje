@@ -1,6 +1,19 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import {
+  Compass,
+  Calendar,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Car,
+  Users,
+  Truck,
+  Plus,
+  ArrowRight,
+  Filter,
+} from 'lucide-react';
 import { centralRequest, centralSession, CentralApiError } from '../../../lib/central-api';
 import { isApiAdmin } from '../../../lib/admin-mode';
 import {
@@ -10,6 +23,9 @@ import {
   type FleetVehicleItem,
 } from '../../../lib/reservations';
 import { ServiceResourceForm, FleetVehicleForm } from './forms';
+import { PageHeader } from '../../../components/design-system/page-header';
+import { StatusBadge } from '../../../components/design-system/status-badge';
+import { EmptyState } from '../../../components/design-system/empty-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,9 +38,21 @@ const dispatchItemSchema = z.object({
   operationStatus: z.string().nullable(),
   pickupHotel: z.string().nullable(),
   pickupTime: z.string().nullable(),
-  guide: z.object({ id: z.string(), displayName: z.string(), phone: z.string().nullable() }).nullable(),
-  driver: z.object({ id: z.string(), displayName: z.string(), phone: z.string().nullable() }).nullable(),
-  vehicle: z.object({ id: z.string(), internalLabel: z.string(), plate: z.string(), vehicleTypeName: z.string(), capacity: z.number().nullable().optional() }).nullable(),
+  guide: z
+    .object({ id: z.string(), displayName: z.string(), phone: z.string().nullable() })
+    .nullable(),
+  driver: z
+    .object({ id: z.string(), displayName: z.string(), phone: z.string().nullable() })
+    .nullable(),
+  vehicle: z
+    .object({
+      id: z.string(),
+      internalLabel: z.string(),
+      plate: z.string(),
+      vehicleTypeName: z.string(),
+      capacity: z.number().nullable().optional(),
+    })
+    .nullable(),
   missing: z.object({
     guide: z.boolean(),
     driver: z.boolean(),
@@ -55,238 +83,367 @@ export default async function OperationsPage({
   try {
     session = await centralSession();
   } catch (error) {
-    if (error instanceof CentralApiError && error.status === 401) redirect('/login?expired=1');
+    if (error instanceof CentralApiError && error.status === 401) {
+      redirect('/login?expired=1');
+    }
     return (
-      <main className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold">Sesión no disponible</h1>
-        <Link href="/workspace" className="underline">Volver</Link>
-      </main>
+      <EmptyState
+        title="Sesión no disponible"
+        description="No fue posible conectar con el servicio central. Vuelve a iniciar sesión."
+      />
     );
   }
 
   const { token, identity } = session;
-  if (!['OWNER', 'ADMIN', 'OPERATOR'].includes(identity.role)) {
+  const canMutate = ['OWNER', 'ADMIN', 'OPERATOR'].includes(identity.role);
+  if (!canMutate) {
     return (
-      <main className="p-8">
-        <p role="alert">Tu rol no permite acceder al módulo de operaciones.</p>
-        <Link href="/workspace" className="underline">Volver</Link>
-      </main>
+      <EmptyState
+        title="Acceso Restringido"
+        description="Tu rol no tiene permiso para consultar o gestionar operaciones."
+        action={
+          <Link href="/workspace" className="underline text-xs font-semibold">
+            Volver al inicio
+          </Link>
+        }
+      />
     );
   }
 
-  const canMutate = ['OWNER', 'ADMIN'].includes(identity.role);
-  const base = `/v1/agencies/${encodeURIComponent(identity.agencyId)}`;
   const view = params.view === 'personnel' ? 'personnel' : params.view === 'fleet' ? 'fleet' : 'dispatch';
+  const base = `/v1/agencies/${encodeURIComponent(identity.agencyId)}`;
 
   let content;
   try {
     if (view === 'dispatch') {
-      const today = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const date = typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : today;
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
+      const date =
+        typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
+          ? params.date
+          : today;
       const missing = typeof params.missing === 'string' ? params.missing : '';
       const query = new URLSearchParams({ date, ...(missing ? { missing } : {}) });
 
       const raw = await centralRequest(`${base}/operations/dispatch?${query}`, token);
       const dispatch = dispatchResponseSchema.parse(raw);
 
+      // Calculate relative dates for quick navigation
+      const currDateObj = new Date(date + 'T12:00:00Z');
+      const prevDate = new Date(currDateObj.getTime() - 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      const nextDate = new Date(currDateObj.getTime() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+
       content = (
-        <section className="bg-white border rounded-xl p-5 space-y-4">
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <h2 className="text-xl font-semibold">Despacho operativo del día</h2>
-            <form method="get" className="flex items-center gap-2">
+        <div className="space-y-5">
+          {/* Dispatch Date Control Bar */}
+          <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/workspace/operations?view=dispatch&date=${prevDate}${
+                  missing ? `&missing=${missing}` : ''
+                }`}
+                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                ← Día anterior
+              </Link>
+              <Link
+                href={`/workspace/operations?view=dispatch&date=${today}${
+                  missing ? `&missing=${missing}` : ''
+                }`}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  date === today
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'border border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                Hoy
+              </Link>
+              <Link
+                href={`/workspace/operations?view=dispatch&date=${nextDate}${
+                  missing ? `&missing=${missing}` : ''
+                }`}
+                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Día siguiente →
+              </Link>
+            </div>
+
+            <form method="get" className="flex items-center gap-2 text-xs">
               <input type="hidden" name="view" value="dispatch" />
-              <label className="text-sm">Fecha: </label>
+              {missing && <input type="hidden" name="missing" value={missing} />}
+              <span className="text-slate-500 font-medium">Fecha:</span>
               <input
                 type="date"
                 name="date"
                 defaultValue={date}
-                className="border rounded-lg p-1.5 text-sm"
+                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-800"
               />
-              <button className="bg-[#062918] text-white px-3 py-1.5 rounded-lg text-sm">Consultar</button>
+              <button className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer">
+                Consultar
+              </button>
             </form>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-sm">
+          {/* Missing filters */}
+          <div className="flex flex-wrap gap-2 text-xs border-b border-slate-200/80 pb-3">
             <Link
               href={`/workspace/operations?view=dispatch&date=${date}`}
-              className={`px-3 py-1.5 rounded-lg border ${!missing ? 'bg-[#062918] text-white' : 'bg-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                !missing
+                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              }`}
             >
-              Todos ({dispatch.total})
+              Todos los servicios ({dispatch.total})
             </Link>
             <Link
               href={`/workspace/operations?view=dispatch&date=${date}&missing=ANY`}
-              className={`px-3 py-1.5 rounded-lg border ${missing === 'ANY' ? 'bg-[#062918] text-white' : 'bg-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                missing === 'ANY'
+                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              }`}
             >
-              Incompletos
+              Incompletos (Requieren atención)
             </Link>
             <Link
               href={`/workspace/operations?view=dispatch&date=${date}&missing=GUIDE`}
-              className={`px-3 py-1.5 rounded-lg border ${missing === 'GUIDE' ? 'bg-[#062918] text-white' : 'bg-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                missing === 'GUIDE'
+                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              }`}
             >
               Falta guía
             </Link>
             <Link
               href={`/workspace/operations?view=dispatch&date=${date}&missing=DRIVER`}
-              className={`px-3 py-1.5 rounded-lg border ${missing === 'DRIVER' ? 'bg-[#062918] text-white' : 'bg-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                missing === 'DRIVER'
+                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              }`}
             >
               Falta conductor
             </Link>
             <Link
               href={`/workspace/operations?view=dispatch&date=${date}&missing=VEHICLE`}
-              className={`px-3 py-1.5 rounded-lg border ${missing === 'VEHICLE' ? 'bg-[#062918] text-white' : 'bg-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                missing === 'VEHICLE'
+                  ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
+              }`}
             >
               Falta vehículo
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-3">Reserva / Servicio</th>
-                  <th>Hora / Recojo</th>
-                  <th>Pax</th>
-                  <th>Guía</th>
-                  <th>Conductor</th>
-                  <th>Vehículo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dispatch.data.map((item) => (
-                  <tr key={item.reservationId} className="border-b">
-                    <td className="py-3">
-                      <Link
-                        href={`/workspace/reservations?id=${item.reservationId}`}
-                        className="font-medium underline block"
-                      >
-                        {item.code ?? item.reservationId}
-                      </Link>
-                      <span className="text-slate-500 text-xs">{item.serviceTitle ?? 'Servicio'}</span>
-                    </td>
-                    <td>
-                      {item.pickupTime ? <strong>{item.pickupTime}</strong> : 'Sin hora'}
-                      <span className="block text-xs text-slate-500">{item.pickupHotel || 'No especificado'}</span>
-                    </td>
-                    <td>{item.pax}</td>
-                    <td>
-                      {item.guide ? (
-                        <span>{item.guide.displayName}</span>
-                      ) : item.missing.guide ? (
-                        <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs font-medium">
-                          Sin guía
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">No requerido</span>
-                      )}
-                    </td>
-                    <td>
-                      {item.driver ? (
-                        <span>{item.driver.displayName}</span>
-                      ) : item.missing.driver ? (
-                        <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
-                          Sin conductor
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">Opcional</span>
-                      )}
-                    </td>
-                    <td>
-                      {item.vehicle ? (
-                        <div>
-                          <span>{item.vehicle.internalLabel}</span>
-                          <span className="block text-xs text-slate-500">[{item.vehicle.plate}]</span>
-                        </div>
-                      ) : item.missing.vehicle ? (
-                        <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs font-medium">
-                          Sin vehículo
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">No asignado</span>
-                      )}
-                    </td>
+          {/* Dispatch Service Rows Table */}
+          <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 font-semibold">Reserva / Servicio</th>
+                    <th className="py-3 px-4 font-semibold">Hora & Recojo</th>
+                    <th className="py-3 px-4 font-semibold">Pax</th>
+                    <th className="py-3 px-4 font-semibold">Guía</th>
+                    <th className="py-3 px-4 font-semibold">Conductor</th>
+                    <th className="py-3 px-4 font-semibold">Vehículo de Flota</th>
+                    <th className="py-3 px-4 font-semibold text-right">Completitud</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {!dispatch.data.length && (
-              <p className="py-6 text-center text-slate-500">No hay servicios programados para esta fecha con el filtro seleccionado.</p>
-            )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {dispatch.data.map((item) => {
+                    const publicCode = item.code ?? item.reservationId.slice(0, 8);
+                    const isFullyAssigned = !item.missing.any;
+
+                    return (
+                      <tr key={item.reservationId} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <Link
+                            href={`/workspace/reservations?id=${item.reservationId}`}
+                            className="font-bold text-slate-900 text-sm hover:underline font-mono"
+                          >
+                            {publicCode}
+                          </Link>
+                          <span className="text-slate-500 text-xs block truncate max-w-xs">
+                            {item.serviceTitle ?? 'Servicio'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">
+                            {item.pickupTime || 'Hora por definir'}
+                          </div>
+                          <span className="text-[11px] text-slate-500 block truncate max-w-[180px]">
+                            {item.pickupHotel || 'No especificado'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-800">{item.pax}</td>
+                        <td className="py-3.5 px-4">
+                          {item.guide ? (
+                            <span className="font-medium text-slate-900">
+                              {item.guide.displayName}
+                            </span>
+                          ) : item.missing.guide ? (
+                            <span className="inline-block px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[11px] font-medium">
+                              Falta guía
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">Opcional</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.driver ? (
+                            <span className="font-medium text-slate-900">
+                              {item.driver.displayName}
+                            </span>
+                          ) : item.missing.driver ? (
+                            <span className="inline-block px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[11px] font-medium">
+                              Falta conductor
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">Opcional</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.vehicle ? (
+                            <div>
+                              <span className="font-medium text-slate-900">
+                                {item.vehicle.internalLabel}
+                              </span>
+                              <span className="block text-[11px] text-slate-500 font-mono">
+                                [{item.vehicle.plate}]
+                              </span>
+                            </div>
+                          ) : item.missing.vehicle ? (
+                            <span className="inline-block px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[11px] font-medium">
+                              Falta vehículo
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">Opcional</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          {isFullyAssigned ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Completo</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-700 text-xs font-semibold">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Incompleto</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {dispatch.data.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        No hay servicios operativos programados para el {date}.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </section>
+        </div>
       );
     } else if (view === 'personnel') {
       const raw = await centralRequest(`${base}/operations/resources`, token);
-      const list = z.object({ data: z.array(serviceResourceSchema), nextCursor: z.string().nullable() }).parse(raw);
+      const list = z
+        .object({ data: z.array(serviceResourceSchema), nextCursor: z.string().nullable() })
+        .parse(raw);
       const selected = list.data.find((r) => r.id === params.edit);
 
       content = (
-        <section className="bg-white border rounded-xl p-5 space-y-4">
-          <div className="flex justify-between items-center">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Personal de Servicio (Guías y Conductores)</h2>
-              <p className="text-sm text-slate-600">Guías de turismo y conductores profesionales disponibles para asignación.</p>
+              <h2 className="text-lg font-bold text-slate-900">
+                Personal Operativo (Guías y Conductores)
+              </h2>
+              <p className="text-xs text-slate-500">
+                Guías oficiales y conductores asignables a los servicios de tu agencia.
+              </p>
             </div>
             {canMutate && (
               <Link
                 href="/workspace/operations?view=personnel&edit=new"
-                className="bg-[#062918] text-white px-4 py-2 rounded-lg text-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
-                Registrar personal
+                <Plus className="w-3.5 h-3.5" />
+                <span>Registrar colaborador</span>
               </Link>
             )}
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <ServiceResourceForm key={selected?.id ?? 'new'} resource={selected} />
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+              <ServiceResourceForm key={selected?.id ?? 'new'} resource={selected} />
+            </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-3">Nombre</th>
-                  <th>Tipo</th>
-                  <th>Teléfono / WhatsApp</th>
-                  <th>Documento</th>
-                  <th>Estado</th>
-                  {canMutate && <th>Acción</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.map((r) => (
-                  <tr key={r.id} className="border-b">
-                    <td className="py-3 font-medium">{r.displayName}</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${r.type === 'GUIDE' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                        {r.type === 'GUIDE' ? 'Guía' : 'Conductor'}
-                      </span>
-                    </td>
-                    <td>{r.phone || 'Sin teléfono'}</td>
-                    <td>{r.documentNumber || '-'}</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded text-xs ${r.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'}`}>
-                        {r.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    {canMutate && (
-                      <td>
-                        <Link
-                          href={`/workspace/operations?view=personnel&edit=${r.id}`}
-                          className="underline text-sm"
-                        >
-                          Editar
-                        </Link>
-                      </td>
-                    )}
+          <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 font-semibold">Nombre</th>
+                    <th className="py-3 px-4 font-semibold">Rol Operativo</th>
+                    <th className="py-3 px-4 font-semibold">Teléfono</th>
+                    <th className="py-3 px-4 font-semibold">Estado</th>
+                    {canMutate && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {!list.data.length && (
-              <p className="py-4 text-slate-500">No hay personal registrado en tu agencia aún.</p>
-            )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {list.data.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                        {item.displayName}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-slate-700">
+                          {item.type === 'GUIDE' ? 'Guía de Turismo' : 'Conductor'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {item.phone || 'Sin registrar'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <StatusBadge status={item.isActive ? 'ACTIVE' : 'INACTIVE'} />
+                      </td>
+                      {canMutate && (
+                        <td className="py-3.5 px-4 text-right">
+                          <Link
+                            href={`/workspace/operations?view=personnel&edit=${item.id}`}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                          >
+                            Editar
+                          </Link>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {list.data.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                        No hay personal operativo registrado en tu agencia aún.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </section>
+        </div>
       );
     } else {
       // view === 'fleet'
@@ -294,129 +451,164 @@ export default async function OperationsPage({
         centralRequest(`${base}/operations/vehicles`, token),
         centralRequest(`${base}/catalog/vehicles`, token),
       ]);
-      const list = z.object({ data: z.array(fleetVehicleSchema), nextCursor: z.string().nullable() }).parse(vehiclesRaw);
+      const list = z
+        .object({ data: z.array(fleetVehicleSchema), nextCursor: z.string().nullable() })
+        .parse(vehiclesRaw);
       const vehicleTypes = vehicleTypeCatalogSchema.parse(catalogRaw).data;
       const selected = list.data.find((v) => v.id === params.edit);
 
       content = (
-        <section className="bg-white border rounded-xl p-5 space-y-4">
-          <div className="flex justify-between items-center">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Flota Operativa (Unidades Físicas)</h2>
-              <p className="text-sm text-slate-600">Vehículos físicos de la agencia vinculados a sus categorías comerciales.</p>
+              <h2 className="text-lg font-bold text-slate-900">
+                Flota Operativa (Unidades Físicas)
+              </h2>
+              <p className="text-xs text-slate-500">
+                Vehículos físicos propios o contratados de la agencia asociados a su categoría.
+              </p>
             </div>
             {canMutate && (
               <Link
                 href="/workspace/operations?view=fleet&edit=new"
-                className="bg-[#062918] text-white px-4 py-2 rounded-lg text-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
-                Registrar unidad
+                <Plus className="w-3.5 h-3.5" />
+                <span>Registrar unidad</span>
               </Link>
             )}
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <FleetVehicleForm key={selected?.id ?? 'new'} vehicle={selected} vehicleTypes={vehicleTypes} />
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+              <FleetVehicleForm
+                key={selected?.id ?? 'new'}
+                vehicle={selected}
+                vehicleTypes={vehicleTypes}
+              />
+            </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-3">Unidad</th>
-                  <th>Placa</th>
-                  <th>Categoría</th>
-                  <th>Capacidad</th>
-                  <th>Estado</th>
-                  {canMutate && <th>Acción</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.map((v) => (
-                  <tr key={v.id} className="border-b">
-                    <td className="py-3 font-medium">{v.internalLabel}</td>
-                    <td><strong className="tracking-wider">{v.plate}</strong></td>
-                    <td>{v.vehicleType.name}</td>
-                    <td>{v.capacity ?? v.vehicleType.maxPax} pasajeros</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded text-xs ${v.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'}`}>
-                        {v.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    {canMutate && (
-                      <td>
-                        <Link
-                          href={`/workspace/operations?view=fleet&edit=${v.id}`}
-                          className="underline text-sm"
-                        >
-                          Editar
-                        </Link>
-                      </td>
-                    )}
+          <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 font-semibold">Identificador</th>
+                    <th className="py-3 px-4 font-semibold">Placa</th>
+                    <th className="py-3 px-4 font-semibold">Tipo Comercial</th>
+                    <th className="py-3 px-4 font-semibold">Capacidad Pax</th>
+                    <th className="py-3 px-4 font-semibold">Estado</th>
+                    {canMutate && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {!list.data.length && (
-              <p className="py-4 text-slate-500">No hay unidades de flota registradas aún.</p>
-            )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {list.data.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                        {item.internalLabel}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
+                        {item.plate}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">{item.vehicleType.name}</td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-800">
+                        {item.capacity ?? item.vehicleType.maxPax} pax
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <StatusBadge status={item.isActive ? 'ACTIVE' : 'INACTIVE'} />
+                      </td>
+                      {canMutate && (
+                        <td className="py-3.5 px-4 text-right">
+                          <Link
+                            href={`/workspace/operations?view=fleet&edit=${item.id}`}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                          >
+                            Editar
+                          </Link>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {list.data.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-400">
+                        No hay vehículos de flota registrados aún.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </section>
+        </div>
       );
     }
-  } catch (error) {
-    if (error instanceof CentralApiError && error.status === 401) redirect('/login?expired=1');
+  } catch {
     content = (
-      <p role="alert" className="text-red-700 p-4 bg-red-50 rounded-lg">
-        No pudimos cargar la información operativa de tu agencia. Vuelve a intentarlo.
-      </p>
+      <EmptyState
+        title="Error operativo"
+        description="No pudimos cargar la información de operaciones. Intenta nuevamente."
+      />
     );
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-5 py-8 space-y-6">
-      <nav className="flex flex-wrap gap-4 text-sm">
-        <Link href="/workspace" className="underline">Catálogo y equipo</Link>
-        <Link href="/workspace/reservations" className="underline">Reservas</Link>
-        <Link href="/workspace/operations" className="font-semibold text-[#062918]">Operaciones y Recursos</Link>
-      </nav>
-
-      <div>
-        <h1 className="text-3xl font-semibold text-[#062918]">Operaciones · {identity.agencyName}</h1>
-        <p className="text-sm text-slate-600 mt-1">Gestión de recursos operativos, flota y despacho diario.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Operaciones y Despacho Diario"
+        description="Coordinación logística diaria, asignación de guías, conductores y unidades de flota."
+        breadcrumbs={[
+          { label: 'Inicio', href: '/workspace' },
+          { label: 'Operaciones', isCurrent: true },
+        ]}
+      />
 
       {params.saved === '1' && (
-        <p role="status" className="p-3 rounded-lg bg-green-50 text-green-800 text-sm">
-          Cambios guardados con éxito.
-        </p>
+        <div
+          role="status"
+          className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium flex items-center gap-2"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Cambios guardados con éxito.</span>
+        </div>
       )}
 
-      <nav aria-label="Secciones de operaciones" className="flex flex-wrap gap-2">
+      {/* Main Operations Navigation Tabs */}
+      <div className="flex gap-2 border-b border-slate-200/80 pb-3">
         <Link
           href="/workspace/operations?view=dispatch"
-          aria-current={view === 'dispatch' ? 'page' : undefined}
-          className={`px-4 py-2 rounded-lg text-sm ${view === 'dispatch' ? 'bg-[#062918] text-white' : 'bg-white border'}`}
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            view === 'dispatch'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
         >
           Despacho diario
         </Link>
         <Link
           href="/workspace/operations?view=personnel"
-          aria-current={view === 'personnel' ? 'page' : undefined}
-          className={`px-4 py-2 rounded-lg text-sm ${view === 'personnel' ? 'bg-[#062918] text-white' : 'bg-white border'}`}
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            view === 'personnel'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
         >
           Personal (Guías y Conductores)
         </Link>
         <Link
           href="/workspace/operations?view=fleet"
-          aria-current={view === 'fleet' ? 'page' : undefined}
-          className={`px-4 py-2 rounded-lg text-sm ${view === 'fleet' ? 'bg-[#062918] text-white' : 'bg-white border'}`}
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            view === 'fleet'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
         >
           Flota operativa
         </Link>
-      </nav>
+      </div>
 
       {content}
-    </main>
+    </div>
   );
 }

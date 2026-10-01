@@ -344,7 +344,7 @@ export function ReservaDetailClient({ initialReserva }: { initialReserva: Reserv
             </div>
 
             <h2 className="text-lg font-bold text-slate-900">
-              {reserva.tour?.title || reserva.transfer?.title || 'Reserva Inca Bound'}
+              {reserva.tour?.title || reserva.transfer?.title || 'Reserva de servicio'}
             </h2>
 
             {reserva.transfer ? (

@@ -1,7 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
+import React, { useActionState } from 'react';
+import { RefreshCw, CheckCircle2, AlertCircle, Clock, Send, XCircle } from 'lucide-react';
 import { retryNotificationAction, type NotificationActionState } from './notifications-actions';
+import { StatusBadge } from '../../../components/design-system/status-badge';
 
 export interface NotificationItem {
   id: string;
@@ -30,28 +32,25 @@ function RetryButton({ notificationId }: { notificationId: string }) {
   );
 
   return (
-    <form action={formAction} className="inline-block">
+    <form action={formAction} className="inline-flex items-center gap-1.5">
       <input type="hidden" name="notificationId" value={notificationId} />
       <button
         type="submit"
         disabled={isPending}
-        className="px-2.5 py-1 text-xs font-medium rounded bg-amber-100 text-amber-900 hover:bg-amber-200 disabled:opacity-50"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50 cursor-pointer"
       >
-        {isPending ? 'Reintentando...' : 'Reintentar'}
+        <RefreshCw className={`w-3 h-3 ${isPending ? 'animate-spin' : ''}`} />
+        <span>{isPending ? 'Reintentando…' : 'Reintentar'}</span>
       </button>
-      {state?.error && <span className="text-xs text-red-600 ml-2">{state.error}</span>}
-      {state?.success && <span className="text-xs text-green-600 ml-2">Encolado</span>}
+      {state?.error && (
+        <span className="text-[11px] text-rose-600 font-medium">{state.error}</span>
+      )}
+      {state?.success && (
+        <span className="text-[11px] text-emerald-600 font-medium">Encolado</span>
+      )}
     </form>
   );
 }
-
-const stateStyles: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-800 border-amber-200',
-  PROCESSING: 'bg-blue-50 text-blue-800 border-blue-200',
-  SENT: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  FAILED: 'bg-rose-50 text-rose-800 border-rose-200',
-  DEAD_LETTER: 'bg-slate-100 text-slate-800 border-slate-300',
-};
 
 export function NotificationsTable({
   notifications,
@@ -62,24 +61,24 @@ export function NotificationsTable({
 }) {
   if (notifications.length === 0) {
     return (
-      <div className="py-8 text-center text-slate-500">
-        No hay notificaciones transaccionales registradas recientemente.
+      <div className="py-12 text-center text-slate-400 text-xs">
+        No hay notificaciones transaccionales registradas recientemente en tu agencia.
       </div>
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left border-collapse">
+      <table className="w-full text-xs text-left border-collapse">
         <thead>
-          <tr className="border-b bg-slate-50 text-slate-600 text-xs uppercase font-medium">
-            <th className="py-3 px-3">Tipo / Asunto</th>
-            <th className="py-3 px-3">Destinatario</th>
-            <th className="py-3 px-3">Estado</th>
-            <th className="py-3 px-3">Intentos</th>
-            <th className="py-3 px-3">Último intento / Envío</th>
-            <th className="py-3 px-3">Error</th>
-            {canRetry && <th className="py-3 px-3 text-right">Acciones</th>}
+          <tr className="border-b bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[10px]">
+            <th className="py-3 px-4 font-semibold">Tipo / Asunto</th>
+            <th className="py-3 px-4 font-semibold">Destinatario</th>
+            <th className="py-3 px-4 font-semibold">Estado Outbox</th>
+            <th className="py-3 px-4 font-semibold">Intentos</th>
+            <th className="py-3 px-4 font-semibold">Último Evento</th>
+            <th className="py-3 px-4 font-semibold">Código Error</th>
+            {canRetry && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -88,39 +87,47 @@ export function NotificationsTable({
               canRetry && (item.state === 'FAILED' || item.state === 'DEAD_LETTER');
 
             return (
-              <tr key={item.id} className="hover:bg-slate-50/50">
-                <td className="py-3 px-3">
-                  <div className="font-medium text-slate-900">{item.subject}</div>
-                  <div className="text-xs text-slate-500 font-mono">{item.kind}</div>
+              <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                <td className="py-3.5 px-4">
+                  <div className="font-bold text-slate-900 text-sm max-w-sm truncate">
+                    {item.subject}
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    {item.kind} · {item.audience}
+                  </div>
                 </td>
-                <td className="py-3 px-3 font-mono text-xs text-slate-700">
+                <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700">
                   {item.recipient}
                 </td>
-                <td className="py-3 px-3">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
-                      stateStyles[item.state] || 'bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    {item.state}
-                  </span>
+                <td className="py-3.5 px-4">
+                  <StatusBadge status={item.state} />
                 </td>
-                <td className="py-3 px-3 text-xs text-slate-600">
+                <td className="py-3.5 px-4 text-slate-700 font-mono font-medium">
                   {item.attempts} / {item.maxAttempts}
                 </td>
-                <td className="py-3 px-3 text-xs text-slate-500">
+                <td className="py-3.5 px-4 text-slate-500 text-[11px]">
                   {item.sentAt
-                    ? `Enviado: ${new Date(item.sentAt).toLocaleString()}`
+                    ? `Enviado: ${new Date(item.sentAt).toLocaleString('es-PE', {
+                        timeZone: 'America/Lima',
+                      })}`
                     : item.lastAttemptAt
-                      ? `Intento: ${new Date(item.lastAttemptAt).toLocaleString()}`
-                      : `Creado: ${new Date(item.createdAt).toLocaleString()}`}
+                      ? `Intento: ${new Date(item.lastAttemptAt).toLocaleString('es-PE', {
+                          timeZone: 'America/Lima',
+                        })}`
+                      : `Creado: ${new Date(item.createdAt).toLocaleString('es-PE', {
+                          timeZone: 'America/Lima',
+                        })}`}
                 </td>
-                <td className="py-3 px-3 text-xs text-rose-700 font-mono">
+                <td className="py-3.5 px-4 font-mono text-slate-500 text-[11px]">
                   {item.failureCode || '-'}
                 </td>
                 {canRetry && (
-                  <td className="py-3 px-3 text-right">
-                    {isRetryable ? <RetryButton notificationId={item.id} /> : <span className="text-xs text-slate-400">-</span>}
+                  <td className="py-3.5 px-4 text-right">
+                    {isRetryable ? (
+                      <RetryButton notificationId={item.id} />
+                    ) : (
+                      <span className="text-slate-300 text-[11px]">-</span>
+                    )}
                   </td>
                 )}
               </tr>
