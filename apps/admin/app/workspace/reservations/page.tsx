@@ -170,7 +170,7 @@ export default async function ReservationsPage({
           {/* Overview Grid: Customer, Passengers, Service, Commercial */}
           <div className="grid gap-5 md:grid-cols-2">
             {/* Card 1: Cliente y Contacto */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" />
                 <span>Cliente Titular</span>
@@ -191,7 +191,7 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 2: Instantánea Comercial (FROZEN / DEFERRED) */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5" />
                 <span>Instantánea Comercial</span>
@@ -206,14 +206,14 @@ export default async function ReservationsPage({
                     {row.pricingUnit === 'GROUP' ? 'por vehículo' : 'por persona'}
                   </p>
                 )}
-                <div className="pt-2 text-[11px] text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb]">
+                <div className="pt-2 text-[11px] text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg">
                   Estado de pagos: <strong>FROZEN / PROVIDER DEFERRED</strong>. No se procesan cobros en pasarela en esta versión.
                 </div>
               </div>
             </div>
 
             {/* Card 3: Servicio y Recojo */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>Logística y Recojo</span>
@@ -240,7 +240,7 @@ export default async function ReservationsPage({
                 {row.specialRequirements && (
                   <div>
                     <span className="text-[#898989] block font-medium">Observaciones:</span>
-                    <p className="whitespace-pre-wrap text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e5e7eb] mt-1">
+                    <p className="whitespace-pre-wrap text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg mt-1">
                       {row.specialRequirements}
                     </p>
                   </div>
@@ -249,7 +249,7 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 4: Manifiesto de Pasajeros */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 space-y-3 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 <span>Manifiesto de Pasajeros ({row.passengers.length})</span>
@@ -258,7 +258,7 @@ export default async function ReservationsPage({
                 {row.passengers.map((p, i) => (
                   <div
                     key={i}
-                    className="p-2.5 rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] flex items-center justify-between text-xs"
+                    className="p-2.5 rounded-lg bg-[#f8f9fa] flex items-center justify-between text-xs"
                   >
                     <span className="font-medium text-[#111111]">
                       {i + 1}. {p.firstName} {p.lastName}
@@ -288,7 +288,7 @@ export default async function ReservationsPage({
           <StatusForm key={row.updatedAt} reservation={row} />
 
           {/* Historial Operativo */}
-          <div className="bg-white border border-[#e5e7eb] rounded-xl p-5 space-y-4 shadow-none">
+          <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-4">
             <h3 className="text-sm font-semibold text-[#111111]">Historial Operativo</h3>
             {!row.events.length && (
               <p className="text-xs text-[#898989]">
@@ -567,7 +567,7 @@ export default async function ReservationsPage({
       </div>
 
       {/* Grouped List / Modern Data Table */}
-      <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+      <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>

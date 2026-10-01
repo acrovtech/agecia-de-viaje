@@ -244,7 +244,7 @@ export default async function WorkspacePage({
         </div>
 
         {/* Recent Reservations Snapshot (One Grouped List Container) */}
-        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
           <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-[#111111]">Reservas Recientes</h3>
@@ -482,7 +482,7 @@ export default async function WorkspacePage({
 
           {/* Catalog Table (Grouped List Container) */}
           {catalog && (
-            <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+            <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
@@ -527,7 +527,7 @@ export default async function WorkspacePage({
                           {canEdit && (
                             <Link
                               href={`/workspace?view=${view}&edit=${encodeURIComponent(item.id)}`}
-                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-md transition-colors"
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-md transition-colors"
                             >
                               Editar
                             </Link>

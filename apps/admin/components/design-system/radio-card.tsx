@@ -76,10 +76,10 @@ export function RadioCardGroup({
                   onChange(option.value);
                 }
               }}
-              className={`relative flex flex-col justify-between p-4 rounded-lg border text-left cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 ${
+              className={`relative flex flex-col justify-between p-4 rounded-lg text-left cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 ${
                 isSelected
-                  ? 'border-[#111111] bg-[#f8f9fa] shadow-none ring-1 ring-[#111111]'
-                  : 'border-[#e5e7eb] bg-white hover:border-[#898989] hover:bg-[#f8f9fa]/50'
+                  ? 'bg-[#f8f9fa] shadow-[0_0_0_1.5px_#111111]'
+                  : 'bg-white shadow-cal-ring hover:bg-[#f8f9fa]/50'
               } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-start justify-between gap-3">

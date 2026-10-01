@@ -102,7 +102,7 @@ export default async function ResourcesPage({
         </div>
 
         {allowed && (selected || params.edit === 'new') && (
-          <div className="max-w-2xl bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-none">
+          <div className="max-w-2xl bg-white rounded-xl shadow-cal-surface p-6">
             <ResourceForm
               key={`${selected?.id ?? 'new'}-${selected?.updatedAt ?? ''}`}
               kind={kind}
@@ -112,7 +112,7 @@ export default async function ResourcesPage({
         )}
 
         {/* Table List */}
-        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>

@@ -148,7 +148,7 @@ export function SettingsForm({
 
       {/* TAB 1: GENERAL Y CONTACTO */}
       {activeTab === 'general' && (
-        <section className="bg-white rounded-xl border border-[#e5e7eb] p-6 space-y-5 shadow-none max-w-3xl">
+        <section className="max-w-3xl space-y-5">
           <div className="border-b border-[#e5e7eb] pb-3">
             <h3 className="text-base font-semibold tracking-tight text-[#111111]">Perfil Comercial y Contacto</h3>
             <p className="text-xs text-[#6b7280]">
@@ -247,7 +247,7 @@ export function SettingsForm({
 
       {/* TAB 2: MARCA E IDENTIDAD */}
       {activeTab === 'branding' && (
-        <section className="bg-white rounded-xl border border-[#e5e7eb] p-6 space-y-5 shadow-none max-w-3xl">
+        <section className="max-w-3xl space-y-5">
           <div className="border-b border-[#e5e7eb] pb-3">
             <h3 className="text-base font-semibold tracking-tight text-[#111111]">Marca e Identidad Visual</h3>
             <p className="text-xs text-[#6b7280]">
@@ -303,7 +303,7 @@ export function SettingsForm({
 
       {/* TAB 3: DOMINIOS Y VITRINA */}
       {activeTab === 'domains' && (
-        <section className="bg-white rounded-xl border border-[#e5e7eb] p-6 space-y-5 shadow-none max-w-3xl">
+        <section className="max-w-3xl space-y-5">
           <div className="border-b border-[#e5e7eb] pb-3">
             <h3 className="text-base font-semibold tracking-tight text-[#111111]">Dominios y Presencia Web</h3>
             <p className="text-xs text-[#6b7280]">
@@ -366,7 +366,7 @@ export function SettingsForm({
 
       {/* TAB 4: PERFIL LEGAL Y FISCAL */}
       {activeTab === 'legal' && (
-        <section className="bg-white rounded-xl border border-[#e5e7eb] p-6 space-y-5 shadow-none max-w-3xl">
+        <section className="max-w-3xl space-y-5">
           <div className="border-b border-[#e5e7eb] pb-3">
             <h3 className="text-base font-semibold tracking-tight text-[#111111]">Perfil Legal y Tributario</h3>
             <p className="text-xs text-[#6b7280]">
@@ -490,7 +490,7 @@ export function SettingsForm({
 
       {/* TAB 5: PAGOS (FROZEN / PROVIDER DEFERRED) */}
       {activeTab === 'payments' && (
-        <section className="bg-white rounded-xl border border-[#e5e7eb] p-6 space-y-4 shadow-none max-w-3xl">
+        <section className="max-w-3xl space-y-4">
           <div className="border-b border-[#e5e7eb] pb-3 flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold tracking-tight text-[#111111]">Pasarelas de Pago</h3>
@@ -503,7 +503,7 @@ export function SettingsForm({
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#374151] space-y-1.5">
+          <div className="p-3.5 rounded-lg bg-[#f8f9fa] text-xs text-[#374151] space-y-1.5">
             <div className="flex items-center gap-2 font-medium text-[#111111]">
               <AlertTriangle className="w-4 h-4 text-[#d97706] shrink-0" />
               <span>Integración de Pasarelas Diferida</span>
@@ -513,8 +513,8 @@ export function SettingsForm({
             </p>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <div className="p-3.5 rounded-xl border border-[#e5e7eb] bg-white flex items-center justify-between text-xs">
+          <div className="rounded-xl bg-white shadow-cal-surface divide-y divide-[#e5e7eb] overflow-hidden">
+            <div className="p-3.5 flex items-center justify-between text-xs">
               <div>
                 <span className="font-medium text-[#111111] block">Izipay Perú</span>
                 <span className="text-[#6b7280]">Tarjetas de crédito/débito y PagoEfectivo</span>
@@ -522,7 +522,7 @@ export function SettingsForm({
               <span className="text-[#898989] font-mono text-[11px]">Diferido</span>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-[#e5e7eb] bg-white flex items-center justify-between text-xs">
+            <div className="p-3.5 flex items-center justify-between text-xs">
               <div>
                 <span className="font-medium text-[#111111] block">Culqi</span>
                 <span className="text-[#6b7280]">Tarjetas, Yape y transferencias</span>

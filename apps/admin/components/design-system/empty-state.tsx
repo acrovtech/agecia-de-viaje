@@ -22,7 +22,7 @@ export function EmptyState({
     <div
       className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-xl border border-dashed border-[#e5e7eb] bg-[#f8f9fa]/50 ${className}`}
     >
-      <div className="w-10 h-10 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center text-[#6b7280] mb-3">
+      <div className="w-10 h-10 rounded-lg bg-white shadow-cal-ring flex items-center justify-center text-[#6b7280] mb-3">
         <Icon className="w-5 h-5" aria-hidden="true" />
       </div>
       <h3 className="text-sm sm:text-base font-semibold text-[#111111]">

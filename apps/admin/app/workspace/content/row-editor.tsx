@@ -5,10 +5,10 @@ export type RowField = { key: string; label: string; type?: 'number' | 'long'; o
 export function RowEditor({ title, fields, rows, onChange, limit = 50 }: { title: string; fields: RowField[]; rows: Row[]; onChange: (rows: Row[]) => void; limit?: number }) {
   const move = (index: number, offset: number) => { const next = [...rows]; [next[index], next[index + offset]] = [next[index + offset]!, next[index]!]; onChange(next); };
   return (
-    <fieldset className="border border-[#e5e7eb] rounded-xl p-4 space-y-3">
-      <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-[#6b7280]">{title}</legend>
+    <div className="space-y-3 pt-2">
+      <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">{title}</h4>
       {rows.map((row, index) => (
-        <div key={index} className="border border-[#e5e7eb] rounded-lg p-3 space-y-2 bg-[#f8f9fa]">
+        <div key={index} className="rounded-lg p-3 space-y-2 bg-[#f8f9fa]">
           <div className="grid sm:grid-cols-2 gap-3">
             {fields.map((field) => {
               const props = {
@@ -73,10 +73,10 @@ export function RowEditor({ title, fields, rows, onChange, limit = 50 }: { title
         type="button"
         disabled={rows.length >= limit}
         onClick={() => onChange([...rows, Object.fromEntries(fields.map((field) => [field.key, '']))])}
-        className="h-9 border border-[#e5e7eb] bg-white hover:bg-[#f8f9fa] rounded-lg px-3.5 text-xs font-semibold text-[#111111] shadow-none cursor-pointer disabled:opacity-40"
+        className="h-9 shadow-cal-ring bg-white hover:bg-[#f8f9fa] rounded-lg px-3.5 text-xs font-semibold text-[#111111] cursor-pointer disabled:opacity-40 transition-colors"
       >
         Añadir {title.toLowerCase()}
       </button>
-    </fieldset>
+    </div>
   );
 }

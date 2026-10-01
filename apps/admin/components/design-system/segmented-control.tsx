@@ -43,7 +43,7 @@ export function SegmentedControl<T extends string = string>({
             onClick={() => onChange(option.value)}
             className={`flex items-center gap-1.5 rounded-md font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${paddingClass} ${
               isSelected
-                ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.05)] font-semibold'
+                ? 'bg-white text-[#111111] shadow-cal-ring font-medium'
                 : 'text-[#6b7280] hover:text-[#111111] hover:bg-black/[0.03]'
             }`}
           >

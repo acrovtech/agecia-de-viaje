@@ -127,7 +127,7 @@ export function BookingForm({
       )}
 
       {/* STEP 1: COTIZACIÓN OFICIAL */}
-      <form action={quoteAction} className="border border-[#e5e7eb] rounded-xl p-5 bg-white space-y-4 shadow-none">
+      <form action={quoteAction} className="rounded-xl p-5 bg-white space-y-4 shadow-cal-surface">
         <div className="border-b border-[#e5e7eb] pb-3 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[#111111]">
@@ -279,7 +279,7 @@ function CreateForm({
   };
 
   return (
-    <form action={action} className="space-y-6 border border-[#e5e7eb] rounded-xl p-5 bg-white shadow-none">
+    <form action={action} className="space-y-6 rounded-xl p-5 bg-white shadow-cal-surface">
       <div className="border-b border-[#e5e7eb] pb-3">
         <h3 className="text-base font-semibold tracking-tight text-[#111111]">
           2. Datos del Cliente, Pasajeros y Emisión
@@ -290,7 +290,7 @@ function CreateForm({
       </div>
 
       {/* Snapshot de Tarifa Cotizada */}
-      <div className="bg-[#f8f9fa] border border-[#e5e7eb] p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-[#f8f9fa] p-4 rounded-lg flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5 text-xs">
           <span className="font-semibold text-[#111111] block">
             {quote.title}
@@ -498,7 +498,7 @@ function CreateForm({
         </div>
 
         {/* Declaración de emisión */}
-        <label className="flex items-start gap-2.5 p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#374151] cursor-pointer">
+        <label className="flex items-start gap-2.5 p-3 rounded-lg bg-[#f8f9fa] text-xs text-[#374151] cursor-pointer">
           <input
             type="checkbox"
             required
@@ -539,7 +539,7 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
   if (reservation.source !== 'MANUAL_SAAS' || !allowed.length) return null;
 
   return (
-    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white shadow-none">
+    <form action={action} className="space-y-4 rounded-xl p-5 bg-white shadow-cal-surface">
       <div className="border-b border-[#e5e7eb] pb-2">
         <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Transición de Estado Operativo
@@ -623,7 +623,7 @@ export function OperationsAssignmentForm({
     reservation.operationStatus === 'CANCELLED' || reservation.operationStatus === 'COMPLETED';
 
   return (
-    <section className="bg-white border border-[#e5e7eb] rounded-xl p-5 space-y-4 shadow-none">
+    <section className="bg-white rounded-xl p-5 space-y-4 shadow-cal-surface">
       <div className="border-b border-[#e5e7eb] pb-2">
         <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Asignación de Recursos Operativos
@@ -633,7 +633,7 @@ export function OperationsAssignmentForm({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 bg-[#f8f9fa] p-4 rounded-xl border border-[#e5e7eb] text-xs">
+      <div className="grid gap-3 sm:grid-cols-3 bg-[#f8f9fa] p-4 rounded-xl text-xs">
         <div>
           <span className="text-[#898989] block font-medium">Guía asignado</span>
           <strong className="text-[#111111] text-sm font-semibold">

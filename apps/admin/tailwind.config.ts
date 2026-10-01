@@ -9,6 +9,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      boxShadow: {
+        'cal-surface': '0px 1px 5px -4px rgba(19, 19, 22, 0.70), 0px 0px 0px 1px rgba(34, 42, 53, 0.08), 0px 4px 8px 0px rgba(34, 42, 53, 0.05)',
+        'cal-ring': '0px 0px 0px 1px rgba(34, 42, 53, 0.08)',
+        'cal-elevated': '0px 2px 8px -2px rgba(19, 19, 22, 0.70), 0px 0px 0px 1px rgba(34, 42, 53, 0.08), 0px 8px 16px 0px rgba(34, 42, 53, 0.08)',
+      },
       colors: {
         border: "var(--border)",
         input: "var(--input)",

@@ -22,7 +22,7 @@ export function PublicationForm({
   const [state, action, pending] = useActionState(catalogContentAction, null);
 
   return (
-    <form action={action} className="border border-[#e5e7eb] rounded-xl bg-white p-5 space-y-4 shadow-none">
+    <form action={action} className="rounded-xl bg-white p-5 space-y-4 shadow-cal-surface">
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="operation" value="publication" />
@@ -52,7 +52,7 @@ export function PublicationForm({
         disabled={pending}
         className={`h-9 px-4 text-xs font-semibold rounded-lg shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
           isPublished
-            ? 'bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#111111] border border-[#e5e7eb]'
+            ? 'bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#111111] shadow-cal-ring'
             : 'bg-[#111111] hover:bg-[#242424] text-white'
         }`}
       >
@@ -119,7 +119,7 @@ export function ContentForm({
         };
 
   return (
-    <form action={action} className="bg-white border border-[#e5e7eb] rounded-xl p-5 sm:p-6 space-y-6 shadow-none">
+    <form action={action} className="bg-white rounded-xl shadow-cal-surface p-5 sm:p-6 space-y-6">
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={record.id} />
       <input type="hidden" name="operation" value="content" />
@@ -134,10 +134,10 @@ export function ContentForm({
       <fieldset disabled={pending} className="space-y-6">
         {kind === 'tours' && (
           <>
-            <fieldset className="border border-[#e5e7eb] rounded-xl p-4 space-y-2">
-              <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-[#6b7280]">
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">
                 Categorías Asociadas
-              </legend>
+              </h4>
               <div className="flex flex-wrap gap-3 pt-1">
                 {categories.map((row) => (
                   <label
@@ -165,7 +165,7 @@ export function ContentForm({
                   Crea categorías en Recursos antes de asignarlas.
                 </p>
               )}
-            </fieldset>
+            </div>
 
             <RowEditor
               title="Galería de imágenes secundarias"
@@ -216,7 +216,7 @@ export function ContentForm({
         )}
 
         {/* Modalidad Privada */}
-        <div className="border border-[#e5e7eb] rounded-xl p-4 space-y-4">
+        <div className="space-y-4 pt-2">
           <label className="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-[#111111] cursor-pointer">
             <input
               type="checkbox"

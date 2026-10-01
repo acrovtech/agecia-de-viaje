@@ -139,13 +139,13 @@ export default async function OperationsPage({
       content = (
         <div className="space-y-5">
           {/* Dispatch Date Control Bar */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] p-3 sm:p-4 shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="bg-white rounded-xl shadow-cal-surface p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Link
                 href={`/workspace/operations?view=dispatch&date=${prevDate}${
                   missing ? `&missing=${missing}` : ''
                 }`}
-                className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#e5e7eb] bg-white text-[#111111] hover:bg-[#f8f9fa] transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium rounded-lg shadow-cal-ring bg-white text-[#111111] hover:bg-[#f8f9fa] transition-colors"
               >
                 ← Día anterior
               </Link>
@@ -242,7 +242,7 @@ export default async function OperationsPage({
           </div>
 
           {/* Dispatch Service Rows Table */}
-          <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
@@ -386,12 +386,12 @@ export default async function OperationsPage({
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <div className="bg-white border border-[#e5e7eb] rounded-xl p-5 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5">
               <ServiceResourceForm key={selected?.id ?? 'new'} resource={selected} />
             </div>
           )}
 
-          <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
@@ -480,7 +480,7 @@ export default async function OperationsPage({
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <div className="bg-white border border-[#e5e7eb] rounded-xl p-5 shadow-none">
+            <div className="bg-white rounded-xl shadow-cal-surface p-5">
               <FleetVehicleForm
                 key={selected?.id ?? 'new'}
                 vehicle={selected}
@@ -489,7 +489,7 @@ export default async function OperationsPage({
             </div>
           )}
 
-          <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>

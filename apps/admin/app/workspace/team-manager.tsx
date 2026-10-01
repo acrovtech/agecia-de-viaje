@@ -223,7 +223,7 @@ export function TeamManager({
 
       {/* FORMULARIO DE INVITACIÓN */}
       {(isOwner || isAdmin) && (
-        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5 sm:p-6 space-y-4 shadow-none">
+        <div className="bg-white rounded-xl shadow-cal-surface p-5 sm:p-6 space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-[#6b7280]" />
@@ -284,7 +284,7 @@ export function TeamManager({
         <h3 className="text-sm font-semibold text-[#111111]">
           Miembros del Equipo ({members.length})
         </h3>
-        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
@@ -382,7 +382,7 @@ export function TeamManager({
           <h3 className="text-sm font-semibold text-[#111111]">
             Invitaciones Pendientes ({pendingInvitations.length})
           </h3>
-          <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>

@@ -118,8 +118,8 @@ export default async function NotificationsPage({
       />
 
       {/* Live Email Transport Banner */}
-      <div className="p-4 rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] flex items-start gap-3 shadow-none">
-        <div className="p-1 rounded-lg bg-[#f3f4f6] text-[#6b7280] shrink-0 mt-0.5">
+      <div className="p-3.5 rounded-lg bg-[#f8f9fa] flex items-start gap-3">
+        <div className="p-1 rounded-md bg-[#e5e7eb] text-[#374151] shrink-0 mt-0.5">
           <Info className="w-4 h-4" />
         </div>
         <div className="flex-1 text-xs">
@@ -167,7 +167,7 @@ export default async function NotificationsPage({
 
       {/* Notifications Table */}
       {notificationsData && (
-        <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-none">
+        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
           <NotificationsTable
             notifications={notificationsData.data as NotificationItem[]}
             canRetry={['OWNER', 'ADMIN'].includes(identity.role)}

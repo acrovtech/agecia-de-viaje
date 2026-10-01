@@ -21,7 +21,7 @@ export function ServiceResourceForm({
   const isEdit = Boolean(resource?.id);
 
   return (
-    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white max-w-xl shadow-none">
+    <form action={action} className="space-y-4 max-w-xl">
       <h3 className="font-semibold text-base text-[#111111]">
         {isEdit ? `Editar recurso: ${resource?.displayName}` : 'Registrar nuevo guía o conductor'}
       </h3>
@@ -126,7 +126,7 @@ export function FleetVehicleForm({
   const isEdit = Boolean(vehicle?.id);
 
   return (
-    <form action={action} className="space-y-4 border border-[#e5e7eb] rounded-xl p-5 bg-white max-w-xl shadow-none">
+    <form action={action} className="space-y-4 max-w-xl">
       <h3 className="font-semibold text-base text-[#111111]">
         {isEdit ? `Editar vehículo: ${vehicle?.internalLabel}` : 'Registrar nueva unidad física en flota'}
       </h3>

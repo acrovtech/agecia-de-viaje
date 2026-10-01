@@ -60,7 +60,7 @@ export function ConfirmDialog({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-md bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-white rounded-xl shadow-cal-elevated p-6 space-y-4 animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -95,7 +95,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onClose}
-            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>

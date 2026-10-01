@@ -49,7 +49,7 @@ export function StickySaveBar({
             type="button"
             disabled={isPending}
             onClick={onCancel}
-            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="h-9 px-3.5 text-xs sm:text-sm font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>
