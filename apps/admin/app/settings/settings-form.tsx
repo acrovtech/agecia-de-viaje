@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useActionState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MediaUploader } from '../../../components/workspace/media-uploader';
-import { ConfirmDialog } from '../../../components/design-system/confirm-dialog';
-import type { NavIdentity } from '../../../components/design-system/sidebar';
+import { MediaUploader } from '../../components/workspace/media-uploader';
+import { ConfirmDialog } from '../../components/design-system/confirm-dialog';
+import type { NavIdentity } from '../../components/design-system/sidebar';
 import {
   updateAgencyProfileAction,
   updateLegalProfileAction,
@@ -22,31 +21,16 @@ import {
   Smartphone,
   Blocks,
   Building2,
-  Globe,
-  FileText,
   CheckCircle2,
   AlertTriangle,
-  Info,
   Copy,
   Check,
-  ExternalLink,
   Lock,
-  Mail,
-  Clock,
-  Calendar,
-  ChevronRight,
-  Download,
-  Trash2,
-  Plus,
-  Share2,
-  MessageSquare,
   ArrowRight,
-  DollarSign,
-  Users,
-  Eye,
-  CheckCircle,
-  HelpCircle,
   TrendingUp,
+  Download,
+  MessageSquare,
+  FileText,
 } from 'lucide-react';
 
 export type SettingsTabId =
@@ -101,9 +85,6 @@ export function SettingsForm({
   identity,
   initialTab = 'resumen',
 }: SettingsFormProps) {
-  const router = useRouter();
-
-  // Validate initial tab
   const validTabs: SettingsTabId[] = [
     'resumen',
     'perfil',
@@ -125,7 +106,6 @@ export function SettingsForm({
 
   const handleTabChange = (tabId: SettingsTabId) => {
     setActiveTab(tabId);
-    // Sync URL cleanly without full reload
     const url = new URL(window.location.href);
     if (tabId === 'resumen') {
       url.searchParams.delete('tab');
@@ -885,7 +865,6 @@ export function SettingsForm({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              {/* Opción 1: Predeterminado */}
               <button
                 type="button"
                 onClick={() => setThemeMode('system')}
@@ -911,7 +890,6 @@ export function SettingsForm({
                 )}
               </button>
 
-              {/* Opción 2: Claro */}
               <button
                 type="button"
                 onClick={() => setThemeMode('light')}
@@ -937,7 +915,6 @@ export function SettingsForm({
                 )}
               </button>
 
-              {/* Opción 3: Oscuro */}
               <button
                 type="button"
                 onClick={() => setThemeMode('dark')}
@@ -977,7 +954,6 @@ export function SettingsForm({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 pt-2 border-t border-[#e5e7eb]">
-              {/* Color Primario */}
               <div className="space-y-2">
                 <label className={labelClass}>Color Primario (Botones y Enlaces)</label>
                 <div className="flex items-center gap-3">
@@ -1010,7 +986,6 @@ export function SettingsForm({
                 </div>
               </div>
 
-              {/* Color Secundario / Acento */}
               <div className="space-y-2">
                 <label className={labelClass}>Color Secundario / Acento (Badges y Destacados)</label>
                 <div className="flex items-center gap-3">
@@ -1044,7 +1019,6 @@ export function SettingsForm({
               </div>
             </div>
 
-            {/* Vista Previa de Colores en Botón */}
             <div className="p-3.5 rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] flex items-center justify-between">
               <span className="text-xs text-[#6b7280]">Vista previa de combinación:</span>
               <div className="flex items-center gap-2">
@@ -1114,7 +1088,6 @@ export function SettingsForm({
       {/* ========================================================================= */}
       {activeTab === 'referidos' && (
         <div className="space-y-6 max-w-4xl">
-          {/* Banner Principal */}
           <div className="product-card-surface p-6 bg-gradient-to-br from-[#111111] to-[#242424] text-white">
             <div className="max-w-2xl space-y-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-amber-400 text-black">
@@ -1129,7 +1102,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Enlace de Referido */}
           <div className="product-card-surface p-5 space-y-3">
             <h3 className="text-sm font-semibold text-[#111111]">
               Tu Enlace Único de Recomendación
@@ -1164,7 +1136,6 @@ export function SettingsForm({
             </p>
           </div>
 
-          {/* Dashboard de Actividad & Earnings */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="product-card-surface p-4 space-y-1">
               <span className="text-[11px] font-medium text-[#6b7280]">Clics en Enlace</span>
@@ -1196,7 +1167,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Tabla de Actividad Reciente */}
           <div className="product-card-surface overflow-hidden">
             <div className="p-4 border-b border-[#e5e7eb] flex items-center justify-between">
               <h4 className="text-xs font-semibold text-[#111111] uppercase tracking-wider">
@@ -1261,7 +1231,6 @@ export function SettingsForm({
       {/* ========================================================================= */}
       {activeTab === 'facturacion' && (
         <div className="space-y-6 max-w-4xl">
-          {/* Card: Plan Activo y Gestión de Cancelación */}
           <div className="product-card-surface p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#e5e7eb] pb-4">
               <div>
@@ -1325,7 +1294,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Card: Saldo de Créditos */}
           <div className="product-card-surface p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -1360,7 +1328,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Card: Registro de Gastos Mensual */}
           <div className="product-card-surface overflow-hidden">
             <div className="p-4 border-b border-[#e5e7eb] flex items-center justify-between">
               <div>
@@ -1443,7 +1410,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Modal de Cancelación de Suscripción */}
           <ConfirmDialog
             isOpen={cancelModalOpen}
             onClose={() => setCancelModalOpen(false)}
@@ -1475,7 +1441,6 @@ export function SettingsForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-            {/* Starter */}
             <div className="product-card-surface p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-4">
                 <div>
@@ -1514,7 +1479,6 @@ export function SettingsForm({
               </button>
             </div>
 
-            {/* Pro (Current) */}
             <div className="product-card-surface p-6 border-2 border-[#111111] relative flex flex-col justify-between space-y-5 bg-[#f8f9fa]/30">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#111111] text-white">
                 PLAN ACTUAL
@@ -1560,7 +1524,6 @@ export function SettingsForm({
               </button>
             </div>
 
-            {/* Enterprise */}
             <div className="product-card-surface p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-4">
                 <div>
@@ -1611,7 +1574,6 @@ export function SettingsForm({
       {/* ========================================================================= */}
       {activeTab === 'seguridad' && (
         <div className="space-y-6 max-w-3xl">
-          {/* Formulario de Perfil Legal y Fiscal */}
           <form action={legalAction} className="product-card-surface p-5 space-y-4">
             <input
               type="hidden"
@@ -1744,7 +1706,6 @@ export function SettingsForm({
             </fieldset>
           </form>
 
-          {/* Tarjeta de Sesiones Activas */}
           <div className="product-card-surface p-5 space-y-4">
             <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#6b7280]" />
@@ -1790,7 +1751,6 @@ export function SettingsForm({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Editor de la Página Social */}
             <div className="lg:col-span-7 space-y-4">
               <div className="product-card-surface p-5 space-y-4">
                 <h4 className="text-sm font-semibold text-[#111111]">
@@ -1885,13 +1845,10 @@ export function SettingsForm({
               </div>
             </div>
 
-            {/* Live Mobile Phone Mockup Preview */}
             <div className="lg:col-span-5 flex justify-center">
               <div className="w-[300px] h-[580px] rounded-[38px] border-4 border-[#111111] bg-white shadow-2xl p-4 flex flex-col justify-between overflow-hidden relative">
-                {/* Notch */}
                 <div className="w-24 h-4 bg-[#111111] rounded-b-xl mx-auto -mt-4 mb-3"></div>
 
-                {/* Bio Header */}
                 <div className="text-center space-y-2 flex-1">
                   <div className="w-16 h-16 rounded-full bg-[#111111] text-white flex items-center justify-center font-bold text-lg mx-auto shadow-sm">
                     {socialBio.title[0]?.toUpperCase() || 'A'}
@@ -1903,7 +1860,6 @@ export function SettingsForm({
                     </p>
                   </div>
 
-                  {/* Primary WhatsApp Action */}
                   <div className="pt-2">
                     <button
                       type="button"
@@ -1914,7 +1870,6 @@ export function SettingsForm({
                     </button>
                   </div>
 
-                  {/* Featured Tour Cards Preview */}
                   <div className="pt-3 space-y-2 text-left">
                     <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wider block">
                       Tours Destacados
@@ -1936,7 +1891,6 @@ export function SettingsForm({
                   </div>
                 </div>
 
-                {/* Bio Footer / Social links */}
                 <div className="pt-2 border-t border-[#e5e7eb] flex items-center justify-center gap-3 text-xs text-[#6b7280]">
                   <span>{socialBio.instagram}</span>
                   <span>·</span>
@@ -1953,7 +1907,6 @@ export function SettingsForm({
       {/* ========================================================================= */}
       {activeTab === 'integraciones' && (
         <div className="space-y-6 max-w-4xl">
-          {/* Pasarelas de Pago */}
           <div className="product-card-surface p-5 space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-[#111111]">
@@ -1965,7 +1918,6 @@ export function SettingsForm({
             </div>
 
             <div className="space-y-3 pt-2 border-t border-[#e5e7eb]">
-              {/* Izipay */}
               <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs shrink-0">
@@ -1992,7 +1944,6 @@ export function SettingsForm({
                 </button>
               </div>
 
-              {/* Stripe */}
               <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
@@ -2019,7 +1970,6 @@ export function SettingsForm({
                 </button>
               </div>
 
-              {/* Mercado Pago */}
               <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 opacity-60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs shrink-0">
@@ -2041,7 +1991,6 @@ export function SettingsForm({
             </div>
           </div>
 
-          {/* Herramientas Externas */}
           <div className="product-card-surface p-5 space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-[#111111]">
@@ -2053,7 +2002,6 @@ export function SettingsForm({
             </div>
 
             <div className="space-y-3 pt-2 border-t border-[#e5e7eb]">
-              {/* Google Calendar */}
               <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs shrink-0">
@@ -2080,7 +2028,6 @@ export function SettingsForm({
                 </button>
               </div>
 
-              {/* WhatsApp Business API */}
               <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">

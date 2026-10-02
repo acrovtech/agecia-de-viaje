@@ -13,8 +13,12 @@ export async function proxy(request: NextRequest) {
     if (isStaticAsset && ['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
     if (pathname === '/login') return NextResponse.next();
 
-    const isWorkspace = pathname === '/workspace' || pathname.startsWith('/workspace/');
-    if (!isWorkspace) {
+    const isAllowedRoute =
+      pathname === '/workspace' ||
+      pathname.startsWith('/workspace/') ||
+      pathname === '/settings' ||
+      pathname.startsWith('/settings/');
+    if (!isAllowedRoute) {
       if (pathname.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
         return new NextResponse(null, { status: 403 });
       }

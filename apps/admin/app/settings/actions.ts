@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { centralRequest, centralSession, CentralApiError } from '../../../lib/central-api';
+import { centralRequest, centralSession, CentralApiError } from '../../lib/central-api';
 
 export type SettingsActionState = {
   success?: boolean;
@@ -49,6 +49,7 @@ export async function updateAgencyProfileAction(
       'PUT'
     );
 
+    revalidatePath('/settings');
     revalidatePath('/workspace/settings');
     revalidatePath('/workspace');
 
@@ -115,6 +116,7 @@ export async function updateLegalProfileAction(
       'PUT'
     );
 
+    revalidatePath('/settings');
     revalidatePath('/workspace/settings');
 
     return { success: true, updatedAt: res.updatedAt };

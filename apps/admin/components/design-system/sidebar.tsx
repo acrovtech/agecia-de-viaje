@@ -130,7 +130,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Configuración',
-    href: '/workspace/settings',
+    href: '/settings',
     icon: Settings,
     roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
   },

@@ -24,6 +24,8 @@ test('workspace and login reach their own server authorization', async () => {
   expect((await proxy(req('/workspace/reservations', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/workspace/nested/custom/route'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/workspace/content/legacy'))).headers.get('x-middleware-next')).toBe('1');
+  expect((await proxy(req('/settings'))).headers.get('x-middleware-next')).toBe('1');
+  expect((await proxy(req('/settings/security', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/login', 'POST', ''))).headers.get('x-middleware-next')).toBe('1');
 });
 test('workspace subroutes without valid token redirect to login', async () => {
