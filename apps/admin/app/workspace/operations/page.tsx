@@ -558,10 +558,6 @@ export default async function OperationsPage({
       <PageHeader
         title="Operaciones y Despacho Diario"
         description="Coordinación logística diaria, asignación de guías, conductores y unidades de flota."
-        breadcrumbs={[
-          { label: 'Inicio', href: '/workspace' },
-          { label: 'Operaciones', isCurrent: true },
-        ]}
       />
 
       {params.saved === '1' && (

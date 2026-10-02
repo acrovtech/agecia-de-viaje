@@ -1,12 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Breadcrumbs, type BreadcrumbItem } from './breadcrumbs';
 
 interface PageHeaderProps {
   title: string;
   description?: string;
-  breadcrumbs?: BreadcrumbItem[];
   badges?: React.ReactNode;
   actions?: React.ReactNode;
   children?: React.ReactNode;
@@ -16,7 +14,6 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   description,
-  breadcrumbs,
   badges,
   actions,
   children,
@@ -24,7 +21,6 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header className={`mb-6 lg:mb-8 space-y-2.5 ${className}`}>
-      {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1 min-w-0 flex-1">

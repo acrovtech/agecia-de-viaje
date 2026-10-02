@@ -49,11 +49,6 @@ export default async function ResourcesPage({
               ? 'Etiquetas y agrupadores temáticos para la clasificación de tours.'
               : 'Categorías de vehículos comerciales ofrecidas para servicios de traslado y tours privados.'
           }
-          breadcrumbs={[
-            { label: 'Inicio', href: '/workspace' },
-            { label: 'Recursos', href: '/workspace/resources?kind=categories' },
-            { label: kind === 'categories' ? 'Categorías' : 'Vehículos', isCurrent: true },
-          ]}
           actions={
             allowed && (
               <Link

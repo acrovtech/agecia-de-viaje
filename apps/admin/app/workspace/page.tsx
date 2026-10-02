@@ -397,10 +397,6 @@ export default async function WorkspacePage({
           <PageHeader
             title="Equipo y Colaboradores"
             description="Gestiona miembros, roles y autorizaciones de tu espacio de trabajo."
-            breadcrumbs={[
-              { label: 'Inicio', href: '/workspace' },
-              { label: 'Equipo', isCurrent: true },
-            ]}
           />
 
           {errorMessage && (
@@ -444,10 +440,6 @@ export default async function WorkspacePage({
                 ? 'Experiencias turísticas y excursiones ofrecidas por tu agencia.'
                 : 'Servicios de transporte y traslados privados o compartidos.'
             }
-            breadcrumbs={[
-              { label: 'Inicio', href: '/workspace' },
-              { label: view === 'tours' ? 'Tours' : 'Traslados', isCurrent: true },
-            ]}
             actions={
               canEdit && (
                 <Link

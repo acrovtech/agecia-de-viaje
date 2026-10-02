@@ -67,10 +67,6 @@ export default async function SettingsPage() {
       <PageHeader
         title="Configuración de Agencia"
         description="Parámetros de empresa, perfiles comerciales, identidad de marca y datos legales."
-        breadcrumbs={[
-          { label: 'Inicio', href: '/workspace' },
-          { label: 'Configuración', isCurrent: true },
-        ]}
       />
 
       <SettingsForm

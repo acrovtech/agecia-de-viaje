@@ -80,11 +80,6 @@ export default async function ContentPage({
               ? 'Gestión de itinerarios, galerías multimedia, inclusiones, exclusiones y tarifas privadas.'
               : 'Configuración de tarifas privadas por categoría de vehículo comercial.'
           }
-          breadcrumbs={[
-            { label: 'Inicio', href: '/workspace' },
-            { label: kind === 'tours' ? 'Tours' : 'Traslados', href: `/workspace?view=${kind}` },
-            { label: record.title, isCurrent: true },
-          ]}
           actions={
             <Link
               href={`/workspace?view=${kind}`}

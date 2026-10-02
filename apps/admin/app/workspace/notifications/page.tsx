@@ -111,10 +111,6 @@ export default async function NotificationsPage({
       <PageHeader
         title="Notificaciones Transaccionales"
         description="Auditoría, outbox y estado de entrega de correos salientes del sistema (invitaciones y reservas)."
-        breadcrumbs={[
-          { label: 'Inicio', href: '/workspace' },
-          { label: 'Notificaciones', isCurrent: true },
-        ]}
       />
 
       {/* Live Email Transport Banner */}

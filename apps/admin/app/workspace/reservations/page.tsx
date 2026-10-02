@@ -152,11 +152,6 @@ export default async function ReservationsPage({
           <PageHeader
             title={publicCode}
             description={`Servicio: ${row.serviceTitle ?? 'Reserva anterior'} · Fecha: ${row.date.slice(0, 10)} · ${row.pax} pasajeros`}
-            breadcrumbs={[
-              { label: 'Inicio', href: '/workspace' },
-              { label: 'Reservas', href: '/workspace/reservations' },
-              { label: publicCode, isCurrent: true },
-            ]}
             badges={
               <div className="flex items-center gap-2">
                 <StatusBadge status={row.operationStatus || 'PENDING'} />
@@ -415,11 +410,6 @@ export default async function ReservationsPage({
           <PageHeader
             title="Nueva Reserva Manual"
             description="Selecciona un servicio publicado para iniciar la cotización y registro."
-            breadcrumbs={[
-              { label: 'Inicio', href: '/workspace' },
-              { label: 'Reservas', href: '/workspace/reservations' },
-              { label: 'Nueva Reserva', isCurrent: true },
-            ]}
           />
 
           <div className="flex gap-2 border-b border-[#e5e7eb] pb-3">
@@ -511,10 +501,6 @@ export default async function ReservationsPage({
       <PageHeader
         title="Reservas"
         description="Gestiona las reservas de tu agencia."
-        breadcrumbs={[
-          { label: 'Inicio', href: '/workspace' },
-          { label: 'Reservas', isCurrent: true },
-        ]}
         actions={
           <Link
             href="/workspace/reservations?new=1"
