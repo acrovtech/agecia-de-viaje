@@ -8,8 +8,15 @@ import { EmptyState } from '../../../components/design-system/empty-state';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!isApiAdmin()) redirect('/');
+
+  const params = searchParams ? await searchParams : {};
+  const requestedTab = typeof params.tab === 'string' ? params.tab : 'resumen';
 
   let session;
   try {
@@ -65,14 +72,16 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Configuración de Agencia"
-        description="Parámetros de empresa, perfiles comerciales, identidad de marca y datos legales."
+        title="Configuración"
+        description="Administra la identidad de tu agencia, preferencias del sistema, facturación, planes y seguridad."
       />
 
       <SettingsForm
         initialProfile={profileData}
         initialLegal={legalData}
         canEdit={canEdit}
+        identity={identity}
+        initialTab={requestedTab}
       />
     </div>
   );
