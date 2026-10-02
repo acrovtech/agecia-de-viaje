@@ -49,7 +49,7 @@ export function StickySaveBar({
             type="button"
             disabled={isPending}
             onClick={onCancel}
-            className="h-8 px-3 text-xs font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-md transition-colors cursor-pointer disabled:opacity-50"
+            className="product-button-secondary"
           >
             {cancelLabel}
           </button>
@@ -58,9 +58,9 @@ export function StickySaveBar({
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 h-8 px-3.5 bg-[#111111] hover:bg-[#242424] active:bg-[#242424] text-white text-xs font-semibold rounded-md shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="product-button-primary"
         >
-          {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           <span>{isPending ? 'Guardando…' : saveLabel}</span>
         </button>
       </div>

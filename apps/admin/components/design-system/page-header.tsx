@@ -23,13 +23,13 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps) {
   return (
-    <header className={`mb-5 space-y-2.5 ${className}`}>
+    <header className={`mb-6 lg:mb-8 space-y-2.5 ${className}`}>
       {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-0.5 min-w-0">
+        <div className="space-y-1 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-[22px] font-semibold tracking-tight text-[#111111] truncate">
+            <h1 className="text-xl font-semibold text-[#111111] truncate">
               {title}
             </h1>
             {badges}
@@ -42,7 +42,7 @@ export function PageHeader({
         </div>
 
         {actions && (
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             {actions}
           </div>
         )}

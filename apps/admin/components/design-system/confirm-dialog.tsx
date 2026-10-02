@@ -95,7 +95,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onClose}
-            className="h-8 px-3 text-xs font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-md transition-colors cursor-pointer disabled:opacity-50"
+            className="product-button-secondary"
           >
             {cancelLabel}
           </button>
@@ -104,10 +104,10 @@ export function ConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onConfirm}
-            className={`h-8 px-3.5 text-xs font-semibold text-white rounded-md shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
+            className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-lg text-sm font-medium text-white shadow-product-button transition-colors disabled:opacity-50 cursor-pointer ${
               isDestructive
-                ? 'bg-[#dc2626] hover:bg-[#b91c1c] focus-visible:ring-[#dc2626]'
-                : 'bg-[#111111] hover:bg-[#242424] focus-visible:ring-[#111111]'
+                ? 'bg-[#dc2626] hover:bg-[#b91c1c] border border-[#dc2626]'
+                : 'bg-[#111111] hover:bg-[#242424] border border-[#111111]'
             }`}
           >
             {isPending ? 'Procesando…' : confirmLabel}

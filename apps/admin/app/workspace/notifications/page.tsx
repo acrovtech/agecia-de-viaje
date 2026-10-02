@@ -165,9 +165,9 @@ export default async function NotificationsPage({
         ))}
       </div>
 
-      {/* Notifications Table */}
+      {/* Notifications Table (Canonical Grouped List Container) */}
       {notificationsData && (
-        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+        <div className="product-card-surface">
           <NotificationsTable
             notifications={notificationsData.data as NotificationItem[]}
             canRetry={['OWNER', 'ADMIN'].includes(identity.role)}

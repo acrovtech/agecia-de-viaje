@@ -45,8 +45,8 @@ export function ResourceForm({
         };
 
   const inputClass =
-    'h-10 block w-full border border-[#e5e7eb] rounded-lg px-3 mt-1 text-sm text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
-  const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
+    'h-[34px] block w-full border border-[#e5e7eb] rounded-lg px-3 mt-1 text-sm text-[#111111] bg-white shadow-product-card focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+  const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
 
   const input = (key: string, label: string, type = 'text', required = true) => (
     <label className={labelClass} key={key}>
@@ -139,7 +139,7 @@ export function ResourceForm({
 
         <button
           disabled={pending}
-          className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-md shadow-none disabled:opacity-50 cursor-pointer"
+          className="product-button-primary"
         >
           {pending ? 'Guardando…' : 'Guardar recurso'}
         </button>

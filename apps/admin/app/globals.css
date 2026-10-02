@@ -108,3 +108,33 @@ a {
     font-family: var(--font-sans), Inter, -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
   }
 }
+
+@layer components {
+  .product-main-surface {
+    @apply bg-white md:rounded-2xl border border-[rgba(34,42,53,0.08)] md:shadow-product-surface md:overflow-hidden;
+  }
+
+  .product-card-surface {
+    @apply rounded-2xl bg-white border border-[#e5e7eb] shadow-product-card overflow-hidden;
+  }
+
+  .product-button-primary {
+    @apply inline-flex items-center justify-center gap-2 h-8 px-3 rounded-lg text-sm font-medium text-white bg-[#111111] hover:bg-[#242424] active:bg-[#242424] border border-[#111111] shadow-product-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation relative before:absolute before:-inset-1.5 sm:before:hidden;
+  }
+
+  .product-button-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] border border-[#e5e7eb] shadow-product-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation relative before:absolute before:-inset-1.5 sm:before:hidden;
+  }
+
+  .product-input {
+    @apply h-[34px] w-full rounded-lg border border-[#e5e7eb] px-3 bg-white text-sm text-[#111111] shadow-product-card placeholder:text-[#898989] focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] transition-all disabled:bg-[#f8f9fa] disabled:cursor-not-allowed;
+  }
+
+  .product-list-row {
+    @apply px-6 py-4 hover:bg-[#f8f9fa]/70 transition-colors;
+  }
+
+  .product-data-row {
+    @apply px-4 py-3 hover:bg-[#f8f9fa]/70 transition-colors;
+  }
+}

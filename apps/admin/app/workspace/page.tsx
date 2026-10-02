@@ -172,17 +172,14 @@ export default async function WorkspacePage({
         <PageHeader
           title="Inicio"
           description={`Resumen operativo de ${identity.agencyName}`}
-          badges={<StatusBadge status="ACTIVE" label="Agencia Activa" />}
           actions={
-            <div className="flex items-center gap-2">
-              <Link
-                href="/workspace/reservations?new=1"
-                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nueva reserva</span>
-              </Link>
-            </div>
+            <Link
+              href="/workspace/reservations?new=1"
+              className="product-button-primary"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nueva reserva</span>
+            </Link>
           }
         />
 
@@ -243,8 +240,8 @@ export default async function WorkspacePage({
           </div>
         </div>
 
-        {/* Recent Reservations Snapshot (One Grouped List Container) */}
-        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+        {/* Recent Reservations Snapshot (Canonical Grouped List Container) */}
+        <div className="product-card-surface">
           <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-[#111111]">Reservas Recientes</h3>
@@ -272,7 +269,7 @@ export default async function WorkspacePage({
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]">
                 {reservations.slice(0, 5).map((row) => (
-                  <tr key={row.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                  <tr key={row.id} className="product-data-row">
                     <td className="py-3 px-4 font-semibold text-[#111111]">
                       <Link
                         href={`/workspace/reservations?id=${row.id}`}
@@ -455,9 +452,9 @@ export default async function WorkspacePage({
               canEdit && (
                 <Link
                   href={`/workspace?view=${view}&edit=new`}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none transition-colors"
+                  className="product-button-primary"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   <span>Crear {view === 'tours' ? 'tour' : 'traslado'}</span>
                 </Link>
               )
@@ -480,9 +477,9 @@ export default async function WorkspacePage({
             </p>
           )}
 
-          {/* Catalog Table (Grouped List Container) */}
+          {/* Catalog Table (Canonical Grouped List Container) */}
           {catalog && (
-            <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+            <div className="product-card-surface">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
@@ -499,7 +496,7 @@ export default async function WorkspacePage({
                   </thead>
                   <tbody className="divide-y divide-[#e5e7eb]">
                     {catalog.data.map((item) => (
-                      <tr key={item.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                      <tr key={item.id} className="product-data-row">
                         <td className="py-3 px-4">
                           <div className="font-semibold text-[#111111] text-sm">{item.title}</div>
                           <div className="text-[11px] text-[#6b7280] font-mono">/{item.slug}</div>

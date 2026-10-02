@@ -77,12 +77,12 @@ export function StatusBadge({ status, label, variant, size = 'sm' }: StatusBadge
 
   const sizeClasses =
     size === 'sm'
-      ? 'px-2 py-0.5 text-xs font-medium gap-1'
-      : 'px-2.5 py-1 text-xs font-medium gap-1.5';
+      ? 'px-1.5 py-0.5 text-[11px] font-medium gap-1 rounded'
+      : 'px-2 py-0.5 text-xs font-medium gap-1.5 rounded-md';
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border ${variantClasses[resolvedVariant]} ${sizeClasses}`}
+      className={`inline-flex items-center border ${variantClasses[resolvedVariant]} ${sizeClasses}`}
       role="status"
     >
       <Icon className={size === 'sm' ? 'w-3 h-3 shrink-0' : 'w-3.5 h-3.5 shrink-0'} aria-hidden="true" />

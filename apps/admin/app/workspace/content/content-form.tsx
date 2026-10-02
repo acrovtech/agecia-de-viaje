@@ -22,7 +22,7 @@ export function PublicationForm({
   const [state, action, pending] = useActionState(catalogContentAction, null);
 
   return (
-    <form action={action} className="rounded-xl bg-white p-5 space-y-4 shadow-cal-surface">
+    <form action={action} className="product-card-surface p-5 space-y-4">
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="operation" value="publication" />
@@ -50,11 +50,7 @@ export function PublicationForm({
 
       <button
         disabled={pending}
-        className={`h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors cursor-pointer disabled:opacity-50 ${
-          isPublished
-            ? 'bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#111111] shadow-cal-ring'
-            : 'bg-[#111111] hover:bg-[#242424] text-white'
-        }`}
+        className={isPublished ? 'product-button-secondary' : 'product-button-primary'}
       >
         {pending ? 'Procesando…' : isPublished ? 'Retirar publicación (Pasar a borrador)' : 'Publicar servicio'}
       </button>
@@ -119,7 +115,7 @@ export function ContentForm({
         };
 
   return (
-    <form action={action} className="bg-white rounded-xl shadow-cal-surface p-5 sm:p-6 space-y-6">
+    <form action={action} className="product-card-surface p-5 sm:p-6 space-y-6">
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={record.id} />
       <input type="hidden" name="operation" value="content" />
@@ -259,7 +255,7 @@ export function ContentForm({
 
         <button
           disabled={pending}
-          className="h-10 px-5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+          className="product-button-primary"
         >
           {pending ? 'Guardando…' : 'Guardar borrador de contenido'}
         </button>

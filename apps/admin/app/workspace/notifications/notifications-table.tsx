@@ -71,14 +71,14 @@ export function NotificationsTable({
     <div className="overflow-x-auto">
       <table className="w-full text-xs text-left border-collapse">
         <thead>
-          <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-            <th className="py-3 px-4 font-semibold">Tipo / Asunto</th>
-            <th className="py-3 px-4 font-semibold">Destinatario</th>
-            <th className="py-3 px-4 font-semibold">Estado Outbox</th>
-            <th className="py-3 px-4 font-semibold">Intentos</th>
-            <th className="py-3 px-4 font-semibold">Último Evento</th>
-            <th className="py-3 px-4 font-semibold">Código Error</th>
-            {canRetry && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
+          <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+            <th className="py-2.5 px-4 font-medium">Tipo / Asunto</th>
+            <th className="py-2.5 px-4 font-medium">Destinatario</th>
+            <th className="py-2.5 px-4 font-medium">Estado Outbox</th>
+            <th className="py-2.5 px-4 font-medium">Intentos</th>
+            <th className="py-2.5 px-4 font-medium">Último Evento</th>
+            <th className="py-2.5 px-4 font-medium">Código Error</th>
+            {canRetry && <th className="py-2.5 px-4 font-medium text-right">Acción</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#e5e7eb]">
@@ -87,7 +87,7 @@ export function NotificationsTable({
               canRetry && (item.state === 'FAILED' || item.state === 'DEAD_LETTER');
 
             return (
-              <tr key={item.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+              <tr key={item.id} className="product-data-row">
                 <td className="py-3.5 px-4">
                   <div className="font-medium text-[#111111] text-sm max-w-sm truncate">
                     {item.subject}

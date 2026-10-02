@@ -73,7 +73,7 @@ export function RowEditor({ title, fields, rows, onChange, limit = 50 }: { title
         type="button"
         disabled={rows.length >= limit}
         onClick={() => onChange([...rows, Object.fromEntries(fields.map((field) => [field.key, '']))])}
-        className="h-8 shadow-cal-ring bg-white hover:bg-[#f8f9fa] rounded-md px-3 text-xs font-semibold text-[#111111] cursor-pointer disabled:opacity-40 transition-colors"
+        className="product-button-secondary"
       >
         Añadir {title.toLowerCase()}
       </button>

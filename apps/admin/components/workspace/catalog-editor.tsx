@@ -129,8 +129,8 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
   ];
 
   const inputClass =
-    'w-full mt-1.5 h-10 px-3 bg-white border border-[#e5e7eb] rounded-lg text-sm text-[#111111] placeholder-[#898989] focus:outline-none focus:ring-2 focus:ring-[#111111] focus:border-[#111111] transition-all';
-  const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
+    'w-full mt-1.5 h-[34px] px-3 bg-white border border-[#e5e7eb] rounded-lg text-sm text-[#111111] shadow-product-card placeholder-[#898989] focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] transition-all';
+  const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -430,7 +430,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
                     placeholder="0.00"
                     value={fields.sharedPrice}
                     onChange={(e) => setFields({ ...fields, sharedPrice: e.target.value })}
-                    className="w-full h-10 pl-8 pr-3 bg-white border border-[#e5e7eb] rounded-lg text-sm text-[#111111] font-medium focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                    className="w-full h-[34px] pl-8 pr-3 bg-white border border-[#e5e7eb] rounded-lg text-sm text-[#111111] shadow-product-card font-medium focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111]"
                   />
                 </div>
               </label>
@@ -642,9 +642,9 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
               type="button"
               disabled={currentStepIndex === 0}
               onClick={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
-              className="inline-flex items-center gap-1.5 h-8 px-3 border border-[#e5e7eb] rounded-md text-xs font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+              className="product-button-secondary"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Paso anterior</span>
             </button>
 
@@ -654,18 +654,18 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
                 onClick={() =>
                   setCurrentStepIndex((prev) => Math.min(steps.length - 1, prev + 1))
                 }
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none cursor-pointer transition-colors"
+                className="product-button-primary"
               >
                 <span>Siguiente paso</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none cursor-pointer disabled:opacity-50 transition-colors"
+                className="product-button-primary"
               >
-                <Save className="w-3.5 h-3.5" />
+                <Save className="w-4 h-4" />
                 <span>{isPending ? 'Guardando…' : 'Finalizar y Guardar'}</span>
               </button>
             )}

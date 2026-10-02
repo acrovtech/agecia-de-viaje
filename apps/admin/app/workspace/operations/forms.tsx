@@ -5,12 +5,11 @@ import { saveServiceResourceAction, saveFleetVehicleAction } from './actions';
 import type { ServiceResourceItem, FleetVehicleItem } from '../../../lib/reservations';
 
 const inputClass =
-  'h-10 block w-full rounded-lg border border-[#e5e7eb] px-3 mt-1 bg-white text-sm text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+  'h-[34px] block w-full rounded-lg border border-[#e5e7eb] px-3 mt-1 bg-white text-sm text-[#111111] shadow-product-card focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
 const textareaClass =
-  'block w-full rounded-lg border border-[#e5e7eb] p-3 mt-1 bg-white text-sm text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
-const buttonClass =
-  'h-8 px-3 rounded-md bg-[#111111] hover:bg-[#242424] text-white disabled:opacity-50 text-xs font-semibold cursor-pointer shadow-none transition-colors';
-const labelClass = 'block text-xs font-medium text-[#374151]';
+  'block w-full rounded-lg border border-[#e5e7eb] p-3 mt-1 bg-white text-sm text-[#111111] shadow-product-card focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+const buttonClass = 'product-button-primary';
+const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
 
 export function ServiceResourceForm({
   resource,

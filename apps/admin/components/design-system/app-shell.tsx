@@ -14,9 +14,9 @@ export function AppShell({ identity, children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-[#111111] flex flex-col md:flex-row antialiased font-sans">
+    <div className="min-h-svh md:h-svh bg-[#f8f9fa] text-[#111111] flex flex-col md:flex-row antialiased font-sans overflow-clip">
       {/* Mobile Topbar */}
-      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-[#e5e7eb] shrink-0 sticky top-0 z-40">
+      <header className="md:hidden flex items-center justify-between px-4 h-14 bg-white border-b border-[#e5e7eb] shrink-0 sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -73,15 +73,15 @@ export function AppShell({ identity, children }: AppShellProps) {
         </div>
       )}
 
-      {/* Persistent Desktop Sidebar */}
-      <div className="hidden md:flex w-60 lg:w-64 shrink-0 flex-col h-screen sticky top-0 z-30">
+      {/* Persistent Desktop Sidebar (md: 64px rail, lg: 256px full, 2xl: 288px wide) */}
+      <div className="hidden md:flex md:w-16 lg:w-64 2xl:w-72 shrink-0 flex-col md:h-svh sticky top-0 z-30">
         <Sidebar identity={identity} />
       </div>
 
-      {/* Elevated White MAIN SURFACE */}
-      <div className="flex-1 flex flex-col min-w-0 md:p-1 md:h-screen md:overflow-hidden">
-        <main className="flex-1 flex flex-col min-w-0 bg-white md:rounded-2xl md:shadow-cal-surface md:overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+      {/* Elevated White MAIN SURFACE (top 8px, right 8px, bottom 8px, left 0px) */}
+      <div className="flex-1 flex flex-col min-w-0 md:my-2 md:me-2 md:ms-0 md:h-[calc(100svh-1rem)] md:max-h-[calc(100svh-1rem)] md:overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 product-main-surface">
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:p-6 lg:px-10">
             {children}
           </div>
         </main>

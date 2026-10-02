@@ -139,7 +139,7 @@ export default async function OperationsPage({
       content = (
         <div className="space-y-5">
           {/* Dispatch Date Control Bar */}
-          <div className="bg-white rounded-xl shadow-cal-surface p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="product-card-surface p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Link
                 href={`/workspace/operations?view=dispatch&date=${prevDate}${
@@ -241,19 +241,19 @@ export default async function OperationsPage({
             </Link>
           </div>
 
-          {/* Dispatch Service Rows Table */}
-          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+          {/* Dispatch Service Rows Table (Canonical Grouped List Container) */}
+          <div className="product-card-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4 font-semibold">Reserva / Servicio</th>
-                    <th className="py-3 px-4 font-semibold">Hora & Recojo</th>
-                    <th className="py-3 px-4 font-semibold">Pax</th>
-                    <th className="py-3 px-4 font-semibold">Guía</th>
-                    <th className="py-3 px-4 font-semibold">Conductor</th>
-                    <th className="py-3 px-4 font-semibold">Vehículo de Flota</th>
-                    <th className="py-3 px-4 font-semibold text-right">Completitud</th>
+                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-4 font-medium">Reserva / Servicio</th>
+                    <th className="py-2.5 px-4 font-medium">Hora & Recojo</th>
+                    <th className="py-2.5 px-4 font-medium">Pax</th>
+                    <th className="py-2.5 px-4 font-medium">Guía</th>
+                    <th className="py-2.5 px-4 font-medium">Conductor</th>
+                    <th className="py-2.5 px-4 font-medium">Vehículo de Flota</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Completitud</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
@@ -262,7 +262,7 @@ export default async function OperationsPage({
                     const isFullyAssigned = !item.missing.any;
 
                     return (
-                      <tr key={item.reservationId} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                      <tr key={item.reservationId} className="product-data-row">
                         <td className="py-3.5 px-4">
                           <Link
                             href={`/workspace/reservations?id=${item.reservationId}`}
@@ -377,35 +377,35 @@ export default async function OperationsPage({
             {canMutate && (
               <Link
                 href="/workspace/operations?view=personnel&edit=new"
-                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none"
+                className="product-button-primary"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Registrar colaborador</span>
               </Link>
             )}
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <div className="bg-white rounded-xl shadow-cal-surface p-5">
+            <div className="product-card-surface p-5">
               <ServiceResourceForm key={selected?.id ?? 'new'} resource={selected} />
             </div>
           )}
 
-          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+          <div className="product-card-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4 font-semibold">Nombre</th>
-                    <th className="py-3 px-4 font-semibold">Rol Operativo</th>
-                    <th className="py-3 px-4 font-semibold">Teléfono</th>
-                    <th className="py-3 px-4 font-semibold">Estado</th>
-                    {canMutate && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
+                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-4 font-medium">Nombre</th>
+                    <th className="py-2.5 px-4 font-medium">Rol Operativo</th>
+                    <th className="py-2.5 px-4 font-medium">Teléfono</th>
+                    <th className="py-2.5 px-4 font-medium">Estado</th>
+                    {canMutate && <th className="py-2.5 px-4 font-medium text-right">Acción</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
                   {list.data.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                    <tr key={item.id} className="product-data-row">
                       <td className="py-3.5 px-4 font-medium text-[#111111] text-sm">
                         {item.displayName}
                       </td>
@@ -471,16 +471,16 @@ export default async function OperationsPage({
             {canMutate && (
               <Link
                 href="/workspace/operations?view=fleet&edit=new"
-                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none"
+                className="product-button-primary"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Registrar unidad</span>
               </Link>
             )}
           </div>
 
           {canMutate && (selected || params.edit === 'new') && (
-            <div className="bg-white rounded-xl shadow-cal-surface p-5">
+            <div className="product-card-surface p-5">
               <FleetVehicleForm
                 key={selected?.id ?? 'new'}
                 vehicle={selected}
@@ -489,22 +489,22 @@ export default async function OperationsPage({
             </div>
           )}
 
-          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+          <div className="product-card-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4 font-semibold">Identificador</th>
-                    <th className="py-3 px-4 font-semibold">Placa</th>
-                    <th className="py-3 px-4 font-semibold">Tipo Comercial</th>
-                    <th className="py-3 px-4 font-semibold">Capacidad Pax</th>
-                    <th className="py-3 px-4 font-semibold">Estado</th>
-                    {canMutate && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
+                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-4 font-medium">Identificador</th>
+                    <th className="py-2.5 px-4 font-medium">Placa</th>
+                    <th className="py-2.5 px-4 font-medium">Tipo Comercial</th>
+                    <th className="py-2.5 px-4 font-medium">Capacidad Pax</th>
+                    <th className="py-2.5 px-4 font-medium">Estado</th>
+                    {canMutate && <th className="py-2.5 px-4 font-medium text-right">Acción</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
                   {list.data.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                    <tr key={item.id} className="product-data-row">
                       <td className="py-3.5 px-4 font-medium text-[#111111] text-sm">
                         {item.internalLabel}
                       </td>

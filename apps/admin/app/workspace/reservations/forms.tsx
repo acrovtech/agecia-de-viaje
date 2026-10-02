@@ -21,8 +21,8 @@ import { RadioCardGroup } from '../../../components/design-system/radio-card';
 import { Calculator, CheckCircle2, User, Phone, Mail, MapPin, Clock, ArrowLeft, ArrowRight, ShieldAlert } from 'lucide-react';
 
 const inputClass =
-  'h-10 block w-full rounded-lg border border-[#e5e7eb] px-3 text-sm text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
-const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
+  'h-[34px] block w-full rounded-lg border border-[#e5e7eb] px-3 text-sm text-[#111111] bg-white shadow-product-card focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] transition-all';
+const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
 
 const bookingSteps: StepItem[] = [
   { id: 'service', label: '1. Servicio' },
@@ -127,7 +127,7 @@ export function BookingForm({
       )}
 
       {/* STEP 1: COTIZACIÓN OFICIAL */}
-      <form action={quoteAction} className="rounded-xl p-5 bg-white space-y-4 shadow-cal-surface">
+      <form action={quoteAction} className="product-card-surface p-5 space-y-4">
         <div className="border-b border-[#e5e7eb] pb-3 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[#111111]">
@@ -210,7 +210,7 @@ export function BookingForm({
           <button
             type="submit"
             disabled={isQuoting || !date}
-            className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+            className="product-button-primary"
           >
             {isQuoting ? 'Calculando tarifa…' : 'Cotizar servicio'}
           </button>
@@ -279,7 +279,7 @@ function CreateForm({
   };
 
   return (
-    <form action={action} className="space-y-6 rounded-xl p-5 bg-white shadow-cal-surface">
+    <form action={action} className="product-card-surface p-5 space-y-6">
       <div className="border-b border-[#e5e7eb] pb-3">
         <h3 className="text-base font-semibold tracking-tight text-[#111111]">
           2. Datos del Cliente, Pasajeros y Emisión
@@ -518,7 +518,7 @@ function CreateForm({
         <button
           type="submit"
           disabled={isPending}
-          className="w-full sm:w-auto px-6 py-2.5 bg-[#111111] hover:bg-[#242424] text-white rounded-lg text-xs sm:text-sm font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+          className="product-button-primary"
         >
           {isPending ? 'Emitiendo reserva…' : 'Crear reserva pendiente'}
         </button>
@@ -539,7 +539,7 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
   if (reservation.source !== 'MANUAL_SAAS' || !allowed.length) return null;
 
   return (
-    <form action={action} className="space-y-4 rounded-xl p-5 bg-white shadow-cal-surface">
+    <form action={action} className="product-card-surface p-5 space-y-4">
       <div className="border-b border-[#e5e7eb] pb-2">
         <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Transición de Estado Operativo
@@ -596,7 +596,7 @@ export function StatusForm({ reservation }: { reservation: ReservationDetail }) 
 
         <button
           type="submit"
-          className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+          className="product-button-primary"
           disabled={pending}
         >
           {pending ? 'Guardando…' : 'Aplicar cambio de estado'}
@@ -623,7 +623,7 @@ export function OperationsAssignmentForm({
     reservation.operationStatus === 'CANCELLED' || reservation.operationStatus === 'COMPLETED';
 
   return (
-    <section className="bg-white rounded-xl p-5 space-y-4 shadow-cal-surface">
+    <section className="product-card-surface p-5 space-y-4">
       <div className="border-b border-[#e5e7eb] pb-2">
         <h2 className="text-base font-semibold tracking-tight text-[#111111]">
           Asignación de Recursos Operativos
@@ -741,7 +741,7 @@ export function OperationsAssignmentForm({
 
           <button
             type="submit"
-            className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+            className="product-button-primary"
             disabled={pending}
           >
             {pending ? 'Guardando asignación…' : 'Guardar asignación de recursos'}

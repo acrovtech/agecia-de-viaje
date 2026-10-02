@@ -58,9 +58,9 @@ export default async function ResourcesPage({
             allowed && (
               <Link
                 href={`${path}&edit=new`}
-                className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none transition-colors"
+                className="product-button-primary"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Crear {kind === 'categories' ? 'categoría' : 'vehículo'}</span>
               </Link>
             )
@@ -102,7 +102,7 @@ export default async function ResourcesPage({
         </div>
 
         {allowed && (selected || params.edit === 'new') && (
-          <div className="max-w-2xl bg-white rounded-xl shadow-cal-surface p-6">
+          <div className="max-w-2xl product-card-surface p-6">
             <ResourceForm
               key={`${selected?.id ?? 'new'}-${selected?.updatedAt ?? ''}`}
               kind={kind}
@@ -111,26 +111,26 @@ export default async function ResourcesPage({
           </div>
         )}
 
-        {/* Table List */}
-        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+        {/* Canonical Grouped List Container */}
+        <div className="product-card-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4 font-semibold">Nombre</th>
-                  <th className="py-3 px-4 font-semibold">Identificador</th>
+                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 px-4 font-medium">Nombre</th>
+                  <th className="py-2.5 px-4 font-medium">Identificador</th>
                   {kind === 'vehicles' && (
-                    <th className="py-3 px-4 font-semibold">Capacidad</th>
+                    <th className="py-2.5 px-4 font-medium">Capacidad</th>
                   )}
                   {kind === 'vehicles' && (
-                    <th className="py-3 px-4 font-semibold">Estado</th>
+                    <th className="py-2.5 px-4 font-medium">Estado</th>
                   )}
-                  {allowed && <th className="py-3 px-4 font-semibold text-right">Acción</th>}
+                  {allowed && <th className="py-2.5 px-4 font-medium text-right">Acción</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]">
                 {result.data.map((row) => (
-                  <tr key={row.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                  <tr key={row.id} className="product-data-row">
                     <td className="py-3.5 px-4 font-medium text-[#111111] text-sm">
                       {row.name}
                     </td>

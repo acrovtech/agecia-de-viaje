@@ -223,7 +223,7 @@ export function TeamManager({
 
       {/* FORMULARIO DE INVITACIÓN */}
       {(isOwner || isAdmin) && (
-        <div className="bg-white rounded-xl shadow-cal-surface p-5 sm:p-6 space-y-4">
+        <div className="product-card-surface p-5 sm:p-6 space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-[#6b7280]" />
@@ -246,7 +246,7 @@ export function TeamManager({
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="colaborador@correo.com"
                 disabled={isPending}
-                className="w-full text-xs sm:text-sm border border-[#e5e7eb] rounded-lg h-10 px-3 bg-white disabled:bg-[#f8f9fa] focus:outline-none focus:ring-1 focus:ring-[#111111]"
+                className="product-input"
               />
             </div>
 
@@ -258,7 +258,7 @@ export function TeamManager({
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
                 disabled={isPending}
-                className="w-full text-xs sm:text-sm border border-[#e5e7eb] rounded-lg h-10 px-3 bg-white disabled:bg-[#f8f9fa] focus:outline-none focus:ring-1 focus:ring-[#111111]"
+                className="product-input"
               >
                 {invitableRoles.map((r) => (
                   <option key={r} value={r}>
@@ -271,7 +271,7 @@ export function TeamManager({
             <button
               type="submit"
               disabled={isPending || !inviteEmail}
-              className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white text-xs font-semibold rounded-md shadow-none transition-colors disabled:opacity-50 cursor-pointer"
+              className="product-button-primary"
             >
               {isPending ? 'Enviando…' : 'Crear Invitación'}
             </button>
@@ -284,16 +284,16 @@ export function TeamManager({
         <h3 className="text-sm font-semibold text-[#111111]">
           Miembros del Equipo ({members.length})
         </h3>
-        <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+        <div className="product-card-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4 font-semibold">Persona</th>
-                  <th className="py-3 px-4 font-semibold">Rol</th>
-                  <th className="py-3 px-4 font-semibold">Estado</th>
+                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 px-4 font-medium">Persona</th>
+                  <th className="py-2.5 px-4 font-medium">Rol</th>
+                  <th className="py-2.5 px-4 font-medium">Estado</th>
                   {(isOwner || isAdmin) && (
-                    <th className="py-3 px-4 font-semibold text-right">Acciones</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Acciones</th>
                   )}
                 </tr>
               </thead>
@@ -305,8 +305,8 @@ export function TeamManager({
                     isOwner || (isAdmin && !targetIsOwner && member.role !== 'ADMIN');
 
                   return (
-                    <tr key={member.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
-                      <td className="py-3.5 px-4">
+                    <tr key={member.id} className="product-data-row">
+                      <td className="py-3 px-4">
                         <div className="font-medium text-[#111111] text-sm">
                           {member.user.name || member.user.email}
                           {isSelf && (
@@ -382,23 +382,23 @@ export function TeamManager({
           <h3 className="text-sm font-semibold text-[#111111]">
             Invitaciones Pendientes ({pendingInvitations.length})
           </h3>
-          <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+          <div className="product-card-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4 font-semibold">Destinatario</th>
-                    <th className="py-3 px-4 font-semibold">Rol Asignado</th>
-                    <th className="py-3 px-4 font-semibold">Expira</th>
-                    <th className="py-3 px-4 font-semibold">Invitado por</th>
+                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-4 font-medium">Destinatario</th>
+                    <th className="py-2.5 px-4 font-medium">Rol Asignado</th>
+                    <th className="py-2.5 px-4 font-medium">Expira</th>
+                    <th className="py-2.5 px-4 font-medium">Invitado por</th>
                     {(isOwner || isAdmin) && (
-                      <th className="py-3 px-4 font-semibold text-right">Acción</th>
+                      <th className="py-2.5 px-4 font-medium text-right">Acción</th>
                     )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
                   {pendingInvitations.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-[#f8f9fa]/80 transition-colors">
+                    <tr key={inv.id} className="product-data-row">
                       <td className="py-3.5 px-4 font-medium text-[#111111] font-mono">
                         {inv.email}
                       </td>

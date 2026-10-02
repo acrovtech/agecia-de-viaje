@@ -73,8 +73,8 @@ export function SettingsForm({
   const [iconUrl, setIconUrl] = useState(initialProfile.iconUrl || '');
 
   const inputClass =
-    'h-10 mt-1 block w-full rounded-lg border border-[#e5e7eb] px-3 text-xs sm:text-sm text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111] disabled:bg-[#f8f9fa] disabled:text-[#898989] transition-all';
-  const labelClass = 'block text-xs font-medium text-[#374151] tracking-tight';
+    'h-[34px] mt-1 block w-full rounded-lg border border-[#e5e7eb] px-3 text-sm text-[#111111] bg-white shadow-product-card focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] disabled:bg-[#f8f9fa] disabled:text-[#898989] transition-all';
+  const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
 
   return (
     <div className="space-y-6">
@@ -235,7 +235,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="product-button-primary"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar información general'}
                 </button>
@@ -291,7 +291,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="product-button-primary"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar identidad visual'}
                 </button>
@@ -327,7 +327,7 @@ export function SettingsForm({
                     disabled={!canEdit || isProfilePending}
                     defaultValue={initialProfile.subdomain || ''}
                     placeholder="mi-agencia"
-                    className="h-10 flex-1 rounded-lg border border-[#e5e7eb] px-3 text-xs sm:text-sm font-mono text-[#111111] bg-white focus:outline-none focus:ring-1 focus:ring-[#111111]"
+                    className="h-[34px] flex-1 rounded-lg border border-[#e5e7eb] px-3 text-sm font-mono text-[#111111] bg-white shadow-product-card focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111]"
                   />
                   <span className="text-xs text-[#6b7280] font-mono">.plataforma.com</span>
                 </div>
@@ -354,7 +354,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isProfilePending}
-                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="product-button-primary"
                 >
                   {isProfilePending ? 'Guardando…' : 'Guardar dominios'}
                 </button>
@@ -478,7 +478,7 @@ export function SettingsForm({
                 <button
                   type="submit"
                   disabled={isLegalPending}
-                  className="h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none disabled:opacity-50 cursor-pointer"
+                  className="product-button-primary"
                 >
                   {isLegalPending ? 'Guardando…' : 'Guardar perfil legal'}
                 </button>
@@ -513,7 +513,7 @@ export function SettingsForm({
             </p>
           </div>
 
-          <div className="rounded-xl bg-white shadow-cal-surface divide-y divide-[#e5e7eb] overflow-hidden">
+          <div className="product-card-surface divide-y divide-[#e5e7eb]">
             <div className="p-3.5 flex items-center justify-between text-xs">
               <div>
                 <span className="font-medium text-[#111111] block">Izipay Perú</span>

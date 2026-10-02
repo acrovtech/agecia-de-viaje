@@ -170,7 +170,7 @@ export default async function ReservationsPage({
           {/* Overview Grid: Customer, Passengers, Service, Commercial */}
           <div className="grid gap-5 md:grid-cols-2">
             {/* Card 1: Cliente y Contacto */}
-            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
+            <div className="product-card-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" />
                 <span>Cliente Titular</span>
@@ -191,7 +191,7 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 2: Instantánea Comercial (FROZEN / DEFERRED) */}
-            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
+            <div className="product-card-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5" />
                 <span>Instantánea Comercial</span>
@@ -213,7 +213,7 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 3: Servicio y Recojo */}
-            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
+            <div className="product-card-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>Logística y Recojo</span>
@@ -249,7 +249,7 @@ export default async function ReservationsPage({
             </div>
 
             {/* Card 4: Manifiesto de Pasajeros */}
-            <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-3">
+            <div className="product-card-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 <span>Manifiesto de Pasajeros ({row.passengers.length})</span>
@@ -288,7 +288,7 @@ export default async function ReservationsPage({
           <StatusForm key={row.updatedAt} reservation={row} />
 
           {/* Historial Operativo */}
-          <div className="bg-white rounded-xl shadow-cal-surface p-5 space-y-4">
+          <div className="product-card-surface p-5 space-y-4">
             <h3 className="text-sm font-semibold text-[#111111]">Historial Operativo</h3>
             {!row.events.length && (
               <p className="text-xs text-[#898989]">
@@ -518,9 +518,9 @@ export default async function ReservationsPage({
         actions={
           <Link
             href="/workspace/reservations?new=1"
-            className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#111111] hover:bg-[#242424] text-white rounded-md text-xs font-semibold shadow-none transition-colors"
+            className="product-button-primary"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Nueva reserva</span>
           </Link>
         }
@@ -566,8 +566,8 @@ export default async function ReservationsPage({
         })}
       </div>
 
-      {/* Grouped List / Modern Data Table */}
-      <div className="rounded-xl bg-white shadow-cal-surface overflow-hidden">
+      {/* Grouped List / Modern Data Table (Canonical Grouped List Container) */}
+      <div className="product-card-surface">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
@@ -583,7 +583,7 @@ export default async function ReservationsPage({
               {list.data.map((row) => {
                 const publicCode = row.code ?? row.id.slice(0, 8);
                 return (
-                  <tr key={row.id} className="hover:bg-[#f8f9fa]/60 transition-colors">
+                  <tr key={row.id} className="product-data-row">
                     <td className="py-3 px-4 pr-3">
                       <Link
                         href={`/workspace/reservations?id=${row.id}`}
