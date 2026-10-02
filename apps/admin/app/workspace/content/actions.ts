@@ -32,6 +32,9 @@ export async function catalogContentAction(_previous: { error: string } | null, 
     } as Record<number, string>)[status] ?? 'No pudimos confirmar el guardado. Revisa el recurso antes de reintentar.' };
   }
   revalidatePath('/workspace');
-  if (operation === 'resource') redirect(`/workspace/resources?kind=${kind}&saved=1`);
-  redirect(`/workspace/content?kind=${kind}&id=${id}&saved=1`);
+  revalidatePath('/content');
+  revalidatePath(`/catalog/${kind}`);
+  revalidatePath(`/resources/${kind}`);
+  if (operation === 'resource') redirect(`/resources/${kind}?saved=1`);
+  redirect(`/content?kind=${kind}&id=${id}&saved=1`);
 }

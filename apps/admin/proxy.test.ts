@@ -3,32 +3,73 @@ import { NextRequest } from 'next/server';
 import { proxy } from './proxy';
 
 afterEach(() => vi.unstubAllEnvs());
+
 function req(path: string, method = 'GET', cookie = `admin_api_session=${'a'.repeat(43)}`) {
   vi.stubEnv('ADMIN_AUTH_MODE', 'api');
   return new NextRequest(`https://admin.example.test${path}`, { method, headers: { cookie } });
 }
+
 test('central workspace ignores a legacy cookie', async () => {
-  const response = await proxy(req('/workspace', 'GET', 'admin_session=legacy.jwt'));
+  const response = await proxy(req('/dashboard', 'GET', 'admin_session=legacy.jwt'));
   expect(response.headers.get('location')).toBe('https://admin.example.test/login');
 });
-test.each(['/reservas', '/usuarios', '/logs', '/tours', '/transporte', '/cupones', '/tours/other-agency.svg'])('unmigrated page %s cannot render in API mode and redirects to /workspace', async (path) => {
-  expect((await proxy(req(path))).headers.get('location')).toBe('https://admin.example.test/workspace');
-});
-test.each(['/api/upload', '/api/seed', '/reservas', '/icon.svg'])('legacy write surface %s is denied', async (path) => {
-  expect((await proxy(req(path, 'POST'))).status).toBe(403);
-});
-test('workspace and login reach their own server authorization', async () => {
-  expect((await proxy(req('/workspace'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/workspace/content', 'POST'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/workspace/resources', 'POST'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/workspace/reservations', 'POST'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/workspace/nested/custom/route'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/workspace/content/legacy'))).headers.get('x-middleware-next')).toBe('1');
-  expect((await proxy(req('/settings'))).headers.get('x-middleware-next')).toBe('1');
+
+test.each(['/reservas', '/usuarios', '/logs', '/tours', '/transporte', '/cupones', '/tours/other-agency.svg'])(
+  'unmigrated page %s cannot render in API mode and redirects to /dashboard',
+  async (path) => {
+    expect((await proxy(req(path))).headers.get('location')).toBe('https://admin.example.test/dashboard');
+  }
+);
+
+test.each(['/api/upload', '/api/seed', '/reservas', '/icon.svg'])(
+  'legacy write surface %s is denied',
+  async (path) => {
+    expect((await proxy(req(path, 'POST'))).status).toBe(403);
+  }
+);
+
+test('canonical clean routes and login reach their own server authorization', async () => {
+  const canonicalRoutes = [
+    '/dashboard',
+    '/reservations',
+    '/operations',
+    '/catalog/tours',
+    '/catalog/transfers',
+    '/resources/categories',
+    '/resources/vehicles',
+    '/resources/fleet',
+    '/resources/personnel',
+    '/team',
+    '/notifications',
+    '/content',
+    '/settings',
+    '/settings/profile',
+    '/settings/general',
+    '/settings/appearance',
+    '/settings/referrals',
+    '/settings/billing',
+    '/settings/plans',
+    '/settings/security',
+    '/settings/security/legal',
+    '/settings/social',
+    '/settings/integrations',
+    // Backward compatibility paths
+    '/workspace',
+    '/workspace/reservations',
+  ];
+
+  for (const path of canonicalRoutes) {
+    const res = await proxy(req(path));
+    expect(res.headers.get('x-middleware-next')).toBe('1');
+  }
+
+  expect((await proxy(req('/reservations', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/settings/security', 'POST'))).headers.get('x-middleware-next')).toBe('1');
   expect((await proxy(req('/login', 'POST', ''))).headers.get('x-middleware-next')).toBe('1');
 });
-test('workspace subroutes without valid token redirect to login', async () => {
-  expect((await proxy(req('/workspace/content', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
-  expect((await proxy(req('/workspace/nested/path', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
+
+test('canonical subroutes without valid token redirect to login', async () => {
+  expect((await proxy(req('/dashboard', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
+  expect((await proxy(req('/reservations', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
+  expect((await proxy(req('/settings/profile', 'GET', ''))).headers.get('location')).toBe('https://admin.example.test/login');
 });

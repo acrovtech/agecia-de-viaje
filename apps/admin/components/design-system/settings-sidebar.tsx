@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   ArrowLeft,
   LayoutGrid,
@@ -24,15 +24,24 @@ export function SettingsSidebar({
   onNavigate,
   className = '',
 }: SettingsSidebarProps) {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'resumen';
+  const pathname = usePathname() || '/settings';
 
   const initialLetter = identity.agencyName ? identity.agencyName[0]?.toUpperCase() : 'A';
 
-  const linkClass = (tabId: string) => {
-    const isSelected = currentTab === tabId;
+  const isActive = (targetHref: string) => {
+    if (targetHref === '/settings') {
+      return pathname === '/settings';
+    }
+    if (targetHref === '/settings/security/legal') {
+      return pathname === '/settings/security' || pathname.startsWith('/settings/security/');
+    }
+    return pathname === targetHref || pathname.startsWith(`${targetHref}/`);
+  };
+
+  const linkClass = (targetHref: string) => {
+    const selected = isActive(targetHref);
     return `block px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer ${
-      isSelected
+      selected
         ? 'bg-[#e5e7eb]/80 text-[#111111] font-semibold'
         : 'text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] font-medium'
     }`;
@@ -43,10 +52,10 @@ export function SettingsSidebar({
       className={`flex flex-col h-full bg-[#f8f9fa] text-[#111111] select-none p-3 space-y-4 overflow-y-auto no-scrollbar ${className}`}
       aria-label="Navegación de configuración"
     >
-      {/* 1. Header: Back link to workspace */}
+      {/* 1. Header: Back link to normal operational workspace (Dashboard) */}
       <div>
         <Link
-          href="/workspace"
+          href="/dashboard"
           onClick={onNavigate}
           className="flex items-center gap-2 px-3 py-2 text-sm text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] rounded-lg font-medium transition-colors"
         >
@@ -58,10 +67,10 @@ export function SettingsSidebar({
       {/* 2. Top-level item: Resumen */}
       <div>
         <Link
-          href="/settings?tab=resumen"
+          href="/settings"
           onClick={onNavigate}
           className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors ${
-            currentTab === 'resumen'
+            isActive('/settings')
               ? 'bg-[#e5e7eb]/80 text-[#111111] font-semibold'
               : 'text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] font-medium'
           }`}
@@ -81,30 +90,30 @@ export function SettingsSidebar({
         </div>
         <div className="space-y-0.5 ps-7 pe-1">
           <Link
-            href="/settings?tab=perfil"
+            href="/settings/profile"
             onClick={onNavigate}
-            className={linkClass('perfil')}
+            className={linkClass('/settings/profile')}
           >
             Perfil
           </Link>
           <Link
-            href="/settings?tab=general"
+            href="/settings/general"
             onClick={onNavigate}
-            className={linkClass('general')}
+            className={linkClass('/settings/general')}
           >
             General
           </Link>
           <Link
-            href="/settings?tab=aspecto"
+            href="/settings/appearance"
             onClick={onNavigate}
-            className={linkClass('aspecto')}
+            className={linkClass('/settings/appearance')}
           >
             Aspecto
           </Link>
           <Link
-            href="/settings?tab=referidos"
+            href="/settings/referrals"
             onClick={onNavigate}
-            className={linkClass('referidos')}
+            className={linkClass('/settings/referrals')}
           >
             Gana 20% de referencia
           </Link>
@@ -119,9 +128,9 @@ export function SettingsSidebar({
         </div>
         <div className="space-y-0.5 ps-7 pe-1">
           <Link
-            href="/settings?tab=seguridad"
+            href="/settings/security/legal"
             onClick={onNavigate}
-            className={linkClass('seguridad')}
+            className={linkClass('/settings/security/legal')}
           >
             Perfil legal
           </Link>
@@ -136,16 +145,16 @@ export function SettingsSidebar({
         </div>
         <div className="space-y-0.5 ps-7 pe-1">
           <Link
-            href="/settings?tab=facturacion"
+            href="/settings/billing"
             onClick={onNavigate}
-            className={linkClass('facturacion')}
+            className={linkClass('/settings/billing')}
           >
             Gestione la facturación
           </Link>
           <Link
-            href="/settings?tab=planes"
+            href="/settings/plans"
             onClick={onNavigate}
-            className={linkClass('planes')}
+            className={linkClass('/settings/plans')}
           >
             Planes
           </Link>
@@ -160,9 +169,9 @@ export function SettingsSidebar({
         </div>
         <div className="space-y-0.5 ps-7 pe-1">
           <Link
-            href="/settings?tab=social"
+            href="/settings/social"
             onClick={onNavigate}
-            className={linkClass('social')}
+            className={linkClass('/settings/social')}
           >
             Link in Bio
           </Link>
@@ -177,9 +186,9 @@ export function SettingsSidebar({
         </div>
         <div className="space-y-0.5 ps-7 pe-1">
           <Link
-            href="/settings?tab=integraciones"
+            href="/settings/integrations"
             onClick={onNavigate}
-            className={linkClass('integraciones')}
+            className={linkClass('/settings/integrations')}
           >
             Pasarelas y APIs
           </Link>

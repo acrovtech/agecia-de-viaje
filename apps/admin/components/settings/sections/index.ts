@@ -1,0 +1,10 @@
+export { OverviewSection } from './overview-section';
+export { ProfileSection } from './profile-section';
+export { GeneralSection } from './general-section';
+export { AppearanceSection } from './appearance-section';
+export { ReferralsSection } from './referrals-section';
+export { BillingSection } from './billing-section';
+export { PlansSection } from './plans-section';
+export { LegalSection } from './legal-section';
+export { SocialSection } from './social-section';
+export { IntegrationsSection } from './integrations-section';

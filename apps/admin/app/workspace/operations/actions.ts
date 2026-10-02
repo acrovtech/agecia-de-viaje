@@ -63,8 +63,9 @@ export async function saveServiceResourceAction(
     return { error: errorMessage(error) };
   }
 
+  revalidatePath('/resources/personnel');
   revalidatePath('/workspace/operations');
-  redirect('/workspace/operations?view=personnel&saved=1');
+  redirect('/resources/personnel?saved=1');
 }
 
 export async function saveFleetVehicleAction(
@@ -102,6 +103,7 @@ export async function saveFleetVehicleAction(
     return { error: errorMessage(error) };
   }
 
+  revalidatePath('/resources/fleet');
   revalidatePath('/workspace/operations');
-  redirect('/workspace/operations?view=fleet&saved=1');
+  redirect('/resources/fleet?saved=1');
 }

@@ -38,6 +38,8 @@ export async function createInvitationAction(
       'POST'
     );
 
+    revalidatePath('/team');
+    revalidatePath('/dashboard');
     revalidatePath('/workspace');
 
     return {
@@ -75,6 +77,8 @@ export async function revokeInvitationAction(invitationId: string): Promise<Team
       'DELETE'
     );
 
+    revalidatePath('/team');
+    revalidatePath('/dashboard');
     revalidatePath('/workspace');
     return { success: true };
   } catch (error) {
@@ -103,6 +107,8 @@ export async function updateMembershipAction(
       'PATCH'
     );
 
+    revalidatePath('/team');
+    revalidatePath('/dashboard');
     revalidatePath('/workspace');
     return { success: true };
   } catch (error) {
@@ -138,6 +144,8 @@ export async function deleteMembershipAction(membershipId: string): Promise<Team
       'DELETE'
     );
 
+    revalidatePath('/team');
+    revalidatePath('/dashboard');
     revalidatePath('/workspace');
     return { success: true };
   } catch (error) {

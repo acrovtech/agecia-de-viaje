@@ -1,12 +1,12 @@
+import React from 'react';
 import { redirect } from 'next/navigation';
-import { isApiAdmin } from '../../lib/admin-mode';
-import { centralSession, CentralApiError } from '../../lib/central-api';
-import { AppShell } from '../../components/design-system/app-shell';
-import { SettingsSidebar } from '../../components/design-system/settings-sidebar';
+import { isApiAdmin } from '@/lib/admin-mode';
+import { centralSession, CentralApiError } from '@/lib/central-api';
+import { AppShell } from '@/components/design-system/app-shell';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SettingsLayout({
+export default async function AuthenticatedWorkspaceLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -32,7 +32,7 @@ export default async function SettingsLayout({
             El servicio de autenticación central no está disponible en este momento.
           </p>
           <a
-            href="/settings"
+            href="/dashboard"
             className="inline-block text-xs font-semibold underline text-slate-900"
           >
             Volver a intentar
@@ -42,14 +42,5 @@ export default async function SettingsLayout({
     );
   }
 
-  return (
-    <AppShell
-      identity={session.identity}
-      sidebar={({ onNavigate }) => (
-        <SettingsSidebar identity={session.identity} onNavigate={onNavigate} />
-      )}
-    >
-      {children}
-    </AppShell>
-  );
+  return <AppShell identity={session.identity}>{children}</AppShell>;
 }

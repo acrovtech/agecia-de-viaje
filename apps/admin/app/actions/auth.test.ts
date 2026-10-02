@@ -25,7 +25,7 @@ function form() {
 test('central login sets an HttpOnly cookie and never returns the bearer to client state', async () => {
   setup(200, { accessToken: 'a'.repeat(43), tokenType: 'Bearer', expiresAt: new Date(Date.now() + 3600000).toISOString(), agencyId: 'a' });
   vi.stubEnv('NODE_ENV', 'production');
-  await expect(loginAction(null, form())).rejects.toThrow('REDIRECT:/workspace');
+  await expect(loginAction(null, form())).rejects.toThrow('REDIRECT:/dashboard');
   expect(cookieStore.set).toHaveBeenCalledWith('admin_api_session', 'a'.repeat(43), expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'lax', path: '/' }));
   expect(cookieStore.delete).toHaveBeenCalledWith('admin_session');
   expect(dbLookup).not.toHaveBeenCalled();
@@ -52,6 +52,6 @@ test('logout revokes upstream before deleting the browser session', async () => 
 test('failed revocation preserves the cookie and offers retry instead of claiming logout', async () => {
   setup(503);
   cookieStore.get.mockReturnValue({ value: 'a'.repeat(43) });
-  await expect(logoutAction()).rejects.toThrow('REDIRECT:/workspace?logout=unavailable');
+  await expect(logoutAction()).rejects.toThrow('REDIRECT:/dashboard?logout=unavailable');
   expect(cookieStore.delete).not.toHaveBeenCalled();
 });

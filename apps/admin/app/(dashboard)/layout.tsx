@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   if (isApiAdmin()) {
-    redirect('/workspace');
+    redirect('/dashboard');
   }
 
   const session = await verifyAdminSession();

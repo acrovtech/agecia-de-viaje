@@ -19,7 +19,7 @@ function setup(role = 'ADMIN') {
 test('save derives agency from session and ignores injected tenant fields', async () => {
   setup();
   const data = form(); data.set('agencyId', 'foreign');
-  await expect(saveCatalogAction(null, data)).rejects.toThrow('REDIRECT:/workspace?view=tours&saved=1');
+  await expect(saveCatalogAction(null, data)).rejects.toThrow('REDIRECT:/catalog/tours?saved=1');
   expect(request.mock.calls[0]![0]).toBe('/v1/agencies/own-agency/catalog/tours');
   expect(request.mock.calls[0]![2]).not.toHaveProperty('agencyId');
 });

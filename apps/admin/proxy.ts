@@ -14,15 +14,31 @@ export async function proxy(request: NextRequest) {
     if (pathname === '/login') return NextResponse.next();
 
     const isAllowedRoute =
-      pathname === '/workspace' ||
-      pathname.startsWith('/workspace/') ||
+      pathname === '/dashboard' ||
+      pathname.startsWith('/dashboard/') ||
+      pathname === '/reservations' ||
+      pathname.startsWith('/reservations/') ||
+      pathname === '/operations' ||
+      pathname.startsWith('/operations/') ||
+      pathname === '/catalog' ||
+      pathname.startsWith('/catalog/') ||
+      pathname === '/resources' ||
+      pathname.startsWith('/resources/') ||
+      pathname === '/team' ||
+      pathname.startsWith('/team/') ||
+      pathname === '/notifications' ||
+      pathname.startsWith('/notifications/') ||
+      pathname === '/content' ||
+      pathname.startsWith('/content/') ||
       pathname === '/settings' ||
-      pathname.startsWith('/settings/');
+      pathname.startsWith('/settings/') ||
+      pathname === '/workspace' ||
+      pathname.startsWith('/workspace/');
     if (!isAllowedRoute) {
       if (pathname.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
         return new NextResponse(null, { status: 403 });
       }
-      return NextResponse.redirect(new URL('/workspace', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     const token = request.cookies.get(API_SESSION_COOKIE)?.value;

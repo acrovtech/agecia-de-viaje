@@ -31,8 +31,9 @@ export async function createReservationAction(_prev: { error: string } | null, f
     const { token, base } = await session();
     id = reservationDetailSchema.parse(await centralRequest(base, token, payload(form))).id;
   } catch (error) { return { error: errorMessage(error) }; }
+  revalidatePath('/reservations');
   revalidatePath('/workspace/reservations');
-  redirect(`/workspace/reservations?id=${encodeURIComponent(id)}&saved=1`);
+  redirect(`/reservations?id=${encodeURIComponent(id)}&saved=1`);
 }
 export async function transitionReservationAction(_prev: { error: string } | null, form: FormData): Promise<{ error: string }> {
   const id = form.get('id');
@@ -41,8 +42,9 @@ export async function transitionReservationAction(_prev: { error: string } | nul
     const { token, base } = await session();
     await centralRequest(`${base}/${id}/status`, token, { expectedUpdatedAt: form.get('expectedUpdatedAt'), status: form.get('status'), note: form.get('note') }, 'PUT');
   } catch (error) { return { error: errorMessage(error) }; }
+  revalidatePath('/reservations');
   revalidatePath('/workspace/reservations');
-  redirect(`/workspace/reservations?id=${id}&saved=1`);
+  redirect(`/reservations?id=${id}&saved=1`);
 }
 
 export async function assignReservationResourcesAction(_prev: { error: string } | null, form: FormData): Promise<{ error: string }> {
@@ -63,7 +65,8 @@ export async function assignReservationResourcesAction(_prev: { error: string } 
       'PUT',
     );
   } catch (error) { return { error: errorMessage(error) }; }
+  revalidatePath('/reservations');
   revalidatePath('/workspace/reservations');
-  redirect(`/workspace/reservations?id=${id}&saved=1`);
+  redirect(`/reservations?id=${id}&saved=1`);
 }
 

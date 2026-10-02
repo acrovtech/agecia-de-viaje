@@ -44,7 +44,7 @@ test('transition uses PUT, current version and explicit note', async () => {
   const data = form();
   Object.entries({ id: 'reservation-a', expectedUpdatedAt: '2026-09-22T00:00:00.000Z', status: 'CONFIRMED', note: 'Coordinado' }).forEach(([key, value]) => data.set(key, value));
   request.mockResolvedValue({});
-  await expect(transitionReservationAction(null, data)).rejects.toThrow('REDIRECT:/workspace/reservations?id=reservation-a&saved=1');
+  await expect(transitionReservationAction(null, data)).rejects.toThrow('REDIRECT:/reservations?id=reservation-a&saved=1');
   expect(request).toHaveBeenCalledWith('/v1/agencies/own-agency/reservations/reservation-a/status', 'secret-token', { expectedUpdatedAt: '2026-09-22T00:00:00.000Z', status: 'CONFIRMED', note: 'Coordinado' }, 'PUT');
 });
 test('transition rejects injected paths', async () => {

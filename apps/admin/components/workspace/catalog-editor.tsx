@@ -138,7 +138,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div className="flex items-center gap-3">
           <Link
-            href={`/workspace?view=${kind}`}
+            href={`/catalog/${kind}`}
             className="p-1.5 text-[#6b7280] hover:text-[#111111] rounded-lg hover:bg-[#f3f4f6] transition-colors"
             title="Volver al catálogo"
           >
@@ -459,7 +459,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
                 </div>
                 {record?.id && (
                   <Link
-                    href={`/workspace/content?kind=${kind}&id=${record.id}`}
+                    href={`/content?kind=${kind}&id=${record.id}`}
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] px-3 py-1.5 rounded-lg transition-colors"
                   >
                     <Layers className="w-3.5 h-3.5 text-[#6b7280]" />
@@ -583,7 +583,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
                 </div>
                 {record?.id && (
                   <Link
-                    href={`/workspace/content?kind=${kind}&id=${record.id}`}
+                    href={`/content?kind=${kind}&id=${record.id}`}
                     className="text-xs font-medium underline text-[#111111]"
                   >
                     Gestionar publicación
@@ -681,7 +681,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
             saveLabel="Guardar cambios del servicio"
             cancelLabel="Descartar y volver"
             onCancel={() => {
-              window.location.href = `/workspace?view=${kind}`;
+              window.location.href = `/catalog/${kind}`;
             }}
             error={state?.error}
           />

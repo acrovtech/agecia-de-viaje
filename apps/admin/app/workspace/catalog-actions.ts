@@ -43,5 +43,6 @@ export async function saveCatalogAction(_previous: { error: string } | null, for
     return { error: errors[status] ?? 'No pudimos confirmar el guardado. Revisa el catálogo antes de reintentar.' };
   }
   revalidatePath('/workspace');
-  redirect(`/workspace?view=${kind}&saved=1`);
+  revalidatePath(`/catalog/${kind}`);
+  redirect(`/catalog/${kind}?saved=1`);
 }

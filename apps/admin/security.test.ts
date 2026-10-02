@@ -137,13 +137,13 @@ describe('SaaS Admin Fail-Closed Security Suite', () => {
       }
     });
 
-    it('8. legacy dashboard routes redirect safely to /workspace in API mode for GET', async () => {
+    it('8. legacy dashboard routes redirect safely to /dashboard in API mode for GET', async () => {
       const legacyPages = ['/', '/reservas', '/tours', '/transporte', '/usuarios', '/cupones', '/blogs', '/megamenus', '/logs'];
 
       for (const page of legacyPages) {
         const req = makeRequest(page, 'GET', { [API_SESSION_COOKIE]: validApiToken });
         const res = await proxy(req);
-        expect(res.headers.get('location')).toBe('https://admin.example.test/workspace');
+        expect(res.headers.get('location')).toBe('https://admin.example.test/dashboard');
       }
     });
 

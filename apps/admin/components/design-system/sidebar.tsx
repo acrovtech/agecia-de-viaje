@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   CalendarCheck2,
@@ -54,63 +54,63 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     label: 'Inicio',
-    href: '/workspace',
+    href: '/dashboard',
     icon: Home,
   },
   {
     label: 'Reservas',
-    href: '/workspace/reservations',
+    href: '/reservations',
     icon: CalendarCheck2,
     roles: ['OWNER', 'ADMIN', 'OPERATOR'],
   },
   {
     label: 'Operaciones',
-    href: '/workspace/operations',
+    href: '/operations',
     icon: Compass,
     roles: ['OWNER', 'ADMIN', 'OPERATOR'],
   },
   {
     label: 'Catálogo',
-    href: '/workspace?view=tours',
+    href: '/catalog/tours',
     icon: Layers,
     children: [
       {
         label: 'Tours',
-        href: '/workspace?view=tours',
+        href: '/catalog/tours',
         icon: MapPin,
       },
       {
         label: 'Traslados',
-        href: '/workspace?view=transfers',
+        href: '/catalog/transfers',
         icon: Car,
       },
     ],
   },
   {
     label: 'Recursos',
-    href: '/workspace/resources?kind=categories',
+    href: '/resources/categories',
     icon: Truck,
     roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR'],
     children: [
       {
         label: 'Categorías comerciales',
-        href: '/workspace/resources?kind=categories',
+        href: '/resources/categories',
         icon: Tag,
       },
       {
         label: 'Vehículos comerciales',
-        href: '/workspace/resources?kind=vehicles',
+        href: '/resources/vehicles',
         icon: Car,
       },
       {
         label: 'Flota operativa',
-        href: '/workspace/operations?view=fleet',
+        href: '/resources/fleet',
         icon: Truck,
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },
       {
         label: 'Guías y Conductores',
-        href: '/workspace/operations?view=personnel',
+        href: '/resources/personnel',
         icon: Users2,
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },
@@ -118,13 +118,13 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Equipo',
-    href: '/workspace?view=members',
+    href: '/team',
     icon: Users2,
     roles: ['OWNER', 'ADMIN'],
   },
   {
     label: 'Notificaciones',
-    href: '/workspace/notifications',
+    href: '/notifications',
     icon: Bell,
     roles: ['OWNER', 'ADMIN'],
   },
@@ -146,33 +146,20 @@ const roleNames: Record<string, string> = {
 
 export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const isCurrent = (href: string) => {
-    const [pathPart, queryPart] = href.split('?');
-    if (pathname !== pathPart) return false;
-
-    if (queryPart) {
-      const targetParams = new URLSearchParams(queryPart);
-      for (const [key, value] of targetParams.entries()) {
-        if (searchParams.get(key) !== value) return false;
-      }
-      return true;
+    const [pathPart] = href.split('?');
+    if (pathPart === '/dashboard') {
+      return pathname === '/dashboard' || pathname === '/workspace';
     }
-
-    // Exact match for base path when no query
-    if (pathname === '/workspace' && !searchParams.get('view')) return true;
-    if (pathname === '/workspace' && searchParams.get('view')) return false;
-
-    return true;
+    return pathname === pathPart || pathname.startsWith(`${pathPart}/`);
   };
 
   const isParentActive = (item: NavItem) => {
-    if (isCurrent(item.href)) return true;
     if (item.children) {
       return item.children.some((child) => isCurrent(child.href));
     }
-    return false;
+    return isCurrent(item.href);
   };
 
   const canAccess = (roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[]) => {

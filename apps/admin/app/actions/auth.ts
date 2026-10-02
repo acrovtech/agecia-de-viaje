@@ -37,7 +37,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         ? 'No pudimos iniciar sesión. Revisa tus credenciales y el acceso a la agencia.'
         : 'No pudimos iniciar sesión en este momento. Inténtalo nuevamente en unos minutos.' };
     }
-    redirect('/workspace');
+    redirect('/dashboard');
   }
   const parsed = LoginSchema.safeParse({
     email: formData.get('email'),
@@ -167,7 +167,7 @@ export async function logoutAction() {
     if (token) {
       let failed = false;
       try { await centralLogout(token); } catch { failed = true; }
-      if (failed) redirect('/workspace?logout=unavailable');
+      if (failed) redirect('/dashboard?logout=unavailable');
     }
     cookieStore.delete(API_SESSION_COOKIE);
   }

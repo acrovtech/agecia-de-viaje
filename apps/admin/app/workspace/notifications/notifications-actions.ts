@@ -31,6 +31,7 @@ export async function retryNotificationAction(
       'POST',
     );
 
+    revalidatePath('/notifications');
     revalidatePath('/workspace/notifications');
     return { success: true, message: 'Notificación reprogramada para reintento.' };
   } catch (error) {

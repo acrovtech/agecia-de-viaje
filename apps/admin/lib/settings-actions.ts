@@ -1,13 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { centralRequest, centralSession, CentralApiError } from '../../lib/central-api';
+import { centralRequest, centralSession, CentralApiError } from './central-api';
+import type { SettingsActionState } from '../components/settings/types';
 
-export type SettingsActionState = {
-  success?: boolean;
-  error?: string;
-  updatedAt?: string;
-};
+export type { SettingsActionState };
 
 export async function updateAgencyProfileAction(
   _prevState: SettingsActionState | null,
@@ -50,8 +47,9 @@ export async function updateAgencyProfileAction(
     );
 
     revalidatePath('/settings');
-    revalidatePath('/workspace/settings');
-    revalidatePath('/workspace');
+    revalidatePath('/settings/profile');
+    revalidatePath('/settings/appearance');
+    revalidatePath('/dashboard');
 
     return { success: true, updatedAt: res.updatedAt };
   } catch (error) {
@@ -117,21 +115,23 @@ export async function updateLegalProfileAction(
     );
 
     revalidatePath('/settings');
-    revalidatePath('/workspace/settings');
+    revalidatePath('/settings/security/legal');
+    revalidatePath('/settings/security');
+    revalidatePath('/dashboard');
 
     return { success: true, updatedAt: res.updatedAt };
   } catch (error) {
     if (error instanceof CentralApiError) {
       if (error.status === 409) {
-        return { error: 'El perfil legal fue modificado concurrentemente por otro usuario. Recarga la página.' };
+        return { error: 'El perfil legal fue modificado concurrentemente por otro usuario. Recarga la página para ver los cambios.' };
       }
       if (error.status === 403) {
-        return { error: 'No tienes autorización para realizar esta acción.' };
+        return { error: 'No tienes autorización para modificar la información legal de esta agencia.' };
       }
       if (error.status === 400) {
         return { error: 'Datos del perfil legal inválidos.' };
       }
     }
-    return { error: 'Ocurrió un error al actualizar el perfil legal.' };
+    return { error: 'Ocurrió un error inesperado al actualizar el perfil legal.' };
   }
 }

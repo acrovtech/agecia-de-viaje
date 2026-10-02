@@ -16,7 +16,7 @@ function form(kind = 'tours', operation = 'publication', id = 'record-a') {
 }
 test('publication derives agency from session and forwards the explicit version', async () => {
   const data = form();
-  await expect(catalogContentAction(null, data)).rejects.toThrow('REDIRECT:/workspace/content?kind=tours&id=record-a&saved=1');
+  await expect(catalogContentAction(null, data)).rejects.toThrow('REDIRECT:/content?kind=tours&id=record-a&saved=1');
   expect(request).toHaveBeenCalledWith('/v1/agencies/own-agency/catalog/tours/record-a/publication', 'private-token', { expectedUpdatedAt: '2026-09-21T00:00:00.000Z', isPublished: true }, 'PUT');
 });
 test.each([['VIEWER', 'tours'], ['OPERATOR', 'categories'], ['EDITOR', 'vehicles']])('%s cannot write %s', async (role, kind) => {
@@ -36,7 +36,7 @@ test.each(['{', JSON.stringify('á'.repeat(46000))])('invalid or oversized paylo
 });
 test('resource creation uses the scoped collection', async () => {
   const data = form('categories', 'resource', ''); data.set('payload', JSON.stringify({ name: 'Nature', slug: 'nature' }));
-  await expect(catalogContentAction(null, data)).rejects.toThrow('REDIRECT:/workspace/resources?kind=categories&saved=1');
+  await expect(catalogContentAction(null, data)).rejects.toThrow('REDIRECT:/resources/categories?saved=1');
   expect(request).toHaveBeenCalledWith('/v1/agencies/own-agency/catalog/categories', 'private-token', { name: 'Nature', slug: 'nature' }, 'POST');
 });
 test('conflict does not retry or redirect', async () => {

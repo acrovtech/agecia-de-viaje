@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   if (isApiAdmin()) {
-    redirect('/workspace');
+    redirect('/dashboard');
   }
 
   const [toursCount, blogsCount, allReservations] = await Promise.all([
