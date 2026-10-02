@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useActionState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { MediaUploader } from '../../components/workspace/media-uploader';
 import { ConfirmDialog } from '../../components/design-system/confirm-dialog';
 import type { NavIdentity } from '../../components/design-system/sidebar';
@@ -98,21 +99,22 @@ export function SettingsForm({
     'integraciones',
   ];
 
-  const defaultTab = validTabs.includes(initialTab as SettingsTabId)
-    ? (initialTab as SettingsTabId)
-    : 'resumen';
-
-  const [activeTab, setActiveTab] = useState<SettingsTabId>(defaultTab);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlTab = searchParams.get('tab') as SettingsTabId | null;
+  const activeTab: SettingsTabId =
+    urlTab && validTabs.includes(urlTab)
+      ? urlTab
+      : validTabs.includes(initialTab as SettingsTabId)
+      ? (initialTab as SettingsTabId)
+      : 'resumen';
 
   const handleTabChange = (tabId: SettingsTabId) => {
-    setActiveTab(tabId);
-    const url = new URL(window.location.href);
     if (tabId === 'resumen') {
-      url.searchParams.delete('tab');
+      router.push('/settings');
     } else {
-      url.searchParams.set('tab', tabId);
+      router.push(`/settings?tab=${tabId}`);
     }
-    window.history.replaceState({}, '', url.toString());
   };
 
   // State for agency profile form
@@ -174,47 +176,8 @@ export function SettingsForm({
     setTimeout(() => setCopiedReferral(false), 2000);
   };
 
-  const tabsConfig: { id: SettingsTabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'resumen', label: 'Resumen', icon: LayoutDashboard },
-    { id: 'perfil', label: 'Perfil', icon: User },
-    { id: 'general', label: 'General', icon: Sliders },
-    { id: 'aspecto', label: 'Aspecto', icon: Palette },
-    { id: 'referidos', label: 'Gana por referenciado', icon: Gift },
-    { id: 'facturacion', label: 'Facturación', icon: CreditCard },
-    { id: 'planes', label: 'Planes', icon: Sparkles },
-    { id: 'seguridad', label: 'Seguridad', icon: ShieldCheck },
-    { id: 'social', label: 'Página social', icon: Smartphone },
-    { id: 'integraciones', label: 'Integraciones', icon: Blocks },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Horizontal Sub-Navigation Tab Bar */}
-      <div className="border-b border-[#e5e7eb] -mt-2 pb-2 overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1.5 min-w-max">
-          {tabsConfig.map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#111111] text-white shadow-product-button'
-                    : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* ========================================================================= */}
       {/* 1. TAB: RESUMEN (Overview Cards Grid)                                     */}

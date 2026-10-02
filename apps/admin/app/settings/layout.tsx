@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { isApiAdmin } from '../../lib/admin-mode';
 import { centralSession, CentralApiError } from '../../lib/central-api';
 import { AppShell } from '../../components/design-system/app-shell';
+import { SettingsSidebar } from '../../components/design-system/settings-sidebar';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,5 +42,14 @@ export default async function SettingsLayout({
     );
   }
 
-  return <AppShell identity={session.identity}>{children}</AppShell>;
+  return (
+    <AppShell
+      identity={session.identity}
+      sidebar={({ onNavigate }) => (
+        <SettingsSidebar identity={session.identity} onNavigate={onNavigate} />
+      )}
+    >
+      {children}
+    </AppShell>
+  );
 }

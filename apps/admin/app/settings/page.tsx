@@ -69,11 +69,61 @@ export default async function SettingsPage({
     );
   }
 
+  const tabHeaders: Record<string, { title: string; description: string }> = {
+    resumen: {
+      title: 'Configuración',
+      description: 'Administra la identidad de tu agencia, preferencias del sistema, facturación, planes y seguridad.',
+    },
+    perfil: {
+      title: 'Perfil',
+      description: 'Gestiona tu información de cuenta, credenciales de acceso y sesión activa.',
+    },
+    general: {
+      title: 'General',
+      description: 'Configura el idioma, zona horaria, formato horario y resumen mensual por correo.',
+    },
+    aspecto: {
+      title: 'Aspecto',
+      description: 'Personaliza los temas del sistema, la paleta de identidad y los logotipos de tu marca.',
+    },
+    referidos: {
+      title: 'Gana por referenciado',
+      description: 'Monitorea tus ingresos, comisiones acumuladas y comparte tu enlace de recomendación.',
+    },
+    facturacion: {
+      title: 'Gestione la facturación',
+      description: 'Administra tu suscripción activa, saldo de créditos disponibles y registro histórico de gastos.',
+    },
+    planes: {
+      title: 'Planes',
+      description: 'Explora y escala a planes con mayores capacidades para tu agencia de viajes.',
+    },
+    seguridad: {
+      title: 'Seguridad y Cumplimiento',
+      description: 'Gestiona el perfil fiscal y legal de tu empresa (RUC) y audita las sesiones del sistema.',
+    },
+    social: {
+      title: 'Página social',
+      description: 'Configura tu link-in-bio móvil para viajeros con accesos directos, tours y contacto WhatsApp.',
+    },
+    integraciones: {
+      title: 'Integraciones',
+      description: 'Conecta pasarelas de pago (Izipay, Stripe), Google Calendar y mensajería en la nube.',
+    },
+  };
+
+  const defaultHeader = {
+    title: 'Configuración',
+    description: 'Administra la identidad de tu agencia, preferencias del sistema, facturación, planes y seguridad.',
+  };
+
+  const headerInfo = tabHeaders[requestedTab] ?? defaultHeader;
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Configuración"
-        description="Administra la identidad de tu agencia, preferencias del sistema, facturación, planes y seguridad."
+        title={headerInfo.title}
+        description={headerInfo.description}
       />
 
       <SettingsForm

@@ -8,9 +8,10 @@ import { PRODUCT_SHORT_NAME } from '../../lib/brand';
 interface AppShellProps {
   identity: NavIdentity;
   children: React.ReactNode;
+  sidebar?: React.ReactNode | ((props: { onNavigate?: () => void }) => React.ReactNode);
 }
 
-export function AppShell({ identity, children }: AppShellProps) {
+export function AppShell({ identity, children, sidebar }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -67,15 +68,27 @@ export function AppShell({ identity, children }: AppShellProps) {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <Sidebar identity={identity} onNavigate={() => setMobileOpen(false)} />
+              {typeof sidebar === 'function'
+                ? sidebar({ onNavigate: () => setMobileOpen(false) })
+                : sidebar
+                ? sidebar
+                : <Sidebar identity={identity} onNavigate={() => setMobileOpen(false)} />}
             </div>
           </div>
         </div>
       )}
 
-      {/* Persistent Desktop Sidebar (md: 64px rail, lg: 256px full, 2xl: 288px wide) */}
-      <div className="hidden md:flex md:w-16 lg:w-64 2xl:w-72 shrink-0 flex-col md:h-svh sticky top-0 z-30">
-        <Sidebar identity={identity} />
+      {/* Persistent Desktop Sidebar */}
+      <div
+        className={
+          sidebar
+            ? "hidden md:flex md:w-60 lg:w-64 2xl:w-72 shrink-0 flex-col md:h-svh sticky top-0 z-30"
+            : "hidden md:flex md:w-16 lg:w-64 2xl:w-72 shrink-0 flex-col md:h-svh sticky top-0 z-30"
+        }
+      >
+        {typeof sidebar === 'function'
+          ? sidebar({})
+          : (sidebar || <Sidebar identity={identity} />)}
       </div>
 
       {/* Elevated White MAIN SURFACE (top 8px, right 8px, bottom 8px, left 0px) */}
