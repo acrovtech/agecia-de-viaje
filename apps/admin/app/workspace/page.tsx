@@ -524,7 +524,7 @@ export default async function WorkspacePage({
                           {canEdit && (
                             <Link
                               href={`/workspace?view=${view}&edit=${encodeURIComponent(item.id)}`}
-                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white shadow-cal-ring hover:bg-[#f8f9fa] rounded-md transition-colors"
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] shadow-product-card hover:bg-[#f8f9fa] rounded-md transition-colors"
                             >
                               Editar
                             </Link>

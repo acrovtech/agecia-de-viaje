@@ -69,7 +69,7 @@ export function MegamenuManager({ tours }: { tours: Tour[] }) {
               </td>
               <td className="px-4 py-4">
                 <select
-                  className="w-full border-gray-200 rounded-md text-sm shadow-sm focus:border-brand-teal focus:ring-brand-teal disabled:opacity-50"
+                  className="w-full border-gray-200 rounded-md text-sm shadow-sm focus:border-[#111111] focus:ring-[#111111] disabled:opacity-50"
                   defaultValue={tour.menuGroup || 'none'}
                   disabled={updatingId === tour.id}
                   onChange={(e) => handleGroupChange(tour.id, e.target.value)}

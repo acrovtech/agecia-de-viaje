@@ -135,7 +135,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Top action header: Back link, Title, Mode switch */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e5e7eb] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div className="flex items-center gap-3">
           <Link
             href={`/workspace?view=${kind}`}
@@ -148,7 +148,7 @@ export function CatalogEditor({ kind, record }: CatalogEditorProps) {
             <span className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wider">
               {kind === 'tours' ? 'Gestión de Tour' : 'Gestión de Traslado'}
             </span>
-            <h1 className="text-xl sm:text-[22px] font-semibold tracking-tight text-[#111111]">
+            <h1 className="text-xl font-semibold text-[#111111]">
               {record ? 'Editar Servicio' : 'Crear Nuevo Servicio'}
             </h1>
           </div>

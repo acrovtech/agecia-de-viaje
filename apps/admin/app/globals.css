@@ -8,7 +8,7 @@ body {
   min-height: 100dvh;
   max-width: 100vw;
   overflow-x: hidden;
-  background-color: #F1F1F1;
+  background-color: #f8f9fa;
 }
 
 * {
@@ -22,83 +22,66 @@ a {
   text-decoration: none;
 }
 
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
-}
-
 @layer base {
   .theme {
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
   :root {
-    --background: #F8FAFC;
-    --foreground: #0F172A;
-    --card: #FFFFFF;
-    --card-foreground: #0F172A;
-    --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #0B4354;
-    --primary-foreground: #FFFFFF;
-    --secondary: #163A24;
-    --secondary-foreground: #FFFFFF;
-    --muted: #F1F5F9;
-    --muted-foreground: #64748B;
-    --accent: #E6F2F5;
-    --accent-foreground: #0B4354;
-    --destructive: #EF4444;
-    --destructive-foreground: #FFFFFF;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #0B4354;
-    --radius: 0.625rem;
-    --sidebar: #062918;
-    --sidebar-foreground: #F8FAFC;
-    --sidebar-primary: #0B4354;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #163A24;
-    --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #134E31;
+    --background: #f8f9fa;
+    --foreground: #111111;
+    --card: #ffffff;
+    --card-foreground: #111111;
+    --popover: #ffffff;
+    --popover-foreground: #111111;
+    --primary: #111111;
+    --primary-foreground: #ffffff;
+    --secondary: #f8f9fa;
+    --secondary-foreground: #111111;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --accent: #f3f4f6;
+    --accent-foreground: #111111;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #111111;
+    --radius: 0.5rem;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #111111;
+    --sidebar-primary: #111111;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f8f9fa;
+    --sidebar-accent-foreground: #111111;
+    --sidebar-border: #e5e7eb;
   }
   .dark {
-    --background: #091814;
-    --foreground: #F8FAFC;
-    --card: #0F2D24;
-    --card-foreground: #F8FAFC;
-    --popover: #0F2D24;
-    --popover-foreground: #F8FAFC;
-    --primary: #0B4354;
-    --primary-foreground: #FFFFFF;
-    --secondary: #163A24;
-    --secondary-foreground: #FFFFFF;
-    --muted: #1E3A32;
-    --muted-foreground: #94A3B8;
-    --accent: #163A24;
-    --accent-foreground: #F8FAFC;
-    --destructive: #EF4444;
-    --border: #1E3A32;
-    --input: #1E3A32;
-    --ring: #0B4354;
-    --sidebar: #062918;
-    --sidebar-foreground: #F8FAFC;
-    --sidebar-primary: #0B4354;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #163A24;
-    --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #134E31;
+    --background: #0d0d0d;
+    --foreground: #f8f9fa;
+    --card: #161616;
+    --card-foreground: #f8f9fa;
+    --popover: #161616;
+    --popover-foreground: #f8f9fa;
+    --primary: #ffffff;
+    --primary-foreground: #111111;
+    --secondary: #1f1f1f;
+    --secondary-foreground: #f8f9fa;
+    --muted: #262626;
+    --muted-foreground: #9ca3af;
+    --accent: #1f1f1f;
+    --accent-foreground: #f8f9fa;
+    --destructive: #ef4444;
+    --border: #262626;
+    --input: #262626;
+    --ring: #ffffff;
+    --sidebar: #111111;
+    --sidebar-foreground: #f8f9fa;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #111111;
+    --sidebar-accent: #1f1f1f;
+    --sidebar-accent-foreground: #f8f9fa;
+    --sidebar-border: #262626;
   }
   * {
     border-color: var(--border);
@@ -111,7 +94,7 @@ a {
 
 @layer components {
   .product-main-surface {
-    @apply bg-white md:rounded-2xl border border-[rgba(34,42,53,0.08)] md:shadow-product-surface md:overflow-hidden;
+    @apply bg-white md:rounded-2xl md:border md:border-[rgba(34,42,53,0.08)] md:shadow-product-surface md:overflow-hidden;
   }
 
   .product-card-surface {
@@ -119,11 +102,11 @@ a {
   }
 
   .product-button-primary {
-    @apply inline-flex items-center justify-center gap-2 h-8 px-3 rounded-lg text-sm font-medium text-white bg-[#111111] hover:bg-[#242424] active:bg-[#242424] border border-[#111111] shadow-product-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation relative before:absolute before:-inset-1.5 sm:before:hidden;
+    @apply inline-flex items-center justify-center gap-2 h-8 px-3 rounded-lg text-sm font-medium text-white bg-[#111111] hover:bg-[#242424] active:bg-[#242424] border border-[#111111] shadow-product-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation;
   }
 
   .product-button-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] border border-[#e5e7eb] shadow-product-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation relative before:absolute before:-inset-1.5 sm:before:hidden;
+    @apply inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-[#111111] bg-white hover:bg-[#f8f9fa] border border-[#e5e7eb] shadow-product-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation;
   }
 
   .product-input {
@@ -131,10 +114,40 @@ a {
   }
 
   .product-list-row {
-    @apply px-6 py-4 hover:bg-[#f8f9fa]/70 transition-colors;
+    @apply hover:bg-[#f8f9fa]/70 transition-colors;
+  }
+
+  .product-list-row > td,
+  div.product-list-row {
+    @apply px-6 py-4;
   }
 
   .product-data-row {
-    @apply px-4 py-3 hover:bg-[#f8f9fa]/70 transition-colors;
+    @apply hover:bg-[#f8f9fa]/70 transition-colors;
+  }
+
+  .product-data-row > td,
+  div.product-data-row {
+    @apply px-4 py-3;
+  }
+}
+
+@media (pointer: coarse) {
+  .product-button-primary,
+  .product-button-secondary {
+    position: relative;
+  }
+
+  .product-button-primary::before,
+  .product-button-secondary::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
   }
 }

@@ -29,7 +29,7 @@ export function EditorModeSwitch({
         onClick={() => onChange('complete')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
           mode === 'complete'
-            ? 'bg-white text-[#111111] shadow-cal-ring font-medium'
+            ? 'bg-white text-[#111111] border border-[#e5e7eb] shadow-product-card font-medium'
             : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]/50'
         }`}
       >
@@ -44,7 +44,7 @@ export function EditorModeSwitch({
         onClick={() => onChange('guided')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
           mode === 'guided'
-            ? 'bg-white text-[#111111] shadow-cal-ring font-medium'
+            ? 'bg-white text-[#111111] border border-[#e5e7eb] shadow-product-card font-medium'
             : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]/50'
         }`}
       >

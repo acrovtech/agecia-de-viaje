@@ -76,7 +76,7 @@ export function ResourceForm({
         })}
       />
 
-      <div className="border-b border-[#e5e7eb] pb-2">
+      <div className="pb-1">
         <h3 className="text-base font-semibold tracking-tight text-[#111111]">
           {record ? 'Editar' : 'Crear'} {kind === 'categories' ? 'categoría' : 'vehículo comercial'}
         </h3>

@@ -24,7 +24,7 @@ export function StickySaveBar({
 }: StickySaveBarProps) {
   return (
     <div
-      className={`sticky bottom-0 left-0 right-0 -mx-4 -mb-5 sm:-mx-6 sm:-mb-6 md:-mx-8 md:-mb-8 px-4 sm:px-6 md:px-8 py-3 bg-white/95 backdrop-blur-xs border-t border-[#e5e7eb] flex flex-wrap items-center justify-between gap-3 shadow-[0_-1px_3px_rgba(0,0,0,0.03)] z-30 transition-all ${className}`}
+      className={`sticky bottom-0 left-0 right-0 -mx-4 px-4 -mb-6 md:-mx-6 md:px-6 md:-mb-6 lg:-mx-10 lg:px-10 lg:-mb-6 py-3 bg-white/95 backdrop-blur-xs border-t border-[#e5e7eb] flex flex-wrap items-center justify-between gap-3 shadow-[0_-1px_3px_rgba(0,0,0,0.03)] z-30 transition-all ${className}`}
     >
       <div className="flex items-center gap-2 min-w-0">
         {error ? (

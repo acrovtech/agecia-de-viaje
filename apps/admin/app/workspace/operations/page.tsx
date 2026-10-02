@@ -145,7 +145,7 @@ export default async function OperationsPage({
                 href={`/workspace/operations?view=dispatch&date=${prevDate}${
                   missing ? `&missing=${missing}` : ''
                 }`}
-                className="px-2.5 py-1.5 text-xs font-medium rounded-lg shadow-cal-ring bg-white text-[#111111] hover:bg-[#f8f9fa] transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#e5e7eb] shadow-product-card bg-white text-[#111111] hover:bg-[#f8f9fa] transition-colors"
               >
                 ← Día anterior
               </Link>

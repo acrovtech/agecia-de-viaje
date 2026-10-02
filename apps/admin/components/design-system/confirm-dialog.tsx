@@ -60,7 +60,7 @@ export function ConfirmDialog({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-md bg-white rounded-xl shadow-cal-elevated p-6 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-white rounded-xl border border-[#e5e7eb] shadow-product-surface p-6 space-y-4 animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">

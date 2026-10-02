@@ -100,7 +100,7 @@ export function BookingForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#e5e7eb] pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-1">
         <div>
           <span className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
             Nueva Reserva Manual

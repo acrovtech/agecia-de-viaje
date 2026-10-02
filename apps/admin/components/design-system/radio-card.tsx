@@ -79,7 +79,7 @@ export function RadioCardGroup({
               className={`relative flex flex-col justify-between p-4 rounded-lg text-left cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 ${
                 isSelected
                   ? 'bg-[#f8f9fa] shadow-[0_0_0_1.5px_#111111]'
-                  : 'bg-white shadow-cal-ring hover:bg-[#f8f9fa]/50'
+                  : 'bg-white border border-[#e5e7eb] shadow-product-card hover:bg-[#f8f9fa]/50'
               } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-start justify-between gap-3">

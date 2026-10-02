@@ -187,14 +187,14 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
     >
       {/* Top Header: Platform Glyph + Tenant Context (Cal density: pt-2 px-2 py-2) */}
       <div className="pt-2 px-2 py-2">
-        <div className="flex items-center gap-2 max-lg:justify-center">
+        <div className="flex items-center gap-2 md:max-lg:justify-center">
           <div
             title={identity.agencyName}
             className="w-8 h-8 rounded-lg bg-[#111111] text-white flex items-center justify-center font-bold text-xs shadow-none shrink-0 tracking-wider"
           >
             {PRODUCT_SHORT_NAME[0]}
           </div>
-          <div className="min-w-0 flex-1 max-lg:hidden">
+          <div className="min-w-0 flex-1 md:max-lg:hidden">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-[#111111] truncate">
                 {identity.agencyName}
@@ -223,24 +223,24 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                   onClick={onNavigate}
                   title={item.label}
                   aria-current={isCurrent(item.href) ? 'page' : undefined}
-                  className={`flex items-center justify-between h-8 px-2 rounded-lg text-sm font-medium transition-colors cursor-pointer max-lg:justify-center max-lg:px-0 ${
+                  className={`flex items-center justify-between h-8 px-2 rounded-lg text-sm font-medium transition-colors cursor-pointer md:max-lg:justify-center md:max-lg:px-0 ${
                     active
                       ? 'bg-[#f3f4f6] text-[#111111]'
                       : 'text-[#374151] hover:text-[#111111] hover:bg-[#f3f4f6]/60'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0 max-lg:justify-center">
+                  <div className="flex items-center gap-2 min-w-0 md:max-lg:justify-center">
                     <Icon className="w-4 h-4 shrink-0 text-[#6b7280]" />
-                    <span className="truncate max-lg:sr-only">{item.label}</span>
+                    <span className="truncate md:max-lg:sr-only">{item.label}</span>
                   </div>
                   {item.children && (
-                    <ChevronDown className="w-3.5 h-3.5 text-[#898989] shrink-0 max-lg:hidden" />
+                    <ChevronDown className="w-3.5 h-3.5 text-[#898989] shrink-0 md:max-lg:hidden" />
                   )}
                 </Link>
 
-                {/* Sub-items (expanded in full sidebar lg+) */}
+                {/* Sub-items (expanded in full sidebar lg+ and mobile drawer) */}
                 {item.children && active && (
-                  <div className="pl-6 pr-1 space-y-0.5 pt-0.5 pb-1 max-lg:hidden">
+                  <div className="pl-6 pr-1 space-y-0.5 pt-0.5 pb-1 md:max-lg:hidden">
                     {item.children
                       .filter((child) => canAccess(child.roles))
                       .map((child) => {
@@ -274,15 +274,15 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
 
       {/* User Footer: Role badge, email, and Logout */}
       <div className="p-2">
-        <div className="flex items-center justify-between gap-2 max-lg:flex-col max-lg:items-center">
+        <div className="flex items-center justify-between gap-2 md:max-lg:flex-col md:max-lg:items-center">
           <div
-            className="flex items-center gap-2 min-w-0 max-lg:justify-center"
+            className="flex items-center gap-2 min-w-0 md:max-lg:justify-center"
             title={`${identity.email} (${roleNames[identity.role] || identity.role})`}
           >
             <div className="w-7 h-7 rounded-md bg-[#f3f4f6] text-[#111111] flex items-center justify-center font-bold text-xs shrink-0">
               {identity.email[0]?.toUpperCase()}
             </div>
-            <div className="min-w-0 max-lg:hidden">
+            <div className="min-w-0 flex-1 md:max-lg:hidden">
               <p className="text-xs font-medium text-[#111111] truncate">
                 {identity.email}
               </p>
@@ -292,7 +292,7 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
             </div>
           </div>
 
-          <form action={logoutAction} className="max-lg:w-full max-lg:flex max-lg:justify-center">
+          <form action={logoutAction} className="md:max-lg:w-full md:max-lg:flex md:max-lg:justify-center">
             <button
               type="submit"
               title="Cerrar sesión"
