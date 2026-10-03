@@ -12,6 +12,10 @@ import {
   CheckCircle2,
   Mail,
   Phone,
+  Search,
+  LayoutList,
+  Calendar,
+  ListFilter,
 } from 'lucide-react';
 import { centralRequest, centralSession, CentralApiError } from '@/lib/central-api';
 import { isApiAdmin } from '@/lib/admin-mode';
@@ -486,25 +490,43 @@ export default async function ReservationsPage({
     list = { data: [], nextCursor: null };
   }
 
+  const searchQuery = typeof params.q === 'string' ? params.q.trim().toLowerCase() : '';
+  const viewMode = params.view === 'calendar' ? 'calendar' : 'list';
+
+  const filteredData = searchQuery
+    ? list.data.filter((item) =>
+        (item.code?.toLowerCase().includes(searchQuery)) ||
+        (item.customerFirstName?.toLowerCase().includes(searchQuery)) ||
+        (item.customerLastName?.toLowerCase().includes(searchQuery)) ||
+        (item.serviceTitle?.toLowerCase().includes(searchQuery))
+      )
+    : list.data;
+
+  const buildStatusHref = (statusKey?: string) => {
+    const q = new URLSearchParams();
+    if (statusKey) q.set('status', statusKey);
+    if (searchQuery) q.set('q', searchQuery);
+    if (viewMode === 'calendar') q.set('view', 'calendar');
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
+
+  const buildViewHref = (targetView: 'list' | 'calendar') => {
+    const q = new URLSearchParams();
+    if (params.status && typeof params.status === 'string') q.set('status', params.status);
+    if (searchQuery) q.set('q', searchQuery);
+    if (targetView === 'calendar') q.set('view', 'calendar');
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
+
   const nextParams = new URLSearchParams(query);
   if (list.nextCursor) nextParams.set('after', list.nextCursor);
+  if (viewMode === 'calendar') nextParams.set('view', 'calendar');
+  if (searchQuery) nextParams.set('q', searchQuery);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Reservas"
-        description="Gestiona las reservas de tu agencia."
-        actions={
-          <Link
-            href="/reservations?new=1"
-            className="product-button-primary"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nueva reserva</span>
-          </Link>
-        }
-      />
-
+    <div className="space-y-4">
       {params.saved === '1' && (
         <div
           role="status"
@@ -515,115 +537,245 @@ export default async function ReservationsPage({
         </div>
       )}
 
-      {/* Filter Tabs by Operation Status */}
-      <div className="flex flex-wrap gap-2 text-xs border-b border-[#e5e7eb] pb-3">
-        <Link
-          href="/reservations"
-          className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-            !params.status
-              ? 'bg-[#111111] text-white'
-              : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
-          }`}
-        >
-          Todas
-        </Link>
-        {Object.entries(operationLabels).map(([statusKey, label]) => {
-          const isActive = params.status === statusKey;
-          return (
+      {/* Top Toolbar Row: Filters on Left, Search + New Reservation + Views on Right */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[#e5e7eb]">
+        {/* Left: Filter tabs + Filtrar button */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex items-center p-1 bg-[#f3f4f6] rounded-[8px] text-xs">
             <Link
-              key={statusKey}
-              href={`/reservations?status=${statusKey}`}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                isActive
-                  ? 'bg-[#111111] text-white'
-                  : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
+              href={buildStatusHref(undefined)}
+              className={`px-3 py-1.5 rounded-[6px] font-medium transition-all ${
+                !params.status
+                  ? 'bg-white text-[#111111] shadow-2xs font-semibold'
+                  : 'text-[#6b7280] hover:text-[#111111]'
               }`}
             >
-              {label}
+              Todas
             </Link>
-          );
-        })}
-      </div>
+            {Object.entries(operationLabels).map(([statusKey, label]) => {
+              const isActive = params.status === statusKey;
+              return (
+                <Link
+                  key={statusKey}
+                  href={buildStatusHref(statusKey)}
+                  className={`px-3 py-1.5 rounded-[6px] font-medium transition-all ${
+                    isActive
+                      ? 'bg-white text-[#111111] shadow-2xs font-semibold'
+                      : 'text-[#6b7280] hover:text-[#111111]'
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
 
-      {/* Grouped List / Modern Data Table */}
-      <div className="product-card-surface">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead>
-              <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
-                <th className="py-2.5 px-4 font-medium">Código / Servicio</th>
-                <th className="py-2.5 px-4 font-medium">Cliente</th>
-                <th className="py-2.5 px-4 font-medium">Fecha del Servicio</th>
-                <th className="py-2.5 px-4 font-medium">Estado Operativo</th>
-                <th className="py-2.5 px-4 font-medium text-right">Total Acordado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e5e7eb]">
-              {list.data.map((row) => {
-                const publicCode = row.code ?? row.id.slice(0, 8);
-                return (
-                  <tr key={row.id} className="product-data-row">
-                    <td className="py-3 px-4 pr-3">
-                      <Link
-                        href={`/reservations?id=${row.id}`}
-                        className="font-semibold text-[#111111] text-sm hover:underline font-mono"
-                      >
-                        {publicCode}
-                      </Link>
-                      <p className="text-[#6b7280] text-xs mt-0.5">
-                        {row.serviceTitle ?? 'Reserva anterior'}
-                      </p>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-[#111111]">
-                      {row.customerFirstName} {row.customerLastName}
-                    </td>
-                    <td className="py-3 px-4 text-[#6b7280] font-mono text-[11px]">
-                      {row.date.slice(0, 10)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={row.operationStatus || 'PENDING'} />
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-[#111111]">
-                      {priceLabel(
-                        row.totalMinor ?? Math.round(row.totalPrice * 100),
-                        row.currency,
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {list.data.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-[#898989]">
-                    No hay reservas todavía
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f9fafb] shadow-2xs transition-colors cursor-pointer"
+          >
+            <ListFilter className="w-3.5 h-3.5 text-[#6b7280]" />
+            <span>Filtrar</span>
+          </button>
         </div>
 
-        <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
-          <div>{list.data.length} reservas listadas</div>
-          <div className="flex gap-4 font-medium">
-            {params.after && (
-              <Link
-                href={`/reservations${
-                  params.status ? `?status=${encodeURIComponent(String(params.status))}` : ''
-                }`}
-                className="hover:underline text-[#111111]"
-              >
-                Primera página
-              </Link>
+        {/* Right: Search, Nueva reserva, View toggle icons */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+          {/* Search input (to the left of Nueva reserva) */}
+          <form method="GET" action="/reservations" className="relative">
+            {params.status && typeof params.status === 'string' && (
+              <input type="hidden" name="status" value={params.status} />
             )}
-            {list.nextCursor && (
-              <Link href={`/reservations?${nextParams}`} className="hover:underline text-[#111111]">
-                Siguiente página
-              </Link>
+            {viewMode === 'calendar' && (
+              <input type="hidden" name="view" value="calendar" />
             )}
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9ca3af] pointer-events-none" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={searchQuery}
+              placeholder="Buscar reserva..."
+              className="h-8.5 pl-8 pr-3 text-xs bg-white border border-[#e5e7eb] rounded-[8px] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] w-36 sm:w-48 placeholder:text-[#9ca3af] transition-all"
+            />
+          </form>
+
+          {/* Nueva reserva */}
+          <Link
+            href="/reservations?new=1"
+            className="h-8.5 px-3 rounded-[8px] bg-[#111111] hover:bg-black text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors shrink-0 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nueva reserva</span>
+          </Link>
+
+          {/* View toggle icons: List & Calendar (to the right of Nueva reserva) */}
+          <div className="inline-flex items-center p-0.5 bg-[#f3f4f6] border border-[#e5e7eb] rounded-[8px] shrink-0">
+            <Link
+              href={buildViewHref('list')}
+              className={`p-1.5 rounded-[6px] transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-white text-[#111111] shadow-2xs'
+                  : 'text-[#6b7280] hover:text-[#111111]'
+              }`}
+              title="Vista de lista"
+              aria-label="Vista de lista"
+            >
+              <LayoutList className="w-3.5 h-3.5" />
+            </Link>
+            <Link
+              href={buildViewHref('calendar')}
+              className={`p-1.5 rounded-[6px] transition-colors ${
+                viewMode === 'calendar'
+                  ? 'bg-white text-[#111111] shadow-2xs'
+                  : 'text-[#6b7280] hover:text-[#111111]'
+              }`}
+              title="Vista de calendario"
+              aria-label="Vista de calendario"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
+
+      {/* Main Content: Calendar View vs List View */}
+      {viewMode === 'calendar' ? (
+        <div className="product-card-surface p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb]">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">
+              Vista por fecha de servicio
+            </h3>
+            <span className="text-xs text-[#6b7280]">
+              {filteredData.length} {filteredData.length === 1 ? 'reserva' : 'reservas'}
+            </span>
+          </div>
+
+          {filteredData.length === 0 ? (
+            <div className="py-12 text-center text-[#898989] text-xs">
+              {searchQuery ? 'No se encontraron reservas con ese criterio' : 'No hay reservas todavía'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredData.map((row) => {
+                const publicCode = row.code ?? row.id.slice(0, 8);
+                return (
+                  <Link
+                    key={row.id}
+                    href={`/reservations?id=${row.id}`}
+                    className="p-3.5 rounded-[10px] border border-[#e5e7eb] bg-white hover:border-[#111111] transition-all space-y-2 block shadow-2xs group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-[#111111] group-hover:underline">
+                        {publicCode}
+                      </span>
+                      <StatusBadge status={row.operationStatus || 'PENDING'} />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-[#111111] line-clamp-1">
+                        {row.serviceTitle ?? 'Reserva'}
+                      </p>
+                      <p className="text-[11px] text-[#6b7280] truncate mt-0.5">
+                        {row.customerFirstName} {row.customerLastName} • {row.pax} {row.pax === 1 ? 'pax' : 'pax'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-[#f3f4f6] text-[11px]">
+                      <span className="text-[#6b7280] font-mono flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-[#9ca3af]" />
+                        {row.date.slice(0, 10)}
+                      </span>
+                      <span className="font-bold text-[#111111]">
+                        {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Grouped List / Modern Data Table */
+        <div className="product-card-surface">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 px-4 font-medium">Código / Servicio</th>
+                  <th className="py-2.5 px-4 font-medium">Cliente</th>
+                  <th className="py-2.5 px-4 font-medium">Fecha del Servicio</th>
+                  <th className="py-2.5 px-4 font-medium">Estado Operativo</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Total Acordado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e7eb]">
+                {filteredData.map((row) => {
+                  const publicCode = row.code ?? row.id.slice(0, 8);
+                  return (
+                    <tr key={row.id} className="product-data-row">
+                      <td className="py-3 px-4 pr-3">
+                        <Link
+                          href={`/reservations?id=${row.id}`}
+                          className="font-semibold text-[#111111] text-sm hover:underline font-mono"
+                        >
+                          {publicCode}
+                        </Link>
+                        <p className="text-[#6b7280] text-xs mt-0.5">
+                          {row.serviceTitle ?? 'Reserva anterior'}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 font-medium text-[#111111]">
+                        {row.customerFirstName} {row.customerLastName}
+                      </td>
+                      <td className="py-3 px-4 text-[#6b7280] font-mono text-[11px]">
+                        {row.date.slice(0, 10)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={row.operationStatus || 'PENDING'} />
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-[#111111]">
+                        {priceLabel(
+                          row.totalMinor ?? Math.round(row.totalPrice * 100),
+                          row.currency,
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredData.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-[#898989]">
+                      {searchQuery ? 'No se encontraron reservas con ese criterio' : 'No hay reservas todavía'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
+            <div>{filteredData.length} reservas listadas</div>
+            <div className="flex gap-4 font-medium">
+              {params.after && (
+                <Link
+                  href={`/reservations${
+                    params.status ? `?status=${encodeURIComponent(String(params.status))}` : ''
+                  }`}
+                  className="hover:underline text-[#111111]"
+                >
+                  Primera página
+                </Link>
+              )}
+              {list.nextCursor && (
+                <Link href={`/reservations?${nextParams}`} className="hover:underline text-[#111111]">
+                  Siguiente página
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
