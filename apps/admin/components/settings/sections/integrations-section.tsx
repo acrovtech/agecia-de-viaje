@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { MessageSquare, Webhook } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 function VerifiedShield() {
   return (
@@ -118,59 +118,6 @@ function IntegrationCard({
 export function IntegrationsSection() {
   const paymentIntegrations: IntegrationCardProps[] = [
     {
-      id: 'stripe',
-      name: 'Stripe',
-      description: 'Track how your links are converting to sales on Stripe.',
-      logo: (
-        <Image
-          src="/integrations/stripe.png"
-          alt="Stripe"
-          width={40}
-          height={40}
-          className="w-full h-full object-cover"
-        />
-      ),
-      statusLabel: 'Integración prevista',
-      actionLabel: 'Conectar cuenta',
-      onAction: () => alert('Próximamente: conectar cuenta de Stripe Connect.'),
-    },
-    {
-      id: 'shopify',
-      name: 'Shopify',
-      description: 'Track how your links are converting to sales on Shopify.',
-      logo: (
-        <div className="w-full h-full bg-[#95bf47] flex items-center justify-center p-1.5 text-white">
-          <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M19.34 6.84L14.7.74a.8.8 0 00-.73-.24l-2.45.69-.14-.42A1.73 1.73 0 009.7.02L5.8 1.15a1.73 1.73 0 00-1.2 1.63c0 .1 0 .2.02.3L2.24 6.27a1.08 1.08 0 00-.59.98c0 5.48 3.51 16.03 10.37 16.03 6.85 0 10.36-10.55 10.36-16.03a1.08 1.08 0 00-.63-.98l-2.41-.43zm-8.8-4.47l2.84-.81.65 1.95-3.49 1-.65-1.95a.35.35 0 01.24-.44.35.35 0 01.41.25zm1.53 18.91C6.26 21.28 3.65 12.3 3.65 7.64l8.42 1.5v12.14zm1.48 0V9.14l7.3-1.3c.06 4.46-2.52 13.44-7.3 13.44z" />
-          </svg>
-        </div>
-      ),
-      badge: 'COMING SOON',
-      badgeVariant: 'purple',
-      statusLabel: 'En desarrollo',
-      actionLabel: 'Saber más',
-      onAction: () => alert('Integración con Shopify para sincronización de catálogo de tours en desarrollo.'),
-    },
-    {
-      id: 'polar',
-      name: 'Polar',
-      description: 'Track how your links are converting to sales on Polar.',
-      badge: 'COMING SOON',
-      badgeVariant: 'purple',
-      logo: (
-        <div className="w-full h-full bg-[#0f0f11] flex items-center justify-center p-1.5">
-          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9" />
-            <ellipse cx="12" cy="12" rx="4.5" ry="9" />
-            <line x1="12" y1="3" x2="12" y2="21" />
-          </svg>
-        </div>
-      ),
-      statusLabel: 'Próximamente',
-      actionLabel: 'Saber más',
-      onAction: () => alert('Integración con Polar en desarrollo.'),
-    },
-    {
       id: 'izipay',
       name: 'Izipay Pasarela',
       description: 'Tarjetas de crédito y débito Visa, Mastercard y Amex con tokenización segura.',
@@ -186,6 +133,21 @@ export function IntegrationsSection() {
       onAction: () => alert('Pasarela Izipay: integración y activación diferida para siguiente fase.'),
     },
     {
+      id: 'culqi',
+      name: 'Culqi Pasarela',
+      description: 'Cobros locales con tarjeta Visa, Mastercard y pagos rápidos con Yape en Perú.',
+      badge: 'COMING SOON',
+      badgeVariant: 'purple',
+      logo: (
+        <div className="w-full h-full bg-gradient-to-br from-[#00b49f] to-[#008272] flex items-center justify-center text-white font-extrabold text-xs tracking-tight">
+          culqi
+        </div>
+      ),
+      statusLabel: 'En desarrollo',
+      actionLabel: 'Saber más',
+      onAction: () => alert('Integración con Culqi programada para la siguiente fase.'),
+    },
+    {
       id: 'mercadopago',
       name: 'Mercado Pago',
       description: 'Cobros locales en moneda nacional y billeteras digitales para América Latina.',
@@ -199,6 +161,23 @@ export function IntegrationsSection() {
       statusLabel: 'Próximamente',
       actionLabel: 'Saber más',
       onAction: () => alert('Integración con Mercado Pago programada para la siguiente fase.'),
+    },
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      description: 'Cobros internacionales en USD, EUR y más de 135 monedas globales.',
+      logo: (
+        <Image
+          src="/integrations/stripe.png"
+          alt="Stripe"
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
+      ),
+      statusLabel: 'Integración prevista',
+      actionLabel: 'Conectar cuenta',
+      onAction: () => alert('Próximamente: conectar cuenta de Stripe Connect.'),
     },
   ];
 
@@ -234,33 +213,18 @@ export function IntegrationsSection() {
       actionLabel: 'Saber más',
       onAction: () => alert('Integración con WhatsApp Cloud API en desarrollo.'),
     },
-    {
-      id: 'webhooks',
-      name: 'Webhooks & API',
-      description: 'Notificaciones en tiempo real para eventos de reservas, pagos y clientes.',
-      badge: 'COMING SOON',
-      badgeVariant: 'purple',
-      logo: (
-        <div className="w-full h-full bg-[#1e293b] flex items-center justify-center text-white">
-          <Webhook className="w-5 h-5 text-white" />
-        </div>
-      ),
-      statusLabel: 'Próximamente',
-      actionLabel: 'Saber más',
-      onAction: () => alert('Webhooks de reservas disponibles en la siguiente fase de API.'),
-    },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Payments Section (Exact match with reference image) */}
+      {/* Payments Section */}
       <section className="space-y-3">
         <div>
           <h3 className="text-base font-semibold text-[#111111] tracking-tight">
             Payments
           </h3>
           <p className="text-xs text-[#6b7280] mt-0.5">
-            Conecta pasarelas de cobro y monitorea cómo tus enlaces y tours convierten en ventas.
+            Conecta pasarelas de cobro con tarjeta y billeteras digitales para confirmar reservas.
           </p>
         </div>
 
@@ -278,7 +242,7 @@ export function IntegrationsSection() {
             Herramientas y Automatizaciones
           </h3>
           <p className="text-xs text-[#6b7280] mt-0.5">
-            Sincronización con calendarios de conductores, mensajería y webhooks en la nube.
+            Sincronización con calendarios de conductores, guías y mensajería instantánea.
           </p>
         </div>
 
