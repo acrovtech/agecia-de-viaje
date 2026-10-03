@@ -43,7 +43,7 @@ interface NavItem {
   children?: {
     label: string;
     href: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon?: React.ComponentType<{ className?: string }>;
     roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[];
   }[];
 }
@@ -72,19 +72,12 @@ const mainNavItems: NavItem[] = [
     icon: MapPin,
     children: [
       {
-        label: 'Tours',
-        href: '/catalog/tours',
-        icon: MapPin,
-      },
-      {
         label: 'Categorías',
         href: '/resources/categories',
-        icon: Tag,
       },
       {
         label: 'Personal operativo (guías y conductores)',
         href: '/resources/personnel',
-        icon: Users2,
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },
     ],
@@ -95,20 +88,13 @@ const mainNavItems: NavItem[] = [
     icon: Car,
     children: [
       {
-        label: 'Traslados',
-        href: '/catalog/transfers',
-        icon: Car,
-      },
-      {
         label: 'Flota operativa',
         href: '/resources/fleet',
-        icon: Truck,
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },
       {
         label: 'Vehículos comerciales',
         href: '/resources/vehicles',
-        icon: Car,
       },
     ],
   },
@@ -180,10 +166,11 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
   };
 
   const isParentActive = (item: NavItem) => {
+    if (isCurrent(item.href)) return true;
     if (item.children) {
       return item.children.some((child) => isCurrent(child.href));
     }
-    return isCurrent(item.href);
+    return false;
   };
 
   const canAccess = (roles?: ('OWNER' | 'ADMIN' | 'OPERATOR' | 'EDITOR' | 'VIEWER')[]) => {
@@ -267,7 +254,6 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                         .filter((child) => canAccess(child.roles))
                         .map((child) => {
                           const childActive = isCurrent(child.href);
-                          const ChildIcon = child.icon;
 
                           return (
                             <Link
@@ -276,13 +262,12 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                               onClick={onNavigate}
                               title={child.label}
                               aria-current={childActive ? 'page' : undefined}
-                              className={`flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#111111] ${
+                              className={`flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#111111] ${
                                 childActive
                                   ? 'bg-[#f3f4f6] text-[#111111] font-semibold'
                                   : 'text-[#6b7280] hover:text-[#111111] hover:bg-[#f3f4f6]/40'
                               }`}
                             >
-                              <ChildIcon className="w-3.5 h-3.5 text-[#898989]" />
                               <span className="truncate">{child.label}</span>
                             </Link>
                           );
@@ -346,7 +331,6 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                         .filter((child) => canAccess(child.roles))
                         .map((child) => {
                           const childActive = isCurrent(child.href);
-                          const ChildIcon = child.icon;
 
                           return (
                             <Link
@@ -357,13 +341,12 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
                                 onNavigate?.();
                               }}
                               title={child.label}
-                              className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                              className={`flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                                 childActive
                                   ? 'bg-[#f3f4f6] text-[#111111] font-semibold'
                                   : 'text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6]'
                               }`}
                             >
-                              <ChildIcon className="w-3.5 h-3.5 text-[#6b7280]" />
                               <span className="truncate">{child.label}</span>
                             </Link>
                           );

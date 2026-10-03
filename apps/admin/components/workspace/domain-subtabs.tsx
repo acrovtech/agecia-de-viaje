@@ -9,13 +9,11 @@ export interface DomainSubtabsProps {
 }
 
 const TOURS_SUBTABS = [
-  { label: 'Tours', href: '/catalog/tours' },
   { label: 'Categorías', href: '/resources/categories' },
   { label: 'Personal operativo (guías y conductores)', href: '/resources/personnel' },
 ];
 
 const TRANSFERS_SUBTABS = [
-  { label: 'Traslados', href: '/catalog/transfers' },
   { label: 'Flota operativa', href: '/resources/fleet' },
   { label: 'Vehículos comerciales', href: '/resources/vehicles' },
 ];

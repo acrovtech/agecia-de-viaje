@@ -3,7 +3,6 @@ import { Plus, CheckCircle2, ArrowRight } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
 import { CatalogEditor } from '../catalog-editor';
-import { DomainSubtabs } from '../domain-subtabs';
 import type { CatalogDetail } from '../../../lib/catalog-editor';
 
 export interface CatalogItem {
@@ -102,8 +101,6 @@ export function CatalogView({
           )
         }
       />
-
-      <DomainSubtabs domain={kind} />
 
       {saved && (
         <div

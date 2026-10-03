@@ -266,7 +266,6 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
         label: 'Tours',
         href: '/catalog/tours',
         children: [
-          { label: 'Tours', href: '/catalog/tours' },
           { label: 'Categorías', href: '/resources/categories' },
           { label: 'Personal operativo (guías y conductores)', href: '/resources/personnel' },
         ],
@@ -275,7 +274,6 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
         label: 'Traslados',
         href: '/catalog/transfers',
         children: [
-          { label: 'Traslados', href: '/catalog/transfers' },
           { label: 'Flota operativa', href: '/resources/fleet' },
           { label: 'Vehículos comerciales', href: '/resources/vehicles' },
         ],
@@ -300,7 +298,6 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
     // Child routes are accessible in the flyout
     const tours = navItems.find((i) => i.label === activeFlyout);
     expect(tours?.children.map((c) => c.href)).toEqual([
-      '/catalog/tours',
       '/resources/categories',
       '/resources/personnel',
     ]);
@@ -315,7 +312,6 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
 
     const traslados = navItems.find((i) => i.label === activeFlyout);
     expect(traslados?.children.map((c) => c.href)).toEqual([
-      '/catalog/transfers',
       '/resources/fleet',
       '/resources/vehicles',
     ]);
