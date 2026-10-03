@@ -502,6 +502,16 @@ export default async function ReservationsPage({
       )
     : list.data;
 
+  const PAGE_SIZE = 10;
+  const rawPage = typeof params.page === 'string' ? parseInt(params.page, 10) : 1;
+  const pageNumber = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+  const totalFiltered = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const currentPage = Math.min(pageNumber, totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, totalFiltered);
+  const pageItems = filteredData.slice(startIndex, endIndex);
+
   const buildStatusHref = (statusKey?: string) => {
     const q = new URLSearchParams();
     if (statusKey) q.set('status', statusKey);
@@ -515,15 +525,42 @@ export default async function ReservationsPage({
     const q = new URLSearchParams();
     if (params.status && typeof params.status === 'string') q.set('status', params.status);
     if (searchQuery) q.set('q', searchQuery);
+    if (currentPage > 1) q.set('page', String(currentPage));
+    if (params.after && typeof params.after === 'string') q.set('after', params.after);
     if (targetView === 'calendar') q.set('view', 'calendar');
     const str = q.toString();
     return `/reservations${str ? `?${str}` : ''}`;
   };
 
-  const nextParams = new URLSearchParams(query);
-  if (list.nextCursor) nextParams.set('after', list.nextCursor);
-  if (viewMode === 'calendar') nextParams.set('view', 'calendar');
-  if (searchQuery) nextParams.set('q', searchQuery);
+  const buildPageHref = (targetPage: number) => {
+    const q = new URLSearchParams();
+    if (params.status && typeof params.status === 'string') q.set('status', params.status);
+    if (searchQuery) q.set('q', searchQuery);
+    if (viewMode === 'calendar') q.set('view', 'calendar');
+    if (params.after && typeof params.after === 'string') q.set('after', params.after);
+    if (targetPage > 1) q.set('page', String(targetPage));
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
+
+  const buildFirstPageHref = () => {
+    const q = new URLSearchParams();
+    if (params.status && typeof params.status === 'string') q.set('status', params.status);
+    if (searchQuery) q.set('q', searchQuery);
+    if (viewMode === 'calendar') q.set('view', 'calendar');
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
+
+  const buildNextBatchHref = (nextCursor: string) => {
+    const q = new URLSearchParams();
+    if (params.status && typeof params.status === 'string') q.set('status', params.status);
+    if (searchQuery) q.set('q', searchQuery);
+    if (viewMode === 'calendar') q.set('view', 'calendar');
+    q.set('after', nextCursor);
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
 
   return (
     <div className="space-y-4">
@@ -646,53 +683,116 @@ export default async function ReservationsPage({
               Vista por fecha de servicio
             </h3>
             <span className="text-xs text-[#6b7280]">
-              {filteredData.length} {filteredData.length === 1 ? 'reserva' : 'reservas'}
+              {totalFiltered} {totalFiltered === 1 ? 'reserva' : 'reservas'}
             </span>
           </div>
 
-          {filteredData.length === 0 ? (
+          {pageItems.length === 0 ? (
             <div className="py-12 text-center text-[#898989] text-xs">
               {searchQuery ? 'No se encontraron reservas con ese criterio' : 'No hay reservas todavía'}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredData.map((row) => {
-                const publicCode = row.code ?? row.id.slice(0, 8);
-                return (
-                  <Link
-                    key={row.id}
-                    href={`/reservations?id=${row.id}`}
-                    className="p-3.5 rounded-[10px] border border-[#e5e7eb] bg-white hover:border-[#111111] transition-all space-y-2 block shadow-2xs group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-[#111111] group-hover:underline">
-                        {publicCode}
-                      </span>
-                      <StatusBadge status={row.operationStatus || 'PENDING'} />
-                    </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pageItems.map((row) => {
+                  const publicCode = row.code ?? row.id.slice(0, 8);
+                  return (
+                    <Link
+                      key={row.id}
+                      href={`/reservations?id=${row.id}`}
+                      className="p-3.5 rounded-[10px] border border-[#e5e7eb] bg-white hover:border-[#111111] transition-all space-y-2 block shadow-2xs group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-[#111111] group-hover:underline">
+                          {publicCode}
+                        </span>
+                        <StatusBadge status={row.operationStatus || 'PENDING'} />
+                      </div>
 
-                    <div>
-                      <p className="text-xs font-semibold text-[#111111] line-clamp-1">
-                        {row.serviceTitle ?? 'Reserva'}
-                      </p>
-                      <p className="text-[11px] text-[#6b7280] truncate mt-0.5">
-                        {row.customerFirstName} {row.customerLastName} • {row.pax} {row.pax === 1 ? 'pax' : 'pax'}
-                      </p>
-                    </div>
+                      <div>
+                        <p className="text-xs font-semibold text-[#111111] line-clamp-1">
+                          {row.serviceTitle ?? 'Reserva'}
+                        </p>
+                        <p className="text-[11px] text-[#6b7280] truncate mt-0.5">
+                          {row.customerFirstName} {row.customerLastName} • {row.pax} {row.pax === 1 ? 'pax' : 'pax'}
+                        </p>
+                      </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-[#f3f4f6] text-[11px]">
-                      <span className="text-[#6b7280] font-mono flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-[#9ca3af]" />
-                        {row.date.slice(0, 10)}
+                      <div className="flex items-center justify-between pt-1 border-t border-[#f3f4f6] text-[11px]">
+                        <span className="text-[#6b7280] font-mono flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#9ca3af]" />
+                          {row.date.slice(0, 10)}
+                        </span>
+                        <span className="font-bold text-[#111111]">
+                          {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Calendar view pagination toolbar */}
+              <div className="pt-3 border-t border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#6b7280]">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <span>Mostrando</span>
+                  <span className="font-semibold text-[#111111]">
+                    {totalFiltered > 0 ? startIndex + 1 : 0} - {endIndex}
+                  </span>
+                  <span>de</span>
+                  <span className="font-semibold text-[#111111]">{totalFiltered}</span>
+                  <span>reservas</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-[#9ca3af]">
+                    Página {currentPage} de {totalPages}
+                  </span>
+
+                  <div className="inline-flex items-center gap-1">
+                    {currentPage > 1 ? (
+                      <Link
+                        href={buildPageHref(currentPage - 1)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <span>← Anterior</span>
+                      </Link>
+                    ) : params.after ? (
+                      <Link
+                        href={buildFirstPageHref()}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <span>« Primera pág.</span>
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
+                        <span>← Anterior</span>
                       </span>
-                      <span className="font-bold text-[#111111]">
-                        {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}
+                    )}
+
+                    {currentPage < totalPages ? (
+                      <Link
+                        href={buildPageHref(currentPage + 1)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <span>Siguiente →</span>
+                      </Link>
+                    ) : list.nextCursor ? (
+                      <Link
+                        href={buildNextBatchHref(list.nextCursor)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <span>Siguiente lote »</span>
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
+                        <span>Siguiente →</span>
                       </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       ) : (
@@ -710,7 +810,7 @@ export default async function ReservationsPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]">
-                {filteredData.map((row) => {
+                {pageItems.map((row) => {
                   const publicCode = row.code ?? row.id.slice(0, 8);
                   return (
                     <tr key={row.id} className="product-data-row">
@@ -743,36 +843,80 @@ export default async function ReservationsPage({
                     </tr>
                   );
                 })}
-                {filteredData.length === 0 && (
+                {pageItems.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-[#898989]">
                       {searchQuery ? 'No se encontraron reservas con ese criterio' : 'No hay reservas todavía'}
                     </td>
                   </tr>
                 )}
+
+                {/* 11th Row: Dedicated table pagination row */}
+                <tr className="border-t border-[#e5e7eb] bg-[#f9fafb]/80">
+                  <td colSpan={5} className="py-2.5 px-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#6b7280]">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span>Mostrando</span>
+                        <span className="font-semibold text-[#111111]">
+                          {totalFiltered > 0 ? startIndex + 1 : 0} - {endIndex}
+                        </span>
+                        <span>de</span>
+                        <span className="font-semibold text-[#111111]">{totalFiltered}</span>
+                        <span>reservas</span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] text-[#9ca3af]">
+                          Página {currentPage} de {totalPages}
+                        </span>
+
+                        <div className="inline-flex items-center gap-1">
+                          {currentPage > 1 ? (
+                            <Link
+                              href={buildPageHref(currentPage - 1)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <span>← Anterior</span>
+                            </Link>
+                          ) : params.after ? (
+                            <Link
+                              href={buildFirstPageHref()}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <span>« Primera pág.</span>
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
+                              <span>← Anterior</span>
+                            </span>
+                          )}
+
+                          {currentPage < totalPages ? (
+                            <Link
+                              href={buildPageHref(currentPage + 1)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <span>Siguiente →</span>
+                            </Link>
+                          ) : list.nextCursor ? (
+                            <Link
+                              href={buildNextBatchHref(list.nextCursor)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <span>Siguiente lote »</span>
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
+                              <span>Siguiente →</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
-          </div>
-
-          <div className="p-3 border-t border-[#e5e7eb] flex items-center justify-between text-xs text-[#6b7280]">
-            <div>{filteredData.length} reservas listadas</div>
-            <div className="flex gap-4 font-medium">
-              {params.after && (
-                <Link
-                  href={`/reservations${
-                    params.status ? `?status=${encodeURIComponent(String(params.status))}` : ''
-                  }`}
-                  className="hover:underline text-[#111111]"
-                >
-                  Primera página
-                </Link>
-              )}
-              {list.nextCursor && (
-                <Link href={`/reservations?${nextParams}`} className="hover:underline text-[#111111]">
-                  Siguiente página
-                </Link>
-              )}
-            </div>
           </div>
         </div>
       )}
