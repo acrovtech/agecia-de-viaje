@@ -100,7 +100,7 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
             <h2 className="text-sm sm:text-base font-semibold text-foreground tracking-tight px-1">
               {section.label}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0.5 sm:gap-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {section.items.map((card) => (
                 <div
                   key={card.id}
