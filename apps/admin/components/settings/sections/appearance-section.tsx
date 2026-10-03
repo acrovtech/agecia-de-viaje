@@ -75,7 +75,7 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           >
             <div>
               <div className="h-10 rounded-lg bg-gradient-to-r from-white to-gray-200 border border-[#e5e7eb] mb-2.5 flex items-center justify-center">
-                <span className="text-[10px] font-mono text-gray-500 font-semibold">AUTO</span>
+                <span className="text-[10px] font-mono text-gray-500 font-semibold">SISTEMA</span>
               </div>
               <h4 className="text-xs font-semibold text-[#111111]">Predeterminado</h4>
               <p className="text-[11px] text-[#6b7280] mt-0.5">
@@ -100,9 +100,9 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           >
             <div>
               <div className="h-10 rounded-lg bg-white border border-[#e5e7eb] mb-2.5 flex items-center justify-center shadow-xs">
-                <span className="text-[10px] font-mono text-gray-800 font-semibold">LIGHT</span>
+                <span className="text-[10px] font-mono text-gray-800 font-semibold">CLARO</span>
               </div>
-              <h4 className="text-xs font-semibold text-[#111111]">Claro (Light)</h4>
+              <h4 className="text-xs font-semibold text-[#111111]">Claro</h4>
               <p className="text-[11px] text-[#6b7280] mt-0.5">
                 Superficie blanca limpia con contraste neutral.
               </p>
@@ -125,9 +125,9 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           >
             <div>
               <div className="h-10 rounded-lg bg-[#161616] border border-[#262626] mb-2.5 flex items-center justify-center">
-                <span className="text-[10px] font-mono text-gray-200 font-semibold">DARK</span>
+                <span className="text-[10px] font-mono text-gray-200 font-semibold">OSCURO</span>
               </div>
-              <h4 className="text-xs font-semibold text-[#111111]">Oscuro (Dark)</h4>
+              <h4 className="text-xs font-semibold text-[#111111]">Oscuro</h4>
               <p className="text-[11px] text-[#6b7280] mt-0.5">
                 Modo oscuro para ambientes de baja luminosidad.
               </p>

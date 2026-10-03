@@ -104,11 +104,11 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
               {section.items.map((card) => (
                 <div
                   key={card.id}
-                  className="relative flex w-full items-start gap-4 py-3 ps-4 pe-2"
+                  className="relative flex w-full items-start gap-4 py-3 ps-4 pe-2 rounded-[10px] hover:bg-muted transition-colors cursor-pointer group"
                 >
                   {/* Cal.com stacked icon deck */}
                   <div
-                    className="relative pointer-events-none shrink-0 z-1 m-0"
+                    className="relative pointer-events-none shrink-0 m-0"
                     data-slot="empty-media"
                     data-variant="icon"
                     aria-hidden="true"
@@ -116,33 +116,33 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
                     {/* Rotated background card left */}
                     <div
                       aria-hidden="true"
-                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground z-1 m-0 pointer-events-none absolute bottom-px origin-bottom-left -translate-x-0.5 -rotate-[10deg] scale-[0.84] shadow-none"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground m-0 pointer-events-none absolute bottom-px origin-bottom-left -translate-x-0.5 -rotate-[10deg] scale-[0.84] shadow-none"
                     />
                     {/* Rotated background card right */}
                     <div
                       aria-hidden="true"
-                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground z-1 m-0 pointer-events-none absolute bottom-px origin-bottom-right translate-x-0.5 rotate-[10deg] scale-[0.84] shadow-none"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground m-0 pointer-events-none absolute bottom-px origin-bottom-right translate-x-0.5 rotate-[10deg] scale-[0.84] shadow-none"
                     />
                     {/* Front card with icon */}
                     <div
-                      className="relative flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-xs pointer-events-none z-1 m-0"
+                      className="relative flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-xs pointer-events-none m-0"
                       aria-hidden="true"
                     >
                       {renderOverviewIcon(card.iconName)}
                     </div>
                   </div>
 
-                  {/* Title and description with stretched link hover */}
+                  {/* Title and description with stretched link hit area */}
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         href={card.href}
-                        className="cursor-pointer font-medium text-sm leading-tight text-foreground before:absolute before:inset-0 before:rounded-[10px] hover:before:bg-muted transition-colors"
+                        className="font-medium text-sm leading-tight text-foreground before:absolute before:inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-[10px]"
                       >
                         {card.label}
                       </Link>
                       {card.id === 'integrations' && (
-                        <span className="relative z-2 pointer-events-none text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="relative z-10 pointer-events-none text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
                           Diferido
                         </span>
                       )}

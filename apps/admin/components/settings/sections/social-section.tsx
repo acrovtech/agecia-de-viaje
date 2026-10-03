@@ -28,7 +28,7 @@ export function SocialSection({ initialProfile }: SocialSectionProps) {
         <div className="flex items-center gap-2.5 text-xs">
           <Smartphone className="w-4 h-4 text-sky-700 shrink-0" />
           <span>
-            <strong>Página Social Móvil (Travel Link in Bio)</strong> — Optimizado para Instagram, TikTok y WhatsApp. Tus clientes podrán cotizar tours y contactarte con 1 clic.
+            <strong>Página social móvil</strong> — Optimizada para Instagram, TikTok y WhatsApp. Tus clientes podrán cotizar tours y contactarte con 1 clic.
           </span>
         </div>
         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-200 text-sky-900 uppercase tracking-wider shrink-0">
@@ -40,7 +40,7 @@ export function SocialSection({ initialProfile }: SocialSectionProps) {
         <div className="lg:col-span-7 space-y-4">
           <div className="product-card-surface p-5 space-y-4">
             <h4 className="text-sm font-semibold text-[#111111]">
-              Personalización del Link in Bio
+              Personalización de la página social
             </h4>
 
             <div className="space-y-3">

@@ -68,7 +68,7 @@ export function GeneralSection({
               className={inputClass}
             >
               <option value="es">Español (Predeterminado)</option>
-              <option value="en" disabled>English (Próximamente)</option>
+              <option value="en" disabled>Inglés (Próximamente)</option>
             </select>
             <p className="text-[11px] text-[#898989] mt-1">
               La interfaz operativa y los comprobantes se emitirán en el idioma elegido.
@@ -77,7 +77,7 @@ export function GeneralSection({
 
           {/* Zona Horaria */}
           <div>
-            <label className={labelClass}>Zona Horaria (Timezone)</label>
+            <label className={labelClass}>Zona horaria</label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}

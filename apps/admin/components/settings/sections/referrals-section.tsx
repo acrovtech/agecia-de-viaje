@@ -29,7 +29,7 @@ export function ReferralsSection({ initialProfile }: ReferralsSectionProps) {
         <div>
           <span className="font-semibold">Vista preliminar de afiliación y referidos: </span>
           <span>
-            Las métricas y conversiones a continuación son datos de demostración / preview del módulo. El motor de liquidación automática y comisiones bancarias se activará en el lanzamiento del programa comercial.
+            Las métricas y conversiones a continuación son datos de demostración / vista preliminar del módulo. El motor de liquidación automática y comisiones bancarias se activará en el lanzamiento del programa comercial.
           </span>
         </div>
       </div>
@@ -37,7 +37,7 @@ export function ReferralsSection({ initialProfile }: ReferralsSectionProps) {
       <div className="product-card-surface p-6 bg-gradient-to-br from-[#111111] to-[#242424] text-white">
         <div className="max-w-2xl space-y-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-amber-400 text-black">
-            <Gift className="w-3 h-3" /> PROGRAMA OFICIAL DE PARTNERS
+            <Gift className="w-3 h-3" /> PROGRAMA OFICIAL DE SOCIOS
           </span>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
             Gana hasta 20% de comisión recurrente por cada agencia referida
@@ -118,7 +118,7 @@ export function ReferralsSection({ initialProfile }: ReferralsSectionProps) {
           <table className="w-full text-left text-xs">
             <thead className="bg-[#f8f9fa] border-b border-[#e5e7eb] text-[#6b7280] uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="px-4 py-2.5">Agencia / Tenant</th>
+                <th className="px-4 py-2.5">Agencia</th>
                 <th className="px-4 py-2.5">Fecha</th>
                 <th className="px-4 py-2.5">Plan Contratado</th>
                 <th className="px-4 py-2.5">Comisión Mensual</th>

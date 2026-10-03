@@ -95,7 +95,7 @@ export function PlansSection() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Página social (Link in Bio)</span>
+                <span>Página social móvil</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />

@@ -10,11 +10,13 @@ import {
   CreditCard,
   Smartphone,
   Blocks,
+  User,
 } from 'lucide-react';
 import {
   SETTINGS_NAV_ITEMS,
   getSettingsNavSections,
 } from '@/lib/settings-navigation';
+import { TenantAccountCard } from './tenant-account-card';
 import type { NavIdentity } from './sidebar';
 
 interface SettingsSidebarProps {
@@ -29,8 +31,6 @@ export function SettingsSidebar({
   className = '',
 }: SettingsSidebarProps) {
   const pathname = usePathname() || '/settings';
-
-  const initialLetter = identity.agencyName ? identity.agencyName[0]?.toUpperCase() : 'A';
   const overviewItem = SETTINGS_NAV_ITEMS.find((item) => item.id === 'overview') || SETTINGS_NAV_ITEMS[0]!;
   const navSections = getSettingsNavSections();
 
@@ -55,22 +55,27 @@ export function SettingsSidebar({
 
   return (
     <aside
-      className={`flex flex-col h-full bg-[#f8f9fa] text-[#111111] select-none p-3 space-y-4 overflow-y-auto no-scrollbar ${className}`}
+      className={`flex flex-col h-full bg-[#f8f9fa] text-[#111111] select-none p-3 space-y-3 overflow-y-auto no-scrollbar ${className}`}
       aria-label="Navegación de configuración"
     >
-      {/* 1. Header: Back link to normal operational workspace (Dashboard) */}
+      {/* 1. Header: Tenant / Account Card */}
+      <div>
+        <TenantAccountCard identity={identity} onNavigate={onNavigate} variant="full" />
+      </div>
+
+      {/* 2. Back link to operational workspace */}
       <div>
         <Link
           href="/dashboard"
           onClick={onNavigate}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] rounded-lg font-medium transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-[#4b5563]" />
-          <span>Atrás</span>
+          <ArrowLeft className="w-3.5 h-3.5 text-[#4b5563]" />
+          <span>Volver al panel</span>
         </Link>
       </div>
 
-      {/* 2. Top-level item: Resumen */}
+      {/* 3. Top-level item: Resumen */}
       <div>
         <Link
           href={overviewItem.href}
@@ -86,14 +91,12 @@ export function SettingsSidebar({
         </Link>
       </div>
 
-      {/* 3. Dynamic Sections derived from canonical SETTINGS_NAV_ITEMS */}
+      {/* 4. Dynamic Sections derived from canonical SETTINGS_NAV_ITEMS */}
       {navSections.map((section) => (
         <div key={section.id} className="space-y-1">
           <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
             {section.iconName === 'agency' ? (
-              <div className="w-5 h-5 rounded-full bg-[#78350f] text-white flex items-center justify-center text-[11px] font-bold shrink-0">
-                {initialLetter}
-              </div>
+              <User className="w-4 h-4 text-[#4b5563]" />
             ) : section.iconName === 'shield-check' ? (
               <ShieldCheck className="w-4 h-4 text-[#4b5563]" />
             ) : section.iconName === 'credit-card' ? (
@@ -103,9 +106,7 @@ export function SettingsSidebar({
             ) : section.iconName === 'blocks' ? (
               <Blocks className="w-4 h-4 text-[#4b5563]" />
             ) : null}
-            <span className="truncate">
-              {section.iconName === 'agency' ? identity.agencyName || 'Mi Agencia' : section.label}
-            </span>
+            <span className="truncate">{section.label}</span>
           </div>
           <div className="space-y-0.5 ps-7 pe-1">
             {section.items.map((item) => (

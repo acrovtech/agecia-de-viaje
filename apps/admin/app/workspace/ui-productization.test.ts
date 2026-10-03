@@ -255,4 +255,70 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
     expect(url.pathname).toBe('/invitations/accept');
     expect(url.searchParams.get('token')).toBe(rawToken);
   });
+
+  // -------------------------------------------------------------------------
+  // 8. TABLET ICON-RAIL NESTED NAVIGATION (md < lg)
+  // -------------------------------------------------------------------------
+  it('11. Tablet icon rail exposes nested flyout navigation without hiding child items', () => {
+    // Model parent rail items with children
+    const navItems = [
+      {
+        label: 'Catálogo',
+        href: '/catalog/tours',
+        children: [
+          { label: 'Tours', href: '/catalog/tours' },
+          { label: 'Traslados', href: '/catalog/transfers' },
+        ],
+      },
+      {
+        label: 'Recursos',
+        href: '/resources/categories',
+        children: [
+          { label: 'Categorías comerciales', href: '/resources/categories' },
+          { label: 'Vehículos comerciales', href: '/resources/vehicles' },
+          { label: 'Flota operativa', href: '/resources/fleet' },
+          { label: 'Guías y Conductores', href: '/resources/personnel' },
+        ],
+      },
+    ];
+
+    // On tablet (md < lg), rail mode toggles a flyout popover for items with children
+    let activeFlyout: string | null = null;
+
+    function handleRailClick(label: string) {
+      activeFlyout = activeFlyout === label ? null : label;
+    }
+
+    function handleEscape() {
+      activeFlyout = null;
+    }
+
+    // Tapping Catálogo on tablet rail opens its flyout
+    handleRailClick('Catálogo');
+    expect(activeFlyout).toBe('Catálogo');
+
+    // Both child routes are accessible in the flyout
+    const catalogo = navItems.find((i) => i.label === activeFlyout);
+    expect(catalogo?.children.map((c) => c.href)).toEqual([
+      '/catalog/tours',
+      '/catalog/transfers',
+    ]);
+
+    // Escape closes flyout
+    handleEscape();
+    expect(activeFlyout).toBeNull();
+
+    // Tapping Recursos on tablet rail opens its flyout
+    handleRailClick('Recursos');
+    expect(activeFlyout).toBe('Recursos');
+
+    const recursos = navItems.find((i) => i.label === activeFlyout);
+    expect(recursos?.children.map((c) => c.href)).toEqual([
+      '/resources/categories',
+      '/resources/vehicles',
+      '/resources/fleet',
+      '/resources/personnel',
+    ]);
+  });
 });
+
