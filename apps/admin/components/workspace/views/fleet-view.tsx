@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
-import { DomainSubtabs } from '../domain-subtabs';
 import { FleetVehicleForm } from '../../../app/workspace/operations/forms';
 import type { FleetVehicleItem } from '../../../lib/reservations';
 
@@ -47,8 +46,6 @@ export function FleetView({
           )
         }
       />
-
-      <DomainSubtabs domain="transfers" />
 
       {canMutate && (selected || editId === 'new') && (
         <div className="product-card-surface p-5 max-w-2xl">

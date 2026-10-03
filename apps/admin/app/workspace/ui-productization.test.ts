@@ -267,7 +267,7 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
         href: '/catalog/tours',
         children: [
           { label: 'Categorías', href: '/resources/categories' },
-          { label: 'Personal operativo (guías y conductores)', href: '/resources/personnel' },
+          { label: 'Personal operativo', href: '/resources/personnel' },
         ],
       },
       {

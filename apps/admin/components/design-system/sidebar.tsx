@@ -76,7 +76,7 @@ const mainNavItems: NavItem[] = [
         href: '/resources/categories',
       },
       {
-        label: 'Personal operativo (guías y conductores)',
+        label: 'Personal operativo',
         href: '/resources/personnel',
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
-import { DomainSubtabs } from '../domain-subtabs';
 import { ServiceResourceForm } from '../../../app/workspace/operations/forms';
 import type { ServiceResourceItem } from '../../../lib/reservations';
 
@@ -25,7 +24,7 @@ export function PersonnelView({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Personal Operativo (Guías y Conductores)"
+        title="Personal Operativo"
         description="Guías oficiales y conductores asignables a los servicios de tu agencia."
         actions={
           canMutate && (
@@ -39,8 +38,6 @@ export function PersonnelView({
           )
         }
       />
-
-      <DomainSubtabs domain="tours" />
 
       {canMutate && (selected || editId === 'new') && (
         <div className="product-card-surface p-5 max-w-2xl">

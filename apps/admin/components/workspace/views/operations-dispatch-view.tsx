@@ -76,7 +76,7 @@ export function OperationsDispatchView({
           href="/resources/personnel"
           className="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]"
         >
-          Guías y Conductores
+          Personal operativo
         </Link>
       </div>
 
