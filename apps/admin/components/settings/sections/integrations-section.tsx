@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { Calendar, MessageSquare } from 'lucide-react';
 import type { SafeIntegrationCapability } from '@/lib/integration-capabilities';
 
@@ -17,6 +16,28 @@ export interface IntegrationCardProps {
   connectionState?: 'disconnected' | 'connecting' | 'connected';
 }
 
+function StripeLogo() {
+  const [hasError, setHasError] = React.useState(false);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-full bg-[#635BFF] flex items-center justify-center text-white font-bold text-xs tracking-tight rounded-lg">
+        stripe
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/integrations/stripe.png"
+      alt="Stripe"
+      className="w-full h-full object-contain p-1"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 function IntegrationCard({
   name,
   badge,
@@ -24,18 +45,18 @@ function IntegrationCard({
   logo,
 }: IntegrationCardProps) {
   return (
-    <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 sm:p-5 flex flex-col justify-start h-[116px] transition-colors cursor-default hover:border-[#d1d5db]">
+    <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-3.5 sm:p-4 transition-colors cursor-default hover:border-[#d1d5db]">
       {/* Top row: Left column (provider icon only) & Right column (status badge + provider name stack) */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         {/* LEFT COLUMN: Provider icon only - visually dominant */}
-        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs">
+        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs">
           {logo}
         </div>
 
         {/* RIGHT COLUMN: Compact right-aligned vertical stack */}
-        <div className="flex flex-col items-end text-right gap-1.5">
+        <div className="flex flex-col items-end text-right gap-1">
           <span
-            className={`text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
+            className={`text-[0.75rem] font-medium leading-tight px-2 py-0.5 rounded-[5px] ${
               badgeVariant === 'amber'
                 ? 'bg-amber-50 text-amber-800 border border-amber-200'
                 : badgeVariant === 'purple'
@@ -52,7 +73,6 @@ function IntegrationCard({
           </span>
         </div>
       </div>
-      {/* Generous clean whitespace below the top row */}
     </div>
   );
 }
@@ -78,7 +98,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: izipayCap?.statusLabel || 'Proveedor diferido',
       badgeVariant: izipayCap?.badgeVariant || 'amber',
       logo: (
-        <div className="w-full h-full bg-gradient-to-br from-[#ff0055] to-[#c70044] flex items-center justify-center text-white font-extrabold text-base tracking-tighter">
+        <div className="w-full h-full bg-gradient-to-br from-[#ff0055] to-[#c70044] flex items-center justify-center text-white font-extrabold text-sm tracking-tighter">
           izi
         </div>
       ),
@@ -100,7 +120,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: mercadopagoCap?.statusLabel || 'Próximamente',
       badgeVariant: mercadopagoCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-[#009ee3] flex items-center justify-center text-white font-black text-sm tracking-tight">
+        <div className="w-full h-full bg-[#009ee3] flex items-center justify-center text-white font-black text-xs tracking-tight">
           MP
         </div>
       ),
@@ -110,15 +130,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       name: 'Stripe',
       badge: stripeCap?.statusLabel || 'No disponible',
       badgeVariant: stripeCap?.badgeVariant || 'neutral',
-      logo: (
-        <Image
-          src="/integrations/stripe.png"
-          alt="Stripe"
-          width={48}
-          height={48}
-          className="w-full h-full object-cover"
-        />
-      ),
+      logo: <StripeLogo />,
     },
   ];
 
@@ -130,7 +142,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badgeVariant: gcalendarCap?.badgeVariant || 'purple',
       logo: (
         <div className="w-full h-full bg-white flex flex-col items-center justify-center border border-[#e5e7eb] text-[#4285F4]">
-          <Calendar className="w-6 h-6" />
+          <Calendar className="w-5 h-5" />
         </div>
       ),
     },
@@ -141,7 +153,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badgeVariant: whatsappCap?.badgeVariant || 'purple',
       logo: (
         <div className="w-full h-full bg-[#25D366] flex items-center justify-center text-white">
-          <MessageSquare className="w-6 h-6 fill-current" />
+          <MessageSquare className="w-5 h-5 fill-current" />
         </div>
       ),
     },
