@@ -35,7 +35,7 @@ interface ProviderEnvContract {
 export const APPROVED_PROVIDERS: ProviderEnvContract[] = [
   {
     id: 'izipay',
-    name: 'Izipay Pasarela',
+    name: 'Izipay',
     category: 'payments',
     requiredEnvVars: [
       'NEXT_PUBLIC_IZIPAY_PUBLIC_KEY',
@@ -47,7 +47,7 @@ export const APPROVED_PROVIDERS: ProviderEnvContract[] = [
   },
   {
     id: 'culqi',
-    name: 'Culqi Pasarela',
+    name: 'Culqi',
     category: 'payments',
     requiredEnvVars: ['CULQI_SECRET_KEY', 'NEXT_PUBLIC_CULQI_PUBLIC_KEY'],
   },

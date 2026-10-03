@@ -24,31 +24,35 @@ function IntegrationCard({
   logo,
 }: IntegrationCardProps) {
   return (
-    <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-4 sm:p-5 flex flex-col justify-between h-[112px] transition-colors cursor-default hover:border-[#d1d5db]">
-      {/* Top row: Provider icon on left, status badge on right */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs">
+    <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 sm:p-5 flex flex-col justify-start h-[116px] transition-colors cursor-default hover:border-[#d1d5db]">
+      {/* Top row: Left column (provider icon only) & Right column (status badge + provider name stack) */}
+      <div className="flex items-start justify-between gap-4">
+        {/* LEFT COLUMN: Provider icon only - visually dominant */}
+        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs">
           {logo}
         </div>
-        <span
-          className={`text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
-            badgeVariant === 'amber'
-              ? 'bg-amber-50 text-amber-800 border border-amber-200'
-              : badgeVariant === 'purple'
-                ? 'bg-[#ede9fe] text-[#6d28d9]'
-                : badgeVariant === 'emerald'
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                  : 'bg-[#f3f4f6] text-[#374151]'
-          }`}
-        >
-          {badge}
-        </span>
-      </div>
 
-      {/* Bottom: Provider name */}
-      <div className="flex items-center gap-1.5">
-        <h4 className="text-sm font-semibold text-[#111111]">{name}</h4>
+        {/* RIGHT COLUMN: Compact right-aligned vertical stack */}
+        <div className="flex flex-col items-end text-right gap-1.5">
+          <span
+            className={`text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
+              badgeVariant === 'amber'
+                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                : badgeVariant === 'purple'
+                  ? 'bg-[#ede9fe] text-[#6d28d9]'
+                  : badgeVariant === 'emerald'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-[#f3f4f6] text-[#374151]'
+            }`}
+          >
+            {badge}
+          </span>
+          <span className="text-sm font-semibold text-[#111111] leading-tight">
+            {name}
+          </span>
+        </div>
       </div>
+      {/* Generous clean whitespace below the top row */}
     </div>
   );
 }
@@ -70,18 +74,18 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
   const paymentIntegrations: IntegrationCardProps[] = [
     {
       id: 'izipay',
-      name: 'Izipay Pasarela',
+      name: 'Izipay',
       badge: izipayCap?.statusLabel || 'Proveedor diferido',
       badgeVariant: izipayCap?.badgeVariant || 'amber',
       logo: (
-        <div className="w-full h-full bg-gradient-to-br from-[#ff0055] to-[#c70044] flex items-center justify-center text-white font-extrabold text-sm tracking-tighter">
+        <div className="w-full h-full bg-gradient-to-br from-[#ff0055] to-[#c70044] flex items-center justify-center text-white font-extrabold text-base tracking-tighter">
           izi
         </div>
       ),
     },
     {
       id: 'culqi',
-      name: 'Culqi Pasarela',
+      name: 'Culqi',
       badge: culqiCap?.statusLabel || 'Próximamente',
       badgeVariant: culqiCap?.badgeVariant || 'purple',
       logo: (
@@ -96,7 +100,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: mercadopagoCap?.statusLabel || 'Próximamente',
       badgeVariant: mercadopagoCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-[#009ee3] flex items-center justify-center text-white font-black text-xs tracking-tight">
+        <div className="w-full h-full bg-[#009ee3] flex items-center justify-center text-white font-black text-sm tracking-tight">
           MP
         </div>
       ),
@@ -110,8 +114,8 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/stripe.png"
           alt="Stripe"
-          width={40}
-          height={40}
+          width={48}
+          height={48}
           className="w-full h-full object-cover"
         />
       ),
@@ -126,7 +130,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badgeVariant: gcalendarCap?.badgeVariant || 'purple',
       logo: (
         <div className="w-full h-full bg-white flex flex-col items-center justify-center border border-[#e5e7eb] text-[#4285F4]">
-          <Calendar className="w-5 h-5" />
+          <Calendar className="w-6 h-6" />
         </div>
       ),
     },
@@ -137,7 +141,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badgeVariant: whatsappCap?.badgeVariant || 'purple',
       logo: (
         <div className="w-full h-full bg-[#25D366] flex items-center justify-center text-white">
-          <MessageSquare className="w-5 h-5 fill-current" />
+          <MessageSquare className="w-6 h-6 fill-current" />
         </div>
       ),
     },
