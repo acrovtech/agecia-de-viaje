@@ -16,6 +16,8 @@ import {
   LayoutList,
   Calendar,
   ListFilter,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { centralRequest, centralSession, CentralApiError } from '@/lib/central-api';
 import { isApiAdmin } from '@/lib/admin-mode';
@@ -35,6 +37,65 @@ import { StatusBadge } from '@/components/design-system/status-badge';
 import { EmptyState } from '@/components/design-system/empty-state';
 
 export const dynamic = 'force-dynamic';
+
+const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+function getMonthCalendar(year: number, monthIndex: number) {
+  const firstDay = new Date(year, monthIndex, 1);
+  const lastDay = new Date(year, monthIndex + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+  const prevMonthLastDay = new Date(year, monthIndex, 0).getDate();
+
+  const cells: Array<{
+    dateStr: string;
+    dayNumber: number;
+    isCurrentMonth: boolean;
+  }> = [];
+
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
+    const d = prevMonthLastDay - i;
+    const prevDate = new Date(year, monthIndex - 1, d);
+    const y = prevDate.getFullYear();
+    const m = String(prevDate.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(d).padStart(2, '0');
+    cells.push({
+      dateStr: `${y}-${m}-${dayStr}`,
+      dayNumber: d,
+      isCurrentMonth: false,
+    });
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const m = String(monthIndex + 1).padStart(2, '0');
+    const dayStr = String(d).padStart(2, '0');
+    cells.push({
+      dateStr: `${year}-${m}-${dayStr}`,
+      dayNumber: d,
+      isCurrentMonth: true,
+    });
+  }
+
+  const totalSlots = Math.ceil(cells.length / 7) * 7;
+  let nextDay = 1;
+  while (cells.length < totalSlots) {
+    const nextDate = new Date(year, monthIndex + 1, nextDay);
+    const y = nextDate.getFullYear();
+    const m = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(nextDay).padStart(2, '0');
+    cells.push({
+      dateStr: `${y}-${m}-${dayStr}`,
+      dayNumber: nextDay,
+      isCurrentMonth: false,
+    });
+    nextDay++;
+  }
+
+  return cells;
+}
 
 const validId = (v: unknown): v is string =>
   typeof v === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(v);
@@ -512,11 +573,52 @@ export default async function ReservationsPage({
   const endIndex = Math.min(startIndex + PAGE_SIZE, totalFiltered);
   const pageItems = filteredData.slice(startIndex, endIndex);
 
+  const todayDateStr = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+  const defaultMonthStr = todayDateStr.slice(0, 7);
+  const activeMonthStr = (typeof params.month === 'string' && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(params.month))
+    ? params.month
+    : defaultMonthStr;
+
+  const [activeYearStr, activeMonthNumStr] = activeMonthStr.split('-');
+  const activeYear = parseInt(activeYearStr || '2026', 10);
+  const activeMonthIndex = (parseInt(activeMonthNumStr || '10', 10) || 1) - 1;
+
+  const prevMonthDate = new Date(activeYear, activeMonthIndex - 1, 1);
+  const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const nextMonthDate = new Date(activeYear, activeMonthIndex + 1, 1);
+  const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const activeMonthLabel = `${MONTH_NAMES_ES[activeMonthIndex] ?? 'Octubre'} ${activeYear}`;
+
+  const calendarCells = getMonthCalendar(activeYear, activeMonthIndex);
+
+  // Group reservations by date for month calendar
+  const reservationsByDate = new Map<string, typeof list.data>();
+  for (const row of filteredData) {
+    const dateKey = row.date.slice(0, 10);
+    const arr = reservationsByDate.get(dateKey) ?? [];
+    arr.push(row);
+    reservationsByDate.set(dateKey, arr);
+  }
+  const reservationsInActiveMonth = filteredData.filter((r) => r.date.startsWith(activeMonthStr));
+
+  const buildMonthHref = (monthStr: string) => {
+    const q = new URLSearchParams();
+    if (params.status && typeof params.status === 'string') q.set('status', params.status);
+    if (searchQuery) q.set('q', searchQuery);
+    q.set('view', 'calendar');
+    q.set('month', monthStr);
+    const str = q.toString();
+    return `/reservations${str ? `?${str}` : ''}`;
+  };
+
   const buildStatusHref = (statusKey?: string) => {
     const q = new URLSearchParams();
     if (statusKey) q.set('status', statusKey);
     if (searchQuery) q.set('q', searchQuery);
-    if (viewMode === 'calendar') q.set('view', 'calendar');
+    if (viewMode === 'calendar') {
+      q.set('view', 'calendar');
+      if (activeMonthStr !== defaultMonthStr) q.set('month', activeMonthStr);
+    }
     const str = q.toString();
     return `/reservations${str ? `?${str}` : ''}`;
   };
@@ -525,9 +627,13 @@ export default async function ReservationsPage({
     const q = new URLSearchParams();
     if (params.status && typeof params.status === 'string') q.set('status', params.status);
     if (searchQuery) q.set('q', searchQuery);
-    if (currentPage > 1) q.set('page', String(currentPage));
-    if (params.after && typeof params.after === 'string') q.set('after', params.after);
-    if (targetView === 'calendar') q.set('view', 'calendar');
+    if (targetView === 'calendar') {
+      q.set('view', 'calendar');
+      if (activeMonthStr !== defaultMonthStr) q.set('month', activeMonthStr);
+    } else {
+      if (currentPage > 1) q.set('page', String(currentPage));
+      if (params.after && typeof params.after === 'string') q.set('after', params.after);
+    }
     const str = q.toString();
     return `/reservations${str ? `?${str}` : ''}`;
   };
@@ -578,10 +684,10 @@ export default async function ReservationsPage({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[#e5e7eb]">
         {/* Left: Filter tabs + Filtrar button */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex items-center p-1 bg-[#f3f4f6] rounded-[8px] text-xs">
+          <div className="h-9 inline-flex items-center p-1 bg-[#f3f4f6] rounded-[8px] text-xs box-border">
             <Link
               href={buildStatusHref(undefined)}
-              className={`px-3 py-1.5 rounded-[6px] font-medium transition-all ${
+              className={`h-7 px-3 inline-flex items-center justify-center rounded-[6px] font-medium transition-all ${
                 !params.status
                   ? 'bg-white text-[#111111] shadow-2xs font-semibold'
                   : 'text-[#6b7280] hover:text-[#111111]'
@@ -595,7 +701,7 @@ export default async function ReservationsPage({
                 <Link
                   key={statusKey}
                   href={buildStatusHref(statusKey)}
-                  className={`px-3 py-1.5 rounded-[6px] font-medium transition-all ${
+                  className={`h-7 px-3 inline-flex items-center justify-center rounded-[6px] font-medium transition-all ${
                     isActive
                       ? 'bg-white text-[#111111] shadow-2xs font-semibold'
                       : 'text-[#6b7280] hover:text-[#111111]'
@@ -609,7 +715,7 @@ export default async function ReservationsPage({
 
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f9fafb] shadow-2xs transition-colors cursor-pointer"
+            className="h-9 inline-flex items-center gap-1.5 px-3 rounded-[8px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f9fafb] shadow-2xs transition-colors cursor-pointer box-border"
           >
             <ListFilter className="w-3.5 h-3.5 text-[#6b7280]" />
             <span>Filtrar</span>
@@ -619,37 +725,40 @@ export default async function ReservationsPage({
         {/* Right: Search, Nueva reserva, View toggle icons */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* Search input (to the left of Nueva reserva) */}
-          <form method="GET" action="/reservations" className="relative">
+          <form method="GET" action="/reservations" className="relative flex items-center">
             {params.status && typeof params.status === 'string' && (
               <input type="hidden" name="status" value={params.status} />
             )}
             {viewMode === 'calendar' && (
               <input type="hidden" name="view" value="calendar" />
             )}
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9ca3af] pointer-events-none" />
+            {activeMonthStr && (
+              <input type="hidden" name="month" value={activeMonthStr} />
+            )}
+            <Search className="w-3.5 h-3.5 absolute left-2.5 text-[#9ca3af] pointer-events-none" />
             <input
               type="text"
               name="q"
               defaultValue={searchQuery}
               placeholder="Buscar reserva..."
-              className="h-8.5 pl-8 pr-3 text-xs bg-white border border-[#e5e7eb] rounded-[8px] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] w-36 sm:w-48 placeholder:text-[#9ca3af] transition-all"
+              className="h-9 pl-8 pr-3 text-xs bg-white border border-[#e5e7eb] rounded-[8px] focus:outline-none focus:ring-1 focus:ring-[#111111] focus:border-[#111111] w-36 sm:w-48 placeholder:text-[#9ca3af] transition-all box-border"
             />
           </form>
 
           {/* Nueva reserva */}
           <Link
             href="/reservations?new=1"
-            className="h-8.5 px-3 rounded-[8px] bg-[#111111] hover:bg-black text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors shrink-0 cursor-pointer"
+            className="h-9 px-3.5 rounded-[8px] bg-[#111111] hover:bg-black text-white text-xs font-medium inline-flex items-center gap-1.5 shadow-2xs transition-colors shrink-0 cursor-pointer box-border"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Nueva reserva</span>
           </Link>
 
           {/* View toggle icons: List & Calendar (to the right of Nueva reserva) */}
-          <div className="inline-flex items-center p-0.5 bg-[#f3f4f6] border border-[#e5e7eb] rounded-[8px] shrink-0">
+          <div className="h-9 inline-flex items-center p-1 bg-[#f3f4f6] border border-[#e5e7eb] rounded-[8px] shrink-0 box-border">
             <Link
               href={buildViewHref('list')}
-              className={`p-1.5 rounded-[6px] transition-colors ${
+              className={`h-7 w-7 inline-flex items-center justify-center rounded-[6px] transition-colors ${
                 viewMode === 'list'
                   ? 'bg-white text-[#111111] shadow-2xs'
                   : 'text-[#6b7280] hover:text-[#111111]'
@@ -661,7 +770,7 @@ export default async function ReservationsPage({
             </Link>
             <Link
               href={buildViewHref('calendar')}
-              className={`p-1.5 rounded-[6px] transition-colors ${
+              className={`h-7 w-7 inline-flex items-center justify-center rounded-[6px] transition-colors ${
                 viewMode === 'calendar'
                   ? 'bg-white text-[#111111] shadow-2xs'
                   : 'text-[#6b7280] hover:text-[#111111]'
@@ -677,123 +786,162 @@ export default async function ReservationsPage({
 
       {/* Main Content: Calendar View vs List View */}
       {viewMode === 'calendar' ? (
-        <div className="product-card-surface p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb]">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">
-              Vista por fecha de servicio
-            </h3>
-            <span className="text-xs text-[#6b7280]">
-              {totalFiltered} {totalFiltered === 1 ? 'reserva' : 'reservas'}
-            </span>
-          </div>
-
-          {pageItems.length === 0 ? (
-            <div className="py-12 text-center text-[#898989] text-xs">
-              {searchQuery ? 'No se encontraron reservas con ese criterio' : 'No hay reservas todavía'}
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {pageItems.map((row) => {
-                  const publicCode = row.code ?? row.id.slice(0, 8);
-                  return (
-                    <Link
-                      key={row.id}
-                      href={`/reservations?id=${row.id}`}
-                      className="p-3.5 rounded-[10px] border border-[#e5e7eb] bg-white hover:border-[#111111] transition-all space-y-2 block shadow-2xs group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-[#111111] group-hover:underline">
-                          {publicCode}
-                        </span>
-                        <StatusBadge status={row.operationStatus || 'PENDING'} />
-                      </div>
-
-                      <div>
-                        <p className="text-xs font-semibold text-[#111111] line-clamp-1">
-                          {row.serviceTitle ?? 'Reserva'}
-                        </p>
-                        <p className="text-[11px] text-[#6b7280] truncate mt-0.5">
-                          {row.customerFirstName} {row.customerLastName} • {row.pax} {row.pax === 1 ? 'pax' : 'pax'}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1 border-t border-[#f3f4f6] text-[11px]">
-                        <span className="text-[#6b7280] font-mono flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#9ca3af]" />
-                          {row.date.slice(0, 10)}
-                        </span>
-                        <span className="font-bold text-[#111111]">
-                          {priceLabel(row.totalMinor ?? Math.round(row.totalPrice * 100), row.currency)}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
+        <div className="product-card-surface overflow-hidden">
+          {/* Calendar Header with Month Navigation */}
+          <div className="p-4 border-b border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#fafafa]">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Link
+                  href={buildMonthHref(prevMonthStr)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                  title="Mes anterior"
+                  aria-label="Mes anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Link>
+                <Link
+                  href={buildMonthHref(nextMonthStr)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
+                  title="Mes siguiente"
+                  aria-label="Mes siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
               </div>
 
-              {/* Calendar view pagination toolbar */}
-              <div className="pt-3 border-t border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#6b7280]">
-                <div className="flex items-center gap-1.5 font-medium">
-                  <span>Mostrando</span>
-                  <span className="font-semibold text-[#111111]">
-                    {totalFiltered > 0 ? startIndex + 1 : 0} - {endIndex}
-                  </span>
-                  <span>de</span>
-                  <span className="font-semibold text-[#111111]">{totalFiltered}</span>
-                  <span>reservas</span>
-                </div>
+              <h3 className="text-base font-bold text-[#111111] capitalize">
+                {activeMonthLabel}
+              </h3>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-[#9ca3af]">
-                    Página {currentPage} de {totalPages}
-                  </span>
+              {activeMonthStr !== defaultMonthStr && (
+                <Link
+                  href={buildMonthHref(defaultMonthStr)}
+                  className="h-7 px-2.5 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors inline-flex items-center"
+                >
+                  Hoy
+                </Link>
+              )}
+            </div>
 
-                  <div className="inline-flex items-center gap-1">
-                    {currentPage > 1 ? (
-                      <Link
-                        href={buildPageHref(currentPage - 1)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <span>← Anterior</span>
-                      </Link>
-                    ) : params.after ? (
-                      <Link
-                        href={buildFirstPageHref()}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <span>« Primera pág.</span>
-                      </Link>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
-                        <span>← Anterior</span>
+            <div className="flex items-center gap-3 text-xs text-[#6b7280]">
+              <span className="font-medium">
+                {reservationsInActiveMonth.length} {reservationsInActiveMonth.length === 1 ? 'reserva' : 'reservas'} en {MONTH_NAMES_ES[activeMonthIndex]}
+              </span>
+            </div>
+          </div>
+
+          {/* Weekdays Header */}
+          <div className="grid grid-cols-7 border-b border-[#e5e7eb] bg-[#f8f9fa] text-center text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider py-2">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mié</div>
+            <div>Jue</div>
+            <div>Vie</div>
+            <div>Sáb</div>
+            <div>Dom</div>
+          </div>
+
+          {/* Month Days Grid */}
+          <div className="grid grid-cols-7 border-l border-t border-[#e5e7eb] bg-[#e5e7eb] gap-[1px]">
+            {calendarCells.map((cell) => {
+              const isToday = cell.dateStr === todayDateStr;
+              const dayReservations = reservationsByDate.get(cell.dateStr) ?? [];
+
+              return (
+                <div
+                  key={cell.dateStr}
+                  className={`min-h-[105px] sm:min-h-[120px] p-1.5 sm:p-2 flex flex-col justify-between transition-colors ${
+                    cell.isCurrentMonth ? 'bg-white' : 'bg-[#fafafa]/80 text-[#9ca3af]'
+                  }`}
+                >
+                  {/* Day header */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      className={`text-xs font-medium ${
+                        isToday
+                          ? 'w-6 h-6 rounded-full bg-[#111111] text-white flex items-center justify-center font-bold text-[11px] shadow-2xs'
+                          : cell.isCurrentMonth
+                            ? 'text-[#111111]'
+                            : 'text-[#9ca3af]'
+                      }`}
+                    >
+                      {cell.dayNumber}
+                    </span>
+
+                    {dayReservations.length > 0 && (
+                      <span className="text-[10px] font-semibold text-[#6b7280]">
+                        {dayReservations.length}
                       </span>
                     )}
+                  </div>
 
-                    {currentPage < totalPages ? (
-                      <Link
-                        href={buildPageHref(currentPage + 1)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <span>Siguiente →</span>
-                      </Link>
-                    ) : list.nextCursor ? (
-                      <Link
-                        href={buildNextBatchHref(list.nextCursor)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#e5e7eb] bg-white text-xs font-medium text-[#374151] hover:bg-[#f3f4f6] hover:text-[#111111] shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <span>Siguiente lote »</span>
-                      </Link>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] border border-[#f3f4f6] bg-[#f9fafb] text-xs font-medium text-[#d1d5db] cursor-not-allowed">
-                        <span>Siguiente →</span>
+                  {/* Day Reservations */}
+                  <div className="space-y-1 flex-1 overflow-hidden">
+                    {dayReservations.slice(0, 3).map((res) => {
+                      const publicCode = res.code ?? res.id.slice(0, 8);
+                      const statusColors: Record<string, string> = {
+                        CONFIRMED: 'bg-[#ecfdf5] border-[#bbf7d0] text-[#166534] hover:bg-[#dcfce7]',
+                        PENDING: 'bg-[#fffbeb] border-[#fde68a] text-[#92400e] hover:bg-[#fef3c7]',
+                        CANCELLED: 'bg-[#fef2f2] border-[#fecaca] text-[#991b1b] hover:bg-[#fee2e2]',
+                        COMPLETED: 'bg-[#f0f9ff] border-[#bae6fd] text-[#0369a1] hover:bg-[#e0f2fe]',
+                      };
+                      const colorClass = statusColors[res.operationStatus || 'PENDING'] ?? statusColors.PENDING;
+
+                      return (
+                        <Link
+                          key={res.id}
+                          href={`/reservations?id=${res.id}`}
+                          title={`${publicCode} - ${res.serviceTitle ?? 'Reserva'} (${res.customerFirstName} ${res.customerLastName})`}
+                          className={`px-1.5 py-0.5 rounded-[4px] border text-[10px] leading-tight font-medium flex items-center justify-between gap-1 transition-all truncate block hover:shadow-2xs ${colorClass}`}
+                        >
+                          <span className="font-mono font-bold shrink-0">{publicCode}</span>
+                          <span className="truncate text-[9.5px]">
+                            {res.customerFirstName}
+                          </span>
+                          <span className="shrink-0 text-[9px] opacity-75 font-semibold">
+                            {res.pax}p
+                          </span>
+                        </Link>
+                      );
+                    })}
+                    {dayReservations.length > 3 && (
+                      <span className="text-[10px] text-[#6b7280] font-medium block px-1">
+                        +{dayReservations.length - 3} más
                       </span>
                     )}
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              );
+            })}
+          </div>
+
+          {/* Calendar Legend */}
+          <div className="p-3 border-t border-[#e5e7eb] bg-[#fafafa] flex flex-wrap items-center justify-between gap-3 text-xs text-[#6b7280]">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-[11px] font-semibold text-[#374151] uppercase tracking-wider">
+                Estados:
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-[#166534]" />
+                Confirmada
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-[#92400e]" />
+                Pendiente
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-[#0369a1]" />
+                Completada
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-[#991b1b]" />
+                Cancelada
+              </span>
+            </div>
+            <div className="text-[11px] text-[#6b7280]">
+              Haz clic en cualquier reserva para abrir sus detalles
+            </div>
+          </div>
         </div>
       ) : (
         /* Grouped List / Modern Data Table */
