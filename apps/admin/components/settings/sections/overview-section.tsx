@@ -26,25 +26,26 @@ export interface OverviewSectionProps {
 }
 
 function renderOverviewIcon(iconName: SettingsIconName) {
+  const iconClass = "w-4 h-4 text-foreground";
   switch (iconName) {
     case 'user':
-      return <User className="w-4 h-4 text-[#374151]" />;
+      return <User className={iconClass} />;
     case 'sliders':
-      return <Sliders className="w-4 h-4 text-[#374151]" />;
+      return <Sliders className={iconClass} />;
     case 'palette':
-      return <Palette className="w-4 h-4 text-[#374151]" />;
+      return <Palette className={iconClass} />;
     case 'gift':
-      return <Gift className="w-4 h-4 text-[#374151]" />;
+      return <Gift className={iconClass} />;
     case 'credit-card':
-      return <CreditCard className="w-4 h-4 text-[#374151]" />;
+      return <CreditCard className={iconClass} />;
     case 'sparkles':
-      return <Sparkles className="w-4 h-4 text-[#374151]" />;
+      return <Sparkles className={iconClass} />;
     case 'shield-check':
-      return <ShieldCheck className="w-4 h-4 text-[#374151]" />;
+      return <ShieldCheck className={iconClass} />;
     case 'smartphone':
-      return <Smartphone className="w-4 h-4 text-[#374151]" />;
+      return <Smartphone className={iconClass} />;
     case 'blocks':
-      return <Blocks className="w-4 h-4 text-[#374151]" />;
+      return <Blocks className={iconClass} />;
     default:
       return null;
   }
@@ -92,46 +93,72 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
         </div>
       </div>
 
-      {/* Sections & Cards (Cal.com aesthetic) */}
-      <div className="space-y-7">
+      {/* Sections & Cards (Cal.com aesthetic with exact stacked icon cards) */}
+      <div className="space-y-8">
         {filteredSections.map((section) => (
-          <section key={section.id} className="space-y-2.5">
-            <h2 className="text-sm font-semibold text-[#111111] tracking-tight">
+          <section key={section.id} className="space-y-2">
+            <h2 className="text-sm sm:text-base font-semibold text-foreground tracking-tight px-1">
               {section.label}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0.5 sm:gap-1">
               {section.items.map((card) => (
-                <Link
+                <div
                   key={card.id}
-                  href={card.href}
-                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#f3f4f6] transition-colors cursor-pointer group text-left"
+                  className="relative flex w-full items-start gap-4 py-3 ps-4 pe-2"
                 >
-                  <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-center shrink-0 shadow-2xs group-hover:border-[#d1d5db] transition-colors">
-                    {renderOverviewIcon(card.iconName)}
+                  {/* Cal.com stacked icon deck */}
+                  <div
+                    className="relative pointer-events-none shrink-0 z-1 m-0"
+                    data-slot="empty-media"
+                    data-variant="icon"
+                    aria-hidden="true"
+                  >
+                    {/* Rotated background card left */}
+                    <div
+                      aria-hidden="true"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground z-1 m-0 pointer-events-none absolute bottom-px origin-bottom-left -translate-x-0.5 -rotate-[10deg] scale-[0.84] shadow-none"
+                    />
+                    {/* Rotated background card right */}
+                    <div
+                      aria-hidden="true"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground z-1 m-0 pointer-events-none absolute bottom-px origin-bottom-right translate-x-0.5 rotate-[10deg] scale-[0.84] shadow-none"
+                    />
+                    {/* Front card with icon */}
+                    <div
+                      className="relative flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-xs pointer-events-none z-1 m-0"
+                      aria-hidden="true"
+                    >
+                      {renderOverviewIcon(card.iconName)}
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
+
+                  {/* Title and description with stretched link hover */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-xs sm:text-[13px] font-medium text-[#111111] leading-snug">
+                      <Link
+                        href={card.href}
+                        className="cursor-pointer font-medium text-sm leading-tight text-foreground before:absolute before:inset-0 before:rounded-lg hover:before:bg-muted transition-colors"
+                      >
                         {card.label}
-                      </h3>
+                      </Link>
                       {card.id === 'integrations' && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="relative z-2 pointer-events-none text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
                           Diferido
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] sm:text-xs text-[#6b7280] leading-tight line-clamp-2 mt-0.5">
+                    <p className="text-muted-foreground text-xs leading-normal line-clamp-2 pointer-events-none">
                       {card.overviewDescription || card.description}
                     </p>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </section>
         ))}
 
         {filteredSections.length === 0 && (
-          <div className="text-center py-12 text-xs text-[#6b7280]">
+          <div className="text-center py-12 text-xs text-muted-foreground">
             No se encontraron opciones para &ldquo;{query}&rdquo;
           </div>
         )}
