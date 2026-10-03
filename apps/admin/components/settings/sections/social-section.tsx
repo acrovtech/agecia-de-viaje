@@ -160,14 +160,14 @@ export function SocialSection({ initialProfile }: SocialSectionProps) {
                 <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wider block">
                   Tours Destacados
                 </span>
-                <div className="p-2 rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-[11px]">
+                <div className="p-2 rounded-[10px] border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-[11px]">
                   <div>
                     <span className="font-semibold text-[#111111] block">City Tour Cusco</span>
                     <span className="text-[10px] text-[#6b7280]">Medio día · Guía oficial</span>
                   </div>
                   <span className="font-bold text-[#111111]">$40</span>
                 </div>
-                <div className="p-2 rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-[11px]">
+                <div className="p-2 rounded-[10px] border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-[11px]">
                   <div>
                     <span className="font-semibold text-[#111111] block">Valle Sagrado VIP</span>
                     <span className="text-[10px] text-[#6b7280]">Día completo · Almuerzo</span>

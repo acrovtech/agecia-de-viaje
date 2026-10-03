@@ -67,7 +67,7 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           <button
             type="button"
             onClick={() => setThemeMode('system')}
-            className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+            className={`p-3.5 rounded-[10px] border text-left cursor-pointer transition-all flex flex-col justify-between ${
               themeMode === 'system'
                 ? 'border-[#111111] bg-[#f8f9fa] shadow-product-card ring-1 ring-[#111111]'
                 : 'border-[#e5e7eb] bg-white hover:bg-[#f8f9fa]'
@@ -92,7 +92,7 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           <button
             type="button"
             onClick={() => setThemeMode('light')}
-            className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+            className={`p-3.5 rounded-[10px] border text-left cursor-pointer transition-all flex flex-col justify-between ${
               themeMode === 'light'
                 ? 'border-[#111111] bg-[#f8f9fa] shadow-product-card ring-1 ring-[#111111]'
                 : 'border-[#e5e7eb] bg-white hover:bg-[#f8f9fa]'
@@ -117,7 +117,7 @@ export function AppearanceSection({ initialProfile, canEdit }: AppearanceSection
           <button
             type="button"
             onClick={() => setThemeMode('dark')}
-            className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+            className={`p-3.5 rounded-[10px] border text-left cursor-pointer transition-all flex flex-col justify-between ${
               themeMode === 'dark'
                 ? 'border-[#111111] bg-[#f8f9fa] shadow-product-card ring-1 ring-[#111111]'
                 : 'border-[#e5e7eb] bg-white hover:bg-[#f8f9fa]'

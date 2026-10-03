@@ -16,7 +16,7 @@ export function IntegrationsSection() {
         </div>
 
         <div className="space-y-3 pt-2 border-t border-[#e5e7eb]">
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-[10px] border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs shrink-0">
                 IZI
@@ -42,7 +42,7 @@ export function IntegrationsSection() {
             </button>
           </div>
 
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-[10px] border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
                 STR
@@ -68,7 +68,7 @@ export function IntegrationsSection() {
             </button>
           </div>
 
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 opacity-60">
+          <div className="p-4 rounded-[10px] border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 opacity-60">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs shrink-0">
                 MP
@@ -100,7 +100,7 @@ export function IntegrationsSection() {
         </div>
 
         <div className="space-y-3 pt-2 border-t border-[#e5e7eb]">
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-[10px] border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs shrink-0">
                 CAL
@@ -126,7 +126,7 @@ export function IntegrationsSection() {
             </button>
           </div>
 
-          <div className="p-4 rounded-xl border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-[10px] border border-[#e5e7eb] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
                 WSP

@@ -137,7 +137,7 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         href={card.href}
-                        className="cursor-pointer font-medium text-sm leading-tight text-foreground before:absolute before:inset-0 before:rounded-lg hover:before:bg-muted transition-colors"
+                        className="cursor-pointer font-medium text-sm leading-tight text-foreground before:absolute before:inset-0 before:rounded-[10px] hover:before:bg-muted transition-colors"
                       >
                         {card.label}
                       </Link>
