@@ -46,7 +46,18 @@ export class AdminCatalogController {
   async tours(@Req() req: AuthenticatedRequest, @Query() query: unknown) {
     const rows = await this.prisma.tour.findMany({
       where: { agencyId: req.identity.agencyId, ...after(query) },
-      select: { id: true, slug: true, title: true, hasSharedService: true, sharedPrice: true, isPublished: true },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        hasSharedService: true,
+        sharedPrice: true,
+        isPublished: true,
+        cardImage: true,
+        bannerImage: true,
+        duration: true,
+        region: true,
+      },
       orderBy: { id: 'asc' }, take: 51,
     });
     return { data: rows.slice(0, 50), nextCursor: rows.length > 50 ? rows[49]!.id : null };
