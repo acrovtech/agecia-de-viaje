@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, Users, DollarSign, Check, Loader2 } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Users, DollarSign, Check, Loader2, Sparkles, Minus, Plus } from 'lucide-react';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
-import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import { formatCurrency } from '@repo/ui/lib/currency';
+import { formatSpanishDate } from '@repo/ui/lib/date-utils';
 
 interface CheckoutModalEditProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ export function CheckoutModalEdit({
       return () => clearTimeout(timer);
     } else {
       setIsAnimating(false);
-      const timer = setTimeout(() => setMounted(false), 250);
+      const timer = setTimeout(() => setMounted(false), 200);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -111,11 +111,18 @@ export function CheckoutModalEdit({
 
   if (!mounted && !isOpen) return null;
 
+  const formattedSelectedDate = modalDate
+    ? formatSpanishDate(modalDate.toISOString(), 'long')
+    : 'Selecciona una fecha';
+
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-250 ease-out ${
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-edit-title"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 transition-all duration-200 ease-out ${
         isAnimating
-          ? 'bg-black/60 backdrop-blur-xs opacity-100'
+          ? 'bg-black/60 backdrop-blur-sm opacity-100'
           : 'bg-black/0 backdrop-blur-none opacity-0 pointer-events-none'
       }`}
       onClick={(e) => {
@@ -123,111 +130,169 @@ export function CheckoutModalEdit({
       }}
     >
       <div
-        className={`bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto transition-all duration-250 ease-out ${
+        className={`bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-100 relative max-h-[92vh] flex flex-col overflow-hidden transition-all duration-200 ease-out ${
           isAnimating
             ? 'scale-100 opacity-100 translate-y-0'
             : 'scale-95 opacity-0 translate-y-3'
         }`}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
-          aria-label="Cerrar modal"
-        >
-          <X size={16} />
-        </button>
-
-        <h3 className="text-base font-bold text-gray-900 mb-4">Modificar Reserva</h3>
-
-        <div className="space-y-4">
-          {/* Fecha */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <Calendar size={14} className="text-[#062918]" /> Fecha del Tour
-            </label>
-            <CalendarUI
-              selectedDate={modalDate}
-              onSelect={(d) => setModalDate(d)}
-            />
+        {/* Header con gradiente sutil y badges */}
+        <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-gray-100 flex items-start justify-between gap-4 bg-gradient-to-r from-gray-50/70 to-white">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#062918] bg-[#062918]/10 px-2 py-0.5 rounded-full">
+              <Sparkles size={11} className="text-[#062918]" />
+              Modificar Reserva
+            </span>
+            <h3 id="modal-edit-title" className="text-base sm:text-lg font-bold text-gray-900 leading-snug line-clamp-1">
+              {tourTitle}
+            </h3>
           </div>
 
-          {/* Cantidad de Pasajeros y Tipo de Servicio */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <Users size={14} className="text-[#062918]" /> Pasajeros
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            aria-label="Cerrar modal"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Contenido scrolleable */}
+        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+          {/* 1. Selector de Fecha */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <label className="font-semibold text-gray-800 flex items-center gap-1.5">
+                <CalendarIcon size={14} className="text-[#062918]" />
+                Fecha del Tour
               </label>
-              <div className="flex items-center border border-gray-200 rounded-xl bg-white h-[42px] px-2">
+              <span className="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                {formattedSelectedDate}
+              </span>
+            </div>
+
+            <div className="border border-gray-200/90 rounded-xl p-3 bg-gray-50/40 shadow-2xs">
+              <CalendarUI
+                selectedDate={modalDate}
+                onSelect={(d) => setModalDate(d)}
+              />
+            </div>
+          </div>
+
+          {/* 2. Cantidad de Pasajeros y Tipo de Servicio */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Pasajeros Stepper */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                <Users size={14} className="text-[#062918]" />
+                Pasajeros
+              </label>
+              <div className="flex items-center justify-between border border-gray-200 rounded-xl bg-white h-[44px] px-2 shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setModalPax(Math.max(1, modalPax - 1))}
-                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 font-bold transition-colors cursor-pointer"
+                  disabled={modalPax <= 1}
+                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-all flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  aria-label="Disminuir pasajeros"
                 >
-                  -
+                  <Minus size={14} />
                 </button>
-                <span className="flex-1 text-center font-bold text-xs">{modalPax}</span>
+                <div className="text-center">
+                  <span className="font-extrabold text-sm text-gray-900">{modalPax}</span>
+                  <span className="text-[10px] text-gray-500 block -mt-0.5">{modalPax === 1 ? 'viajero' : 'viajeros'}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setModalPax(modalPax + 1)}
-                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 font-bold transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95"
+                  aria-label="Aumentar pasajeros"
                 >
-                  +
+                  <Plus size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Tipo de Servicio */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <DollarSign size={14} className="text-[#062918]" /> Tipo Servicio
+            {/* Tipo de Servicio Pills */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                <DollarSign size={14} className="text-[#062918]" />
+                Modalidad de Servicio
               </label>
-              <Select
-                value={modalServiceType}
-                onValueChange={(val) => setModalServiceType((val as 'shared' | 'private') || 'shared')}
-              >
-                <SelectTrigger className="h-[42px] rounded-xl text-xs font-medium">
-                  {modalServiceType === 'private' ? 'Privado' : 'Compartido'}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shared">Compartido</SelectItem>
-                  <SelectItem value="private">Privado</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl h-[44px] items-center">
+                <button
+                  type="button"
+                  onClick={() => setModalServiceType('shared')}
+                  className={`h-[36px] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    modalServiceType === 'shared'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {modalServiceType === 'shared' && <Check size={12} className="text-[#062918]" />}
+                  Compartido
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalServiceType('private')}
+                  className={`h-[36px] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    modalServiceType === 'private'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {modalServiceType === 'private' && <Check size={12} className="text-[#062918]" />}
+                  Privado
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Resumen de Tarifas y Total */}
-          <div className="bg-[#062918]/5 rounded-xl p-3.5 space-y-1.5 border border-[#062918]/10">
-            <div className="flex items-center justify-between text-xs text-gray-600">
-              <span>Precio por pasajero ({modalServiceType === 'private' ? 'Privado' : 'Compartido'}):</span>
-              <span className="font-semibold text-gray-900">
+          {/* 3. Resumen de Tarifas con estética Premium */}
+          <div className="rounded-xl p-4 bg-gradient-to-br from-[#062918] to-[#0c3e27] text-white shadow-md space-y-2.5">
+            <div className="flex items-center justify-between text-xs text-emerald-100/90">
+              <span>Tarifa por pasajero ({modalServiceType === 'private' ? 'Privado' : 'Compartido'}):</span>
+              <span className="font-bold text-white text-sm">
                 {isLoadingTour ? (
-                  <Loader2 size={12} className="animate-spin inline" />
+                  <Loader2 size={13} className="animate-spin inline" />
                 ) : (
                   formatCurrency(calculatedPricePerPax)
                 )}
               </span>
             </div>
-            <div className="flex items-center justify-between pt-1.5 border-t border-[#062918]/10">
-              <span className="text-xs font-bold text-gray-800">Nuevo Total Estimado ({modalPax} pax):</span>
-              <span className="text-base font-bold text-[#062918]">
+
+            <div className="pt-2 border-t border-emerald-400/20 flex items-baseline justify-between">
+              <div>
+                <span className="text-xs font-medium text-emerald-200 block">Total Estimado ({modalPax} {modalPax === 1 ? 'pax' : 'pax'}):</span>
+                <span className="text-[10px] text-emerald-300/80">Impuestos y tarifas incluidos</span>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {isLoadingTour ? (
-                  <Loader2 size={14} className="animate-spin inline" />
+                  <Loader2 size={18} className="animate-spin inline" />
                 ) : (
                   formatCurrency(calculatedTotal)
                 )}
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Botón Guardar */}
+        {/* Footer con acciones */}
+        <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
           <button
             type="button"
             onClick={handleSave}
-            className="w-full py-3 bg-[#062918] hover:bg-[#0c4028] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
+            className="px-5 py-2.5 bg-[#062918] hover:bg-[#0c4028] text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-98 flex items-center gap-1.5 cursor-pointer"
           >
-            <Check size={14} /> Actualizar Datos
+            <Check size={14} />
+            Actualizar Reserva
           </button>
         </div>
       </div>
