@@ -141,11 +141,6 @@ export function OverviewSection({ initialProfile, identity }: OverviewSectionPro
                       >
                         {card.label}
                       </Link>
-                      {card.id === 'integrations' && (
-                        <span className="relative z-10 pointer-events-none text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                          Diferido
-                        </span>
-                      )}
                     </div>
                     <p className="text-muted-foreground text-xs leading-normal line-clamp-2 pointer-events-none">
                       {card.overviewDescription || card.description}
