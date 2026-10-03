@@ -162,12 +162,20 @@ export function CatalogView({
                     )}
                     <td className="py-3 px-4 text-right space-x-2">
                       {canEdit && (
-                        <Link
-                          href={`${baseRoute}?edit=${encodeURIComponent(item.id)}`}
-                          className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] shadow-product-card hover:bg-[#f8f9fa] rounded-md transition-colors"
-                        >
-                          Editar
-                        </Link>
+                        <>
+                          <Link
+                            href={`${baseRoute}?edit=${encodeURIComponent(item.id)}`}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] shadow-product-card hover:bg-[#f8f9fa] rounded-md transition-colors"
+                          >
+                            Editar
+                          </Link>
+                          <Link
+                            href={`/content?kind=${kind}&id=${encodeURIComponent(item.id)}`}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#6b7280] hover:text-[#111111] hover:underline underline-offset-2 transition-colors"
+                          >
+                            Contenido
+                          </Link>
+                        </>
                       )}
                     </td>
                   </tr>

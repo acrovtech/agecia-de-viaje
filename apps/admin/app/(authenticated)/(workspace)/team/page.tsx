@@ -5,6 +5,7 @@ import { centralRequest, centralSession, CentralApiError } from '@/lib/central-a
 import { isApiAdmin } from '@/lib/admin-mode';
 import { TeamView } from '@/components/workspace/views/team-view';
 import { EmptyState } from '@/components/design-system/empty-state';
+import { canAccessTeamUi } from '@/lib/team-auth';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export default async function TeamPage({
   }
 
   const { token, identity } = session;
-  const canSeeTeam = ['OWNER', 'ADMIN', 'OPERATOR'].includes(identity.role);
+  const canSeeTeam = canAccessTeamUi(identity.role);
   if (!canSeeTeam) {
     return (
       <EmptyState

@@ -16,7 +16,7 @@ export default async function SettingsOverviewPage({
   const params = await searchParams;
 
   // Backward compatibility: redirect ?tab=... to canonical nested settings route
-  if (typeof params.tab === 'string' && params.tab !== 'resumen') {
+  if (typeof params.tab === 'string') {
     const target = getSettingsConfigByLegacyTab(params.tab);
     if (target) {
       const q = new URLSearchParams();

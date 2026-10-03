@@ -11,6 +11,10 @@ import {
   Smartphone,
   Blocks,
 } from 'lucide-react';
+import {
+  SETTINGS_NAV_ITEMS,
+  getSettingsNavSections,
+} from '@/lib/settings-navigation';
 import type { NavIdentity } from './sidebar';
 
 interface SettingsSidebarProps {
@@ -27,6 +31,8 @@ export function SettingsSidebar({
   const pathname = usePathname() || '/settings';
 
   const initialLetter = identity.agencyName ? identity.agencyName[0]?.toUpperCase() : 'A';
+  const overviewItem = SETTINGS_NAV_ITEMS.find((item) => item.id === 'overview') || SETTINGS_NAV_ITEMS[0]!;
+  const navSections = getSettingsNavSections();
 
   const isActive = (targetHref: string) => {
     if (targetHref === '/settings') {
@@ -67,133 +73,54 @@ export function SettingsSidebar({
       {/* 2. Top-level item: Resumen */}
       <div>
         <Link
-          href="/settings"
+          href={overviewItem.href}
           onClick={onNavigate}
           className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors ${
-            isActive('/settings')
+            isActive(overviewItem.href)
               ? 'bg-[#e5e7eb]/80 text-[#111111] font-semibold'
               : 'text-[#4b5563] hover:text-[#111111] hover:bg-[#f3f4f6] font-medium'
           }`}
         >
           <LayoutGrid className="w-4 h-4 text-[#4b5563]" />
-          <span>Resumen</span>
+          <span>{overviewItem.label}</span>
         </Link>
       </div>
 
-      {/* 3. Section: Agency / User profile */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
-          <div className="w-5 h-5 rounded-full bg-[#78350f] text-white flex items-center justify-center text-[11px] font-bold shrink-0">
-            {initialLetter}
+      {/* 3. Dynamic Sections derived from canonical SETTINGS_NAV_ITEMS */}
+      {navSections.map((section) => (
+        <div key={section.id} className="space-y-1">
+          <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
+            {section.iconName === 'agency' ? (
+              <div className="w-5 h-5 rounded-full bg-[#78350f] text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                {initialLetter}
+              </div>
+            ) : section.iconName === 'shield-check' ? (
+              <ShieldCheck className="w-4 h-4 text-[#4b5563]" />
+            ) : section.iconName === 'credit-card' ? (
+              <CreditCard className="w-4 h-4 text-[#4b5563]" />
+            ) : section.iconName === 'smartphone' ? (
+              <Smartphone className="w-4 h-4 text-[#4b5563]" />
+            ) : section.iconName === 'blocks' ? (
+              <Blocks className="w-4 h-4 text-[#4b5563]" />
+            ) : null}
+            <span className="truncate">
+              {section.iconName === 'agency' ? identity.agencyName || 'Mi Agencia' : section.label}
+            </span>
           </div>
-          <span className="truncate">{identity.agencyName || 'Mi Agencia'}</span>
+          <div className="space-y-0.5 ps-7 pe-1">
+            {section.items.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={onNavigate}
+                className={linkClass(item.href)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="space-y-0.5 ps-7 pe-1">
-          <Link
-            href="/settings/profile"
-            onClick={onNavigate}
-            className={linkClass('/settings/profile')}
-          >
-            Perfil
-          </Link>
-          <Link
-            href="/settings/general"
-            onClick={onNavigate}
-            className={linkClass('/settings/general')}
-          >
-            General
-          </Link>
-          <Link
-            href="/settings/appearance"
-            onClick={onNavigate}
-            className={linkClass('/settings/appearance')}
-          >
-            Aspecto
-          </Link>
-          <Link
-            href="/settings/referrals"
-            onClick={onNavigate}
-            className={linkClass('/settings/referrals')}
-          >
-            Gana 20% de referencia
-          </Link>
-        </div>
-      </div>
-
-      {/* 4. Section: Seguridad */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
-          <ShieldCheck className="w-4 h-4 text-[#4b5563]" />
-          <span>Seguridad</span>
-        </div>
-        <div className="space-y-0.5 ps-7 pe-1">
-          <Link
-            href="/settings/security/legal"
-            onClick={onNavigate}
-            className={linkClass('/settings/security/legal')}
-          >
-            Perfil legal
-          </Link>
-        </div>
-      </div>
-
-      {/* 5. Section: Facturación */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
-          <CreditCard className="w-4 h-4 text-[#4b5563]" />
-          <span>Facturación</span>
-        </div>
-        <div className="space-y-0.5 ps-7 pe-1">
-          <Link
-            href="/settings/billing"
-            onClick={onNavigate}
-            className={linkClass('/settings/billing')}
-          >
-            Gestione la facturación
-          </Link>
-          <Link
-            href="/settings/plans"
-            onClick={onNavigate}
-            className={linkClass('/settings/plans')}
-          >
-            Planes
-          </Link>
-        </div>
-      </div>
-
-      {/* 6. Section: Página social */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
-          <Smartphone className="w-4 h-4 text-[#4b5563]" />
-          <span>Página social</span>
-        </div>
-        <div className="space-y-0.5 ps-7 pe-1">
-          <Link
-            href="/settings/social"
-            onClick={onNavigate}
-            className={linkClass('/settings/social')}
-          >
-            Link in Bio
-          </Link>
-        </div>
-      </div>
-
-      {/* 7. Section: Integraciones */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-sm font-semibold text-[#111111]">
-          <Blocks className="w-4 h-4 text-[#4b5563]" />
-          <span>Integraciones</span>
-        </div>
-        <div className="space-y-0.5 ps-7 pe-1">
-          <Link
-            href="/settings/integrations"
-            onClick={onNavigate}
-            className={linkClass('/settings/integrations')}
-          >
-            Pasarelas y APIs
-          </Link>
-        </div>
-      </div>
+      ))}
     </aside>
   );
 }

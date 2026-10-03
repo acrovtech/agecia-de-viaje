@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   SETTINGS_NAV_ITEMS,
+  SETTINGS_GROUPS,
   getSettingsConfigByPath,
   getSettingsConfigByLegacyTab,
+  getSettingsNavSections,
+  getSettingsOverviewCards,
 } from './settings-navigation';
+import { canAccessTeamUi, TEAM_UI_ALLOWED_ROLES } from './team-auth';
 
 describe('Settings Navigation and Canonical Routing Architecture', () => {
   it('1. contains all 10 approved product settings sections in the exact hierarchy', () => {
@@ -49,4 +53,58 @@ describe('Settings Navigation and Canonical Routing Architecture', () => {
     expect(getSettingsConfigByLegacyTab('integraciones')?.href).toBe('/settings/integrations');
     expect(getSettingsConfigByLegacyTab('unknown')).toBeNull();
   });
+
+  it('4. canonicalizes legacy ?tab=resumen redirect while removing tab param and preserving other params', () => {
+    function resolveLegacyTabRedirect(params: Record<string, string | undefined>) {
+      if (typeof params.tab === 'string') {
+        const target = getSettingsConfigByLegacyTab(params.tab);
+        if (target) {
+          const q = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (key !== 'tab' && typeof value === 'string') {
+              q.set(key, value);
+            }
+          }
+          const qStr = q.toString() ? `?${q.toString()}` : '';
+          return `${target.href}${qStr}`;
+        }
+      }
+      return null;
+    }
+
+    // ?tab=resumen -> /settings (tab stripped, no query)
+    expect(resolveLegacyTabRedirect({ tab: 'resumen' })).toBe('/settings');
+
+    // ?tab=resumen&ref=promo -> /settings?ref=promo (tab stripped, other params preserved)
+    expect(resolveLegacyTabRedirect({ tab: 'resumen', ref: 'promo' })).toBe('/settings?ref=promo');
+
+    // ?tab=facturacion&period=annual -> /settings/billing?period=annual
+    expect(resolveLegacyTabRedirect({ tab: 'facturacion', period: 'annual' })).toBe('/settings/billing?period=annual');
+  });
+
+  it('5. single source of truth provides canonical sidebar sections and overview cards', () => {
+    const sections = getSettingsNavSections();
+    expect(sections).toHaveLength(5);
+    expect(sections.map((s) => s.id)).toEqual(['account', 'security', 'billing', 'social', 'integrations']);
+
+    const cards = getSettingsOverviewCards();
+    expect(cards).toHaveLength(9);
+    expect(cards.find((c) => c.id === 'overview')).toBeUndefined();
+
+    // Verify payment status consistency on Integrations
+    const integrationsCard = cards.find((c) => c.id === 'integrations');
+    expect(integrationsCard).toBeDefined();
+    expect(integrationsCard?.overviewBadge).toBe('PROVEEDOR DIFERIDO');
+    expect(integrationsCard?.overviewBadge).not.toContain('IZIPAY ACTIVO');
+  });
+
+  it('6. Team UI authorization allows only OWNER and ADMIN, strictly denying OPERATOR', () => {
+    expect(TEAM_UI_ALLOWED_ROLES).toEqual(['OWNER', 'ADMIN']);
+    expect(canAccessTeamUi('OWNER')).toBe(true);
+    expect(canAccessTeamUi('ADMIN')).toBe(true);
+    expect(canAccessTeamUi('OPERATOR')).toBe(false);
+    expect(canAccessTeamUi('EDITOR')).toBe(false);
+    expect(canAccessTeamUi('VIEWER')).toBe(false);
+  });
 });
+
