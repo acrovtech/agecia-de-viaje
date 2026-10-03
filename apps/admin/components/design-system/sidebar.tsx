@@ -13,13 +13,11 @@ import {
   Users2,
   Bell,
   Settings,
-  LogOut,
   ChevronDown,
   Building2,
   Tag,
   Truck,
 } from 'lucide-react';
-import { logoutAction } from '../../app/actions/auth';
 import { PRODUCT_SHORT_NAME } from '../../lib/brand';
 
 export interface NavIdentity {
@@ -51,7 +49,7 @@ interface NavItem {
   }[];
 }
 
-const navItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
   {
     label: 'Inicio',
     href: '/dashboard',
@@ -122,6 +120,9 @@ const navItems: NavItem[] = [
     icon: Users2,
     roles: ['OWNER', 'ADMIN'],
   },
+];
+
+const bottomNavItems: NavItem[] = [
   {
     label: 'Notificaciones',
     href: '/notifications',
@@ -129,20 +130,12 @@ const navItems: NavItem[] = [
     roles: ['OWNER', 'ADMIN'],
   },
   {
-    label: 'Configuración',
+    label: 'Ajustes',
     href: '/settings',
     icon: Settings,
     roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
   },
 ];
-
-const roleNames: Record<string, string> = {
-  OWNER: 'Propietario',
-  ADMIN: 'Administrador',
-  EDITOR: 'Editor',
-  OPERATOR: 'Operador',
-  VIEWER: 'Consulta',
-};
 
 export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) {
   const pathname = usePathname();
@@ -151,6 +144,9 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
     const [pathPart] = href.split('?');
     if (pathPart === '/dashboard') {
       return pathname === '/dashboard' || pathname === '/workspace';
+    }
+    if (pathPart === '/settings') {
+      return pathname === '/settings' || pathname.startsWith('/settings/');
     }
     return pathname === pathPart || pathname.startsWith(`${pathPart}/`);
   };
@@ -197,7 +193,7 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
 
       {/* Navigation list (Cal geometry: h-8, rounded-lg, text-sm, gap-2, icon size-4) */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 no-scrollbar">
-        {navItems
+        {mainNavItems
           .filter((item) => canAccess(item.roles))
           .map((item) => {
             const active = isParentActive(item);
@@ -259,37 +255,34 @@ export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) 
           })}
       </nav>
 
-      {/* User Footer: Role badge, email, and Logout */}
-      <div className="p-2">
-        <div className="flex items-center justify-between gap-2 md:max-lg:flex-col md:max-lg:items-center">
-          <div
-            className="flex items-center gap-2 min-w-0 md:max-lg:justify-center"
-            title={`${identity.email} (${roleNames[identity.role] || identity.role})`}
-          >
-            <div className="w-7 h-7 rounded-md bg-[#f3f4f6] text-[#111111] flex items-center justify-center font-bold text-xs shrink-0">
-              {identity.email[0]?.toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1 md:max-lg:hidden">
-              <p className="text-xs font-medium text-[#111111] truncate">
-                {identity.email}
-              </p>
-              <span className="inline-block text-[10px] font-medium text-[#6b7280] uppercase tracking-wider">
-                {roleNames[identity.role] || identity.role}
-              </span>
-            </div>
-          </div>
+      {/* Bottom Navigation: Notificaciones & Ajustes */}
+      <div className="p-2 border-t border-[#e5e7eb] space-y-0.5">
+        {bottomNavItems
+          .filter((item) => canAccess(item.roles))
+          .map((item) => {
+            const active = isCurrent(item.href);
+            const Icon = item.icon;
 
-          <form action={logoutAction} className="md:max-lg:w-full md:max-lg:flex md:max-lg:justify-center">
-            <button
-              type="submit"
-              title="Cerrar sesión"
-              className="p-1.5 text-[#6b7280] hover:text-[#111111] hover:bg-[#f3f4f6] rounded-lg transition-colors cursor-pointer"
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={onNavigate}
+                title={item.label}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center justify-between h-8 px-2 rounded-lg text-sm font-medium transition-colors cursor-pointer md:max-lg:justify-center md:max-lg:px-0 ${
+                  active
+                    ? 'bg-[#f3f4f6] text-[#111111]'
+                    : 'text-[#374151] hover:text-[#111111] hover:bg-[#f3f4f6]/60'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0 md:max-lg:justify-center">
+                  <Icon className="w-4 h-4 shrink-0 text-[#6b7280]" />
+                  <span className="truncate md:max-lg:sr-only">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
       </div>
     </aside>
   );
