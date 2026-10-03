@@ -106,5 +106,22 @@ describe('Settings Navigation and Canonical Routing Architecture', () => {
     expect(canAccessTeamUi('EDITOR')).toBe(false);
     expect(canAccessTeamUi('VIEWER')).toBe(false);
   });
+
+  it('7. Settings layout never passes a callback prop across RSC boundary into AppShell', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const layoutPath = path.resolve(__dirname, '../app/(authenticated)/settings/layout.tsx');
+    const layoutContent = fs.readFileSync(layoutPath, 'utf8');
+
+    // Must not pass inline functions / callbacks to AppShell across RSC boundary
+    expect(layoutContent).not.toMatch(/<AppShell[^>]*sidebar=\{/);
+    expect(layoutContent).toContain('SettingsShell');
+
+    // SettingsShell must be a client component composing AppShell and SettingsSidebar
+    const shellPath = path.resolve(__dirname, '../components/settings/settings-shell.tsx');
+    const shellContent = fs.readFileSync(shellPath, 'utf8');
+    expect(shellContent).toMatch(/^'use client'/);
+    expect(shellContent).toContain('SettingsSidebar');
+  });
 });
 

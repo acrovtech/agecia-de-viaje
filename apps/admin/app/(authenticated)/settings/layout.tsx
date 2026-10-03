@@ -2,8 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { isApiAdmin } from '@/lib/admin-mode';
 import { centralSession, CentralApiError } from '@/lib/central-api';
-import { AppShell } from '@/components/design-system/app-shell';
-import { SettingsSidebar } from '@/components/design-system/settings-sidebar';
+import { SettingsShell } from '@/components/settings/settings-shell';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,13 +43,8 @@ export default async function AuthenticatedSettingsLayout({
   }
 
   return (
-    <AppShell
-      identity={session.identity}
-      sidebar={({ onNavigate }) => (
-        <SettingsSidebar identity={session.identity} onNavigate={onNavigate} />
-      )}
-    >
+    <SettingsShell identity={session.identity}>
       {children}
-    </AppShell>
+    </SettingsShell>
   );
 }
