@@ -56,13 +56,13 @@ function IntegrationCard({
         {/* RIGHT COLUMN: Compact right-aligned vertical stack */}
         <div className="flex flex-col items-end text-right gap-1">
           <span
-            className={`text-[0.75rem] font-medium leading-tight px-2 py-0.5 rounded-[5px] ${
+            className={`text-[0.625rem] font-medium leading-tight px-2 py-0.5 rounded-[5px] ${
               badgeVariant === 'amber'
-                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                ? 'bg-[#fef3c7] text-[#92400e]'
                 : badgeVariant === 'purple'
                   ? 'bg-[#ede9fe] text-[#6d28d9]'
                   : badgeVariant === 'emerald'
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    ? 'bg-[#d1fae5] text-[#065f46]'
                     : 'bg-[#f3f4f6] text-[#374151]'
             }`}
           >
