@@ -263,21 +263,21 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
     // Model parent rail items with children
     const navItems = [
       {
-        label: 'Catálogo',
+        label: 'Tours',
         href: '/catalog/tours',
         children: [
           { label: 'Tours', href: '/catalog/tours' },
-          { label: 'Traslados', href: '/catalog/transfers' },
+          { label: 'Categorías', href: '/resources/categories' },
+          { label: 'Personal operativo (guías y conductores)', href: '/resources/personnel' },
         ],
       },
       {
-        label: 'Recursos',
-        href: '/resources/categories',
+        label: 'Traslados',
+        href: '/catalog/transfers',
         children: [
-          { label: 'Categorías comerciales', href: '/resources/categories' },
-          { label: 'Vehículos comerciales', href: '/resources/vehicles' },
+          { label: 'Traslados', href: '/catalog/transfers' },
           { label: 'Flota operativa', href: '/resources/fleet' },
-          { label: 'Guías y Conductores', href: '/resources/personnel' },
+          { label: 'Vehículos comerciales', href: '/resources/vehicles' },
         ],
       },
     ];
@@ -293,31 +293,31 @@ describe('Admin UI/UX Productization Suite (Phase 2.8)', () => {
       activeFlyout = null;
     }
 
-    // Tapping Catálogo on tablet rail opens its flyout
-    handleRailClick('Catálogo');
-    expect(activeFlyout).toBe('Catálogo');
+    // Tapping Tours on tablet rail opens its flyout
+    handleRailClick('Tours');
+    expect(activeFlyout).toBe('Tours');
 
-    // Both child routes are accessible in the flyout
-    const catalogo = navItems.find((i) => i.label === activeFlyout);
-    expect(catalogo?.children.map((c) => c.href)).toEqual([
+    // Child routes are accessible in the flyout
+    const tours = navItems.find((i) => i.label === activeFlyout);
+    expect(tours?.children.map((c) => c.href)).toEqual([
       '/catalog/tours',
-      '/catalog/transfers',
+      '/resources/categories',
+      '/resources/personnel',
     ]);
 
     // Escape closes flyout
     handleEscape();
     expect(activeFlyout).toBeNull();
 
-    // Tapping Recursos on tablet rail opens its flyout
-    handleRailClick('Recursos');
-    expect(activeFlyout).toBe('Recursos');
+    // Tapping Traslados on tablet rail opens its flyout
+    handleRailClick('Traslados');
+    expect(activeFlyout).toBe('Traslados');
 
-    const recursos = navItems.find((i) => i.label === activeFlyout);
-    expect(recursos?.children.map((c) => c.href)).toEqual([
-      '/resources/categories',
-      '/resources/vehicles',
+    const traslados = navItems.find((i) => i.label === activeFlyout);
+    expect(traslados?.children.map((c) => c.href)).toEqual([
+      '/catalog/transfers',
       '/resources/fleet',
-      '/resources/personnel',
+      '/resources/vehicles',
     ]);
   });
 });

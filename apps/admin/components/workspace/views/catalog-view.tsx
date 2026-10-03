@@ -3,6 +3,7 @@ import { Plus, CheckCircle2, ArrowRight } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
 import { CatalogEditor } from '../catalog-editor';
+import { DomainSubtabs } from '../domain-subtabs';
 import type { CatalogDetail } from '../../../lib/catalog-editor';
 
 export interface CatalogItem {
@@ -83,7 +84,7 @@ export function CatalogView({
   return (
     <div className="space-y-6">
       <PageHeader
-        title={kind === 'tours' ? 'Catálogo de Tours' : 'Catálogo de Traslados'}
+        title={kind === 'tours' ? 'Tours' : 'Traslados'}
         description={
           kind === 'tours'
             ? 'Experiencias turísticas y excursiones ofrecidas por tu agencia.'
@@ -101,6 +102,8 @@ export function CatalogView({
           )
         }
       />
+
+      <DomainSubtabs domain={kind} />
 
       {saved && (
         <div

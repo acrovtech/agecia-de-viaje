@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Plus, CheckCircle2, ArrowRight } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
+import { DomainSubtabs } from '../domain-subtabs';
 import { ResourceForm } from '../../../app/workspace/resources/resource-form';
 import type { CategoryResource, VehicleResource } from '../../../lib/catalog-content';
 
@@ -29,7 +30,7 @@ export function ResourcesCatalogView({
   return (
     <div className="space-y-6">
       <PageHeader
-        title={kind === 'categories' ? 'Categorías Comerciales' : 'Vehículos Comerciales'}
+        title={kind === 'categories' ? 'Categorías' : 'Vehículos comerciales'}
         description={
           kind === 'categories'
             ? 'Etiquetas y agrupadores temáticos para la clasificación de tours.'
@@ -47,6 +48,8 @@ export function ResourcesCatalogView({
           )
         }
       />
+
+      <DomainSubtabs domain={kind === 'categories' ? 'tours' : 'transfers'} />
 
       {saved && (
         <div

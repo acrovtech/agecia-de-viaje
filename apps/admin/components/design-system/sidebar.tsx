@@ -67,9 +67,9 @@ const mainNavItems: NavItem[] = [
     roles: ['OWNER', 'ADMIN', 'OPERATOR'],
   },
   {
-    label: 'Catálogo',
+    label: 'Tours',
     href: '/catalog/tours',
-    icon: Layers,
+    icon: MapPin,
     children: [
       {
         label: 'Tours',
@@ -77,26 +77,26 @@ const mainNavItems: NavItem[] = [
         icon: MapPin,
       },
       {
-        label: 'Traslados',
-        href: '/catalog/transfers',
-        icon: Car,
-      },
-    ],
-  },
-  {
-    label: 'Recursos',
-    href: '/resources/categories',
-    icon: Truck,
-    roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR'],
-    children: [
-      {
-        label: 'Categorías comerciales',
+        label: 'Categorías',
         href: '/resources/categories',
         icon: Tag,
       },
       {
-        label: 'Vehículos comerciales',
-        href: '/resources/vehicles',
+        label: 'Personal operativo (guías y conductores)',
+        href: '/resources/personnel',
+        icon: Users2,
+        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+      },
+    ],
+  },
+  {
+    label: 'Traslados',
+    href: '/catalog/transfers',
+    icon: Car,
+    children: [
+      {
+        label: 'Traslados',
+        href: '/catalog/transfers',
         icon: Car,
       },
       {
@@ -106,10 +106,9 @@ const mainNavItems: NavItem[] = [
         roles: ['OWNER', 'ADMIN', 'OPERATOR'],
       },
       {
-        label: 'Guías y Conductores',
-        href: '/resources/personnel',
-        icon: Users2,
-        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
+        label: 'Vehículos comerciales',
+        href: '/resources/vehicles',
+        icon: Car,
       },
     ],
   },

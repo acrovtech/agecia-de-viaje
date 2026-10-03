@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
+import { DomainSubtabs } from '../domain-subtabs';
 import { ServiceResourceForm } from '../../../app/workspace/operations/forms';
 import type { ServiceResourceItem } from '../../../lib/reservations';
 
@@ -39,27 +40,7 @@ export function PersonnelView({
         }
       />
 
-      {/* Sub-Navigation */}
-      <div className="flex gap-2 border-b border-[#e5e7eb] pb-3">
-        <Link
-          href="/operations"
-          className="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]"
-        >
-          Despacho diario
-        </Link>
-        <Link
-          href="/resources/fleet"
-          className="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]"
-        >
-          Flota operativa
-        </Link>
-        <Link
-          href="/resources/personnel"
-          className="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#111111] text-white"
-        >
-          Guías y Conductores
-        </Link>
-      </div>
+      <DomainSubtabs domain="tours" />
 
       {canMutate && (selected || editId === 'new') && (
         <div className="product-card-surface p-5 max-w-2xl">
