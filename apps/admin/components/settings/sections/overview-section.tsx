@@ -1,3 +1,6 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   User,
@@ -9,12 +12,10 @@ import {
   ShieldCheck,
   Smartphone,
   Blocks,
-  ArrowRight,
+  Search,
 } from 'lucide-react';
 import {
-  getSettingsOverviewCards,
-  getSettingsConfigByPath,
-  type SettingsRouteConfig,
+  getSettingsNavSections,
   type SettingsIconName,
 } from '@/lib/settings-navigation';
 import type { AgencyProfileData, NavIdentity } from '../types';
@@ -27,173 +28,113 @@ export interface OverviewSectionProps {
 function renderOverviewIcon(iconName: SettingsIconName) {
   switch (iconName) {
     case 'user':
-      return <User className="w-4 h-4" />;
+      return <User className="w-4 h-4 text-[#374151]" />;
     case 'sliders':
-      return <Sliders className="w-4 h-4" />;
+      return <Sliders className="w-4 h-4 text-[#374151]" />;
     case 'palette':
-      return <Palette className="w-4 h-4" />;
+      return <Palette className="w-4 h-4 text-[#374151]" />;
     case 'gift':
-      return <Gift className="w-4 h-4" />;
+      return <Gift className="w-4 h-4 text-[#374151]" />;
     case 'credit-card':
-      return <CreditCard className="w-4 h-4" />;
+      return <CreditCard className="w-4 h-4 text-[#374151]" />;
     case 'sparkles':
-      return <Sparkles className="w-4 h-4" />;
+      return <Sparkles className="w-4 h-4 text-[#374151]" />;
     case 'shield-check':
-      return <ShieldCheck className="w-4 h-4" />;
+      return <ShieldCheck className="w-4 h-4 text-[#374151]" />;
     case 'smartphone':
-      return <Smartphone className="w-4 h-4" />;
+      return <Smartphone className="w-4 h-4 text-[#374151]" />;
     case 'blocks':
-      return <Blocks className="w-4 h-4" />;
-    default:
-      return null;
-  }
-}
-
-function getIconContainerClass(iconName: SettingsIconName) {
-  switch (iconName) {
-    case 'gift':
-      return 'w-9 h-9 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors';
-    case 'sparkles':
-      return 'w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors';
-    case 'smartphone':
-      return 'w-9 h-9 rounded-lg bg-pink-50 text-pink-700 flex items-center justify-center group-hover:bg-pink-600 group-hover:text-white transition-colors';
-    default:
-      return 'w-9 h-9 rounded-lg bg-[#f3f4f6] text-[#111111] flex items-center justify-center group-hover:bg-[#111111] group-hover:text-white transition-colors';
-  }
-}
-
-function renderBadge(card: SettingsRouteConfig, identity: NavIdentity) {
-  if (card.overviewBadgeVariant === 'role') {
-    return (
-      <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[#f3f4f6] text-[#374151]">
-        {identity?.role || 'ACTIVO'}
-      </span>
-    );
-  }
-  if (!card.overviewBadge) return null;
-
-  switch (card.overviewBadgeVariant) {
-    case 'neutral':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#f3f4f6] text-[#374151]">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'emerald':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'amber':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'amber-bordered':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'blue':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'indigo':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
-          {card.overviewBadge}
-        </span>
-      );
-    case 'pink':
-      return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-pink-100 text-pink-800">
-          {card.overviewBadge}
-        </span>
-      );
+      return <Blocks className="w-4 h-4 text-[#374151]" />;
     default:
       return null;
   }
 }
 
 export function OverviewSection({ initialProfile, identity }: OverviewSectionProps) {
-  const cards = getSettingsOverviewCards();
-  const billingConfig = getSettingsConfigByPath('/settings/billing');
-  const appearanceConfig = getSettingsConfigByPath('/settings/appearance');
+  const [query, setQuery] = useState('');
+  const sections = getSettingsNavSections();
+
+  const filteredSections = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sections;
+
+    return sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) =>
+            item.label.toLowerCase().includes(q) ||
+            item.title.toLowerCase().includes(q) ||
+            item.description.toLowerCase().includes(q) ||
+            (item.overviewTitle && item.overviewTitle.toLowerCase().includes(q)) ||
+            (item.overviewDescription && item.overviewDescription.toLowerCase().includes(q))
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [sections, query]);
 
   return (
     <div className="space-y-6">
-      {/* Top Quick Tenant Banner */}
-      <div className="product-card-surface p-5 bg-gradient-to-r from-white to-[#f8f9fa] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-[#111111] text-white flex items-center justify-center font-bold text-base shadow-product-surface shrink-0">
-            {initialProfile.name ? initialProfile.name[0]?.toUpperCase() : 'A'}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-[#111111]">
-                {initialProfile.name}
-              </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#111111] text-white">
-                PLAN PRO ACTIVO
-              </span>
-            </div>
-            <p className="text-xs text-[#6b7280] mt-0.5 font-mono">
-              Slug: {initialProfile.slug} · ID: {initialProfile.id.slice(0, 12)}…
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href={billingConfig.href}
-            className="product-button-secondary text-xs"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Gestionar plan</span>
-          </Link>
-          <Link
-            href={appearanceConfig.href}
-            className="product-button-primary text-xs"
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>Personalizar marca</span>
-          </Link>
+      {/* Top Header: Title + Search (Cal.com layout) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 pt-1 border-b border-[#f3f4f6]">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#111111] tracking-tight">
+          Ajustes
+        </h1>
+        <div className="relative w-full sm:w-60">
+          <Search className="w-3.5 h-3.5 text-[#898989] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar"
+            className="w-full h-8 pl-8 pr-3 text-xs bg-white border border-[#e5e7eb] rounded-lg text-[#111111] placeholder:text-[#898989] focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] transition-all"
+          />
         </div>
       </div>
 
-      {/* Grid of Section Cards (Derived from SETTINGS_NAV_ITEMS canonical config) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cards.map((card) => (
-          <Link
-            key={card.id}
-            href={card.href}
-            className="product-card-surface p-5 hover:border-[#111111]/30 transition-all cursor-pointer flex flex-col justify-between group"
-          >
-            <div className="space-y-3">
-              <div className={getIconContainerClass(card.iconName)}>
-                {renderOverviewIcon(card.iconName)}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[#111111] flex items-center justify-between">
-                  <span>{card.overviewTitle || card.title}</span>
-                  {renderBadge(card, identity)}
-                </h3>
-                <p className="text-xs text-[#6b7280] mt-1 leading-relaxed">
-                  {card.overviewDescription || card.description}
-                </p>
-              </div>
+      {/* Sections & Cards (Cal.com aesthetic) */}
+      <div className="space-y-7">
+        {filteredSections.map((section) => (
+          <section key={section.id} className="space-y-2.5">
+            <h2 className="text-sm font-semibold text-[#111111] tracking-tight">
+              {section.label}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
+              {section.items.map((card) => (
+                <Link
+                  key={card.id}
+                  href={card.href}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#f3f4f6] transition-colors cursor-pointer group text-left"
+                >
+                  <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-center shrink-0 shadow-2xs group-hover:border-[#d1d5db] transition-colors">
+                    {renderOverviewIcon(card.iconName)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="text-xs sm:text-[13px] font-medium text-[#111111] leading-snug">
+                        {card.label}
+                      </h3>
+                      {card.id === 'integrations' && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                          Diferido
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-[#6b7280] leading-tight line-clamp-2 mt-0.5">
+                      {card.overviewDescription || card.description}
+                    </p>
+                  </div>
+                </Link>
+              ))}
             </div>
-            <div className="pt-4 flex items-center text-xs font-medium text-[#111111] group-hover:translate-x-0.5 transition-transform">
-              <span>{card.overviewActionLabel || 'Configurar'}</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </div>
-          </Link>
+          </section>
         ))}
+
+        {filteredSections.length === 0 && (
+          <div className="text-center py-12 text-xs text-[#6b7280]">
+            No se encontraron opciones para &ldquo;{query}&rdquo;
+          </div>
+        )}
       </div>
     </div>
   );

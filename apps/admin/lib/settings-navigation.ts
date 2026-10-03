@@ -67,7 +67,7 @@ export interface SettingsGroupConfig {
 }
 
 export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
-  { id: 'account', label: 'Cuenta', iconName: 'agency' },
+  { id: 'account', label: 'Configuración personal', iconName: 'agency' },
   { id: 'security', label: 'Seguridad', iconName: 'shield-check' },
   { id: 'billing', label: 'Facturación', iconName: 'credit-card' },
   { id: 'social', label: 'Página social', iconName: 'smartphone' },

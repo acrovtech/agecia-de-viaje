@@ -1,8 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { requireSettingsSession, fetchAgencyProfile } from '@/lib/settings-loader';
-import { getSettingsConfigByPath, getSettingsConfigByLegacyTab } from '@/lib/settings-navigation';
-import { PageHeader } from '@/components/design-system/page-header';
+import { getSettingsConfigByLegacyTab } from '@/lib/settings-navigation';
 import { OverviewSection } from '@/components/settings/sections/overview-section';
 import type { AgencyProfileData } from '@/components/settings/types';
 
@@ -32,7 +31,6 @@ export default async function SettingsOverviewPage({
 
   const { session } = await requireSettingsSession();
   const profile = await fetchAgencyProfile(session.identity.agencyId, session.token);
-  const config = getSettingsConfigByPath('/settings');
 
   const fallbackProfile: AgencyProfileData = profile || {
     id: session.identity.agencyId,
@@ -49,12 +47,6 @@ export default async function SettingsOverviewPage({
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={config.title}
-        description={config.description}
-      />
-      <OverviewSection identity={session.identity} initialProfile={fallbackProfile} />
-    </div>
+    <OverviewSection identity={session.identity} initialProfile={fallbackProfile} />
   );
 }

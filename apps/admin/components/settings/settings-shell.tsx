@@ -18,7 +18,9 @@ export function SettingsShell({ identity, children }: SettingsShellProps) {
         <SettingsSidebar identity={identity} onNavigate={onNavigate} />
       )}
     >
-      {children}
+      <div className="max-w-[48rem] mx-auto w-full">
+        {children}
+      </div>
     </AppShell>
   );
 }
