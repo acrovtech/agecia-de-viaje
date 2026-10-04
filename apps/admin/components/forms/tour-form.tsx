@@ -864,14 +864,26 @@ export function TourForm({
                     <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
                       <input 
                         type="checkbox" 
-                        id="cat_internacional" 
+                        id="cat_trekking" 
                         name="categories" 
-                        value="internacional" 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'internacional' || c.id === 'internacional')}
+                        value="trekking" 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'trekking' || c.id === 'trekking')}
                         onChange={() => setIsDirty(true)}
                         className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
                       />
-                      <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
+                      <Label htmlFor="cat_trekking" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Trekking</Label>
+                    </div>
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        id="cat_aventura" 
+                        name="categories" 
+                        value="aventura" 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'aventura' || c.id === 'aventura')}
+                        onChange={() => setIsDirty(true)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                      />
+                      <Label htmlFor="cat_aventura" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Aventura</Label>
                     </div>
                     <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
                       <input 
@@ -884,6 +896,18 @@ export function TourForm({
                         className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
                       />
                       <Label htmlFor="cat_nacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Nacional</Label>
+                    </div>
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        id="cat_internacional" 
+                        name="categories" 
+                        value="internacional" 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'internacional' || c.id === 'internacional')}
+                        onChange={() => setIsDirty(true)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                      />
+                      <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
                     </div>
                   </>
                 )}

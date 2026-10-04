@@ -372,7 +372,7 @@ export function ReservasClient({
                   {filterStatus === 'PAID' && (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span className="text-emerald-700">Pagadas</span>
+                      <span className="text-emerald-700">Confirmadas</span>
                     </>
                   )}
                   {filterStatus === 'PENDING' && (
@@ -383,8 +383,8 @@ export function ReservasClient({
                   )}
                   {filterStatus === 'CANCELLED' && (
                     <>
-                      <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span className="text-rose-700">Canceladas</span>
+                      <XCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <span className="text-slate-600">Fallidas</span>
                     </>
                   )}
                 </div>
@@ -406,7 +406,7 @@ export function ReservasClient({
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Pagadas</span>
+                      <span>Confirmadas</span>
                     </div>
                     <span className="text-[11px] text-slate-400 font-normal">({reservas.filter(r => r.status === 'PAID').length})</span>
                   </div>
@@ -423,8 +423,8 @@ export function ReservasClient({
                 <SelectItem value="CANCELLED" className="text-xs font-medium cursor-pointer py-1.5 px-2 rounded-lg">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span>Canceladas</span>
+                      <XCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <span>Fallidas</span>
                     </div>
                     <span className="text-[11px] text-slate-400 font-normal">({reservas.filter(r => r.status === 'CANCELLED').length})</span>
                   </div>
@@ -538,19 +538,20 @@ export function ReservasClient({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs table-fixed">
                 <colgroup>
-                  <col style={{ width: '4%' }} />
-                  <col style={{ width: '6%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '24%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '6%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '10%' }} />
+                  <col className="w-12" />
+                  <col className="w-28" />
+                  <col className="w-36" />
+                  <col className="w-auto" />
+                  <col className="w-28" />
+                  <col className="w-14" />
+                  <col className="w-28" />
+                  <col className="w-24" />
+                  <col className="w-20" />
+                  <col className="w-28" />
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
-                    <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
+                    <tr className="bg-white border-b border-slate-100 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
                       <th className="px-4 py-3 text-center">
                         <input 
                           type="checkbox" 
@@ -559,23 +560,23 @@ export function ReservasClient({
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
-                      <th colSpan={8} className="px-4 py-2.5 text-left">
-                        <div className="flex items-center gap-4">
-                          <span className="font-semibold text-slate-900 text-xs">
+                      <th colSpan={9} className="px-4 py-2.5 text-left">
+                        <div className="flex items-center gap-3.5">
+                          <span className="text-xs font-medium text-slate-700">
                             {selectedIds.length} {selectedIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
                           </span>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={handleBulkDelete}
-                              disabled={isPending}
-                              className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                              <span>{isPending ? 'Borrando...' : 'Borrar seleccionadas'}</span>
-                            </button>
-                          </div>
+                          <div className="h-4 w-px bg-slate-200" />
+
+                          <button
+                            type="button"
+                            onClick={handleBulkDelete}
+                            disabled={isPending}
+                            className="inline-flex items-center gap-1.5 h-7.5 px-3 bg-white hover:bg-rose-50 text-rose-500 hover:text-rose-600 border border-rose-200 rounded-lg text-xs font-medium shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{isPending ? 'Borrando...' : 'Borrar seleccionadas'}</span>
+                          </button>
                         </div>
                       </th>
                     </tr>
@@ -589,14 +590,15 @@ export function ReservasClient({
                           className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
                         />
                       </th>
-                      <th className="px-4 py-3 text-left">Código</th>
-                      <th className="px-4 py-3 text-left">Cliente</th>
-                      <th className="px-4 py-3 text-left">Servicio Reservado</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Fecha Viaje</th>
+                      <th className="px-4 py-3 text-left">CÓDIGO</th>
+                      <th className="px-4 py-3 text-left">CLIENTE</th>
+                      <th className="px-4 py-3 text-left">SERVICIO</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap">FECHA DE VIAJE</th>
                       <th className="px-4 py-3 text-center">PAX</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Total</th>
-                      <th className="px-2 py-3 text-center">Estado</th>
-                      <th className="px-4 py-3 text-center">Acciones</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap">TOTAL</th>
+                      <th className="px-4 py-3 text-center">ESTADO</th>
+                      <th className="px-4 py-3 text-center">TIPO</th>
+                      <th className="px-4 py-3 text-center">VER ACCIONES</th>
                     </tr>
                   )}
                 </thead>
@@ -607,7 +609,7 @@ export function ReservasClient({
                     return (
                       <tr 
                         key={reserva.id}
-                        className={`transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}
+                        className={`transition-colors ${isSelected ? 'bg-white' : 'hover:bg-slate-50/80'}`}
                       >
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input 
@@ -619,7 +621,7 @@ export function ReservasClient({
                         </td>
                         <td className="px-4 py-3 text-left">
                           {reserva.code ? (
-                            <span className="font-mono text-[11px] font-semibold bg-slate-100/90 text-slate-700 px-2 py-0.5 rounded border border-slate-200/80 inline-block truncate max-w-[125px]">
+                            <span className="font-mono text-xs font-semibold text-slate-800 tracking-tight">
                               {reserva.code}
                             </span>
                           ) : (
@@ -627,48 +629,53 @@ export function ReservasClient({
                           )}
                         </td>
                         <td className="px-4 py-3 text-left">
-                          <div className="font-semibold text-slate-900 truncate">
+                          <div className="font-medium text-slate-800 text-xs truncate">
                             {reserva.customerFirstName} {reserva.customerLastName}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-left">
                           <div 
-                            className="font-semibold text-slate-900 text-xs truncate"
+                            className="font-bold text-slate-900 text-xs uppercase truncate"
                             title={serviceTitle}
                           >
                             {serviceTitle}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-semibold" suppressHydrationWarning>
+                        <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap text-xs font-medium" suppressHydrationWarning>
                           {new Date(reserva.date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </td>
-                        <td className="px-4 py-3 text-center font-semibold text-slate-700">
+                        <td className="px-4 py-3 text-center font-medium text-slate-700 text-xs">
                           {reserva.pax}
                         </td>
-                        <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap">
-                          ${reserva.totalPrice.toFixed(2)} USD
+                        <td className="px-4 py-3 text-center font-bold text-slate-900 whitespace-nowrap text-xs">
+                          $ {reserva.totalPrice.toFixed(2)} USD
                         </td>
                         <td className="px-2 py-3 text-center whitespace-nowrap">
-                          {reserva.status === 'PAID' && (
-                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 size={12} /> <span>Pagado</span>
+                          {reserva.status === 'PAID' ? (
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Confirmada
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                              Fallida
                             </span>
                           )}
-                          {reserva.status === 'PENDING' && (
-                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                              <Clock size={12} /> <span>Pendiente</span>
+                        </td>
+                        <td className="px-2 py-3 text-center whitespace-nowrap">
+                          {reserva.transfer || reserva.transferId ? (
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200">
+                              Transfer
                             </span>
-                          )}
-                          {reserva.status === 'CANCELLED' && (
-                            <span className="inline-flex items-center justify-center gap-1 w-[88px] py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                              <XCircle size={12} /> <span>Cancelado</span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Tour
                             </span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           <Link
                             href={`/reservas/${reserva.id}`}
-                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-semibold text-xs transition-colors inline-flex items-center gap-1"
+                            className="px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-md font-medium text-xs transition-colors inline-flex items-center gap-1 shadow-2xs"
                           >
                             <span>Ver detalle</span>
                             <ArrowRight size={12} />
