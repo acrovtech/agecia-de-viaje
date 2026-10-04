@@ -307,6 +307,16 @@ export function CatalogView({
         <div className="product-card-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
+              {kind === 'tours' && (
+                <colgroup>
+                  <col className="w-12" />
+                  <col className="w-auto" />
+                  <col className="w-28" />
+                  <col className="w-32" />
+                  <col className="w-32" />
+                  <col className="w-32" />
+                </colgroup>
+              )}
               <thead>
                 {kind === 'tours' ? (
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px] font-semibold">
@@ -323,7 +333,7 @@ export function CatalogView({
                     <th className="py-3 px-4 text-center">ESTADO</th>
                     <th className="py-3 px-4 text-center">DURACIÓN</th>
                     <th className="py-3 px-4 text-center">DESTINO</th>
-                    <th className="py-3 px-4 text-center">ACCIONES</th>
+                    <th className="py-3 pr-6 pl-4 text-right">ACCIONES</th>
                   </tr>
                 ) : (
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
@@ -399,15 +409,17 @@ export function CatalogView({
                               <span className="text-[#9ca3af]">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-3 pr-6 pl-4 text-right">
                             {canEdit && (
-                              <Link
-                                href={`${baseRoute}?edit=${encodeURIComponent(item.id)}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-[#374151] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-md transition-colors shadow-2xs"
-                              >
-                                <SquarePen className="w-3.5 h-3.5 text-[#6b7280]" />
-                                <span>Editar</span>
-                              </Link>
+                              <div className="flex justify-end">
+                                <Link
+                                  href={`${baseRoute}?edit=${encodeURIComponent(item.id)}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-[#374151] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-md transition-colors shadow-2xs"
+                                >
+                                  <SquarePen className="w-3.5 h-3.5 text-[#6b7280]" />
+                                  <span>Editar</span>
+                                </Link>
+                              </div>
                             )}
                           </td>
                         </tr>
