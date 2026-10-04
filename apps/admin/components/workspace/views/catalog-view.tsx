@@ -273,7 +273,7 @@ export function CatalogView({
       {kind === 'tours' && catalog && (
         <div
           ref={dropdownRef}
-          className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-2.5 flex flex-col md:flex-row items-center gap-2.5 text-xs"
+          className="flex flex-col md:flex-row items-center gap-2.5 text-xs"
         >
           {/* Barra de Búsqueda Principal */}
           <div className="w-full md:flex-1 relative">
@@ -283,7 +283,7 @@ export function CatalogView({
               placeholder="Buscar tours por título, slug o destino..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
             />
           </div>
 
@@ -294,7 +294,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'status' ? null : 'status'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterStatus === 'ALL'
@@ -311,14 +311,14 @@ export function CatalogView({
               </button>
 
               {openDropdown === 'status' && (
-                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50">
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-lg border border-slate-200/90 shadow-xl p-1 z-50">
                   <button
                     type="button"
                     onClick={() => {
                       setFilterStatus('ALL');
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                    className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                       filterStatus === 'ALL'
                         ? 'bg-[#f1f5f9] font-bold text-slate-900'
                         : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -333,7 +333,7 @@ export function CatalogView({
                       setFilterStatus('ACTIVE');
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                    className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                       filterStatus === 'ACTIVE'
                         ? 'bg-[#f1f5f9] font-bold text-slate-900'
                         : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -348,7 +348,7 @@ export function CatalogView({
                       setFilterStatus('DRAFT');
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                    className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                       filterStatus === 'DRAFT'
                         ? 'bg-[#f1f5f9] font-bold text-slate-900'
                         : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -366,7 +366,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'duration' ? null : 'duration'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterDuration === 'ALL' ? 'Todas las duraciones' : filterDuration}
@@ -379,14 +379,14 @@ export function CatalogView({
               </button>
 
               {openDropdown === 'duration' && (
-                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50 max-h-[260px] overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-lg border border-slate-200/90 shadow-xl p-1 z-50 max-h-[260px] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => {
                       setFilterDuration('ALL');
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                    className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                       filterDuration === 'ALL'
                         ? 'bg-[#f1f5f9] font-bold text-slate-900'
                         : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -403,7 +403,7 @@ export function CatalogView({
                         setFilterDuration(dur);
                         setOpenDropdown(null);
                       }}
-                      className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                         filterDuration === dur
                           ? 'bg-[#f1f5f9] font-bold text-slate-900'
                           : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -424,7 +424,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'destination' ? null : 'destination'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterDestination === 'ALL' ? 'Todos los destinos' : filterDestination}
@@ -437,14 +437,14 @@ export function CatalogView({
               </button>
 
               {openDropdown === 'destination' && (
-                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50 max-h-[260px] overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-lg border border-slate-200/90 shadow-xl p-1 z-50 max-h-[260px] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => {
                       setFilterDestination('ALL');
                       setOpenDropdown(null);
                     }}
-                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                    className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                       filterDestination === 'ALL'
                         ? 'bg-[#f1f5f9] font-bold text-slate-900'
                         : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -461,7 +461,7 @@ export function CatalogView({
                         setFilterDestination(dest);
                         setOpenDropdown(null);
                       }}
-                      className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      className={`w-full px-3 py-2 text-xs rounded-md flex items-center justify-between transition-colors text-left ${
                         filterDestination === dest
                           ? 'bg-[#f1f5f9] font-bold text-slate-900'
                           : 'font-medium text-slate-700 hover:bg-slate-50'
@@ -482,7 +482,7 @@ export function CatalogView({
               type="button"
               onClick={clearAllFilters}
               disabled={!hasActiveFilters}
-              className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
+              className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
                 hasActiveFilters
                   ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200 cursor-pointer'
                   : 'text-slate-400 bg-slate-50/70 border-slate-200/80 cursor-not-allowed opacity-50'
