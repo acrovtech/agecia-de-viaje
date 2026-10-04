@@ -267,43 +267,10 @@ export function TourForm({
       <input type="hidden" name="status" value={status === 'Activo' ? 'Active' : 'Draft'} />
       <input type="hidden" name="isFeatured" value={isFeatured === 'Activo' ? 'true' : 'false'} />
       
-      {/* BARRA CONTEXTUAL FLOTANTE SHOPIFY POLARIS (Integrada al topbar) */}
-      {(isDirty || !initialData?.id) && (
-        <div className="fixed top-2 left-2 right-2 md:left-1/2 md:-translate-x-1/2 md:right-auto z-[60] flex items-center justify-between gap-2 md:gap-8 md:min-w-[620px] bg-[#222222] text-white py-1.5 px-3 md:py-1 md:pr-1 md:pb-1 md:pl-3.5 rounded-xl shadow-2xl border border-white/15 animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 fill-[#EEEEEE] shrink-0">
-              <path d="M8 4a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75"></path>
-              <path d="M8 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2"></path>
-              <path fillRule="evenodd" d="M1.5 6.25a4.75 4.75 0 0 1 4.75-4.75h3.5a4.75 4.75 0 0 1 4.75 4.75v2.5a4.75 4.75 0 0 1-4.573 4.747l-1.335 1.714a.75.75 0 0 1-1.189-.007l-1.3-1.706a4.75 4.75 0 0 1-4.603-4.748zm4.75-3.25a3.25 3.25 0 0 0-3.25 3.25v2.5a3.25 3.25 0 0 0 3.25 3.25h.226c.234 0 .455.11.597.296l.934 1.225.96-1.232a.75.75 0 0 1 .591-.289h.192a3.25 3.25 0 0 0 3.25-3.25v-2.5a3.25 3.25 0 0 0-3.25-3.25z"></path>
-            </svg>
-            <h2 className="text-[11px] md:text-[12px] leading-[16px] font-[450] text-[#EEEEEE] tracking-tight truncate">
-              {initialData?.id ? 'Cambios no guardados' : 'Tour no guardado'}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button 
-              type="button"
-              onClick={() => {
-                if (initialData?.id) {
-                  setIsDirty(false);
-                } else {
-                  window.location.href = '/tours';
-                }
-              }}
-              className="px-2.5 md:px-3 py-1 rounded-lg bg-[#383838] hover:bg-[#444444] text-[#EEEEEE] font-[550] text-[11px] md:text-[12px] leading-[16px] transition-colors"
-            >
-              Descartar
-            </button>
-            <SubmitSaveButton />
-          </div>
-        </div>
-      )}
-
-      {/* Header Titulo de la página */}
+      {/* Header Fila de la página (Título + Acciones en la misma fila) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Link href="/tours" className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" title="Volver a Tours">
+          <Link href="/catalog/tours" className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" title="Volver a Tours">
             <Map className="w-4 h-4 text-slate-700 shrink-0" />
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -312,31 +279,56 @@ export function TourForm({
           </h1>
         </div>
 
-        {/* Acciones de Tour en Modo Edición (Ver tour + Eliminar tour) */}
-        {initialData?.id && (
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-            <a 
-              href={getStorefrontUrl(`/tours/${slug || initialData.slug}`)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all select-none"
-              title="Ver tour en la web"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-              <span>Ver tour</span>
-            </a>
+        {/* Acciones en la misma fila: Ver / Eliminar (si editando) + Estado Guardado / Descartar / Guardar */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 flex-wrap">
+          {initialData?.id && (
+            <>
+              <a 
+                href={getStorefrontUrl(`/tours/${slug || initialData.slug}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3 h-8 rounded-md shadow-2xs transition-all select-none"
+                title="Ver tour en la web"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                <span>Ver tour</span>
+              </a>
 
-            <Button 
-              type="button" 
-              disabled={isDeleting}
-              onClick={openDeleteModal}
-              className="flex-1 sm:flex-initial bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 py-1.5 h-auto rounded-lg shadow-2xs transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-1.5"
+              <Button 
+                type="button" 
+                disabled={isDeleting}
+                onClick={openDeleteModal}
+                className="bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 hover:border-rose-200 font-semibold text-xs px-3 h-8 rounded-md shadow-2xs transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Eliminar tour</span>
+              </Button>
+            </>
+          )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block animate-pulse" />
+              {initialData?.id ? 'Cambios no guardados' : 'Tour no guardado'}
+            </span>
+
+            <button 
+              type="button"
+              onClick={() => {
+                if (initialData?.id) {
+                  setIsDirty(false);
+                } else {
+                  window.location.href = '/catalog/tours';
+                }
+              }}
+              className="px-3 h-8 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5 text-slate-500" />
-              <span>Eliminar tour</span>
-            </Button>
+              Descartar
+            </button>
+
+            <SubmitSaveButton />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar) */}
@@ -378,13 +370,10 @@ export function TourForm({
             
             <div className="space-y-6">
               {/* Row 1: Banner, Miniatura y Mapa */}
-              <div>
-                <Label className="text-xs font-semibold text-slate-700 mb-3 block">Imágenes Clave (Banner, Miniatura y Mapa)</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <ImageDropzone name="bannerImage" label="Banner Principal (Horizontal)" initialUrl={initialData?.bannerImage} folder={`tours/${slug || 'nuevo'}`} />
-                  <ImageDropzone name="cardImage" label="Miniatura / Card (Cuadrada)" initialUrl={initialData?.cardImage} folder={`tours/${slug || 'nuevo'}`} />
-                  <ImageDropzone name="mapImage" label="Mapa del Tour" initialUrl={initialData?.mapImage} folder={`tours/${slug || 'nuevo'}`} />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ImageDropzone name="bannerImage" label="Banner Principal (Horizontal)" initialUrl={initialData?.bannerImage} folder={`tours/${slug || 'nuevo'}`} />
+                <ImageDropzone name="cardImage" label="Miniatura / Card (Cuadrada)" initialUrl={initialData?.cardImage} folder={`tours/${slug || 'nuevo'}`} />
+                <ImageDropzone name="mapImage" label="Mapa del Tour" initialUrl={initialData?.mapImage} folder={`tours/${slug || 'nuevo'}`} />
               </div>
 
               {/* Row 2: Galería de 4 Fotos */}

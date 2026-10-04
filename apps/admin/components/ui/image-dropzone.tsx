@@ -145,11 +145,13 @@ export function ImageDropzone({
     <div ref={containerRef} className={`flex flex-col flex-1 gap-1.5 w-full relative select-none ${className || ''}`}>
       {label && labelPosition === 'top' && <label className="text-xs font-semibold text-slate-700">{label}</label>}
       
-      <div className="flex-1 min-h-[130px] h-full w-full relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50/60 shadow-2xs group">
+      <div className="flex-1 min-h-[125px] h-full w-full relative rounded-xl overflow-hidden shadow-2xs group">
         {!filePreview ? (
           <div 
-            className={`absolute inset-0 flex cursor-pointer flex-col items-center justify-center border-2 border-dashed transition-all duration-200 rounded-lg ${
-              dragActive ? 'border-slate-900 bg-slate-100' : 'border-slate-300/80 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
+            className={`w-full h-full min-h-[125px] flex cursor-pointer flex-col items-center justify-center border border-dashed transition-all duration-200 rounded-xl p-4 text-center ${
+              dragActive 
+                ? 'border-slate-900 bg-slate-100 ring-2 ring-slate-900/10' 
+                : 'border-slate-300 bg-[#fbfcfd] hover:border-slate-400 hover:bg-slate-50/90'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -157,10 +159,12 @@ export function ImageDropzone({
             onDrop={handleDrop}
             onClick={() => inputRef.current?.click()}
           >
-            <div className="flex flex-col items-center justify-center py-3 px-2 pointer-events-none">
-              <UploadCloud className="mb-1.5 h-5 w-5 text-slate-400" />
-              <p className="text-[10px] text-slate-500 text-center font-normal">
-                <span className="font-semibold text-slate-700">Haz clic o arrastra</span>
+            <div className="flex flex-col items-center justify-center pointer-events-none">
+              <div className="w-8 h-8 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-slate-400 group-hover:text-slate-700 group-hover:scale-105 group-hover:border-slate-300 transition-all duration-200 mb-1.5">
+                <UploadCloud className="w-4 h-4 text-slate-500" />
+              </div>
+              <p className="text-xs font-semibold text-slate-700 leading-tight">
+                Haz clic o arrastra
               </p>
             </div>
             
@@ -174,7 +178,7 @@ export function ImageDropzone({
             />
           </div>
         ) : (
-          <div className="w-full h-full relative">
+          <div className="w-full h-full min-h-[125px] relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50/60">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={filePreview} 
