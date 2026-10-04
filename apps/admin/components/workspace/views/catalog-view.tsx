@@ -241,6 +241,7 @@ export function CatalogView({
             ? undefined
             : 'Servicios de transporte y traslados privados o compartidos.'
         }
+        className="!mb-0"
         actions={
           canEdit && (
             <Link
@@ -253,6 +254,8 @@ export function CatalogView({
           )
         }
       />
+
+      <div className="border-b border-slate-200" />
 
       {saved && (
         <div
@@ -283,7 +286,7 @@ export function CatalogView({
               placeholder="Buscar tours por título, slug o destino..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
+              className="h-8 w-full pl-9 pr-3.5 bg-[#f9fafb] border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
             />
           </div>
 
@@ -294,7 +297,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'status' ? null : 'status'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-8 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterStatus === 'ALL'
@@ -366,7 +369,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'duration' ? null : 'duration'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-8 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterDuration === 'ALL' ? 'Todas las duraciones' : filterDuration}
@@ -424,7 +427,7 @@ export function CatalogView({
               <button
                 type="button"
                 onClick={() => setOpenDropdown((prev) => (prev === 'destination' ? null : 'destination'))}
-                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                className="h-8 w-full px-3.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
                 <span className="truncate">
                   {filterDestination === 'ALL' ? 'Todos los destinos' : filterDestination}
@@ -482,7 +485,7 @@ export function CatalogView({
               type="button"
               onClick={clearAllFilters}
               disabled={!hasActiveFilters}
-              className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
                 hasActiveFilters
                   ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200 cursor-pointer'
                   : 'text-slate-400 bg-slate-50/70 border-slate-200/80 cursor-not-allowed opacity-50'
