@@ -526,32 +526,32 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                 </colgroup>
                 <thead>
                   {selectedIds.length > 0 ? (
-                    <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
-                      <th colSpan={7} className="px-4 py-2.5">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
-                            <input 
-                              type="checkbox" 
-                              checked={isAllSelected}
-                              onChange={toggleSelectAll}
-                              className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
-                            />
-                            <span className="font-semibold text-slate-900 text-xs">
-                              {selectedIds.length} seleccionados
-                            </span>
-                          </div>
+                    <tr className="bg-white border-b border-slate-100 text-slate-800 text-xs font-medium animate-in fade-in duration-150">
+                      <th className="px-4 py-3 text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={isAllSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer" 
+                        />
+                      </th>
+                      <th colSpan={6} className="px-4 py-2.5 text-left">
+                        <div className="flex items-center gap-3.5">
+                          <span className="text-xs font-medium text-slate-700">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'seleccionado' : 'seleccionados'}
+                          </span>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={promptBulkDelete}
-                              disabled={isPending}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                              <span>{isPending ? 'Borrando...' : 'Borrar seleccionados'}</span>
-                            </button>
-                          </div>
+                          <div className="h-4 w-px bg-slate-200" />
+
+                          <button
+                            type="button"
+                            onClick={promptBulkDelete}
+                            disabled={isPending}
+                            className="inline-flex items-center gap-1.5 h-7.5 px-3 bg-white hover:bg-rose-50 text-rose-500 hover:text-rose-600 border border-rose-200 rounded-lg text-xs font-medium shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{isPending ? 'Borrando...' : 'Borrar seleccionados'}</span>
+                          </button>
                         </div>
                       </th>
                     </tr>
@@ -578,7 +578,7 @@ export function ToursClient({ initialTours }: { initialTours: Tour[] }) {
                   {filteredTours.map((tour) => {
                     const isSelected = selectedIds.includes(tour.id);
                     return (
-                      <tr key={tour.id} className={`group/row transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}>
+                      <tr key={tour.id} className={`group/row transition-colors ${isSelected ? 'bg-white' : 'hover:bg-slate-50/80'}`}>
                         <td className="px-4 py-3 text-center">
                           <input 
                             type="checkbox" 
