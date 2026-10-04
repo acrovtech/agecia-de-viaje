@@ -25,7 +25,7 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl font-semibold text-[#111111] truncate">
+            <h1 className="text-[1.125rem] font-semibold text-[#111111] truncate">
               {title}
             </h1>
             {badges}

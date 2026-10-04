@@ -99,12 +99,21 @@ export async function createTour(formData: FormData) {
   
   const privatePricing: { pax: number; price: number }[] = [];
   if (hasPrivateService) {
-    for (const [key, val] of formData.entries()) {
-      if (key.startsWith('privatePrice_')) {
-        const pax = parseInt(key.replace('privatePrice_', ''), 10);
-        const price = parseFloat(val as string);
-        if (!isNaN(pax) && !isNaN(price) && price >= 0) {
-          privatePricing.push({ pax, price });
+    const fixedPrivatePriceRaw = (formData.get('fixedPrivatePrice') as string)?.trim();
+    const fixedPrivatePrice = fixedPrivatePriceRaw ? parseFloat(fixedPrivatePriceRaw) : null;
+    if (fixedPrivatePrice !== null && !isNaN(fixedPrivatePrice) && fixedPrivatePrice >= 0) {
+      const gSize = parseInt(groupSizeStr, 10) || 12;
+      for (let p = 1; p <= gSize; p++) {
+        privatePricing.push({ pax: p, price: fixedPrivatePrice });
+      }
+    } else {
+      for (const [key, val] of formData.entries()) {
+        if (key.startsWith('privatePrice_')) {
+          const pax = parseInt(key.replace('privatePrice_', ''), 10);
+          const price = parseFloat(val as string);
+          if (!isNaN(pax) && !isNaN(price) && price >= 0) {
+            privatePricing.push({ pax, price });
+          }
         }
       }
     }

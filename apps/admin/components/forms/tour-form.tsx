@@ -32,11 +32,11 @@ import { AutoResizeTextarea, SubmitSaveButton, getStorefrontUrl } from './shared
 import { analyzeSeo } from './shared/seo-analysis';
 
 export function TourForm({ 
-  categories, 
+  categories = [], 
   initialData,
   showCategories = true
 }: { 
-  categories: Category[]; 
+  categories?: Category[]; 
   initialData?: any;
   showCategories?: boolean;
 }) {
@@ -307,7 +307,7 @@ export function TourForm({
             <Map className="w-4 h-4 text-slate-700 shrink-0" />
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <h1 className="text-[1rem] font-semibold text-[#303030] tracking-tight truncate">
+          <h1 className="text-[1.125rem] font-semibold text-[#111111] tracking-tight truncate">
             {initialData?.id ? initialData.title : 'Agregar tour'}
           </h1>
         </div>
@@ -660,19 +660,19 @@ export function TourForm({
             </Select>
           </div>
 
-          {/* Card 2: Sección recomendados (Home) */}
+          {/* Card 2: Mostrar en recomendados del Inicio */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
-            <Label className="text-xs font-semibold text-slate-700">Sección recomendados (Home)</Label>
+            <Label className="text-xs font-semibold text-slate-700">Mostrar en recomendados del Inicio</Label>
             <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
               <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Activo">Activo</SelectItem>
                 <SelectItem value="Desactivado">Desactivado</SelectItem>
+                <SelectItem value="Activo">Activo</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[10px] text-slate-400">Desactivado por defecto. Máximo 6 tours destacados en el Home.</p>
+            <p className="text-[10px] text-slate-400">Máximo 6 tours en esta sección del Inicio. Esta opción no modifica el diseño de las tarjetas.</p>
           </div>
 
           {/* Card 3: Destino (Filtro Catálogo) */}
@@ -736,14 +736,12 @@ export function TourForm({
             </div>
           </div>
 
-          {/* Card 4: Categorización (Oculto para el usuario de gestión) */}
+          {/* Card 4: Categorización */}
           {showCategories ? (
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
               <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Categorización</h3>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {categories.length === 0 ? (
-                  <p className="text-[11px] text-slate-400">Sin categorías.</p>
-                ) : (
+                {categories && categories.length > 0 ? (
                   categories.map(cat => (
                     <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
                       <input 
@@ -758,6 +756,33 @@ export function TourForm({
                       <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
                     </div>
                   ))
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                      <input 
+                        type="checkbox" 
+                        id="cat_internacional" 
+                        name="categories" 
+                        value="internacional" 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'internacional' || c.id === 'internacional')}
+                        onChange={() => setIsDirty(true)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                      />
+                      <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
+                    </div>
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                      <input 
+                        type="checkbox" 
+                        id="cat_nacional" 
+                        name="categories" 
+                        value="nacional" 
+                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'nacional' || c.id === 'nacional')}
+                        onChange={() => setIsDirty(true)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                      />
+                      <Label htmlFor="cat_nacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Nacional</Label>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -787,10 +812,10 @@ export function TourForm({
 
             {/* Servicio Privado (Opcional por botón) */}
             {hasPrivateService ? (
-              <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
+              <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
                 <input type="hidden" name="hasPrivateService" value="on" />
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-slate-700">Precios Servicio Privado ($ por Pax)</Label>
+                  <Label htmlFor="fixedPrivatePrice" className="text-xs font-semibold text-slate-700">Precio fijo del tour privado ($ USD)</Label>
                   <button 
                     type="button" 
                     onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
@@ -800,47 +825,19 @@ export function TourForm({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {Array.from({ length: groupSize }).map((_, i) => {
-                    const pax = i + 1;
-                    return (
-                      <div key={pax} className="relative flex items-center">
-                        <Input 
-                          name={`privatePrice_${pax}`} 
-                          type="number" 
-                          step="0.01" 
-                          value={privatePrices[pax] ?? ''}
-                          onChange={(e) => handlePrivatePriceChange(pax, e.target.value)}
-                          placeholder={`${pax} Pax $`} 
-                          className="text-left pl-2.5 pr-7 bg-slate-50 border-slate-200 text-xs h-8 font-medium focus:bg-white" 
-                        />
-                        {pax > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => copyPreviousPrice(pax)}
-                            title={`Copiar precio del Pax ${pax - 1}`}
-                            className="absolute right-1 p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <Input 
+                  id="fixedPrivatePrice"
+                  name="fixedPrivatePrice" 
+                  type="number" 
+                  step="0.01" 
+                  defaultValue={initialData?.fixedPrivatePrice || (initialData?.privatePricing?.[0]?.price ?? '')}
+                  placeholder="Ej. 2000.00" 
+                  className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                />
 
-                {/* Botón de Copiar Último Precio al Resto */}
-                <div className="pt-2.5 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={fillRemainingPrices}
-                    title="Copiar el último precio ingresado a todos los siguientes pax"
-                    className="w-full py-1.5 px-3 rounded-lg border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/50 text-[11px] font-medium text-slate-700 hover:text-emerald-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ArrowDownToLine className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Copiar último precio al resto</span>
-                  </button>
-                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Se cobra una sola vez por el grupo, desde 1 hasta {groupSize || 12} pasajeros. El importe por persona es solo una referencia.
+                </p>
               </div>
             ) : (
               <div className="pt-2 border-t border-slate-100">

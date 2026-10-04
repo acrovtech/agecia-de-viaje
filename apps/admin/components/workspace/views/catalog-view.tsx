@@ -197,10 +197,26 @@ export function CatalogView({
   };
 
   if (editing && canEdit) {
+    if (kind === 'tours') {
+      return (
+        <div className="w-full">
+          {errorMessage && (
+            <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-3 rounded-lg border border-rose-200 mb-4">
+              {errorMessage}
+            </p>
+          )}
+          <CatalogEditor
+            kind="tours"
+            record={record}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <PageHeader
-          title={isNew ? (kind === 'tours' ? 'Crear Tour' : 'Crear Traslado') : `Editar: ${record?.title ?? ''}`}
+          title={isNew ? 'Crear Traslado' : `Editar: ${record?.title ?? ''}`}
           description={
             isNew
               ? 'Registra un nuevo servicio en el catálogo comercial de tu agencia.'
