@@ -1021,27 +1021,27 @@ export function TourForm({
             </div>
 
             {/* Footer Modal */}
-            <div className="flex items-center justify-end gap-2 px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex-wrap">
+            <div className="grid grid-cols-3 gap-2.5 px-5 py-3.5 bg-slate-50/60 border-t border-slate-100">
               <button 
                 type="button" 
                 onClick={closeUnsavedModal}
-                className="h-8 px-3.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                className="h-8 px-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs cursor-pointer inline-flex items-center justify-center text-center"
               >
                 Continuar editando
               </button>
               <button 
                 type="button" 
                 onClick={handleConfirmDiscard}
-                className="h-8 px-3.5 rounded-md border border-slate-300 hover:bg-rose-50 hover:border-rose-200 text-rose-600 font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                className="h-8 px-2 rounded-md border border-slate-300 hover:bg-rose-50 hover:border-rose-200 text-rose-600 font-semibold text-xs transition-colors shadow-2xs cursor-pointer inline-flex items-center justify-center text-center"
               >
                 Descartar cambios
               </button>
               <button 
                 type="button" 
                 onClick={handleConfirmSave}
-                className="h-8 px-3.5 rounded-md bg-[#008060] hover:bg-[#006e52] text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+                className="h-8 px-2 rounded-md bg-[#008060] hover:bg-[#006e52] text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer text-center"
               >
-                <Save className="w-3.5 h-3.5" />
+                <Save className="w-3.5 h-3.5 shrink-0" />
                 <span>Guardar tour</span>
               </button>
             </div>
