@@ -899,9 +899,9 @@ export function TourForm({
 
           {/* Card 6: Precios */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            {/* Servicio Compartido / Grupal (Siempre activo) */}
-            <input type="hidden" name="hasSharedService" value="on" />
             <div className="space-y-1">
+              {/* Servicio Compartido / Grupal (Siempre activo) */}
+              <input type="hidden" hidden name="hasSharedService" value="on" />
               <Label htmlFor="sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD)</Label>
               <Input 
                 id="sharedPrice" 
@@ -917,7 +917,7 @@ export function TourForm({
             {/* Servicio Privado (Opcional por botón) */}
             {hasPrivateService ? (
               <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
-                <input type="hidden" name="hasPrivateService" value="on" />
+                <input type="hidden" hidden name="hasPrivateService" value="on" />
                 <div className="flex items-center justify-between">
                   <Label htmlFor="fixedPrivatePrice" className="text-xs font-semibold text-slate-700">Precio fijo del tour privado ($ USD)</Label>
                   <button 
@@ -966,10 +966,9 @@ export function TourForm({
               </span>
             </div>
             
-            <input type="hidden" name="slug" value={slug} />
-            <input type="hidden" name="metaTitle" value={`${title} - Agencia de Viajes`} />
-
             <div className="space-y-3">
+              <input type="hidden" hidden name="slug" value={slug} />
+              <input type="hidden" hidden name="metaTitle" value={`${title} - Agencia de Viajes`} />
               <div className="space-y-1">
                 <Label htmlFor="focusKeyphrase" className="text-xs font-semibold text-slate-700">Palabra clave principal</Label>
                 <AutoResizeTextarea id="focusKeyphrase" rows={1} placeholder="Ej. Tour Valle Sagrado Cusco" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
