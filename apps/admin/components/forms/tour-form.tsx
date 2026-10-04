@@ -176,8 +176,86 @@ export function TourForm({
     setTimeout(() => setShowDeleteModal(false), 200);
   };
 
-  // Estado para detectar si hubo cambios en el formulario
+  // Estado para detectar si hubo cambios en el formulario y modal de confirmación de salida
   const [isDirty, setIsDirty] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [isUnsavedAnimating, setIsUnsavedAnimating] = useState(false);
+  const [pendingNavigationUrl, setPendingNavigationUrl] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const openUnsavedModal = (targetUrl?: string) => {
+    setPendingNavigationUrl(targetUrl || null);
+    setShowUnsavedModal(true);
+    setTimeout(() => setIsUnsavedAnimating(true), 10);
+  };
+
+  const closeUnsavedModal = () => {
+    setIsUnsavedAnimating(false);
+    setTimeout(() => {
+      setShowUnsavedModal(false);
+      setPendingNavigationUrl(null);
+    }, 200);
+  };
+
+  const handleConfirmDiscard = () => {
+    setIsDirty(false);
+    closeUnsavedModal();
+    const dest = pendingNavigationUrl || '/catalog/tours';
+    window.location.href = dest;
+  };
+
+  const handleConfirmSave = () => {
+    setIsDirty(false);
+    closeUnsavedModal();
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
+  };
+
+  const handleDiscardClick = () => {
+    if (isDirty) {
+      openUnsavedModal('/catalog/tours');
+    } else {
+      window.location.href = '/catalog/tours';
+    }
+  };
+
+  // Prevenir cerrar o recargar la pestaña del navegador si hay cambios no guardados
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Interceptar navegación por enlaces (tabs, sidebar, breadcrumb) si hay cambios no guardados
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('a');
+      if (!target) return;
+      if (target.closest('[role="dialog"]')) return;
+
+      const href = target.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      if (target.getAttribute('target') === '_blank') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      openUnsavedModal(href);
+    };
+
+    document.addEventListener('click', handleAnchorClick, { capture: true });
+    return () => {
+      document.removeEventListener('click', handleAnchorClick, { capture: true });
+    };
+  }, [isDirty]);
 
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -258,7 +336,9 @@ export function TourForm({
 
   return (
     <form 
+      ref={formRef}
       action={createTour} 
+      onSubmit={() => setIsDirty(false)}
       onChange={() => setIsDirty(true)}
       onInput={() => setIsDirty(true)}
       className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none"
@@ -270,7 +350,17 @@ export function TourForm({
       {/* Header Fila de la página (Título + Acciones en la misma fila) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Link href="/catalog/tours" className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" title="Volver a Tours">
+          <Link 
+            href="/catalog/tours" 
+            onClick={(e) => {
+              if (isDirty) {
+                e.preventDefault();
+                openUnsavedModal('/catalog/tours');
+              }
+            }}
+            className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors shrink-0" 
+            title="Volver a Tours"
+          >
             <Map className="w-4 h-4 text-slate-700 shrink-0" />
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -279,7 +369,7 @@ export function TourForm({
           </h1>
         </div>
 
-        {/* Acciones en la misma fila: Ver / Eliminar (si editando) + Estado Guardado / Descartar / Guardar */}
+        {/* Acciones en la misma fila: Ver / Eliminar (si editando) + Descartar / Guardar */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 flex-wrap">
           {initialData?.id && (
             <>
@@ -287,7 +377,7 @@ export function TourForm({
                 href={getStorefrontUrl(`/tours/${slug || initialData.slug}`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3 h-8 rounded-md shadow-2xs transition-all select-none"
+                className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-xs px-3.5 h-8 rounded-md shadow-2xs transition-all select-none shrink-0"
                 title="Ver tour en la web"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
@@ -298,7 +388,7 @@ export function TourForm({
                 type="button" 
                 disabled={isDeleting}
                 onClick={openDeleteModal}
-                className="bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 hover:border-rose-200 font-semibold text-xs px-3 h-8 rounded-md shadow-2xs transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-1.5"
+                className="bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-300 hover:border-rose-200 font-semibold text-xs px-3.5 h-8 rounded-md shadow-2xs transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                 <span>Eliminar tour</span>
@@ -307,21 +397,10 @@ export function TourForm({
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block animate-pulse" />
-              {initialData?.id ? 'Cambios no guardados' : 'Tour no guardado'}
-            </span>
-
             <button 
               type="button"
-              onClick={() => {
-                if (initialData?.id) {
-                  setIsDirty(false);
-                } else {
-                  window.location.href = '/catalog/tours';
-                }
-              }}
-              className="px-3 h-8 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
+              onClick={handleDiscardClick}
+              className="h-8 px-3.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs inline-flex items-center justify-center cursor-pointer shrink-0"
             >
               Descartar
             </button>
@@ -893,6 +972,83 @@ export function TourForm({
         </div>
 
       </div>
+
+      {/* MODAL CONFIRMACION DE CAMBIOS NO GUARDADOS ESTILO SHOPIFY ADMIN */}
+      {showUnsavedModal && (
+        <div 
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unsaved-modal-title"
+          className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ease-out select-none ${
+            isUnsavedAnimating ? 'bg-black/60 backdrop-blur-[3px] opacity-100' : 'bg-black/0 backdrop-blur-none opacity-0 pointer-events-none'
+          }`}
+          onClick={closeUnsavedModal}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-white w-full max-w-[480px] rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-200 ease-out transform ${
+              isUnsavedAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-3'
+            }`}
+          >
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                </div>
+                <h3 id="unsaved-modal-title" className="font-semibold text-sm text-slate-900">
+                  Tour no guardado
+                </h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={closeUnsavedModal}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                title="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="p-5 space-y-2">
+              <p className="text-xs font-semibold text-slate-800">
+                Tienes modificaciones pendientes sin guardar.
+              </p>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Si sales de la pestaña o te vas a otra sección sin guardar, se perderán todos los datos que ingresaste o modificaste. ¿Deseas guardar los cambios antes de salir?
+              </p>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 bg-slate-50/60 border-t border-slate-100 flex-wrap">
+              <button 
+                type="button" 
+                onClick={closeUnsavedModal}
+                className="h-8 px-3.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+              >
+                Continuar editando
+              </button>
+              <button 
+                type="button" 
+                onClick={handleConfirmDiscard}
+                className="h-8 px-3.5 rounded-md border border-slate-300 hover:bg-rose-50 hover:border-rose-200 text-rose-600 font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+              >
+                Descartar cambios
+              </button>
+              <button 
+                type="button" 
+                onClick={handleConfirmSave}
+                className="h-8 px-3.5 rounded-md bg-[#008060] hover:bg-[#006e52] text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Guardar tour</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* MODAL CONFIRMACION DE ELIMINACION EXACTO A SHOPIFY ADMIN CON ANIMACIÓN FLUIDA */}
       {showDeleteModal && (

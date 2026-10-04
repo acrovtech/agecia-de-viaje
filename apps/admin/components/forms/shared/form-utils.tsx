@@ -3,13 +3,19 @@
 import React, { useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 
-export function SubmitSaveButton({ label = 'Guardar' }: { label?: string }) {
+export function SubmitSaveButton({ 
+  label = 'Guardar', 
+  className = '' 
+}: { 
+  label?: string; 
+  className?: string; 
+}) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="px-3 md:px-3.5 py-1 rounded-lg bg-[#008060] hover:bg-[#006e52] text-white font-[600] text-[11px] md:text-[12px] leading-[16px] transition-colors shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+      className={`h-8 px-3.5 rounded-md bg-[#008060] hover:bg-[#006e52] text-white font-semibold text-xs transition-colors shadow-2xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${className}`}
     >
       {pending ? 'Guardando...' : label}
     </button>
