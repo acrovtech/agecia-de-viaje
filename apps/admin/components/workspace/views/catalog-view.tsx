@@ -1,8 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, CheckCircle2, ArrowRight, Clock, MapPin, Image as ImageIcon } from 'lucide-react';
+import {
+  Plus,
+  CheckCircle2,
+  ArrowRight,
+  Clock,
+  Search,
+  ChevronDown,
+  RotateCcw,
+  SquarePen,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
 import { CatalogEditor } from '../catalog-editor';
@@ -48,19 +58,85 @@ export function CatalogView({
   errorMessage,
   agencySlug,
 }: CatalogViewProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'DRAFT'>('ALL');
+  const [filterDuration, setFilterDuration] = useState('ALL');
+  const [filterDestination, setFilterDestination] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   const baseRoute = kind === 'tours' ? '/catalog/tours' : '/catalog/transfers';
   const isNew = editId === 'new';
 
+  const availableDurations = useMemo(() => {
+    if (!catalog) return [];
+    const list = Array.from(
+      new Set(catalog.data.map((t) => t.duration?.trim()).filter(Boolean) as string[])
+    );
+    return list.sort();
+  }, [catalog]);
+
+  const availableDestinations = useMemo(() => {
+    if (!catalog) return [];
+    const list = Array.from(
+      new Set(catalog.data.map((t) => t.region?.trim()).filter(Boolean) as string[])
+    );
+    return list.sort();
+  }, [catalog]);
+
+  const filteredTours = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.data.filter((tour) => {
+      // 1. Search text (Title, slug or destination/region)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchTitle = tour.title.toLowerCase().includes(q);
+        const matchSlug = tour.slug.toLowerCase().includes(q);
+        const matchRegion = tour.region ? tour.region.toLowerCase().includes(q) : false;
+        if (!matchTitle && !matchSlug && !matchRegion) return false;
+      }
+
+      // 2. Filter Status
+      if (filterStatus === 'ACTIVE') {
+        if (!tour.isPublished) return false;
+      } else if (filterStatus === 'DRAFT') {
+        if (tour.isPublished) return false;
+      }
+
+      // 3. Filter Duration
+      if (filterDuration !== 'ALL' && tour.duration !== filterDuration) {
+        return false;
+      }
+
+      // 4. Filter Destination
+      if (filterDestination !== 'ALL' && tour.region !== filterDestination) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [catalog, searchQuery, filterStatus, filterDuration, filterDestination]);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' ||
+    filterStatus !== 'ALL' ||
+    filterDuration !== 'ALL' ||
+    filterDestination !== 'ALL';
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('ALL');
+    setFilterDuration('ALL');
+    setFilterDestination('ALL');
+  };
+
   const isAllSelected =
-    Boolean(catalog && catalog.data.length > 0 && selectedIds.length === catalog.data.length);
+    filteredTours.length > 0 && selectedIds.length === filteredTours.length;
 
   const handleToggleAll = () => {
-    if (!catalog) return;
     if (isAllSelected) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(catalog.data.map((item) => item.id));
+      setSelectedIds(filteredTours.map((item) => item.id));
     }
   };
 
@@ -144,14 +220,97 @@ export function CatalogView({
         </p>
       )}
 
+      {kind === 'tours' && catalog && (
+        <div className="bg-white rounded-xl border border-[#e5e7eb] p-2.5 flex flex-col md:flex-row items-center gap-2.5 text-xs shadow-xs">
+          {/* Barra de Búsqueda Principal */}
+          <div className="w-full md:flex-1 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+            <input
+              type="text"
+              placeholder="Buscar tours por título, slug o destino..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-xs text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] transition-all placeholder:text-[#9ca3af]"
+            />
+          </div>
+
+          {/* Grupo de Filtros */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+            {/* 1. Filtro de Estado */}
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as 'ALL' | 'ACTIVE' | 'DRAFT')}
+                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer"
+              >
+                <option value="ALL">Todos los estados</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="DRAFT">Borrador</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* 2. Filtro de Duración */}
+            <div className="relative">
+              <select
+                value={filterDuration}
+                onChange={(e) => setFilterDuration(e.target.value)}
+                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer max-w-[180px] truncate"
+              >
+                <option value="ALL">Todas las duraciones</option>
+                {availableDurations.map((dur) => (
+                  <option key={dur} value={dur}>
+                    {dur}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* 3. Filtro de Destino */}
+            <div className="relative">
+              <select
+                value={filterDestination}
+                onChange={(e) => setFilterDestination(e.target.value)}
+                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer max-w-[180px] truncate"
+              >
+                <option value="ALL">Todos los destinos</option>
+                {availableDestinations.map((dest) => (
+                  <option key={dest} value={dest}>
+                    {dest}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* 4. Botón Limpiar */}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              disabled={!hasActiveFilters}
+              className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-medium border transition-colors shrink-0 ${
+                hasActiveFilters
+                  ? 'text-[#dc2626] bg-[#fef2f2] hover:bg-[#fee2e2] border-[#fecaca] cursor-pointer'
+                  : 'text-[#9ca3af] bg-[#f9fafb] border-[#e5e7eb] cursor-not-allowed opacity-60'
+              }`}
+              title={hasActiveFilters ? 'Restablecer todos los filtros' : 'No hay filtros activos'}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Limpiar</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {catalog && (
         <div className="product-card-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
                 {kind === 'tours' ? (
-                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
-                    <th className="w-10 py-2.5 px-4 text-center">
+                  <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[11px] font-semibold">
+                    <th className="w-12 py-3 px-4 text-center">
                       <input
                         type="checkbox"
                         checked={isAllSelected}
@@ -160,11 +319,11 @@ export function CatalogView({
                         className="w-4 h-4 rounded border-[#d1d5db] text-[#111111] accent-[#111111] cursor-pointer"
                       />
                     </th>
-                    <th className="py-2.5 px-4 font-medium">Tour</th>
-                    <th className="py-2.5 px-4 font-medium">Estado</th>
-                    <th className="py-2.5 px-4 font-medium">Duración</th>
-                    <th className="py-2.5 px-4 font-medium">Destino</th>
-                    <th className="py-2.5 px-4 font-medium text-right">Acciones</th>
+                    <th className="py-3 px-4">TOUR</th>
+                    <th className="py-3 px-4 text-center">ESTADO</th>
+                    <th className="py-3 px-4 text-center">DURACIÓN</th>
+                    <th className="py-3 px-4 text-center">DESTINO</th>
+                    <th className="py-3 px-4 text-center">ACCIONES</th>
                   </tr>
                 ) : (
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
@@ -179,14 +338,14 @@ export function CatalogView({
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]">
                 {kind === 'tours'
-                  ? catalog.data.map((item) => {
+                  ? filteredTours.map((item) => {
                       const isSelected = selectedIds.includes(item.id);
                       return (
                         <tr
                           key={item.id}
                           className={`product-data-row ${isSelected ? 'bg-[#f9fafb]' : ''}`}
                         >
-                          <td className="w-10 py-3 px-4 text-center">
+                          <td className="w-12 py-3 px-4 text-center">
                             <input
                               type="checkbox"
                               checked={isSelected}
@@ -197,7 +356,7 @@ export function CatalogView({
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-[#f3f4f6] border border-[#e5e7eb] shrink-0 flex items-center justify-center">
+                              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[#f3f4f6] border border-[#e5e7eb] shrink-0 flex items-center justify-center">
                                 {item.cardImage || item.bannerImage ? (
                                   <img
                                     src={item.cardImage || item.bannerImage || ''}
@@ -209,43 +368,45 @@ export function CatalogView({
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-[#111111] text-sm truncate max-w-xs sm:max-w-md">
+                                <div className="font-bold text-[#111111] text-xs uppercase tracking-tight truncate max-w-xs sm:max-w-md">
                                   {item.title}
                                 </div>
                                 <div className="text-[11px] text-[#6b7280] font-mono">/{item.slug}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            <StatusBadge status={item.isPublished ? 'PUBLISHED' : 'DRAFT'} />
+                          <td className="py-3 px-4 text-center">
+                            {item.isPublished ? (
+                              <span className="text-[#16a34a] font-semibold text-xs">Activo</span>
+                            ) : (
+                              <span className="text-[#9ca3af] font-semibold text-xs">Borrador</span>
+                            )}
                           </td>
-                          <td className="py-3 px-4 text-[#374151]">
+                          <td className="py-3 px-4 text-center text-[#374151]">
                             {item.duration ? (
-                              <span className="inline-flex items-center gap-1.5 font-medium text-xs">
-                                <Clock className="w-3.5 h-3.5 text-[#6b7280] shrink-0" />
+                              <span className="inline-flex items-center justify-center gap-1.5 font-medium text-xs text-[#374151]">
+                                <Clock className="w-3.5 h-3.5 text-[#9ca3af] shrink-0" />
                                 <span>{item.duration}</span>
                               </span>
                             ) : (
                               <span className="text-[#9ca3af]">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-[#374151]">
+                          <td className="py-3 px-4 text-center text-[#374151]">
                             {item.region ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#f3f4f6] text-[#374151] text-xs font-medium">
-                                <MapPin className="w-3 h-3 text-[#6b7280] shrink-0" />
-                                <span>{item.region}</span>
-                              </span>
+                              <span className="text-xs font-medium text-[#374151]">{item.region}</span>
                             ) : (
                               <span className="text-[#9ca3af]">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-center">
                             {canEdit && (
                               <Link
                                 href={`${baseRoute}?edit=${encodeURIComponent(item.id)}`}
-                                className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#111111] bg-white border border-[#e5e7eb] shadow-product-card hover:bg-[#f8f9fa] rounded-md transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-[#374151] bg-white border border-[#e5e7eb] hover:bg-[#f8f9fa] rounded-md transition-colors shadow-2xs"
                               >
-                                Editar
+                                <SquarePen className="w-3.5 h-3.5 text-[#6b7280]" />
+                                <span>Editar</span>
                               </Link>
                             )}
                           </td>
@@ -295,13 +456,18 @@ export function CatalogView({
                         </td>
                       </tr>
                     ))}
-                {catalog.data.length === 0 && (
+                {((kind === 'tours' && filteredTours.length === 0) ||
+                  (kind !== 'tours' && catalog.data.length === 0)) && (
                   <tr>
                     <td
-                      colSpan={kind === 'tours' ? 6 : 6}
+                      colSpan={6}
                       className="py-12 text-center text-[#898989]"
                     >
-                      No hay {kind === 'tours' ? 'tours' : 'traslados'} registrados en el catálogo
+                      {kind === 'tours'
+                        ? hasActiveFilters
+                          ? 'No se encontraron tours con los filtros aplicados'
+                          : 'No hay tours registrados en el catálogo'
+                        : 'No hay traslados registrados en el catálogo'}
                     </td>
                   </tr>
                 )}
