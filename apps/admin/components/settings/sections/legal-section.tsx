@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useActionState } from 'react';
-import { FileText, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { updateLegalProfileAction } from '@/lib/settings-actions';
 import type { LegalProfileData } from '../types';
 
@@ -26,18 +26,6 @@ export function LegalSection({ initialLegal, canEdit }: LegalSectionProps) {
           value={initialLegal.updatedAt || ''}
         />
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#6b7280]" />
-              <span>Perfil Legal y Fiscal de la Empresa</span>
-            </h3>
-            <p className="text-xs text-[#6b7280]">
-              Datos constitutivos requeridos para facturación electrónica y cumplimiento tributario.
-            </p>
-          </div>
-        </div>
-
         {legalState?.success && (
           <p role="alert" className="text-xs text-[#166534] bg-[#f0fdf4] p-3 rounded-lg border border-[#bbf7d0] flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-[#16a34a] shrink-0" />
@@ -52,7 +40,7 @@ export function LegalSection({ initialLegal, canEdit }: LegalSectionProps) {
           </p>
         )}
 
-        <fieldset disabled={isLegalPending || !canEdit} className="space-y-4 pt-2">
+        <fieldset disabled={isLegalPending || !canEdit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>
