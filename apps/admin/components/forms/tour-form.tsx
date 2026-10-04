@@ -197,6 +197,44 @@ export function TourForm({
     }, 200);
   };
 
+  // Comprobar si al menos un campo del formulario contiene datos ingresados
+  const hasEnteredData = () => {
+    if (!isDirty) return false;
+
+    // Si es edición de tour existente y está sucio, se modificó algo
+    if (initialData?.id) return true;
+
+    // En tour nuevo: validar si al menos un input o campo tiene contenido real
+    if (title.trim()) return true;
+    if (description.trim()) return true;
+    if (focusKeyphrase.trim()) return true;
+    if (metaDescription.trim()) return true;
+    if (galleryImages.some(Boolean)) return true;
+    if (itinerary.some(it => it.title.trim() !== '' || it.content.trim() !== '')) return true;
+    if (faqs.some(f => f.question.trim() !== '' || f.answer.trim() !== '')) return true;
+
+    if (formRef.current) {
+      const inputs = formRef.current.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        'input:not([type="hidden"]), textarea'
+      );
+      for (const input of inputs) {
+        if (input instanceof HTMLInputElement && input.type === 'checkbox') {
+          if (input.checked) return true;
+        } else if (input.name === 'groupSize') {
+          if (input.value && input.value !== '12') return true;
+        } else if (input.value && input.value.trim() !== '') {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  const shouldShowUnsavedPrompt = () => {
+    return hasEnteredData();
+  };
+
   const handleConfirmDiscard = () => {
     setIsDirty(false);
     closeUnsavedModal();
@@ -212,18 +250,16 @@ export function TourForm({
     }
   };
 
+  // El botón "Descartar" directo al lado de Guardar no requiere validación
   const handleDiscardClick = () => {
-    if (isDirty) {
-      openUnsavedModal('/catalog/tours');
-    } else {
-      window.location.href = '/catalog/tours';
-    }
+    setIsDirty(false);
+    window.location.href = '/catalog/tours';
   };
 
-  // Prevenir cerrar o recargar la pestaña del navegador si hay cambios no guardados
+  // Prevenir cerrar o recargar la pestaña del navegador si hay cambios con datos reales
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
+      if (shouldShowUnsavedPrompt()) {
         e.preventDefault();
         e.returnValue = '';
         return '';
@@ -231,13 +267,13 @@ export function TourForm({
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  }, [isDirty, title, description, galleryImages, itinerary, faqs]);
 
-  // Interceptar navegación por enlaces (tabs, sidebar, breadcrumb) si hay cambios no guardados
+  // Interceptar navegación por enlaces (tabs, sidebar, breadcrumb) solo si se ingresaron datos
   useEffect(() => {
-    if (!isDirty) return;
-
     const handleAnchorClick = (e: MouseEvent) => {
+      if (!shouldShowUnsavedPrompt()) return;
+
       const target = (e.target as HTMLElement).closest('a');
       if (!target) return;
       if (target.closest('[role="dialog"]')) return;
@@ -255,7 +291,7 @@ export function TourForm({
     return () => {
       document.removeEventListener('click', handleAnchorClick, { capture: true });
     };
-  }, [isDirty]);
+  }, [isDirty, title, description, galleryImages, itinerary, faqs]);
 
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -353,7 +389,7 @@ export function TourForm({
           <Link 
             href="/catalog/tours" 
             onClick={(e) => {
-              if (isDirty) {
+              if (shouldShowUnsavedPrompt()) {
                 e.preventDefault();
                 openUnsavedModal('/catalog/tours');
               }
