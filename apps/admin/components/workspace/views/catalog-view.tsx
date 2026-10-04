@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -63,9 +63,58 @@ export function CatalogView({
   const [filterDuration, setFilterDuration] = useState('ALL');
   const [filterDestination, setFilterDestination] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<'status' | 'duration' | 'destination' | null>(null);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const baseRoute = kind === 'tours' ? '/catalog/tours' : '/catalog/transfers';
   const isNew = editId === 'new';
+
+  const totalCount = catalog ? catalog.data.length : 0;
+
+  const activeCount = useMemo(() => {
+    if (!catalog) return 0;
+    return catalog.data.filter((t) => t.isPublished).length;
+  }, [catalog]);
+
+  const draftCount = useMemo(() => {
+    if (!catalog) return 0;
+    return catalog.data.filter((t) => !t.isPublished).length;
+  }, [catalog]);
+
+  const durationCounts = useMemo(() => {
+    if (!catalog) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const t of catalog.data) {
+      const d = t.duration?.trim();
+      if (d) {
+        counts.set(d, (counts.get(d) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [catalog]);
+
+  const destinationCounts = useMemo(() => {
+    if (!catalog) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const t of catalog.data) {
+      const r = t.region?.trim();
+      if (r) {
+        counts.set(r, (counts.get(r) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [catalog]);
 
   const availableDurations = useMemo(() => {
     if (!catalog) return [];
@@ -127,6 +176,7 @@ export function CatalogView({
     setFilterStatus('ALL');
     setFilterDuration('ALL');
     setFilterDestination('ALL');
+    setOpenDropdown(null);
   };
 
   const isAllSelected =
@@ -221,67 +271,210 @@ export function CatalogView({
       )}
 
       {kind === 'tours' && catalog && (
-        <div className="bg-white rounded-xl border border-[#e5e7eb] p-2.5 flex flex-col md:flex-row items-center gap-2.5 text-xs shadow-xs">
+        <div
+          ref={dropdownRef}
+          className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-2.5 flex flex-col md:flex-row items-center gap-2.5 text-xs"
+        >
           {/* Barra de Búsqueda Principal */}
           <div className="w-full md:flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Buscar tours por título, slug o destino..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-xs text-[#111111] focus:outline-none focus:ring-1 focus:ring-[#111111] transition-all placeholder:text-[#9ca3af]"
+              className="w-full pl-9 pr-3.5 py-1.5 bg-[#f9fafb] border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-400"
             />
           </div>
 
           {/* Grupo de Filtros */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
             {/* 1. Filtro de Estado */}
-            <div className="relative">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'ALL' | 'ACTIVE' | 'DRAFT')}
-                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer"
+            <div className="relative w-[170px]">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown((prev) => (prev === 'status' ? null : 'status'))}
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
-                <option value="ALL">Todos los estados</option>
-                <option value="ACTIVE">Activo</option>
-                <option value="DRAFT">Borrador</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <span className="truncate">
+                  {filterStatus === 'ALL'
+                    ? 'Todos los estados'
+                    : filterStatus === 'ACTIVE'
+                    ? 'Activos'
+                    : 'Borradores'}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${
+                    openDropdown === 'status' ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {openDropdown === 'status' && (
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterStatus('ALL');
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      filterStatus === 'ALL'
+                        ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                        : 'font-medium text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Todos los estados</span>
+                    <span className="text-slate-400 font-normal text-[11px]">({totalCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterStatus('ACTIVE');
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      filterStatus === 'ACTIVE'
+                        ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                        : 'font-medium text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Activos</span>
+                    <span className="text-slate-400 font-normal text-[11px]">({activeCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterStatus('DRAFT');
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      filterStatus === 'DRAFT'
+                        ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                        : 'font-medium text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Borradores</span>
+                    <span className="text-slate-400 font-normal text-[11px]">({draftCount})</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 2. Filtro de Duración */}
-            <div className="relative">
-              <select
-                value={filterDuration}
-                onChange={(e) => setFilterDuration(e.target.value)}
-                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer max-w-[180px] truncate"
+            <div className="relative w-[190px]">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown((prev) => (prev === 'duration' ? null : 'duration'))}
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
-                <option value="ALL">Todas las duraciones</option>
-                {availableDurations.map((dur) => (
-                  <option key={dur} value={dur}>
-                    {dur}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <span className="truncate">
+                  {filterDuration === 'ALL' ? 'Todas las duraciones' : filterDuration}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${
+                    openDropdown === 'duration' ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {openDropdown === 'duration' && (
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50 max-h-[260px] overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterDuration('ALL');
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      filterDuration === 'ALL'
+                        ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                        : 'font-medium text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Todas las duraciones</span>
+                    <span className="text-slate-400 font-normal text-[11px]">({totalCount})</span>
+                  </button>
+                  {availableDurations.map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => {
+                        setFilterDuration(dur);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                        filterDuration === dur
+                          ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                          : 'font-medium text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="truncate">{dur}</span>
+                      <span className="text-slate-400 font-normal text-[11px] shrink-0 ml-2">
+                        ({durationCounts.get(dur) ?? 0})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 3. Filtro de Destino */}
-            <div className="relative">
-              <select
-                value={filterDestination}
-                onChange={(e) => setFilterDestination(e.target.value)}
-                className="h-8 pl-3 pr-8 bg-white border border-[#e5e7eb] rounded-lg text-xs font-medium text-[#374151] appearance-none focus:outline-none focus:ring-1 focus:ring-[#111111] cursor-pointer max-w-[180px] truncate"
+            <div className="relative w-[180px]">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown((prev) => (prev === 'destination' ? null : 'destination'))}
+                className="h-9 w-full px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer select-none"
               >
-                <option value="ALL">Todos los destinos</option>
-                {availableDestinations.map((dest) => (
-                  <option key={dest} value={dest}>
-                    {dest}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <span className="truncate">
+                  {filterDestination === 'ALL' ? 'Todos los destinos' : filterDestination}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${
+                    openDropdown === 'destination' ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {openDropdown === 'destination' && (
+                <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50 max-h-[260px] overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterDestination('ALL');
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                      filterDestination === 'ALL'
+                        ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                        : 'font-medium text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Todos los destinos</span>
+                    <span className="text-slate-400 font-normal text-[11px]">({totalCount})</span>
+                  </button>
+                  {availableDestinations.map((dest) => (
+                    <button
+                      key={dest}
+                      type="button"
+                      onClick={() => {
+                        setFilterDestination(dest);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors text-left ${
+                        filterDestination === dest
+                          ? 'bg-[#f1f5f9] font-bold text-slate-900'
+                          : 'font-medium text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="truncate">{dest}</span>
+                      <span className="text-slate-400 font-normal text-[11px] shrink-0 ml-2">
+                        ({destinationCounts.get(dest) ?? 0})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 4. Botón Limpiar */}
@@ -289,10 +482,10 @@ export function CatalogView({
               type="button"
               onClick={clearAllFilters}
               disabled={!hasActiveFilters}
-              className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-medium border transition-colors shrink-0 ${
+              className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border transition-all shrink-0 shadow-2xs ${
                 hasActiveFilters
-                  ? 'text-[#dc2626] bg-[#fef2f2] hover:bg-[#fee2e2] border-[#fecaca] cursor-pointer'
-                  : 'text-[#9ca3af] bg-[#f9fafb] border-[#e5e7eb] cursor-not-allowed opacity-60'
+                  ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200 cursor-pointer'
+                  : 'text-slate-400 bg-slate-50/70 border-slate-200/80 cursor-not-allowed opacity-50'
               }`}
               title={hasActiveFilters ? 'Restablecer todos los filtros' : 'No hay filtros activos'}
             >
