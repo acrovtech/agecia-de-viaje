@@ -12,7 +12,7 @@ const TourInputSchema = z.object({
   description: z.string().default(''),
   duration: z.string().default(''),
   altitude: z.string().default(''),
-  groupSize: z.string().default('12'),
+  groupSize: z.string().default(''),
   difficulty: z.string().default('Fácil'),
 });
 
@@ -28,7 +28,7 @@ export async function createTour(formData: FormData) {
     description: (formData.get('description') as string) || '',
     duration: (formData.get('duration') as string) || '',
     altitude: (formData.get('altitude') as string) || '',
-    groupSize: (formData.get('groupSize') as string) || '12',
+    groupSize: (formData.get('groupSize') as string)?.trim() || '',
     difficulty: (formData.get('difficulty') as string) || 'Fácil',
   });
 
@@ -78,7 +78,7 @@ export async function createTour(formData: FormData) {
   // Details
   const duration = (formData.get('duration') as string)?.trim() || '';
   const altitude = (formData.get('altitude') as string)?.trim() || '';
-  const groupSizeStr = (formData.get('groupSize') as string)?.trim() || '12';
+  const groupSizeStr = (formData.get('groupSize') as string)?.trim() || '';
   const difficulty = (formData.get('difficulty') as string)?.trim() || 'Fácil';
   const mapEmbedUrl = (formData.get('mapEmbedUrl') as string)?.trim() || '';
   

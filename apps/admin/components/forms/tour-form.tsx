@@ -40,7 +40,7 @@ export function TourForm({
   initialData?: any;
   showCategories?: boolean;
 }) {
-  const [groupSize, setGroupSize] = useState<number>(initialData?.groupSize || 12);
+  const [groupSize, setGroupSize] = useState<string>(initialData?.groupSize !== undefined && initialData?.groupSize !== null ? String(initialData.groupSize) : '');
   const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
   const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
   const [title, setTitle] = useState(initialData?.title || '');
@@ -144,7 +144,8 @@ export function TourForm({
   const fillRemainingPrices = () => {
     let lastPaxWithPrice = 0;
     let lastPrice = '';
-    for (let p = 1; p <= groupSize; p++) {
+    const numericGroupSize = parseInt(groupSize, 10) || 12;
+    for (let p = 1; p <= numericGroupSize; p++) {
       if (privatePrices[p] !== undefined && String(privatePrices[p]).trim() !== '') {
         lastPaxWithPrice = p;
         lastPrice = String(privatePrices[p]);
@@ -154,7 +155,7 @@ export function TourForm({
 
     setPrivatePrices(prev => {
       const updated = { ...prev };
-      for (let p = lastPaxWithPrice + 1; p <= groupSize; p++) {
+      for (let p = lastPaxWithPrice + 1; p <= numericGroupSize; p++) {
         updated[p] = lastPrice;
       }
       return updated;
@@ -220,8 +221,6 @@ export function TourForm({
       for (const input of inputs) {
         if (input instanceof HTMLInputElement && input.type === 'checkbox') {
           if (input.checked) return true;
-        } else if (input.name === 'groupSize') {
-          if (input.value && input.value !== '12') return true;
         } else if (input.value && input.value.trim() !== '') {
           return true;
         }
@@ -342,8 +341,8 @@ export function TourForm({
   };
 
   const handleGroupSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
-    setGroupSize(isNaN(val) || val < 1 ? 1 : val);
+    setGroupSize(e.target.value);
+    setIsDirty(true);
   };
 
   const addItineraryDay = () => {
@@ -835,8 +834,8 @@ export function TourForm({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="groupSize" className="text-xs font-semibold text-slate-600">Tamaño de Grupo (Pax)</Label>
-              <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="12" className="bg-white border-slate-300 h-8 text-xs" />
+              <Label htmlFor="groupSize" className="text-xs font-semibold text-slate-600">Tamaño Máximo de Grupo (Pax)</Label>
+              <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="Ej. 12" className="bg-white border-slate-300 h-8 text-xs font-medium" />
             </div>
           </div>
 
@@ -940,7 +939,7 @@ export function TourForm({
                 />
 
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Se cobra una sola vez por el grupo, desde 1 hasta {groupSize || 12} pasajeros. El importe por persona es solo una referencia.
+                  Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}. El importe por persona es solo una referencia.
                 </p>
               </div>
             ) : (
