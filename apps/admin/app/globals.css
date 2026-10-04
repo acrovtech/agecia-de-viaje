@@ -87,6 +87,10 @@ a {
     border-color: var(--border);
     outline-color: var(--ring);
   }
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
   html, body {
     font-family: var(--font-sans), Inter, -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
   }

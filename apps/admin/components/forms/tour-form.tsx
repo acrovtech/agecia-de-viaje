@@ -761,9 +761,9 @@ export function TourForm({
             </Select>
           </div>
 
-          {/* Card 3: Datos técnicos */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
-            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Datos técnicos</h3>
+          {/* Card 4: Datos técnicos */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Datos técnicos</h3>
             
             <div className="space-y-1">
               <Label htmlFor="duration" className="text-xs font-semibold text-slate-600">Duración</Label>
@@ -804,14 +804,14 @@ export function TourForm({
             </div>
           </div>
 
-          {/* Card 4: Categorización */}
+          {/* Card 5: Categorización */}
           {showCategories ? (
-            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3">
-              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Categorización</h3>
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Categorización</h3>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                 {categories && categories.length > 0 ? (
                   categories.map(cat => (
-                    <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                    <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
                       <input 
                         type="checkbox" 
                         id={`cat_${cat.id}`} 
@@ -819,14 +819,14 @@ export function TourForm({
                         value={cat.id} 
                         defaultChecked={initialData?.categories?.some((c: any) => c.id === cat.id)}
                         onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
                       />
                       <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
                     </div>
                   ))
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
                       <input 
                         type="checkbox" 
                         id="cat_internacional" 
@@ -834,11 +834,11 @@ export function TourForm({
                         value="internacional" 
                         defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'internacional' || c.id === 'internacional')}
                         onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
                       />
                       <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
                     </div>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors">
+                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
                       <input 
                         type="checkbox" 
                         id="cat_nacional" 
@@ -846,7 +846,7 @@ export function TourForm({
                         value="nacional" 
                         defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'nacional' || c.id === 'nacional')}
                         onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900" 
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
                       />
                       <Label htmlFor="cat_nacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Nacional</Label>
                     </div>
@@ -861,8 +861,8 @@ export function TourForm({
             ))
           )}
 
-          {/* Card 4: Precios */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs px-4 py-3.5 space-y-3">
+          {/* Card 6: Precios */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
             {/* Servicio Compartido / Grupal (Siempre activo) */}
             <input type="hidden" name="hasSharedService" value="on" />
             <div className="space-y-1">
@@ -913,7 +913,7 @@ export function TourForm({
                   type="button"
                   variant="outline"
                   onClick={() => { setHasPrivateService(true); setIsDirty(true); }}
-                  className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium"
+                  className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" /> Añadir precio privado
                 </Button>
@@ -921,9 +921,9 @@ export function TourForm({
             )}
           </div>
 
-          {/* Card 5: Optimización SEO */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-4 space-y-3.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          {/* Card 7: Optimización SEO */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-semibold text-xs text-slate-800">Optimización SEO</h3>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${seoAnalysis.badgeClass}`}>
                 SEO: {seoAnalysis.level}
