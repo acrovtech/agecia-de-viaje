@@ -808,7 +808,7 @@ export function TourForm({
           {showCategories ? (
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
               <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Categorización</h3>
-              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1.5">
                 {categories && categories.length > 0 ? (
                   categories.map(cat => (
                     <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
