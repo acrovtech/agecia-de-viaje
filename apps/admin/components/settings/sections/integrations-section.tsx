@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Calendar, MessageSquare } from 'lucide-react';
 import type { SafeIntegrationCapability } from '@/lib/integration-capabilities';
 
 export interface IntegrationCardProps {
@@ -127,9 +126,14 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: gcalendarCap?.statusLabel || 'Próximamente',
       badgeVariant: gcalendarCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-white flex flex-col items-center justify-center border border-[#e5e7eb] text-[#4285F4]">
-          <Calendar className="w-5 h-5" />
-        </div>
+        <Image
+          src="/integrations/calendar.png"
+          alt="Google Calendar"
+          width={40}
+          height={40}
+          unoptimized
+          className="w-full h-full object-cover"
+        />
       ),
     },
     {
@@ -138,9 +142,14 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: whatsappCap?.statusLabel || 'Próximamente',
       badgeVariant: whatsappCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-[#25D366] flex items-center justify-center text-white">
-          <MessageSquare className="w-5 h-5 fill-current" />
-        </div>
+        <Image
+          src="/integrations/whatsapp.png"
+          alt="WhatsApp Cloud API"
+          width={40}
+          height={40}
+          unoptimized
+          className="w-full h-full object-cover"
+        />
       ),
     },
   ];
