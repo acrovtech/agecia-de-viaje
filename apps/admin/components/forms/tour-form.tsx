@@ -483,7 +483,9 @@ export function TourForm({
                 ? 'Parte 1 — Título y Descripción. Completa la información inicial del tour.' 
                 : assistedStep === 2
                 ? 'Parte 2 — Multimedia. Agrega el banner, miniatura y galería del tour.'
-                : 'Parte 3 — Itinerario. Define los días y actividades del tour.'}
+                : assistedStep === 3
+                ? 'Parte 3 — Itinerario. Define los días y actividades del tour.'
+                : 'Parte 4 — Detalles y Especificaciones. Inclusiones, exclusiones y recomendaciones.'}
             </span>
           </div>
           <button
@@ -710,7 +712,7 @@ export function TourForm({
               </Button>
             </div>
 
-            {/* En Modo Asistido: Botón Anterior en Paso 3 */}
+            {/* En Modo Asistido: Botones Anterior y Siguiente en Paso 3 */}
             {creationMode === 'asistido' && assistedStep === 3 && (
               <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
                 <button
@@ -721,15 +723,22 @@ export function TourForm({
                   <ChevronLeft className="w-4 h-4 text-slate-500" />
                   <span>Anterior</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(4)}
+                  className="inline-flex items-center gap-1.5 bg-[#0B4354] hover:bg-[#0B4354]/90 text-white font-semibold text-xs px-4 h-9 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1, 2 y 3) */}
-          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
-            {/* Card 4: Inclusiones, Exclusiones y Recomendaciones (Cada uno en su propia Fila) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Detalles y Especificaciones</h3>
+          {/* Card 4: Detalles y Especificaciones (En completo con card, en asistido sin card cuando assistedStep === 4) */}
+          <div className={creationMode === 'asistido' ? (assistedStep === 4 ? 'space-y-5 pt-1' : 'hidden') : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
+            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-200/80 pb-3">Detalles y Especificaciones</h3>
 
             <div className="space-y-5">
               <div className="space-y-1.5">
@@ -759,7 +768,24 @@ export function TourForm({
                 />
               </div>
             </div>
+
+            {/* En Modo Asistido: Botón Anterior en Paso 4 */}
+            {creationMode === 'asistido' && assistedStep === 4 && (
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(3)}
+                  className="inline-flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 h-9 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                  <span>Anterior</span>
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1, 2, 3 y 4) */}
+          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
 
           {/* Card 5: Preguntas Frecuentes (FAQs Acordeón con Animación) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
