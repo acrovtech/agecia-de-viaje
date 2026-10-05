@@ -79,6 +79,31 @@ export function TourForm({
   const [hasPrivateService, setHasPrivateService] = useState<boolean>(
     Boolean(initialData?.hasPrivateService || initialData?.privatePricing?.length > 0)
   );
+  const [region, setRegion] = useState<string>(initialData?.region || '');
+  const [duration, setDuration] = useState<string>(initialData?.duration || '');
+  const [difficulty, setDifficulty] = useState<string>(initialData?.difficulty || 'Moderada');
+  const [altitude, setAltitude] = useState<string>(
+    initialData?.altitude?.replace(/\s*m\s*s\.\s*n\.\s*m\.\s*/gi, '').trim() || ''
+  );
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    if (!initialData?.categories || !Array.isArray(initialData.categories)) return [];
+    return initialData.categories.map((c: any) => String(c.id || c.name));
+  });
+  const [sharedPrice, setSharedPrice] = useState<string>(
+    initialData?.sharedPrice !== undefined && initialData?.sharedPrice !== null ? String(initialData.sharedPrice) : ''
+  );
+  const [fixedPrivatePrice, setFixedPrivatePrice] = useState<string>(
+    initialData?.fixedPrivatePrice !== undefined && initialData?.fixedPrivatePrice !== null 
+      ? String(initialData.fixedPrivatePrice) 
+      : (initialData?.privatePricing?.[0]?.price ? String(initialData.privatePricing[0].price) : '')
+  );
+
+  const handleCategoryToggle = (catVal: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(catVal) ? prev.filter(c => c !== catVal) : [...prev, catVal]
+    );
+    setIsDirty(true);
+  };
 
   // Precios privados por Pax dinámicos
   const [privatePrices, setPrivatePrices] = useState<Record<number, string>>(() => {
@@ -383,6 +408,10 @@ export function TourForm({
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
       <input type="hidden" name="status" value={status === 'Activo' ? 'Active' : 'Draft'} />
       <input type="hidden" name="isFeatured" value={isFeatured === 'Activo' ? 'true' : 'false'} />
+      <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="metaTitle" value={`${title} - Agencia de Viajes`} />
+      <input type="hidden" name="hasSharedService" value="on" />
+      {hasPrivateService && <input type="hidden" name="hasPrivateService" value="on" />}
       
       {/* Header Fila de la página (Título + Acciones en la misma fila) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
@@ -487,7 +516,11 @@ export function TourForm({
                 ? 'Parte 3 — Itinerario. Define los días y actividades del tour.'
                 : assistedStep === 4
                 ? 'Parte 4 — Detalles y Especificaciones. Inclusiones, exclusiones y recomendaciones.'
-                : 'Parte 5 — Preguntas Frecuentes. Resuelve dudas habituales del viajero.'}
+                : assistedStep === 5
+                ? 'Parte 5 — Preguntas Frecuentes. Resuelve dudas habituales del viajero.'
+                : assistedStep === 6
+                ? 'Parte 6 — Destino y Datos Técnicos. Ubicación, categorías y ficha técnica.'
+                : 'Parte 7 — Precios, SEO y Publicación. Tarifas, visibilidad y posicionamiento.'}
             </span>
           </div>
           <button
@@ -884,7 +917,7 @@ export function TourForm({
               </Button>
             </div>
 
-            {/* En Modo Asistido: Botón Anterior en Paso 5 */}
+            {/* En Modo Asistido: Botones Anterior y Siguiente en Paso 5 */}
             {creationMode === 'asistido' && assistedStep === 5 && (
               <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
                 <button
@@ -895,295 +928,614 @@ export function TourForm({
                   <ChevronLeft className="w-4 h-4 text-slate-500" />
                   <span>Anterior</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(6)}
+                  className="inline-flex items-center gap-1.5 bg-[#0B4354] hover:bg-[#0B4354]/90 text-white font-semibold text-xs px-4 h-9 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
+
+          {/* Card 6: Destino y Datos Técnicos (En Modo Asistido como Paso 6 sin card wrapper) */}
+          {creationMode === 'asistido' && (
+            <div className={assistedStep === 6 ? 'space-y-6 pt-1' : 'hidden'}>
+              <div className="border-b border-slate-200/80 pb-3">
+                <h3 className="font-semibold text-sm text-slate-800">Destino y Datos Técnicos</h3>
+                <p className="text-xs text-slate-500">Define la ubicación, el tipo de experiencia y las exigencias físicas del viaje.</p>
+              </div>
+
+              {/* Grid 2 Columnas: Destino y Categorías */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Destino */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="asistido_region" className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+                  <Select name="region" value={region} onValueChange={(val) => { setRegion(val || ''); setIsDirty(true); }}>
+                    <SelectTrigger id="asistido_region" className="w-full h-9 bg-white border-slate-300 text-xs font-medium">
+                      <SelectValue placeholder="Seleccionar región..." />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                      <SelectItem value="Cusco">Cusco</SelectItem>
+                      <SelectItem value="Lima">Lima</SelectItem>
+                      <SelectItem value="Ica">Ica</SelectItem>
+                      <SelectItem value="Arequipa">Arequipa</SelectItem>
+                      <SelectItem value="Puno">Puno</SelectItem>
+                      <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Categorización */}
+                {showCategories && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-700">Categorización</Label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50/70 p-3 rounded-xl border border-slate-200/80">
+                      {(categories && categories.length > 0 ? categories : [
+                        { id: 'trekking', name: 'Trekking' },
+                        { id: 'aventura', name: 'Aventura' },
+                        { id: 'nacional', name: 'Nacional' },
+                        { id: 'internacional', name: 'Internacional' },
+                      ]).map(cat => (
+                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 hover:text-slate-900">
+                          <input 
+                            type="checkbox" 
+                            name="categories" 
+                            value={cat.id} 
+                            checked={selectedCategories.includes(String(cat.id))}
+                            onChange={() => handleCategoryToggle(String(cat.id))}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-[#0B4354] focus:ring-[#0B4354] cursor-pointer" 
+                          />
+                          <span>{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Grid 4 Columnas: Datos Técnicos */}
+              <div className="space-y-2 pt-2">
+                <Label className="text-xs font-semibold text-slate-700">Especificaciones Técnicas</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="asistido_duration" className="text-[11px] font-medium text-slate-600">Duración</Label>
+                    <Input 
+                      id="asistido_duration" 
+                      name="duration" 
+                      value={duration} 
+                      onChange={(e) => { setDuration(e.target.value); setIsDirty(true); }}
+                      placeholder="Ej. 1 Día / Full Day" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium" 
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="asistido_difficulty" className="text-[11px] font-medium text-slate-600">Dificultad</Label>
+                    <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || 'Moderada'); setIsDirty(true); }}>
+                      <SelectTrigger id="asistido_difficulty" className="w-full h-9 bg-white border-slate-300 text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                        <SelectItem value="Fácil">Fácil</SelectItem>
+                        <SelectItem value="Fácil – Moderada">Fácil – Moderada</SelectItem>
+                        <SelectItem value="Moderada">Moderada</SelectItem>
+                        <SelectItem value="Moderada – Difícil">Moderada – Difícil</SelectItem>
+                        <SelectItem value="Difícil">Difícil</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="asistido_altitude" className="text-[11px] font-medium text-slate-600">Altitud Máxima (m s. n. m.)</Label>
+                    <Input 
+                      id="asistido_altitude" 
+                      name="altitude" 
+                      value={altitude} 
+                      onChange={(e) => { setAltitude(e.target.value); setIsDirty(true); }}
+                      placeholder="Ej. 4200 o 3900 - 4200" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium" 
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="asistido_groupSize" className="text-[11px] font-medium text-slate-600">Tamaño Grupo (Pax)</Label>
+                    <Input 
+                      id="asistido_groupSize" 
+                      name="groupSize" 
+                      type="number" 
+                      min="1" 
+                      value={groupSize} 
+                      onChange={handleGroupSizeChange} 
+                      placeholder="Ej. 12" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium" 
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400">La unidad 'm s. n. m.' se formatea automáticamente en la web del catálogo.</p>
+              </div>
+
+              {/* Botones Anterior y Siguiente */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(5)}
+                  className="inline-flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 h-9 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                  <span>Anterior</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(7)}
+                  className="inline-flex items-center gap-1.5 bg-[#0B4354] hover:bg-[#0B4354]/90 text-white font-semibold text-xs px-4 h-9 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Siguiente: Precios y Publicación</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 7: Precios, SEO y Publicación (En Modo Asistido como Paso 7 sin card wrapper) */}
+          {creationMode === 'asistido' && (
+            <div className={assistedStep === 7 ? 'space-y-6 pt-1' : 'hidden'}>
+              <div className="border-b border-slate-200/80 pb-3">
+                <h3 className="font-semibold text-sm text-slate-800">Precios, SEO y Publicación</h3>
+                <p className="text-xs text-slate-500">Configura las tarifas de venta, el posicionamiento en Google y la visibilidad en el catálogo.</p>
+              </div>
+
+              {/* Fila 1: Precios (Grupal / Compartido y Privado) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
+                <div className="space-y-1.5">
+                  <Label htmlFor="asistido_sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD) — Servicio Grupal</Label>
+                  <Input 
+                    id="asistido_sharedPrice" 
+                    name="sharedPrice" 
+                    type="number" 
+                    step="0.01" 
+                    value={sharedPrice} 
+                    onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
+                    placeholder="Ej. 45.00" 
+                    className="bg-white border-slate-300 h-9 text-xs font-medium" 
+                  />
+                  <p className="text-[11px] text-slate-400">Tarifa compartida base que se muestra en las cards del catálogo.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-slate-700">Servicio Privado</Label>
+                    {hasPrivateService ? (
+                      <button 
+                        type="button" 
+                        onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
+                        className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+                      >
+                        Quitar privado
+                      </button>
+                    ) : (
+                      <button 
+                        type="button" 
+                        onClick={() => { setHasPrivateService(true); setIsDirty(true); }} 
+                        className="text-[11px] font-medium text-[#0B4354] hover:underline cursor-pointer"
+                      >
+                        + Añadir servicio privado
+                      </button>
+                    )}
+                  </div>
+
+                  {hasPrivateService ? (
+                    <div className="space-y-2">
+                      <Input 
+                        id="asistido_fixedPrivatePrice"
+                        name="fixedPrivatePrice" 
+                        type="number" 
+                        step="0.01" 
+                        value={fixedPrivatePrice}
+                        onChange={(e) => { setFixedPrivatePrice(e.target.value); setIsDirty(true); }}
+                        placeholder="Ej. 2000.00" 
+                        className="bg-white border-slate-300 h-9 text-xs font-medium" 
+                      />
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-white rounded-lg border border-dashed border-slate-200 text-center">
+                      <p className="text-xs text-slate-400">Sin servicio privado configurado para este tour.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 2: Visibilidad y Estado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Estado de Publicación</Label>
+                  <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
+                    <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                      <SelectItem value="Activo">Activo (Visible en la tienda)</SelectItem>
+                      <SelectItem value="Desactivado">Desactivado (Borrador)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Mostrar en recomendados del Inicio</Label>
+                  <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
+                    <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                      <SelectItem value="Desactivado">Desactivado</SelectItem>
+                      <SelectItem value="Activo">Activo (Destacado en Inicio)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Máximo 6 tours en esta sección del Inicio.</p>
+                </div>
+              </div>
+
+              {/* Fila 3: Optimización SEO */}
+              <div className="space-y-3 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-800">Optimización SEO</Label>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${seoAnalysis.badgeClass}`}>
+                    SEO: {seoAnalysis.level}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="asistido_focusKeyphrase" className="text-[11px] font-semibold text-slate-700">Palabra clave principal</Label>
+                    <AutoResizeTextarea id="asistido_focusKeyphrase" rows={1} placeholder="Ej. Tour Valle Sagrado Cusco" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="asistido_metaDescription" className="text-[11px] font-semibold text-slate-700">Meta Descripción</Label>
+                      <span className="text-[10px] text-slate-400">{metaDescription.length}/160</span>
+                    </div>
+                    <AutoResizeTextarea id="asistido_metaDescription" name="metaDescription" rows={2} placeholder="Descripción corta para aparecer en Google..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+                  </div>
+                </div>
+
+                {focusKeyphrase && (
+                  <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700">Diagnóstico SEO:</span>
+                      <span className={`font-bold ${seoAnalysis.color}`}>{seoAnalysis.status}</span>
+                    </div>
+                    <ul className="space-y-1 text-[11px]">
+                      {seoAnalysis.results.map((r, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5">
+                          <span className={r.type === 'good' ? 'text-emerald-600 font-bold' : 'text-rose-500 font-bold'}>
+                            {r.type === 'good' ? '✓' : '✗'}
+                          </span>
+                          <span className="text-slate-600">{r.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Botón Anterior y Guardar Tour */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(6)}
+                  className="inline-flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 h-9 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                  <span>Anterior</span>
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <SubmitSaveButton />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ==========================================
             SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
         ========================================== */}
-        <div className={creationMode === 'asistido' ? 'hidden' : 'lg:col-span-1 space-y-6'}>
-          
-          {/* Card 1: Estado del Producto */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
-            <Label className="text-xs font-semibold text-slate-700">Estado</Label>
-            <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
-              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Activo">Activo</SelectItem>
-                <SelectItem value="Desactivado">Desactivado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Card 2: Mostrar en recomendados del Inicio */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
-            <Label className="text-xs font-semibold text-slate-700">Mostrar en recomendados del Inicio</Label>
-            <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
-              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Desactivado">Desactivado</SelectItem>
-                <SelectItem value="Activo">Activo</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-[10px] text-slate-400">Máximo 6 tours en esta sección del Inicio. Esta opción no modifica el diseño de las tarjetas.</p>
-          </div>
-
-          {/* Card 3: Destino (Filtro Catálogo) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
-            <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
-            <Select name="region" defaultValue={initialData?.region || undefined} onValueChange={() => setIsDirty(true)}>
-              <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
-                <SelectValue placeholder="Seleccionar..." />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                <SelectItem value="Cusco">Cusco</SelectItem>
-                <SelectItem value="Lima">Lima</SelectItem>
-                <SelectItem value="Ica">Ica</SelectItem>
-                <SelectItem value="Arequipa">Arequipa</SelectItem>
-                <SelectItem value="Puno">Puno</SelectItem>
-                <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Card 4: Datos técnicos */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Datos técnicos</h3>
+        {creationMode === 'completo' && (
+          <div className="lg:col-span-1 space-y-6">
             
-            <div className="space-y-1">
-              <Label htmlFor="duration" className="text-xs font-semibold text-slate-600">Duración</Label>
-              <Input id="duration" name="duration" defaultValue={initialData?.duration} placeholder="Ej. 1 Día / Full Day" className="bg-white border-slate-300 h-8 text-xs" />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="difficulty" className="text-xs font-semibold text-slate-600">Dificultad</Label>
-              <Select name="difficulty" defaultValue={initialData?.difficulty || 'Moderada'} onValueChange={() => setIsDirty(true)}>
-                <SelectTrigger className="w-full h-8 bg-white border-slate-300 text-xs font-semibold">
-                  <SelectValue placeholder="Seleccionar..." />
+            {/* Card 1: Estado del Producto */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
+              <Label className="text-xs font-semibold text-slate-700">Estado</Label>
+              <Select value={status} onValueChange={(val: any) => { setStatus(val); setIsDirty(true); }}>
+                <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
-                  <SelectItem value="Fácil">Fácil</SelectItem>
-                  <SelectItem value="Fácil – Moderada">Fácil – Moderada</SelectItem>
-                  <SelectItem value="Moderada">Moderada</SelectItem>
-                  <SelectItem value="Moderada – Difícil">Moderada – Difícil</SelectItem>
-                  <SelectItem value="Difícil">Difícil</SelectItem>
+                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                  <SelectItem value="Activo">Activo</SelectItem>
+                  <SelectItem value="Desactivado">Desactivado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="altitude" className="text-xs font-semibold text-slate-600">Altitud Máxima (m s. n. m.)</Label>
-              <Input 
-                id="altitude" 
-                name="altitude" 
-                defaultValue={initialData?.altitude?.replace(/\s*m\s*s\.\s*n\.\s*m\.\s*/gi, '').trim()} 
-                placeholder="Ej. 4200 o 3900 - 4200" 
-                className="bg-white border-slate-300 h-8 text-xs font-medium" 
-              />
-              <p className="text-[10px] text-slate-400">Ingresa la cifra o rango. La unidad 'm s. n. m.' se formatea automáticamente en la web.</p>
+            {/* Card 2: Mostrar en recomendados del Inicio */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
+              <Label className="text-xs font-semibold text-slate-700">Mostrar en recomendados del Inicio</Label>
+              <Select value={isFeatured} onValueChange={(val: any) => { setIsFeatured(val); setIsDirty(true); }}>
+                <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                  <SelectItem value="Desactivado">Desactivado</SelectItem>
+                  <SelectItem value="Activo">Activo</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-slate-400">Máximo 6 tours en esta sección del Inicio. Esta opción no modifica el diseño de las tarjetas.</p>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="groupSize" className="text-xs font-semibold text-slate-600">Tamaño Máximo de Grupo (Pax)</Label>
-              <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="Ej. 12" className="bg-white border-slate-300 h-8 text-xs font-medium" />
+            {/* Card 3: Destino (Filtro Catálogo) */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
+              <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+              <Select name="region" value={region} onValueChange={(val) => { setRegion(val || ''); setIsDirty(true); }}>
+                <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                  <SelectItem value="Cusco">Cusco</SelectItem>
+                  <SelectItem value="Lima">Lima</SelectItem>
+                  <SelectItem value="Ica">Ica</SelectItem>
+                  <SelectItem value="Arequipa">Arequipa</SelectItem>
+                  <SelectItem value="Puno">Puno</SelectItem>
+                  <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          {/* Card 5: Categorización */}
-          {showCategories ? (
+            {/* Card 4: Datos técnicos */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Categorización</h3>
-              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1.5">
-                {categories && categories.length > 0 ? (
-                  categories.map(cat => (
-                    <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        id={`cat_${cat.id}`} 
-                        name="categories" 
-                        value={cat.id} 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.id === cat.id)}
-                        onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                      />
-                      <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        id="cat_trekking" 
-                        name="categories" 
-                        value="trekking" 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'trekking' || c.id === 'trekking')}
-                        onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                      />
-                      <Label htmlFor="cat_trekking" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Trekking</Label>
-                    </div>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        id="cat_aventura" 
-                        name="categories" 
-                        value="aventura" 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'aventura' || c.id === 'aventura')}
-                        onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                      />
-                      <Label htmlFor="cat_aventura" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Aventura</Label>
-                    </div>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        id="cat_nacional" 
-                        name="categories" 
-                        value="nacional" 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'nacional' || c.id === 'nacional')}
-                        onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                      />
-                      <Label htmlFor="cat_nacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Nacional</Label>
-                    </div>
-                    <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        id="cat_internacional" 
-                        name="categories" 
-                        value="internacional" 
-                        defaultChecked={initialData?.categories?.some((c: any) => c.name?.toLowerCase() === 'internacional' || c.id === 'internacional')}
-                        onChange={() => setIsDirty(true)}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                      />
-                      <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            // Preservar categorías existentes si el usuario no tiene permisos para modificarlas
-            initialData?.categories?.map((c: any) => (
-              <input key={c.id} type="hidden" name="categories" value={c.id} />
-            ))
-          )}
-
-          {/* Card 6: Precios */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <div className="space-y-1">
-              {/* Servicio Compartido / Grupal (Siempre activo) */}
-              <input type="hidden" hidden name="hasSharedService" value="on" />
-              <Label htmlFor="sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD)</Label>
-              <Input 
-                id="sharedPrice" 
-                name="sharedPrice" 
-                type="number" 
-                step="0.01" 
-                defaultValue={initialData?.sharedPrice} 
-                placeholder="Ej. 45.00" 
-                className="bg-white border-slate-300 h-8 text-xs font-medium" 
-              />
-            </div>
-
-            {/* Servicio Privado (Opcional por botón) */}
-            {hasPrivateService ? (
-              <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
-                <input type="hidden" hidden name="hasPrivateService" value="on" />
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="fixedPrivatePrice" className="text-xs font-semibold text-slate-700">Precio fijo del tour privado ($ USD)</Label>
-                  <button 
-                    type="button" 
-                    onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
-                    className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
-                  >
-                    Quitar privado
-                  </button>
-                </div>
-
+              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Datos técnicos</h3>
+              
+              <div className="space-y-1">
+                <Label htmlFor="duration" className="text-xs font-semibold text-slate-600">Duración</Label>
                 <Input 
-                  id="fixedPrivatePrice"
-                  name="fixedPrivatePrice" 
-                  type="number" 
-                  step="0.01" 
-                  defaultValue={initialData?.fixedPrivatePrice || (initialData?.privatePricing?.[0]?.price ?? '')}
-                  placeholder="Ej. 2000.00" 
+                  id="duration" 
+                  name="duration" 
+                  value={duration} 
+                  onChange={(e) => { setDuration(e.target.value); setIsDirty(true); }} 
+                  placeholder="Ej. 1 Día / Full Day" 
                   className="bg-white border-slate-300 h-8 text-xs font-medium" 
                 />
+              </div>
 
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}. El importe por persona es solo una referencia.
-                </p>
+              <div className="space-y-1">
+                <Label htmlFor="difficulty" className="text-xs font-semibold text-slate-600">Dificultad</Label>
+                <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || 'Moderada'); setIsDirty(true); }}>
+                  <SelectTrigger className="w-full h-8 bg-white border-slate-300 text-xs font-semibold">
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                    <SelectItem value="Fácil">Fácil</SelectItem>
+                    <SelectItem value="Fácil – Moderada">Fácil – Moderada</SelectItem>
+                    <SelectItem value="Moderada">Moderada</SelectItem>
+                    <SelectItem value="Moderada – Difícil">Moderada – Difícil</SelectItem>
+                    <SelectItem value="Difícil">Difícil</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="altitude" className="text-xs font-semibold text-slate-600">Altitud Máxima (m s. n. m.)</Label>
+                <Input 
+                  id="altitude" 
+                  name="altitude" 
+                  value={altitude} 
+                  onChange={(e) => { setAltitude(e.target.value); setIsDirty(true); }}
+                  placeholder="Ej. 4200 o 3900 - 4200" 
+                  className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                />
+                <p className="text-[10px] text-slate-400">Ingresa la cifra o rango. La unidad 'm s. n. m.' se formatea automáticamente en la web.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="groupSize" className="text-xs font-semibold text-slate-600">Tamaño Máximo de Grupo (Pax)</Label>
+                <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="Ej. 12" className="bg-white border-slate-300 h-8 text-xs font-medium" />
+              </div>
+            </div>
+
+            {/* Card 5: Categorización */}
+            {showCategories ? (
+              <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+                <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Categorización</h3>
+                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1.5">
+                  {categories && categories.length > 0 ? (
+                    categories.map(cat => (
+                      <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          id={`cat_${cat.id}`} 
+                          name="categories" 
+                          value={cat.id} 
+                          checked={selectedCategories.includes(String(cat.id))}
+                          onChange={() => handleCategoryToggle(String(cat.id))}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                        />
+                        <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          id="cat_trekking" 
+                          name="categories" 
+                          value="trekking" 
+                          checked={selectedCategories.includes('trekking')}
+                          onChange={() => handleCategoryToggle('trekking')}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                        />
+                        <Label htmlFor="cat_trekking" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Trekking</Label>
+                      </div>
+                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          id="cat_aventura" 
+                          name="categories" 
+                          value="aventura" 
+                          checked={selectedCategories.includes('aventura')}
+                          onChange={() => handleCategoryToggle('aventura')}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                        />
+                        <Label htmlFor="cat_aventura" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Aventura</Label>
+                      </div>
+                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          id="cat_nacional" 
+                          name="categories" 
+                          value="nacional" 
+                          checked={selectedCategories.includes('nacional')}
+                          onChange={() => handleCategoryToggle('nacional')}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                        />
+                        <Label htmlFor="cat_nacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Nacional</Label>
+                      </div>
+                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          id="cat_internacional" 
+                          name="categories" 
+                          value="internacional" 
+                          checked={selectedCategories.includes('internacional')}
+                          onChange={() => handleCategoryToggle('internacional')}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
+                        />
+                        <Label htmlFor="cat_internacional" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Internacional</Label>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="pt-2 border-t border-slate-100">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setHasPrivateService(true); setIsDirty(true); }}
-                  className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Añadir precio privado
-                </Button>
-              </div>
+              // Preservar categorías existentes si el usuario no tiene permisos para modificarlas
+              initialData?.categories?.map((c: any) => (
+                <input key={c.id} type="hidden" name="categories" value={c.id} />
+              ))
             )}
-          </div>
 
-          {/* Card 7: Optimización SEO */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-semibold text-xs text-slate-800">Optimización SEO</h3>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${seoAnalysis.badgeClass}`}>
-                SEO: {seoAnalysis.level}
-              </span>
-            </div>
-            
-            <div className="space-y-3">
-              <input type="hidden" hidden name="slug" value={slug} />
-              <input type="hidden" hidden name="metaTitle" value={`${title} - Agencia de Viajes`} />
+            {/* Card 6: Precios */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="focusKeyphrase" className="text-xs font-semibold text-slate-700">Palabra clave principal</Label>
-                <AutoResizeTextarea id="focusKeyphrase" rows={1} placeholder="Ej. Tour Valle Sagrado Cusco" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
+                <Label htmlFor="sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD)</Label>
+                <Input 
+                  id="sharedPrice" 
+                  name="sharedPrice" 
+                  type="number" 
+                  step="0.01" 
+                  value={sharedPrice} 
+                  onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
+                  placeholder="Ej. 45.00" 
+                  className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                />
               </div>
 
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="metaDescription" className="text-xs font-semibold text-slate-700">Meta Descripción</Label>
-                  <span className="text-[10px] text-slate-400">{metaDescription.length}/160</span>
-                </div>
-                <AutoResizeTextarea id="metaDescription" name="metaDescription" rows={3} placeholder="Descripción corta para aparecer en Google..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
-              </div>
-
-              {/* Panel de Análisis SEO */}
-              {focusKeyphrase && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700">Diagnóstico SEO:</span>
-                    <span className={`font-bold ${seoAnalysis.color}`}>{seoAnalysis.status}</span>
+              {/* Servicio Privado (Opcional por botón) */}
+              {hasPrivateService ? (
+                <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="fixedPrivatePrice" className="text-xs font-semibold text-slate-700">Precio fijo del tour privado ($ USD)</Label>
+                    <button 
+                      type="button" 
+                      onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
+                      className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+                    >
+                      Quitar privado
+                    </button>
                   </div>
-                  <ul className="space-y-1 text-[11px]">
-                    {seoAnalysis.results.map((r, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5">
-                        <span className={r.type === 'good' ? 'text-emerald-600 font-bold' : 'text-rose-500 font-bold'}>
-                          {r.type === 'good' ? '✓' : '✗'}
-                        </span>
-                        <span className="text-slate-600">{r.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  <Input 
+                    id="fixedPrivatePrice"
+                    name="fixedPrivatePrice" 
+                    type="number" 
+                    step="0.01" 
+                    value={fixedPrivatePrice} 
+                    onChange={(e) => { setFixedPrivatePrice(e.target.value); setIsDirty(true); }}
+                    placeholder="Ej. 2000.00" 
+                    className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                  />
+
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}. El importe por persona es solo una referencia.
+                  </p>
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setHasPrivateService(true); setIsDirty(true); }}
+                    className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Añadir precio privado
+                  </Button>
                 </div>
               )}
             </div>
-          </div>
 
-        </div>
+            {/* Card 7: Optimización SEO */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-semibold text-xs text-slate-800">Optimización SEO</h3>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${seoAnalysis.badgeClass}`}>
+                  SEO: {seoAnalysis.level}
+                </span>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="focusKeyphrase" className="text-xs font-semibold text-slate-700">Palabra clave principal</Label>
+                  <AutoResizeTextarea id="focusKeyphrase" rows={1} placeholder="Ej. Tour Valle Sagrado Cusco" value={focusKeyphrase} onChange={(e) => setFocusKeyphrase(e.target.value)} />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="metaDescription" className="text-xs font-semibold text-slate-700">Meta Descripción</Label>
+                    <span className="text-[10px] text-slate-400">{metaDescription.length}/160</span>
+                  </div>
+                  <AutoResizeTextarea id="metaDescription" name="metaDescription" rows={3} placeholder="Descripción corta para aparecer en Google..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+                </div>
+
+                {/* Panel de Análisis SEO */}
+                {focusKeyphrase && (
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700">Diagnóstico SEO:</span>
+                      <span className={`font-bold ${seoAnalysis.color}`}>{seoAnalysis.status}</span>
+                    </div>
+                    <ul className="space-y-1 text-[11px]">
+                      {seoAnalysis.results.map((r, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5">
+                          <span className={r.type === 'good' ? 'text-emerald-600 font-bold' : 'text-rose-500 font-bold'}>
+                            {r.type === 'good' ? '✓' : '✗'}
+                          </span>
+                          <span className="text-slate-600">{r.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
 
       </div>
 
