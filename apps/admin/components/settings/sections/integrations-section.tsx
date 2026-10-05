@@ -31,8 +31,8 @@ function IntegrationCard({
       <div className="flex items-start justify-between gap-3">
         {/* LEFT COLUMN: Provider icon only - visually dominant */}
         <div
-          className="w-16 h-16 w-[64px] h-[64px] rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs"
-          style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px' }}
+          className="w-10 h-10 w-[40px] h-[40px] rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs"
+          style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
         >
           {logo}
         </div>
@@ -84,11 +84,10 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/izipay.png"
           alt="Izipay"
-          width={64}
-          height={64}
+          width={40}
+          height={40}
           unoptimized
-          className="w-full h-full object-cover scale-150"
-          style={{ transform: 'scale(1.5)' }}
+          className="w-full h-full object-cover"
         />
       ),
     },
@@ -101,11 +100,10 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/culqi.png"
           alt="Culqi"
-          width={64}
-          height={64}
+          width={40}
+          height={40}
           unoptimized
-          className="w-full h-full object-cover scale-150"
-          style={{ transform: 'scale(1.5)' }}
+          className="w-full h-full object-cover"
         />
       ),
     },
@@ -118,11 +116,10 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/mercadopago.png"
           alt="Mercado Pago"
-          width={64}
-          height={64}
+          width={40}
+          height={40}
           unoptimized
-          className="w-full h-full object-cover scale-150"
-          style={{ transform: 'scale(1.5)' }}
+          className="w-full h-full object-cover"
         />
       ),
     },
@@ -138,11 +135,10 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/calendar.png"
           alt="Google Calendar"
-          width={64}
-          height={64}
+          width={40}
+          height={40}
           unoptimized
-          className="w-full h-full object-cover scale-150"
-          style={{ transform: 'scale(1.5)' }}
+          className="w-full h-full object-cover"
         />
       ),
     },
@@ -155,11 +151,10 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         <Image
           src="/integrations/whatsapp.png"
           alt="WhatsApp Cloud API"
-          width={64}
-          height={64}
+          width={40}
+          height={40}
           unoptimized
-          className="w-full h-full object-cover scale-150"
-          style={{ transform: 'scale(1.5)' }}
+          className="w-full h-full object-cover"
         />
       ),
     },
