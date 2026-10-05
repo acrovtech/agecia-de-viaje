@@ -41,6 +41,7 @@ export function TourForm({
   showCategories?: boolean;
 }) {
   const [creationMode, setCreationMode] = useState<'completo' | 'asistido'>('completo');
+  const [assistedStep, setAssistedStep] = useState<number>(1);
   const [groupSize, setGroupSize] = useState<string>(initialData?.groupSize !== undefined && initialData?.groupSize !== null ? String(initialData.groupSize) : '');
   const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
   const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
@@ -478,7 +479,9 @@ export function TourForm({
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
             <span className="font-medium">
-              <strong>Modo Asistido:</strong> Parte 1 — Título y Descripción. Completa la información inicial del tour.
+              <strong>Modo Asistido:</strong> {assistedStep === 1 
+                ? 'Parte 1 — Título y Descripción. Completa la información inicial del tour.' 
+                : 'Parte 2 — Multimedia. Agrega el banner, miniatura y galería del tour.'}
             </span>
           </div>
           <button
@@ -500,7 +503,7 @@ export function TourForm({
         <div className={creationMode === 'asistido' ? 'space-y-6' : 'lg:col-span-2 space-y-6'}>
           
           {/* Card 1: Título y Descripción (Exacto a Shopify Admin en completo, sin card en asistido) */}
-          <div className={creationMode === 'asistido' ? 'space-y-4 pt-1' : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
+          <div className={creationMode === 'asistido' ? (assistedStep === 1 ? 'space-y-4 pt-1' : 'hidden') : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-semibold text-slate-700">Título</Label>
               <Input 
@@ -522,13 +525,32 @@ export function TourForm({
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+
+            {/* En Modo Asistido: Botón Siguiente para ir a Multimedia */}
+            {creationMode === 'asistido' && assistedStep === 1 && (
+              <div className="flex justify-end pt-4 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!title.trim()) {
+                      const el = document.getElementById('title');
+                      el?.focus();
+                      return;
+                    }
+                    setAssistedStep(2);
+                  }}
+                  className="inline-flex items-center gap-1.5 bg-[#0B4354] hover:bg-[#0B4354]/90 text-white font-semibold text-xs px-4 h-9 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1) */}
-          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
-            {/* Card 2: Multimedia */}
-            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Multimedia</h3>
+          {/* Card 2: Multimedia (En completo con card, en asistido sin card cuando assistedStep === 2) */}
+          <div className={creationMode === 'asistido' ? (assistedStep === 2 ? 'space-y-6 pt-1' : 'hidden') : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
+            <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-200/80 pb-3">Multimedia</h3>
             
             <div className="space-y-6">
               {/* Row 1: Banner, Miniatura y Mapa */}
@@ -569,16 +591,32 @@ export function TourForm({
                 </div>
               </div>
             </div>
+
+            {/* En Modo Asistido: Botón Anterior */}
+            {creationMode === 'asistido' && assistedStep === 2 && (
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(1)}
+                  className="inline-flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 h-9 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                  <span>Anterior</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Card 3: Itinerario por Días (Acordeón con Animación) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-semibold text-sm text-slate-800">Itinerario por Días</h3>
-              <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{itinerary.length} días</span>
-            </div>
+          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1 y 2) */}
+          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
+            {/* Card 3: Itinerario por Días (Acordeón con Animación) */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-semibold text-sm text-slate-800">Itinerario por Días</h3>
+                <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{itinerary.length} días</span>
+              </div>
             
-            <div className="space-y-3">
+              <div className="space-y-3">
               <input type="hidden" name="itineraryCount" value={itinerary.length} />
               
               {itinerary.map((day: ItineraryItem, index: number) => {
