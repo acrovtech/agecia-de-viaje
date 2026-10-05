@@ -23,11 +23,17 @@ function IntegrationCard({
   logo,
 }: IntegrationCardProps) {
   return (
-    <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-[0.725rem] transition-colors cursor-default hover:border-[#d1d5db]">
+    <div
+      className="rounded-[10px] border border-[#e5e7eb] bg-white p-[0.725rem] transition-colors cursor-default hover:border-[#d1d5db]"
+      style={{ padding: '0.725rem' }}
+    >
       {/* Top row: Left column (provider icon only) & Right column (status badge + provider name stack) */}
       <div className="flex items-start justify-between gap-3">
         {/* LEFT COLUMN: Provider icon only - visually dominant */}
-        <div className="w-[64px] h-[64px] rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs">
+        <div
+          className="w-16 h-16 w-[64px] h-[64px] rounded-lg overflow-hidden shrink-0 border border-black/5 flex items-center justify-center bg-[#f8f9fa] shadow-2xs"
+          style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px' }}
+        >
           {logo}
         </div>
 
@@ -82,6 +88,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           height={64}
           unoptimized
           className="w-full h-full object-cover scale-150"
+          style={{ transform: 'scale(1.5)' }}
         />
       ),
     },
@@ -98,6 +105,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           height={64}
           unoptimized
           className="w-full h-full object-cover scale-150"
+          style={{ transform: 'scale(1.5)' }}
         />
       ),
     },
@@ -114,6 +122,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           height={64}
           unoptimized
           className="w-full h-full object-cover scale-150"
+          style={{ transform: 'scale(1.5)' }}
         />
       ),
     },
@@ -133,6 +142,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           height={64}
           unoptimized
           className="w-full h-full object-cover scale-150"
+          style={{ transform: 'scale(1.5)' }}
         />
       ),
     },
@@ -149,6 +159,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           height={64}
           unoptimized
           className="w-full h-full object-cover scale-150"
+          style={{ transform: 'scale(1.5)' }}
         />
       ),
     },
