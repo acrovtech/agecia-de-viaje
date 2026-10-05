@@ -125,8 +125,7 @@ describe('Integration Capabilities Detection Model', () => {
     expect(content).not.toContain('id: \'shopify\'');
     expect(content).not.toContain('id: \'polar\'');
     expect(content).not.toContain('id: \'webhooks\'');
-    expect(content).toContain('md:grid-cols-2');
-    expect(content).not.toContain('md:grid-cols-3');
-    expect(content).not.toContain('lg:grid-cols-3');
+    expect(content).not.toContain('id: \'stripe\'');
+    expect(content).toContain('md:grid-cols-3');
   });
 });

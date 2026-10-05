@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Calendar, MessageSquare } from 'lucide-react';
 import type { SafeIntegrationCapability } from '@/lib/integration-capabilities';
 
@@ -14,28 +15,6 @@ export interface IntegrationCardProps {
   connectHref?: string;
   onConnect?: () => void;
   connectionState?: 'disconnected' | 'connecting' | 'connected';
-}
-
-function StripeLogo() {
-  const [hasError, setHasError] = React.useState(false);
-
-  if (hasError) {
-    return (
-      <div className="w-full h-full bg-[#635BFF] flex items-center justify-center text-white font-bold text-xs tracking-tight rounded-lg">
-        stripe
-      </div>
-    );
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/integrations/stripe.png"
-      alt="Stripe"
-      className="w-full h-full object-contain p-1"
-      onError={() => setHasError(true)}
-    />
-  );
 }
 
 function IntegrationCard({
@@ -87,7 +66,6 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
   const izipayCap = getCap('izipay');
   const culqiCap = getCap('culqi');
   const mercadopagoCap = getCap('mercadopago');
-  const stripeCap = getCap('stripe');
   const gcalendarCap = getCap('gcalendar');
   const whatsappCap = getCap('whatsapp');
 
@@ -98,9 +76,13 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: izipayCap?.statusLabel || 'Proveedor diferido',
       badgeVariant: izipayCap?.badgeVariant || 'amber',
       logo: (
-        <div className="w-full h-full bg-gradient-to-br from-[#ff0055] to-[#c70044] flex items-center justify-center text-white font-extrabold text-sm tracking-tighter">
-          izi
-        </div>
+        <Image
+          src="/integrations/izipay.png"
+          alt="Izipay"
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       ),
     },
     {
@@ -109,9 +91,13 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: culqiCap?.statusLabel || 'Próximamente',
       badgeVariant: culqiCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-gradient-to-br from-[#00b49f] to-[#008272] flex items-center justify-center text-white font-extrabold text-xs tracking-tight">
-          culqi
-        </div>
+        <Image
+          src="/integrations/culqi.png"
+          alt="Culqi"
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       ),
     },
     {
@@ -120,17 +106,14 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
       badge: mercadopagoCap?.statusLabel || 'Próximamente',
       badgeVariant: mercadopagoCap?.badgeVariant || 'purple',
       logo: (
-        <div className="w-full h-full bg-[#009ee3] flex items-center justify-center text-white font-black text-xs tracking-tight">
-          MP
-        </div>
+        <Image
+          src="/integrations/mercadopago.png"
+          alt="Mercado Pago"
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       ),
-    },
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      badge: stripeCap?.statusLabel || 'No disponible',
-      badgeVariant: stripeCap?.badgeVariant || 'neutral',
-      logo: <StripeLogo />,
     },
   ];
 
@@ -161,7 +144,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
 
   return (
     <div className="space-y-8">
-      {/* Payments Section (Spanish label, 2 columns on md+) */}
+      {/* Payments Section (Spanish label, 3 columns on md+) */}
       <section className="space-y-3">
         <div>
           <h3 className="text-base font-semibold text-[#111111] tracking-tight">
@@ -172,7 +155,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3.5">
           {paymentIntegrations.map((item) => (
             <IntegrationCard key={item.id} {...item} />
           ))}
