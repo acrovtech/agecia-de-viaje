@@ -81,6 +81,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           alt="Izipay"
           width={40}
           height={40}
+          unoptimized
           className="w-full h-full object-cover"
         />
       ),
@@ -96,6 +97,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           alt="Culqi"
           width={40}
           height={40}
+          unoptimized
           className="w-full h-full object-cover"
         />
       ),
@@ -111,6 +113,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           alt="Mercado Pago"
           width={40}
           height={40}
+          unoptimized
           className="w-full h-full object-cover"
         />
       ),

@@ -168,7 +168,7 @@ describe('SaaS Admin Fail-Closed Security Suite', () => {
     });
 
     it('10. static assets required by login and workspace still work for GET/HEAD', async () => {
-      const staticAssets = ['/icon.svg', '/logo.svg', '/favicon.ico', '/_next/static/css/app.css'];
+      const staticAssets = ['/icon.svg', '/logo.svg', '/favicon.ico', '/_next/static/css/app.css', '/integrations/izipay.png'];
 
       for (const asset of staticAssets) {
         const reqGet = makeRequest(asset, 'GET');

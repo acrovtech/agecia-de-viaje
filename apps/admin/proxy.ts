@@ -9,6 +9,7 @@ export async function proxy(request: NextRequest) {
     // API mode has a separate surface; old pages and API handlers are not tenant safe yet.
     const isStaticAsset =
       pathname.startsWith('/_next/') ||
+      pathname.startsWith('/integrations/') ||
       ['/icon.svg', '/logo.svg', '/favicon.ico'].includes(pathname);
     if (isStaticAsset && ['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
     if (pathname === '/login') return NextResponse.next();
@@ -84,5 +85,5 @@ export async function proxy(request: NextRequest) {
 export const middleware = proxy;
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|integrations).*)'],
 };
