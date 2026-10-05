@@ -499,8 +499,8 @@ export function TourForm({
         ========================================== */}
         <div className={creationMode === 'asistido' ? 'space-y-6' : 'lg:col-span-2 space-y-6'}>
           
-          {/* Card 1: Título y Descripción (Exacto a Shopify Admin) */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+          {/* Card 1: Título y Descripción (Exacto a Shopify Admin en completo, sin card en asistido) */}
+          <div className={creationMode === 'asistido' ? 'space-y-4 pt-1' : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-semibold text-slate-700">Título</Label>
               <Input 
