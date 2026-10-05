@@ -478,7 +478,7 @@ export function TourForm({
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
             <span className="font-medium">
-              <strong>Modo Asistido:</strong> Completa cada sección con asistencia guiada. Todos los campos se sincronizan de forma segura.
+              <strong>Modo Asistido:</strong> Parte 1 — Título y Descripción. Completa la información inicial del tour.
             </span>
           </div>
           <button
@@ -492,12 +492,12 @@ export function TourForm({
       )}
 
       {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className={creationMode === 'asistido' ? 'max-w-3xl mx-auto space-y-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'}>
         
         {/* ==========================================
             COLUMNA PRINCIPAL (70%): Contenido del Tour
         ========================================== */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className={creationMode === 'asistido' ? 'space-y-6' : 'lg:col-span-2 space-y-6'}>
           
           {/* Card 1: Título y Descripción (Exacto a Shopify Admin) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
@@ -524,8 +524,10 @@ export function TourForm({
             </div>
           </div>
 
-          {/* Card 2: Multimedia */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1) */}
+          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
+            {/* Card 2: Multimedia */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
             <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Multimedia</h3>
             
             <div className="space-y-6">
@@ -786,14 +788,13 @@ export function TourForm({
             </div>
           </div>
 
+          </div>
         </div>
 
         {/* ==========================================
             SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
-        {/* ==========================================
-            SIDEBAR DERECHO (30% - COLUMNA 2): Estado, Recomendados, Organización, Categorización, Precios y SEO
         ========================================== */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className={creationMode === 'asistido' ? 'hidden' : 'lg:col-span-1 space-y-6'}>
           
           {/* Card 1: Estado del Producto */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-3">
