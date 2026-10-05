@@ -481,7 +481,9 @@ export function TourForm({
             <span className="font-medium">
               <strong>Modo Asistido:</strong> {assistedStep === 1 
                 ? 'Parte 1 — Título y Descripción. Completa la información inicial del tour.' 
-                : 'Parte 2 — Multimedia. Agrega el banner, miniatura y galería del tour.'}
+                : assistedStep === 2
+                ? 'Parte 2 — Multimedia. Agrega el banner, miniatura y galería del tour.'
+                : 'Parte 3 — Itinerario. Define los días y actividades del tour.'}
             </span>
           </div>
           <button
@@ -494,13 +496,13 @@ export function TourForm({
         </div>
       )}
 
-      {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar) */}
-      <div className={creationMode === 'asistido' ? 'max-w-3xl mx-auto space-y-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'}>
+      {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar en completo, ancho completo en asistido) */}
+      <div className={creationMode === 'asistido' ? 'w-full space-y-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'}>
         
         {/* ==========================================
             COLUMNA PRINCIPAL (70%): Contenido del Tour
         ========================================== */}
-        <div className={creationMode === 'asistido' ? 'space-y-6' : 'lg:col-span-2 space-y-6'}>
+        <div className={creationMode === 'asistido' ? 'w-full space-y-6' : 'lg:col-span-2 space-y-6'}>
           
           {/* Card 1: Título y Descripción (Exacto a Shopify Admin en completo, sin card en asistido) */}
           <div className={creationMode === 'asistido' ? (assistedStep === 1 ? 'space-y-4 pt-1' : 'hidden') : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
@@ -592,7 +594,7 @@ export function TourForm({
               </div>
             </div>
 
-            {/* En Modo Asistido: Botón Anterior */}
+            {/* En Modo Asistido: Botones Anterior y Siguiente */}
             {creationMode === 'asistido' && assistedStep === 2 && (
               <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
                 <button
@@ -603,20 +605,27 @@ export function TourForm({
                   <ChevronLeft className="w-4 h-4 text-slate-500" />
                   <span>Anterior</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(3)}
+                  className="inline-flex items-center gap-1.5 bg-[#0B4354] hover:bg-[#0B4354]/90 text-white font-semibold text-xs px-4 h-9 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1 y 2) */}
-          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
-            {/* Card 3: Itinerario por Días (Acordeón con Animación) */}
-            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-semibold text-sm text-slate-800">Itinerario por Días</h3>
-                <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{itinerary.length} días</span>
-              </div>
+          {/* Card 3: Itinerario por Días (En completo con card, en asistido sin card cuando assistedStep === 3) */}
+          <div className={creationMode === 'asistido' ? (assistedStep === 3 ? 'space-y-4 pt-1' : 'hidden') : 'bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4'}>
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+              <h3 className="font-semibold text-sm text-slate-800">Itinerario por Días</h3>
+              <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">{itinerary.length} días</span>
+            </div>
             
-              <div className="space-y-3">
+            <div className="space-y-3">
               <input type="hidden" name="itineraryCount" value={itinerary.length} />
               
               {itinerary.map((day: ItineraryItem, index: number) => {
@@ -700,9 +709,25 @@ export function TourForm({
                 <Plus className="w-3.5 h-3.5 mr-1" /> Agregar otro día al itinerario
               </Button>
             </div>
+
+            {/* En Modo Asistido: Botón Anterior en Paso 3 */}
+            {creationMode === 'asistido' && assistedStep === 3 && (
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setAssistedStep(2)}
+                  className="inline-flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 h-9 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                  <span>Anterior</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Card 4: Inclusiones, Exclusiones y Recomendaciones (Cada uno en su propia Fila) */}
+          {/* Siguientes secciones: Ocultas en Modo Asistido (Parte 1, 2 y 3) */}
+          <div className={creationMode === 'asistido' ? 'hidden' : 'space-y-6'}>
+            {/* Card 4: Inclusiones, Exclusiones y Recomendaciones (Cada uno en su propia Fila) */}
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
             <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-3">Detalles y Especificaciones</h3>
 
