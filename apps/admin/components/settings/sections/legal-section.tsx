@@ -19,7 +19,7 @@ export function LegalSection({ initialLegal, canEdit }: LegalSectionProps) {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <form action={legalAction} className="product-card-surface p-5 space-y-4">
+      <form action={legalAction} className="product-card-surface p-5">
         <input
           type="hidden"
           name="expectedUpdatedAt"
@@ -27,14 +27,14 @@ export function LegalSection({ initialLegal, canEdit }: LegalSectionProps) {
         />
 
         {legalState?.success && (
-          <p role="alert" className="text-xs text-[#166534] bg-[#f0fdf4] p-3 rounded-lg border border-[#bbf7d0] flex items-center gap-2">
+          <p role="alert" className="text-xs text-[#166534] bg-[#f0fdf4] p-3 rounded-lg border border-[#bbf7d0] flex items-center gap-2 mb-4">
             <CheckCircle2 className="w-4 h-4 text-[#16a34a] shrink-0" />
             <span>Perfil legal actualizado exitosamente.</span>
           </p>
         )}
 
         {legalState?.error && (
-          <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-3 rounded-lg border border-[#fecaca] flex items-center gap-2">
+          <p role="alert" className="text-xs text-[#dc2626] bg-[#fef2f2] p-3 rounded-lg border border-[#fecaca] flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-[#ef4444] shrink-0" />
             <span>{legalState.error}</span>
           </p>
@@ -127,11 +127,11 @@ export function LegalSection({ initialLegal, canEdit }: LegalSectionProps) {
             </div>
           </div>
 
-          <div className="flex justify-end pt-3">
+          <div className="flex justify-end pt-4 mt-5 border-t border-slate-200">
             <button
               type="submit"
               disabled={isLegalPending || !canEdit}
-              className="product-button-primary"
+              className="product-button-primary cursor-pointer"
             >
               {isLegalPending ? 'Guardando datos legales…' : 'Guardar perfil legal'}
             </button>

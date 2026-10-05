@@ -40,6 +40,7 @@ export function TourForm({
   initialData?: any;
   showCategories?: boolean;
 }) {
+  const [creationMode, setCreationMode] = useState<'completo' | 'asistido'>('completo');
   const [groupSize, setGroupSize] = useState<string>(initialData?.groupSize !== undefined && initialData?.groupSize !== null ? String(initialData.groupSize) : '');
   const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
   const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
@@ -404,8 +405,8 @@ export function TourForm({
           </h1>
         </div>
 
-        {/* Acciones en la misma fila: Ver / Eliminar (si editando) + Descartar / Guardar */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 flex-wrap">
+        {/* Acciones en la misma fila: Ver / Eliminar (si editando) + Modo (Completo | Asistido) + Descartar / Guardar */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end shrink-0 flex-wrap">
           {initialData?.id && (
             <>
               <a 
@@ -431,6 +432,32 @@ export function TourForm({
             </>
           )}
 
+          {/* Selector de Modo: Completo | Asistido */}
+          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setCreationMode('completo')}
+              className={`h-7 px-3 rounded-md text-xs transition-all cursor-pointer ${
+                creationMode === 'completo'
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              Modo completo
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreationMode('asistido')}
+              className={`h-7 px-3 rounded-md text-xs transition-all cursor-pointer ${
+                creationMode === 'asistido'
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              Modo asistido
+            </button>
+          </div>
+
           <div className="flex items-center gap-2">
             <button 
               type="button"
@@ -444,6 +471,25 @@ export function TourForm({
           </div>
         </div>
       </div>
+
+      {/* Banner de Modo Asistido si está activo */}
+      {creationMode === 'asistido' && (
+        <div className="mb-5 p-3.5 rounded-xl border border-sky-200 bg-sky-50/80 text-sky-900 flex items-center justify-between text-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+            <span className="font-medium">
+              <strong>Modo Asistido:</strong> Completa cada sección con asistencia guiada. Todos los campos se sincronizan de forma segura.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreationMode('completo')}
+            className="text-[11px] font-semibold text-sky-700 hover:text-sky-900 hover:underline cursor-pointer shrink-0 ml-3"
+          >
+            Volver a modo completo
+          </button>
+        </div>
+      )}
 
       {/* Grid Principal Shopify Admin (70% Contenido / 30% Sidebar) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
