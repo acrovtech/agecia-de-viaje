@@ -31,6 +31,7 @@ export default async function EditTourPage({ params }: { params: Promise<{ id: s
   }
 
   const categories = await prisma.category.findMany({
+    include: { parent: true },
     orderBy: { name: 'asc' }
   });
 

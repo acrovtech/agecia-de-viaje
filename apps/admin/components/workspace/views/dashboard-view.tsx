@@ -42,11 +42,11 @@ export function DashboardView({
         description={`Resumen operativo de ${identity.agencyName}`}
         actions={
           <Link
-            href="/reservations?new=1"
+            href="/tours/new"
             className="product-button-primary"
           >
             <Plus className="w-4 h-4" />
-            <span>Nueva reserva</span>
+            <span>Nuevo tour</span>
           </Link>
         }
       />

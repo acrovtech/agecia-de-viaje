@@ -90,8 +90,10 @@ export async function createTour(formData: FormData) {
   const isFeatured = formData.get('isFeatured') === 'true';
   
   // Categories (excluyendo 'nacional' e 'internacional' por ser selector interno de destino)
-  const categoryIds = (formData.getAll('categories') as string[])
-    .filter(Boolean)
+  const rawCategories = formData.getAll('categories') as string[];
+  const singleCategory = (formData.get('category') as string)?.trim();
+  const allCategoryInputs = [...rawCategories, singleCategory].filter(Boolean);
+  const categoryIds = Array.from(new Set(allCategoryInputs))
     .filter(id => id.toLowerCase() !== 'nacional' && id.toLowerCase() !== 'internacional');
   
   // Pricing

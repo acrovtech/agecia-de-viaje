@@ -199,6 +199,10 @@ model Category {
   name      String
   slug      String
   
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Category[] @relation("CategoryHierarchy")
+  
   tours     Tour[]
   
   createdAt DateTime @default(now())
@@ -206,6 +210,7 @@ model Category {
 
   @@unique([agencyId, slug])
   @@index([agencyId])
+  @@index([parentId])
 }
 
 model Blog {

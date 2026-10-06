@@ -14,6 +14,13 @@ import { createTour, deleteTour } from '../../app/actions/tour';
 type Category = {
   id: string;
   name: string;
+  slug?: string;
+  parentId?: string | null;
+  parent?: {
+    id: string;
+    name: string;
+    slug?: string;
+  } | null;
 };
 
 interface ItineraryItem {
@@ -92,12 +99,20 @@ export function TourForm({
   const [altitude, setAltitude] = useState<string>(
     initialData?.altitude?.replace(/\s*m\s*s\.\s*n\.\s*m\.\s*/gi, '').trim() || ''
   );
+  const [selectedCategory, setSelectedCategory] = useState<string>(() => {
+    if (!initialData?.categories || !Array.isArray(initialData.categories)) return '';
+    const valid = initialData.categories
+      .map((c: any) => String(c.id || c.name))
+      .filter((c: string) => c.toLowerCase() !== 'nacional' && c.toLowerCase() !== 'internacional');
+    return valid[0] || '';
+  });
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     if (!initialData?.categories || !Array.isArray(initialData.categories)) return [];
     return initialData.categories
       .map((c: any) => String(c.id || c.name))
       .filter((c: string) => c.toLowerCase() !== 'nacional' && c.toLowerCase() !== 'internacional');
   });
+
   const [sharedPrice, setSharedPrice] = useState<string>(
     initialData?.sharedPrice !== undefined && initialData?.sharedPrice !== null ? String(initialData.sharedPrice) : ''
   );
@@ -111,7 +126,67 @@ export function TourForm({
     setSelectedCategories(prev => 
       prev.includes(catVal) ? prev.filter(c => c !== catVal) : [...prev, catVal]
     );
+    setSelectedCategory(catVal);
     setIsDirty(true);
+  };
+
+  // Jerarquía de Destinos (Nacional e Internacional) y Categorización
+  const parentNacional = categories.find(c => c.slug === 'nacional' || c.name.toLowerCase() === 'nacional');
+  const parentInternacional = categories.find(c => c.slug === 'internacional' || c.name.toLowerCase() === 'internacional');
+
+  const nationalDestinations = categories.filter(c => 
+    c.parentId === parentNacional?.id || 
+    c.parent?.slug === 'nacional' ||
+    c.parent?.name.toLowerCase() === 'nacional'
+  );
+
+  const internationalDestinations = categories.filter(c => 
+    c.parentId === parentInternacional?.id || 
+    c.parent?.slug === 'internacional' ||
+    c.parent?.name.toLowerCase() === 'internacional'
+  );
+
+  const fallbackNac = ['Cusco', 'Lima', 'Ica', 'Arequipa', 'Puno', 'Madre de Dios'];
+  const fallbackInter = ['Cancún', 'Punta Cana', 'Cartagena', 'Europa', 'Buenos Aires', 'Santiago de Chile'];
+
+  const destinationOptions = destinationType === 'Internacional'
+    ? (internationalDestinations.length > 0
+        ? internationalDestinations.map(c => ({ value: c.name, label: c.name }))
+        : fallbackInter.map(name => ({ value: name, label: name })))
+    : (nationalDestinations.length > 0
+        ? nationalDestinations.map(c => ({ value: c.name, label: c.name }))
+        : fallbackNac.map(name => ({ value: name, label: name })));
+
+  const experienceCategories = categories.filter(c => {
+    const isParentGroup = c.slug === 'nacional' || c.slug === 'internacional' || c.name.toLowerCase() === 'nacional' || c.name.toLowerCase() === 'internacional';
+    const isChildOfDestination = (parentNacional && c.parentId === parentNacional.id) || 
+      (parentInternacional && c.parentId === parentInternacional.id) || 
+      c.parent?.slug === 'nacional' || 
+      c.parent?.slug === 'internacional';
+    return !isParentGroup && !isChildOfDestination;
+  });
+
+  const fallbackExp = [
+    { id: 'trekking', name: 'Trekking & Senderismo' },
+    { id: 'aventura', name: 'Aventura & Deportes' },
+    { id: 'cultural', name: 'Cultural & Histórico' },
+    { id: 'gastronomico', name: 'Gastronómico' },
+    { id: 'naturaleza', name: 'Naturaleza & Paisajes' },
+    { id: 'sol-y-playa', name: 'Sol & Playa' }
+  ];
+
+  const availableExperienceCategories = experienceCategories.length > 0 ? experienceCategories : fallbackExp;
+
+  const handleDestinationTypeChange = (newType: string | null) => {
+    const val = newType || 'Nacional';
+    setDestinationType(val);
+    setIsDirty(true);
+    const newOpts = val === 'Internacional'
+      ? (internationalDestinations.length > 0 ? internationalDestinations.map(c => c.name) : fallbackInter)
+      : (nationalDestinations.length > 0 ? nationalDestinations.map(c => c.name) : fallbackNac);
+    if (!newOpts.includes(region)) {
+      setRegion(newOpts[0] || '');
+    }
   };
 
   // Precios privados por Pax dinámicos
@@ -958,12 +1033,12 @@ export function TourForm({
                 <p className="text-xs text-slate-500">Define la ubicación, el tipo de experiencia y las exigencias físicas del viaje.</p>
               </div>
 
-              {/* Fila 1: Tipo de Destino y Destino (Filtro Catálogo) - Selects internos sin CRUD */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Fila 1: Tipo de Destino, Destino (Filtro Catálogo) y Categorización en fila */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="asistido_destinationType" className="text-xs font-semibold text-slate-700">Tipo de Destino</Label>
-                  <Select name="destinationType" value={destinationType} onValueChange={(val) => { setDestinationType(val || 'Nacional'); setIsDirty(true); }}>
-                    <SelectTrigger id="asistido_destinationType" className="w-full h-10 data-[size=default]:h-10 bg-white border-slate-300 text-sm font-medium rounded-lg">
+                  <Select name="destinationType" value={destinationType} onValueChange={handleDestinationTypeChange}>
+                    <SelectTrigger id="asistido_destinationType" className="w-full h-9 data-[size=default]:h-9 bg-white border-slate-300 text-xs font-medium rounded-lg">
                       <SelectValue placeholder="Seleccionar tipo..." />
                     </SelectTrigger>
                     <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
@@ -974,52 +1049,55 @@ export function TourForm({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="asistido_region" className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="asistido_region" className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {destinationType === 'Internacional' ? 'Internacional' : 'Nacional'}
+                    </span>
+                  </div>
                   <Select name="region" value={region} onValueChange={(val) => { setRegion(val || ''); setIsDirty(true); }}>
-                    <SelectTrigger id="asistido_region" className="w-full h-10 data-[size=default]:h-10 bg-white border-slate-300 text-sm font-medium rounded-lg">
-                      <SelectValue placeholder="Seleccionar región..." />
+                    <SelectTrigger id="asistido_region" className="w-full h-9 data-[size=default]:h-9 bg-white border-slate-300 text-xs font-medium rounded-lg">
+                      <SelectValue placeholder="Seleccionar destino..." />
                     </SelectTrigger>
                     <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
-                      <SelectItem value="Cusco">Cusco</SelectItem>
-                      <SelectItem value="Lima">Lima</SelectItem>
-                      <SelectItem value="Ica">Ica</SelectItem>
-                      <SelectItem value="Arequipa">Arequipa</SelectItem>
-                      <SelectItem value="Puno">Puno</SelectItem>
-                      <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
+                      {destinationOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {showCategories && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="asistido_category" className="text-xs font-semibold text-slate-700">Categorización</Label>
+                      <Link href="/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
+                        Gestionar
+                      </Link>
+                    </div>
+                    <Select value={selectedCategory} onValueChange={(val) => { setSelectedCategory(val || ''); setIsDirty(true); }}>
+                      <SelectTrigger id="asistido_category" className="w-full h-9 data-[size=default]:h-9 bg-white border-slate-300 text-xs font-medium rounded-lg">
+                        <SelectValue placeholder="Seleccionar categoría..." />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                        {availableExperienceCategories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
-              {/* Fila 2: Categorización (Su propia row, sin contenedor, sólo categorías reales del sistema) */}
-              {showCategories && (
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-slate-700">Categorización</Label>
-                  <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-0.5">
-                    {(categories && categories.length > 0 
-                      ? categories.filter(c => c.name.toLowerCase() !== 'nacional' && c.name.toLowerCase() !== 'internacional' && c.id.toLowerCase() !== 'nacional' && c.id.toLowerCase() !== 'internacional') 
-                      : [
-                        { id: 'trekking', name: 'Trekking' },
-                        { id: 'aventura', name: 'Aventura' },
-                      ]
-                    ).map(cat => (
-                      <label key={cat.id} className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 hover:text-slate-900 font-medium">
-                        <input 
-                          type="checkbox" 
-                          name="categories" 
-                          value={cat.id} 
-                          checked={selectedCategories.includes(String(cat.id))}
-                          onChange={() => handleCategoryToggle(String(cat.id))}
-                          className="h-4 w-4 rounded border-slate-300 text-[#0B4354] focus:ring-[#0B4354] cursor-pointer" 
-                        />
-                        <span>{cat.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+              {/* Sincronización de categoría seleccionada */}
+              {selectedCategory && (
+                <>
+                  <input type="hidden" name="categories" value={selectedCategory} />
+                  <input type="hidden" name="category" value={selectedCategory} />
+                </>
               )}
 
-              {/* Fila 3: Especificaciones Técnicas (Alturas parejas a h-10) */}
+              {/* Fila 2: Especificaciones Técnicas (Alturas estándar h-9) */}
               <div className="space-y-2 pt-1">
                 <Label className="text-xs font-semibold text-slate-700">Especificaciones Técnicas</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-start">
@@ -1031,14 +1109,14 @@ export function TourForm({
                       value={duration} 
                       onChange={(e) => { setDuration(e.target.value); setIsDirty(true); }}
                       placeholder="Ej. 1 Día / Full Day" 
-                      className="bg-white border-slate-300 h-10 text-sm font-medium rounded-lg" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium rounded-lg" 
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="asistido_difficulty" className="text-xs font-medium text-slate-600 block truncate">Dificultad</Label>
                     <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || 'Moderada'); setIsDirty(true); }}>
-                      <SelectTrigger id="asistido_difficulty" className="w-full h-10 data-[size=default]:h-10 bg-white border-slate-300 text-sm font-medium rounded-lg">
+                      <SelectTrigger id="asistido_difficulty" className="w-full h-9 data-[size=default]:h-9 bg-white border-slate-300 text-xs font-medium rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
@@ -1059,7 +1137,7 @@ export function TourForm({
                       value={altitude} 
                       onChange={(e) => { setAltitude(e.target.value); setIsDirty(true); }}
                       placeholder="Ej. 4200 o 3900 - 4200" 
-                      className="bg-white border-slate-300 h-10 text-sm font-medium rounded-lg" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium rounded-lg" 
                     />
                   </div>
 
@@ -1073,7 +1151,7 @@ export function TourForm({
                       value={groupSize} 
                       onChange={handleGroupSizeChange} 
                       placeholder="Ej. 12" 
-                      className="bg-white border-slate-300 h-10 text-sm font-medium rounded-lg" 
+                      className="bg-white border-slate-300 h-9 text-xs font-medium rounded-lg" 
                     />
                   </div>
                 </div>
@@ -1325,15 +1403,15 @@ export function TourForm({
               <p className="text-[10px] text-slate-400">Máximo 6 tours en esta sección del Inicio. Esta opción no modifica el diseño de las tarjetas.</p>
             </div>
 
-            {/* Card 3: Destino y Ámbito */}
+            {/* Card 3: Destino y Categorización */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700">Tipo de Destino</Label>
-                <Select name="destinationType" value={destinationType} onValueChange={(val) => { setDestinationType(val || 'Nacional'); setIsDirty(true); }}>
-                  <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                <Select name="destinationType" value={destinationType} onValueChange={handleDestinationTypeChange}>
+                  <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-medium">
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>
-                  <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                  <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
                     <SelectItem value="Nacional">Nacional</SelectItem>
                     <SelectItem value="Internacional">Internacional</SelectItem>
                   </SelectContent>
@@ -1341,21 +1419,48 @@ export function TourForm({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-700">Destino (Filtro Catálogo)</Label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {destinationType === 'Internacional' ? 'Internacional' : 'Nacional'}
+                  </span>
+                </div>
                 <Select name="region" value={region} onValueChange={(val) => { setRegion(val || ''); setIsDirty(true); }}>
-                  <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-semibold">
+                  <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-medium">
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>
-                  <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
-                    <SelectItem value="Cusco">Cusco</SelectItem>
-                    <SelectItem value="Lima">Lima</SelectItem>
-                    <SelectItem value="Ica">Ica</SelectItem>
-                    <SelectItem value="Arequipa">Arequipa</SelectItem>
-                    <SelectItem value="Puno">Puno</SelectItem>
-                    <SelectItem value="Madre de Dios">Madre de Dios</SelectItem>
+                  <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                    {destinationOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {showCategories ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-slate-700">Categorización</Label>
+                    <Link href="/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
+                      Gestionar
+                    </Link>
+                  </div>
+                  <Select value={selectedCategory} onValueChange={(val) => { setSelectedCategory(val || ''); setIsDirty(true); }}>
+                    <SelectTrigger className="w-full h-9 bg-white border-slate-300 text-xs font-medium">
+                      <SelectValue placeholder="Seleccionar categoría..." />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
+                      {availableExperienceCategories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                initialData?.categories?.map((c: any) => (
+                  <input key={c.id} type="hidden" name="categories" value={c.id} />
+                ))
+              )}
             </div>
 
             {/* Card 4: Datos técnicos */}
@@ -1408,65 +1513,6 @@ export function TourForm({
                 <Input id="groupSize" name="groupSize" type="number" min="1" value={groupSize} onChange={handleGroupSizeChange} placeholder="Ej. 12" className="bg-white border-slate-300 h-8 text-xs font-medium" />
               </div>
             </div>
-
-            {/* Card 5: Categorización */}
-            {showCategories ? (
-              <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-                <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-3">Categorización</h3>
-                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1.5">
-                  {categories && categories.length > 0 ? (
-                    categories
-                      .filter(cat => cat.name.toLowerCase() !== 'nacional' && cat.name.toLowerCase() !== 'internacional' && cat.id.toLowerCase() !== 'nacional' && cat.id.toLowerCase() !== 'internacional')
-                      .map(cat => (
-                        <div key={cat.id} className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            id={`cat_${cat.id}`} 
-                            name="categories" 
-                            value={cat.id} 
-                            checked={selectedCategories.includes(String(cat.id))}
-                            onChange={() => handleCategoryToggle(String(cat.id))}
-                            className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                          />
-                          <Label htmlFor={`cat_${cat.id}`} className="text-xs font-normal cursor-pointer text-slate-700 flex-1">{cat.name}</Label>
-                        </div>
-                      ))
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          id="cat_trekking" 
-                          name="categories" 
-                          value="trekking" 
-                          checked={selectedCategories.includes('trekking')}
-                          onChange={() => handleCategoryToggle('trekking')}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                        />
-                        <Label htmlFor="cat_trekking" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Trekking</Label>
-                      </div>
-                      <div className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          id="cat_aventura" 
-                          name="categories" 
-                          value="aventura" 
-                          checked={selectedCategories.includes('aventura')}
-                          onChange={() => handleCategoryToggle('aventura')}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 cursor-pointer" 
-                        />
-                        <Label htmlFor="cat_aventura" className="text-xs font-normal cursor-pointer text-slate-700 flex-1">Aventura</Label>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Preservar categorías existentes si el usuario no tiene permisos para modificarlas
-              initialData?.categories?.map((c: any) => (
-                <input key={c.id} type="hidden" name="categories" value={c.id} />
-              ))
-            )}
 
             {/* Card 6: Precios */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">

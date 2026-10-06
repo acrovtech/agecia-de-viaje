@@ -12,7 +12,10 @@ export default async function CategoriesPage() {
   }
 
   const categories = await prisma.category.findMany({
-    orderBy: { createdAt: 'desc' }
+    include: {
+      parent: true,
+    },
+    orderBy: [{ parentId: 'asc' }, { name: 'asc' }]
   });
 
   return (

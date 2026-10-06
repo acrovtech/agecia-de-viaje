@@ -8,6 +8,7 @@ import { Plus, Edit, Trash2, Search, Tags, Tag } from 'lucide-react';
 import { createCategory, updateCategory, deleteCategory } from '../../actions/category';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -15,6 +16,8 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  parentId?: string | null;
+  parent?: { id: string; name: string } | null;
   createdAt: Date;
 }
 
@@ -28,6 +31,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
   // Form State
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [parentId, setParentId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Confirm Modal State
@@ -63,10 +67,12 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
       setEditingCat(cat);
       setName(cat.name);
       setSlug(cat.slug);
+      setParentId(cat.parentId || 'none');
     } else {
       setEditingCat(null);
       setName('');
       setSlug('');
+      setParentId('none');
     }
     setIsModalOpen(true);
   };
@@ -78,19 +84,20 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
     if (!cleanName || !cleanSlug) return;
 
     setIsSubmitting(true);
+    const pId = parentId === 'none' ? null : parentId;
     try {
       if (editingCat) {
-        const res = await updateCategory(editingCat.id, cleanName, cleanSlug);
+        const res = await updateCategory(editingCat.id, cleanName, cleanSlug, pId);
         if (res.success && res.category) {
-          setCategories(categories.map(c => c.id === editingCat.id ? res.category! : c));
+          setCategories(categories.map(c => c.id === editingCat.id ? (res.category as any) : c));
           setIsModalOpen(false);
         } else {
           alert(res.error || "Error al actualizar");
         }
       } else {
-        const res = await createCategory(name, slug);
+        const res = await createCategory(name, slug, pId);
         if (res.success && res.category) {
-          setCategories([res.category, ...categories]);
+          setCategories([res.category as any, ...categories]);
           setIsModalOpen(false);
         } else {
           alert(res.error || "Error al crear");
@@ -215,18 +222,19 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
               <colgroup>
                 <col className="w-12" />
                 <col className="w-auto" />
-                <col className="w-48" />
                 <col className="w-44" />
-                <col className="w-28" />
+                <col className="w-36" />
+                <col className="w-36" />
+                <col className="w-24" />
               </colgroup>
               <thead>
                 {selectedIds.length > 0 ? (
                   <tr className="bg-slate-100/90 border-b border-slate-200 text-[#2f2f2f] text-xs font-medium animate-in fade-in duration-150">
-                    <th colSpan={5} className="px-4 py-2.5">
+                    <th colSpan={6} className="px-4 py-2.5">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 pr-2 border-r border-slate-300/80">
                           <input 
-                            type="checkbox"
+                            type="checkbox" 
                             checked={isAllSelected}
                             onChange={toggleSelectAll}
                             className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
@@ -258,6 +266,7 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                       />
                     </th>
                     <th className="px-4 py-3">Nombre de Categoría</th>
+                    <th className="px-4 py-3">Ámbito / Padre</th>
                     <th className="px-4 py-3">Slug (URL)</th>
                     <th className="px-4 py-3">Fecha de Creación</th>
                     <th className="px-4 py-3 text-center">Acciones</th>
@@ -285,6 +294,19 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
                           <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>{cat.name}</span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {cat.parent ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                            Padre: {cat.parent.name}
+                          </span>
+                        ) : (cat.slug === 'nacional' || cat.slug === 'internacional') ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+                            Categoría Padre
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">Principal</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-[11px] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-slate-600">
@@ -332,13 +354,33 @@ export function CategoryClientPage({ initialCategories }: { initialCategories: C
               </Label>
               <Input 
                 id="name" 
-                placeholder="Ej. Turismo de Aventura" 
+                placeholder="Ej. Cusco, Cancún, Aventura" 
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 required
                 autoFocus
                 className="text-xs h-9 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-slate-900"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="parentId" className="text-xs font-semibold text-slate-700">
+                Categoría Padre / Ámbito (Opcional)
+              </Label>
+              <Select value={parentId} onValueChange={(val) => setParentId(val || 'none')}>
+                <SelectTrigger id="parentId" className="text-xs h-9 bg-slate-50/50 border-slate-200 w-full">
+                  <SelectValue placeholder="Seleccionar padre..." />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs">
+                  <SelectItem value="none">Ninguna (Categoría Principal)</SelectItem>
+                  {categories.filter(c => !c.parentId && (!editingCat || c.id !== editingCat.id)).map(p => (
+                    <SelectItem key={p.id} value={p.id}>Padre: {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-slate-400">
+                Selecciona "Nacional" o "Internacional" para asociar este destino a su ámbito.
+              </p>
             </div>
             
             <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-end gap-2">

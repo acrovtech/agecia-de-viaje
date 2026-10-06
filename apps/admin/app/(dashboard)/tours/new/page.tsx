@@ -10,6 +10,7 @@ export default async function NewTourPage() {
   const showCategories = !isGestionUser;
 
   const categories = await prisma.category.findMany({
+    include: { parent: true },
     orderBy: { name: 'asc' }
   });
 
