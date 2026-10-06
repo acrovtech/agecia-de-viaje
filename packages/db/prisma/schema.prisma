@@ -73,6 +73,7 @@ model Tour {
   // Megamenu / Grouping
   region            String?  // e.g. "Cusco", "Lima"
   menuGroup         String?  // e.g. "Full Day", "Aventura"
+  destinationType   String?  @default("Nacional") // "Nacional" | "Internacional"
   isFeatured        Boolean  @default(false)
   
   // Images

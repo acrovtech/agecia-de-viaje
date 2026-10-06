@@ -86,10 +86,13 @@ export async function createTour(formData: FormData) {
   const region = (formData.get('region') as string)?.trim() || null;
   let menuGroup = (formData.get('menuGroup') as string)?.trim() || null;
   if (menuGroup === 'none') menuGroup = null;
+  const destinationType = (formData.get('destinationType') as string)?.trim() || 'Nacional';
   const isFeatured = formData.get('isFeatured') === 'true';
   
-  // Categories
-  const categoryIds = (formData.getAll('categories') as string[]).filter(Boolean);
+  // Categories (excluyendo 'nacional' e 'internacional' por ser selector interno de destino)
+  const categoryIds = (formData.getAll('categories') as string[])
+    .filter(Boolean)
+    .filter(id => id.toLowerCase() !== 'nacional' && id.toLowerCase() !== 'internacional');
   
   // Pricing
   const hasSharedService = formData.get('hasSharedService') === 'on' || formData.get('hasSharedService') === 'true';
@@ -157,6 +160,7 @@ export async function createTour(formData: FormData) {
     mapImage,
     region,
     menuGroup,
+    destinationType,
     isFeatured,
     hasSharedService,
     sharedPrice,
