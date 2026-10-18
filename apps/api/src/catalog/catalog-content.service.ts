@@ -33,6 +33,21 @@ const vehicle = z.object({
   maxLuggage: z.number().int().min(0).max(200), image,
   features: z.array(text).max(30), isActive: z.boolean(),
 }).strict();
+const tourTranslationSchema = z.object({
+  title: text,
+  slug: z.string().trim().max(100).nullable().optional(),
+  description: z.string().nullable().optional(),
+  itinerary: z.any().optional(),
+  inclusions: z.any().optional(),
+  exclusions: z.any().optional(),
+  recommendations: z.any().optional(),
+  faqs: z.any().optional(),
+  metaTitle: z.string().trim().max(100).nullable().optional(),
+  metaDescription: z.string().trim().max(300).nullable().optional(),
+  focusKeyphrase: z.string().trim().max(100).nullable().optional(),
+  generatedByAi: z.boolean().optional(),
+  reviewStatus: z.enum(['DRAFT', 'REVIEWED', 'PUBLISHED']).optional(),
+}).strict();
 const categorySelect = {
   id: true,
   name: true,
@@ -216,5 +231,77 @@ export class CatalogContentService {
       await this.audit(tx, who, 'VehicleType', row.id, resourceId ? 'SAAS_RESOURCE_UPDATE' : 'SAAS_RESOURCE_CREATE');
       return row;
     }); } catch (error) { conflict(error); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // TOUR LOCALIZED CONTENT / TRANSLATIONS
+  // ---------------------------------------------------------------------------
+  async getTourTranslations(agencyId: string, tourId: string) {
+    const tour = await this.prisma.tour.findFirst({
+      where: { id: tourId, agencyId },
+      select: { id: true, agencyId: true },
+    });
+    if (!tour) throw new NotFoundException('Tour no encontrado');
+
+    return await this.prisma.tourLocalizedContent.findMany({
+      where: { tourId },
+      orderBy: { locale: 'asc' },
+    });
+  }
+
+  async saveTourTranslation(who: ApiIdentity, tourId: string, locale: string, body: unknown) {
+    const tour = await this.prisma.tour.findFirst({
+      where: { id: tourId, agencyId: who.agencyId },
+      select: { id: true, agencyId: true },
+    });
+    if (!tour) throw new NotFoundException('Tour no encontrado');
+
+    const supportedLocales = ['es', 'en', 'pt', 'fr', 'de', 'it'];
+    if (!supportedLocales.includes(locale)) {
+      throw new BadRequestException('Idioma no compatible');
+    }
+
+    const data = tourTranslationSchema.parse(body);
+
+    return await this.prisma.tourLocalizedContent.upsert({
+      where: {
+        tourId_locale: {
+          tourId,
+          locale,
+        },
+      },
+      create: {
+        tourId,
+        locale,
+        title: data.title,
+        slug: data.slug || `${tourId}-${locale}`,
+        description: data.description || null,
+        itinerary: data.itinerary ?? null,
+        inclusions: data.inclusions ?? null,
+        exclusions: data.exclusions ?? null,
+        recommendations: data.recommendations ?? null,
+        faqs: data.faqs ?? null,
+        metaTitle: data.metaTitle || null,
+        metaDescription: data.metaDescription || null,
+        focusKeyphrase: data.focusKeyphrase || null,
+        generatedByAi: Boolean(data.generatedByAi),
+        reviewStatus: data.reviewStatus || 'DRAFT',
+      },
+      update: {
+        title: data.title,
+        slug: data.slug || `${tourId}-${locale}`,
+        description: data.description || null,
+        itinerary: data.itinerary ?? null,
+        inclusions: data.inclusions ?? null,
+        exclusions: data.exclusions ?? null,
+        recommendations: data.recommendations ?? null,
+        faqs: data.faqs ?? null,
+        metaTitle: data.metaTitle || null,
+        metaDescription: data.metaDescription || null,
+        focusKeyphrase: data.focusKeyphrase || null,
+        generatedByAi: Boolean(data.generatedByAi),
+        reviewStatus: data.reviewStatus || 'DRAFT',
+      },
+    });
   }
 }

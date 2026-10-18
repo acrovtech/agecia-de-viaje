@@ -1,49 +1,58 @@
+import React from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, AlertTriangle, Calendar, Clock, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
 import type { NavIdentity } from '../../design-system/sidebar';
 
+export interface DashboardReservation {
+  id: string;
+  code: string | null;
+  serviceTitle: string | null;
+  date: string;
+  pax: number;
+  totalPrice: number;
+  totalMinor?: number | null;
+  currency: string;
+  bookingStatus?: string | null;
+  paymentStatus?: string | null;
+  operationStatus?: string | null;
+  customerFirstName: string;
+  customerLastName: string;
+  pickupHotel?: string | null;
+}
+
 export interface DashboardViewProps {
   identity: NavIdentity;
-  reservations: {
-    id: string;
-    code: string | null;
-    serviceTitle: string | null;
-    date: string;
-    pax: number;
-    totalPrice: number;
-    totalMinor?: number | null;
-    currency: string;
-    operationStatus: string | null;
-    customerFirstName: string;
-    customerLastName: string;
-  }[];
-  dispatchTotal: number;
-  dispatchIncomplete: number;
   reservationsToday: number;
-  pendingReservations: number;
+  upcomingReservations: DashboardReservation[];
+  attentionNeeded: {
+    reservation: DashboardReservation;
+    reason: string;
+  }[];
+  nextDaysLoad: { date: string; dayName: string; count: number }[];
   formattedBookedValue: string;
+  totalReservationsCount: number;
 }
 
 export function DashboardView({
   identity,
-  reservations,
-  dispatchTotal,
-  dispatchIncomplete,
   reservationsToday,
-  pendingReservations,
+  upcomingReservations,
+  attentionNeeded,
+  nextDaysLoad,
   formattedBookedValue,
+  totalReservationsCount,
 }: DashboardViewProps) {
   return (
     <div className="space-y-6">
       <PageHeader
         title="Inicio"
-        description={`Resumen operativo de ${identity.agencyName}`}
+        description={`Panel operativo y comercial de ${identity.agencyName}`}
         actions={
           <Link
             href="/catalog/tours?edit=new"
-            className="product-button-primary"
+            className="product-button-primary inline-flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo tour</span>
@@ -51,69 +60,127 @@ export function DashboardView({
         }
       />
 
-      {/* Live Email Transport Quiet System Notice */}
-      <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-between text-xs text-[#374151]">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-[#898989] shrink-0" aria-hidden="true" />
-          <span className="font-medium truncate">
-            Correo transaccional pendiente de configurar
-          </span>
-          <span className="hidden sm:inline text-[#6b7280]">
-            — Bandeja de salida duradera y cifrado activo (transporte de correo en vivo no configurado)
-          </span>
-        </div>
-        <Link
-          href="/notifications"
-          className="text-xs font-medium text-[#111111] hover:underline underline-offset-2 shrink-0 ml-3"
-        >
-          Ver outbox
-        </Link>
-      </div>
-
-      {/* Flat Operational Metrics Row (Whitespace + Typography + Hairline Divider) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-3 border-b border-[#e5e7eb]">
+      {/* Action-Oriented Operational Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2 border-b border-[#e5e7eb]">
         <div className="space-y-1">
-          <span className="text-xs text-[#6b7280] font-medium block">Servicios hoy</span>
-          <div className="text-2xl font-semibold text-[#111111] tracking-tight">{reservationsToday}</div>
+          <span className="text-xs text-[#6b7280] font-medium block">Servicios Hoy</span>
+          <div className="text-2xl font-bold text-[#111111] tracking-tight">{reservationsToday}</div>
           <p className="text-[11px] text-[#6b7280]">
-            {dispatchTotal === 0 ? 'Sin servicios programados' : `${dispatchTotal} programados en despacho`}
+            {reservationsToday === 0 ? 'Sin salidas programadas hoy' : `${reservationsToday} reservas para hoy`}
           </p>
         </div>
 
         <div className="space-y-1">
-          <span className="text-xs text-[#6b7280] font-medium block">Operaciones pendientes</span>
-          <div className="text-2xl font-semibold text-[#111111] tracking-tight">{dispatchIncomplete}</div>
+          <span className="text-xs text-[#6b7280] font-medium block">Requieren Atención</span>
+          <div className="text-2xl font-bold text-amber-600 tracking-tight">{attentionNeeded.length}</div>
           <p className="text-[11px] text-[#6b7280]">
-            {dispatchIncomplete > 0 ? 'Falta asignar recursos' : 'Despacho completo'}
+            {attentionNeeded.length === 0 ? 'Todo al día' : 'Pendientes de confirmar o cobrar'}
           </p>
         </div>
 
         <div className="space-y-1">
-          <span className="text-xs text-[#6b7280] font-medium block">Reservas pendientes</span>
-          <div className="text-2xl font-semibold text-[#111111] tracking-tight">{pendingReservations}</div>
-          <p className="text-[11px] text-[#6b7280]">Pendientes de coordinar</p>
+          <span className="text-xs text-[#6b7280] font-medium block">Próximas Salidas</span>
+          <div className="text-2xl font-bold text-[#111111] tracking-tight">{upcomingReservations.length}</div>
+          <p className="text-[11px] text-[#6b7280]">Próximas reservas cronológicas</p>
         </div>
 
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[#6b7280] font-medium block">Valor reservado</span>
+            <span className="text-xs text-[#6b7280] font-medium block">Valor Reservado</span>
             <span className="text-[10px] uppercase font-medium px-1.5 py-0.2 rounded bg-[#f3f4f6] text-[#6b7280] border border-[#e5e7eb]">
-              Diferido
+              Total
             </span>
           </div>
-          <div className="text-2xl font-semibold text-[#111111] tracking-tight">{formattedBookedValue}</div>
-          <p className="text-[11px] text-[#898989]">
-            Importe pactado (pagos diferidos)
-          </p>
+          <div className="text-2xl font-bold text-[#111111] tracking-tight">{formattedBookedValue}</div>
+          <p className="text-[11px] text-[#898989]">{totalReservationsCount} reservas registradas</p>
         </div>
       </div>
 
-      {/* Recent Reservations Snapshot (Canonical Grouped List Container) */}
+      {/* SECTION: REQUIEREN ATENCIÓN */}
+      {attentionNeeded.length > 0 && (
+        <div className="product-card-surface border-amber-200 bg-amber-50/20 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <h3 className="text-sm font-semibold text-[#111111]">Requieren Atención</h3>
+            </div>
+            <Link href="/reservations" className="text-xs font-medium text-amber-800 hover:underline">
+              Ir a Reservas
+            </Link>
+          </div>
+
+          <div className="divide-y divide-amber-100 text-xs">
+            {attentionNeeded.slice(0, 4).map(({ reservation: r, reason }) => (
+              <div key={r.id} className="py-2.5 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/reservations?id=${r.id}`}
+                      className="font-semibold text-[#111111] hover:underline font-mono"
+                    >
+                      {r.code ?? r.id.slice(0, 8)}
+                    </Link>
+                    <span className="text-[#374151] truncate">— {r.serviceTitle ?? 'Tour'}</span>
+                  </div>
+                  <p className="text-[11px] text-amber-700 mt-0.5">{reason}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="font-semibold text-[#111111]">
+                    ${((r.totalMinor ?? Math.round(r.totalPrice * 100)) / 100).toFixed(2)} USD
+                  </span>
+                  <Link
+                    href={`/reservations?id=${r.id}`}
+                    className="block text-[11px] text-[#111111] font-medium hover:underline mt-0.5"
+                  >
+                    Gestionar
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION: PRÓXIMOS DÍAS (Carga operativa) */}
+      <div className="product-card-surface p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-[#111111]">Carga de los Próximos 7 Días</h3>
+            <p className="text-xs text-[#6b7280]">Volumen de pasajeros y servicios programados</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 pt-2">
+          {nextDaysLoad.map((item, idx) => (
+            <div
+              key={item.date}
+              className={`p-2.5 rounded-xl border text-center transition-all ${
+                idx === 0
+                  ? 'border-[#111111] bg-[#f8f9fa] shadow-xs'
+                  : 'border-[#e5e7eb] bg-white'
+              }`}
+            >
+              <span className="text-[10px] uppercase font-bold text-[#6b7280] block">
+                {item.dayName}
+              </span>
+              <span className="text-xs font-mono text-[#898989] block mt-0.5">
+                {item.date.slice(5)}
+              </span>
+              <div className="mt-2 text-base font-bold text-[#111111]">{item.count}</div>
+              <span className="text-[10px] text-[#898989] block">
+                {item.count === 1 ? 'reserva' : 'reservas'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION: PRÓXIMAS RESERVAS */}
       <div className="product-card-surface">
         <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-[#111111]">Reservas Recientes</h3>
-            <p className="text-xs text-[#6b7280]">Últimos servicios registrados en tu agencia</p>
+            <h3 className="text-sm font-semibold text-[#111111]">Próximas Reservas</h3>
+            <p className="text-xs text-[#6b7280]">Siguientes salidas ordenadas cronológicamente</p>
           </div>
           <Link
             href="/reservations"
@@ -128,15 +195,16 @@ export function DashboardView({
             <thead>
               <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
                 <th className="py-2.5 px-4 font-medium">Código</th>
-                <th className="py-2.5 px-4 font-medium">Servicio</th>
+                <th className="py-2.5 px-4 font-medium">Tour</th>
                 <th className="py-2.5 px-4 font-medium">Cliente</th>
                 <th className="py-2.5 px-4 font-medium">Fecha</th>
+                <th className="py-2.5 px-4 font-medium text-center">Pax</th>
                 <th className="py-2.5 px-4 font-medium">Estado</th>
                 <th className="py-2.5 px-4 font-medium text-right">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5e7eb]">
-              {reservations.slice(0, 5).map((row) => (
+              {upcomingReservations.slice(0, 6).map((row) => (
                 <tr key={row.id} className="product-data-row">
                   <td className="py-3 px-4 font-semibold text-[#111111]">
                     <Link
@@ -147,24 +215,27 @@ export function DashboardView({
                     </Link>
                   </td>
                   <td className="py-3 px-4 text-[#111111] font-medium">
-                    {row.serviceTitle ?? 'Servicio'}
+                    {row.serviceTitle ?? 'Tour'}
                   </td>
                   <td className="py-3 px-4 text-[#374151]">
                     {row.customerFirstName} {row.customerLastName}
                   </td>
                   <td className="py-3 px-4 text-[#6b7280]">{row.date.slice(0, 10)}</td>
+                  <td className="py-3 px-4 text-center font-medium text-[#111111]">
+                    {row.pax}
+                  </td>
                   <td className="py-3 px-4">
-                    <StatusBadge status={row.operationStatus || 'PENDING'} />
+                    <StatusBadge status={row.operationStatus || row.bookingStatus || 'PENDING'} />
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-[#111111]">
                     ${((row.totalMinor ?? Math.round(row.totalPrice * 100)) / 100).toFixed(2)} USD
                   </td>
                 </tr>
               ))}
-              {reservations.length === 0 && (
+              {upcomingReservations.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#898989]">
-                    No hay reservas todavía
+                  <td colSpan={7} className="py-8 text-center text-[#898989]">
+                    No hay reservas programadas próximamente
                   </td>
                 </tr>
               )}

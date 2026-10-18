@@ -531,7 +531,7 @@ export default async function ReservationsPage({
   // VIEW: CREAR RESERVA MANUAL (?new=1)
   // =========================================================================
   if (params.new === '1') {
-    const kind = params.kind === 'transfers' ? 'transfers' : 'tours';
+    const kind = 'tours';
 
     if (params.serviceId !== undefined) {
       if (!validId(params.serviceId)) {
@@ -540,27 +540,20 @@ export default async function ReservationsPage({
 
       try {
         const body = await centralRequest(`${base}/catalog/${kind}/${params.serviceId}/content`, token);
-        const row = kind === 'tours' ? tourContentSchema.parse(body) : transferContentSchema.parse(body);
+        const row = tourContentSchema.parse(body);
 
-        if (!row.isPublished || ('isActive' in row && !row.isActive)) {
+        if (!row.isPublished) {
           throw new CentralApiError(404);
         }
-
-        const vehicles =
-          'vehiclePrices' in row
-            ? row.vehiclePrices
-                .filter((p) => p.vehicle.isActive)
-                .map((p) => ({ id: p.vehicleId, name: p.vehicle.name, maxPax: p.vehicle.maxPax }))
-            : [];
 
         return (
           <div className="max-w-4xl mx-auto space-y-6">
             <Link
-              href={`/reservations?new=1&kind=${kind}`}
+              href="/reservations?new=1"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6b7280] hover:text-[#111111]"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Elegir otro servicio</span>
+              <span>Elegir otro tour</span>
             </Link>
 
             <BookingForm
@@ -569,10 +562,10 @@ export default async function ReservationsPage({
               service={{
                 id: row.id,
                 title: row.title,
-                kind: kind === 'tours' ? 'TOUR' : 'TRANSFER',
+                kind: 'TOUR',
                 hasSharedService: row.hasSharedService,
                 hasPrivateService: row.hasPrivateService,
-                vehicles,
+                vehicles: [],
               }}
             />
           </div>
@@ -580,8 +573,8 @@ export default async function ReservationsPage({
       } catch {
         return (
           <EmptyState
-            title="Servicio no disponible"
-            description="El servicio seleccionado no está publicado o no está disponible para cotización."
+            title="Tour no disponible"
+            description="El tour seleccionado no está publicado o no está disponible para cotización."
             action={
               <Link href="/reservations?new=1" className="underline text-xs font-semibold">
                 Volver a la selección
@@ -594,38 +587,19 @@ export default async function ReservationsPage({
       // Step: Select published service
       const after = validId(params.after) ? `?after=${encodeURIComponent(params.after)}` : '';
       const list = catalogSchema.parse(
-        await centralRequest(`${base}/catalog/${kind}${after}`, token).catch(() => ({
+        await centralRequest(`${base}/catalog/tours${after}`, token).catch(() => ({
           data: [],
           nextCursor: null,
         })),
       );
-      const rows = list.data.filter((r) => r.isPublished && (kind === 'tours' || r.isActive));
+      const rows = list.data.filter((r) => r.isPublished);
 
       return (
         <div className="max-w-4xl mx-auto space-y-6">
           <PageHeader
             title="Nueva Reserva Manual"
-            description="Selecciona un servicio publicado para iniciar la cotización y registro."
+            description="Selecciona un tour publicado para iniciar la cotización y registro."
           />
-
-          <div className="flex gap-2 border-b border-[#e5e7eb] pb-3">
-            <Link
-              href="/reservations?new=1&kind=tours"
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                kind === 'tours' ? 'bg-[#111111] text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
-              }`}
-            >
-              Tours
-            </Link>
-            <Link
-              href="/reservations?new=1&kind=transfers"
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                kind === 'transfers' ? 'bg-[#111111] text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111] hover:bg-[#e5e7eb]'
-              }`}
-            >
-              Traslados
-            </Link>
-          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             {rows.map((r) => (

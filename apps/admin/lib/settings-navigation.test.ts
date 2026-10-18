@@ -10,11 +10,13 @@ import {
 import { canAccessTeamUi, TEAM_UI_ALLOWED_ROLES } from './team-auth';
 
 describe('Settings Navigation and Canonical Routing Architecture', () => {
-  it('1. contains all 10 approved product settings sections in the exact hierarchy', () => {
+  it('1. contains all approved product settings sections in the exact hierarchy including team and feedback', () => {
     const ids = SETTINGS_NAV_ITEMS.map((item) => item.id);
     expect(ids).toEqual([
       'overview',
       'profile',
+      'team',
+      'feedback',
       'general',
       'appearance',
       'referrals',
@@ -29,6 +31,8 @@ describe('Settings Navigation and Canonical Routing Architecture', () => {
   it('2. maps canonical pathname routes correctly', () => {
     expect(getSettingsConfigByPath('/settings').id).toBe('overview');
     expect(getSettingsConfigByPath('/settings/profile').id).toBe('profile');
+    expect(getSettingsConfigByPath('/settings/team').id).toBe('team');
+    expect(getSettingsConfigByPath('/settings/feedback').id).toBe('feedback');
     expect(getSettingsConfigByPath('/settings/general').id).toBe('general');
     expect(getSettingsConfigByPath('/settings/appearance').id).toBe('appearance');
     expect(getSettingsConfigByPath('/settings/referrals').id).toBe('referrals');
@@ -88,7 +92,7 @@ describe('Settings Navigation and Canonical Routing Architecture', () => {
     expect(sections.map((s) => s.id)).toEqual(['account', 'security', 'billing', 'social', 'integrations']);
 
     const cards = getSettingsOverviewCards();
-    expect(cards).toHaveLength(9);
+    expect(cards).toHaveLength(11);
     expect(cards.find((c) => c.id === 'overview')).toBeUndefined();
 
     // Verify payment status consistency on Integrations

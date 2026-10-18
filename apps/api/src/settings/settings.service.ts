@@ -10,6 +10,8 @@ import type { ApiIdentity } from '../auth/auth.service.js';
 import {
   updateAgencyProfileSchema,
   updateLegalProfileSchema,
+  addLocaleSchema,
+  createFeedbackSchema,
   type UpdateAgencyProfileDto,
   type UpdateLegalProfileDto,
 } from './settings.dto.js';
@@ -276,4 +278,224 @@ export class SettingsService {
       throw new ForbiddenException('No puedes utilizar archivos multimedia pertenecientes a otra agencia');
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // ENTITLEMENTS
+  // ---------------------------------------------------------------------------
+  async getEntitlements(agencyId: string) {
+    const entitlement = await this.prisma.agencyEntitlement.findUnique({
+      where: { agencyId },
+    });
+
+    if (!entitlement) {
+      return {
+        agencyId,
+        maxCatalogLocales: 1,
+        aiEnabled: false,
+        aiMonthlyCredits: 0,
+      };
+    }
+
+    return entitlement;
+  }
+
+  // ---------------------------------------------------------------------------
+  // CATALOG LOCALES
+  // ---------------------------------------------------------------------------
+  async getLocales(agencyId: string) {
+    let locales = await this.prisma.agencyLocale.findMany({
+      where: { agencyId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (locales.length === 0) {
+      const defaultLocale = await this.prisma.agencyLocale.create({
+        data: {
+          agencyId,
+          locale: 'es',
+          isDefault: true,
+          enabled: true,
+        },
+      });
+      locales = [defaultLocale];
+    }
+
+    const entitlements = await this.getEntitlements(agencyId);
+    const defaultLocale = locales.find((l) => l.isDefault)?.locale || 'es';
+
+    return {
+      locales,
+      defaultLocale,
+      maxCatalogLocales: entitlements.maxCatalogLocales,
+      enabledCount: locales.filter((l) => l.enabled).length,
+    };
+  }
+
+  async addLocale(identity: ApiIdentity, agencyId: string, rawBody: unknown) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para modificar la configuración de esta agencia');
+    }
+
+    const parsed = addLocaleSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message || 'Idioma no válido';
+      throw new BadRequestException(msg);
+    }
+    const { locale } = parsed.data;
+
+    const entitlements = await this.getEntitlements(agencyId);
+    const existingLocales = await this.prisma.agencyLocale.findMany({
+      where: { agencyId },
+    });
+
+    const activeCount = existingLocales.filter((l) => l.enabled).length;
+    const isAlreadyPresent = existingLocales.some((l) => l.locale === locale && l.enabled);
+
+    if (!isAlreadyPresent && activeCount >= entitlements.maxCatalogLocales) {
+      throw new ForbiddenException(
+        `Tu configuración actual permite un máximo de ${entitlements.maxCatalogLocales} idioma(s) de catálogo.`
+      );
+    }
+
+    return await this.prisma.agencyLocale.upsert({
+      where: {
+        agencyId_locale: {
+          agencyId,
+          locale,
+        },
+      },
+      create: {
+        agencyId,
+        locale,
+        enabled: true,
+        isDefault: existingLocales.length === 0,
+      },
+      update: {
+        enabled: true,
+      },
+    });
+  }
+
+  async setDefaultLocale(identity: ApiIdentity, agencyId: string, localeId: string) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para modificar la configuración de esta agencia');
+    }
+
+    const targetLocale = await this.prisma.agencyLocale.findFirst({
+      where: { id: localeId, agencyId },
+    });
+
+    if (!targetLocale) {
+      throw new NotFoundException('Idioma no encontrado para esta agencia');
+    }
+
+    if (!targetLocale.enabled) {
+      throw new BadRequestException('No se puede establecer como predeterminado un idioma deshabilitado');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.agencyLocale.updateMany({
+        where: { agencyId, isDefault: true },
+        data: { isDefault: false },
+      });
+
+      return await tx.agencyLocale.update({
+        where: { id: targetLocale.id },
+        data: { isDefault: true },
+      });
+    });
+  }
+
+  async removeLocale(identity: ApiIdentity, agencyId: string, localeId: string) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para modificar la configuración de esta agencia');
+    }
+
+    const target = await this.prisma.agencyLocale.findFirst({
+      where: { id: localeId, agencyId },
+    });
+
+    if (!target) {
+      throw new NotFoundException('Idioma no encontrado');
+    }
+
+    if (target.isDefault) {
+      throw new BadRequestException('No puedes eliminar el idioma principal del catálogo sin asignar otro primero');
+    }
+
+    const allLocales = await this.prisma.agencyLocale.findMany({
+      where: { agencyId },
+    });
+    if (allLocales.length <= 1) {
+      throw new BadRequestException('La agencia debe tener al menos un idioma en su catálogo');
+    }
+
+    return await this.prisma.agencyLocale.delete({
+      where: { id: target.id },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI CREDITS (FOUNDATION & LEDGER)
+  // ---------------------------------------------------------------------------
+  async getCredits(agencyId: string) {
+    let account = await this.prisma.aiCreditAccount.findUnique({
+      where: { agencyId },
+    });
+
+    if (!account) {
+      account = await this.prisma.aiCreditAccount.create({
+        data: { agencyId, balance: 0 },
+      });
+    }
+
+    const ledger = await this.prisma.aiCreditLedger.findMany({
+      where: { agencyId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return {
+      balance: account.balance,
+      ledger,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // PRODUCT FEEDBACK
+  // ---------------------------------------------------------------------------
+  async createFeedback(identity: ApiIdentity, agencyId: string, rawBody: unknown) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para enviar comentarios para esta agencia');
+    }
+
+    const parsed = createFeedbackSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message || 'Datos de comentario inválidos';
+      throw new BadRequestException(msg);
+    }
+    const dto = parsed.data;
+
+    // Submitting feedback creates ZERO reward credits automatically
+    return await this.prisma.productFeedback.create({
+      data: {
+        agencyId,
+        userId: identity.userId,
+        type: dto.type,
+        title: dto.title,
+        description: dto.description,
+        status: 'OPEN',
+        rewardCredits: null,
+      },
+    });
+  }
+
+  async listFeedback(agencyId: string) {
+    return await this.prisma.productFeedback.findMany({
+      where: { agencyId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
 }
+

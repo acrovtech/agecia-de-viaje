@@ -34,4 +34,8 @@ export class CatalogContentController {
   createVehicle(@Req() req: AuthenticatedRequest, @Body() body: unknown) { return this.content.saveVehicle(req.identity, undefined, body); }
   @Put('vehicles/:id') @AgencyRoles('OWNER', 'ADMIN', 'OPERATOR')
   updateVehicle(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) { return this.content.saveVehicle(req.identity, id, body); }
+  @Get('tours/:id/translations')
+  translations(@Req() req: AuthenticatedRequest, @Param('id') id: string) { return this.content.getTourTranslations(req.identity.agencyId, id); }
+  @Put('tours/:id/translations/:locale') @AgencyRoles('OWNER', 'ADMIN', 'EDITOR')
+  saveTranslation(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Param('locale') locale: string, @Body() body: unknown) { return this.content.saveTourTranslation(req.identity, id, locale, body); }
 }

@@ -1,6 +1,7 @@
 export type SettingsSectionId =
   | 'overview'
   | 'profile'
+  | 'team'
   | 'general'
   | 'appearance'
   | 'referrals'
@@ -9,7 +10,8 @@ export type SettingsSectionId =
   | 'security'
   | 'security-legal'
   | 'social'
-  | 'integrations';
+  | 'integrations'
+  | 'feedback';
 
 export type SettingsGroupId =
   | 'root'
@@ -22,6 +24,8 @@ export type SettingsGroupId =
 export type SettingsIconName =
   | 'layout-grid'
   | 'user'
+  | 'users'
+  | 'help-circle'
   | 'sliders'
   | 'palette'
   | 'gift'
@@ -101,6 +105,36 @@ export const SETTINGS_NAV_ITEMS: SettingsRouteConfig[] = [
     iconName: 'user',
     overviewBadgeVariant: 'role',
     overviewActionLabel: 'Configurar cuenta',
+  },
+  {
+    id: 'team',
+    groupId: 'account',
+    groupLabel: 'Cuenta',
+    label: 'Equipo',
+    href: '/settings/team',
+    legacyTab: 'equipo',
+    title: 'Equipo y acceso',
+    overviewTitle: 'Equipo y roles',
+    description: 'Gestiona los miembros de tu equipo, roles, permisos e invitaciones de acceso.',
+    overviewDescription: 'Miembros, roles, invitaciones pendientes y control de acceso.',
+    status: 'active',
+    iconName: 'users',
+    overviewActionLabel: 'Gestionar equipo',
+  },
+  {
+    id: 'feedback',
+    groupId: 'account',
+    groupLabel: 'Cuenta',
+    label: 'Ayuda y comentarios',
+    href: '/settings/feedback',
+    legacyTab: 'feedback',
+    title: 'Ayuda y comentarios',
+    overviewTitle: 'Ayuda y comentarios',
+    description: 'Envía reportes de errores, sugerencias de mejora o solicita nuevas funciones.',
+    overviewDescription: 'Canal directo de retroalimentación y sugerencias para la plataforma.',
+    status: 'active',
+    iconName: 'help-circle',
+    overviewActionLabel: 'Enviar sugerencia',
   },
   {
     id: 'general',

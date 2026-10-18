@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Building2, User, LogOut, ChevronDown } from 'lucide-react';
+import { Building2, User, LogOut, ChevronDown, HelpCircle } from 'lucide-react';
 import { logoutAction } from '@/app/actions/auth';
 import type { NavIdentity } from './sidebar';
 
@@ -146,6 +146,18 @@ export function TenantAccountCard({
             >
               <User className="w-3.5 h-3.5 text-[#6b7280]" />
               <span>Perfil</span>
+            </Link>
+
+            <Link
+              href="/settings/feedback"
+              onClick={() => {
+                handleClose();
+                onNavigate?.();
+              }}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium text-[#374151] hover:text-[#111111] hover:bg-[#f3f4f6] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#111111]"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[#6b7280]" />
+              <span>Ayuda y comentarios</span>
             </Link>
           </div>
 

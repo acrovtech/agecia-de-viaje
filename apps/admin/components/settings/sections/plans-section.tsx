@@ -1,28 +1,36 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Check, Info } from 'lucide-react';
 
 export function PlansSection() {
+  const [selectedPlanNotice, setSelectedPlanNotice] = useState<string | null>(null);
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Notice: SaaS Plans preview status */}
       <div className="p-3.5 rounded-lg border border-indigo-200 bg-indigo-50/70 flex items-start gap-2.5 text-xs text-indigo-900">
         <Info className="w-4 h-4 text-indigo-700 shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold">Planes de la Plataforma SaaS: </span>
+          <span className="font-semibold">Vista preliminar de planes SaaS: </span>
           <span>
-            Comparativa de niveles de servicio. Tu agencia se encuentra actualmente en el <strong>Plan Pro Crecimiento</strong>. El flujo de actualización automática de planes con facturación recurrente se habilitará en el lanzamiento comercial.
+            Comparativa de niveles de servicio de referencia. El flujo de contratación automatizada con facturación recurrente se habilitará en el lanzamiento comercial oficial.
           </span>
         </div>
       </div>
 
+      {selectedPlanNotice && (
+        <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#374151]">
+          {selectedPlanNotice}
+        </div>
+      )}
+
       <div className="text-center max-w-2xl mx-auto space-y-1">
         <h3 className="text-lg font-bold text-[#111111]">
-          Planes Diseñados para Escalar tu Agencia de Viajes
+          Niveles de Servicio Diseñados para tu Crecimiento
         </h3>
         <p className="text-xs text-[#6b7280]">
-          Elige el nivel de capacidad operativa y canales de venta que mejor se adapte a tu crecimiento.
+          Comparativa referencial de capacidades para agencias de viajes independientes y operadores consolidados.
         </p>
       </div>
 
@@ -49,28 +57,25 @@ export function PlansSection() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Pasarela de pagos Izipay</span>
+                <span>1 idioma de catálogo</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Soporte por ticket</span>
+                <span>Pasarela de pagos Izipay</span>
               </li>
             </ul>
           </div>
           <button
             type="button"
-            onClick={() => alert('Seleccionar plan Starter')}
+            onClick={() => setSelectedPlanNotice('La contratación directa del Plan Starter estará disponible próximamente.')}
             className="product-button-secondary w-full"
           >
-            Cambiar a Starter
+            Ver detalles Starter
           </button>
         </div>
 
-        {/* Pro (Active) */}
-        <div className="product-card-surface p-6 border-2 border-[#111111] relative flex flex-col justify-between space-y-5 bg-[#f8f9fa]/30">
-          <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#111111] text-white">
-            PLAN ACTUAL
-          </span>
+        {/* Pro */}
+        <div className="product-card-surface p-6 border-2 border-[#111111] relative flex flex-col justify-between space-y-5">
           <div className="space-y-4">
             <div>
               <h4 className="text-base font-semibold text-[#111111]">Pro Crecimiento</h4>
@@ -83,11 +88,11 @@ export function PlansSection() {
             <ul className="space-y-2 text-xs text-[#374151] pt-2 border-t border-[#e5e7eb]">
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="font-medium text-[#111111]">Tours y traslados ilimitados</span>
+                <span className="font-medium text-[#111111]">Tours ilimitados</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Despacho y asignación de flota</span>
+                <span>Reportes comerciales avanzados</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -95,20 +100,20 @@ export function PlansSection() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Página social móvil</span>
+                <span>Múltiples idiomas de catálogo</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Soporte prioritario</span>
+                <span>Diagnóstico SEO contextual</span>
               </li>
             </ul>
           </div>
           <button
             type="button"
-            disabled
-            className="w-full h-8 rounded-lg bg-[#e5e7eb] text-[#374151] text-xs font-semibold cursor-default"
+            onClick={() => setSelectedPlanNotice('La contratación directa del Plan Pro estará disponible en el lanzamiento comercial.')}
+            className="product-button-secondary w-full"
           >
-            Plan Activo
+            Ver detalles Pro
           </button>
         </div>
 
@@ -138,7 +143,7 @@ export function PlansSection() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Acceso a API y webhooks en vivo</span>
+                <span>Acceso a API y webhooks</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -148,10 +153,10 @@ export function PlansSection() {
           </div>
           <button
             type="button"
-            onClick={() => alert('Mejorar a Enterprise: te conectaremos con un asesor comercial.')}
+            onClick={() => setSelectedPlanNotice('Para opciones Enterprise personalizadas, contacta a ventas.')}
             className="product-button-primary w-full"
           >
-            Mejorar a Enterprise
+            Consultar Enterprise
           </button>
         </div>
       </div>

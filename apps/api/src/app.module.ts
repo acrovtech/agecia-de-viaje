@@ -38,6 +38,8 @@ import { OperationsController } from './operations/operations.controller.js';
 import { OperationsService } from './operations/operations.service.js';
 import { NotificationsController } from './notifications/notifications.controller.js';
 import { NotificationsService } from './notifications/notifications.service.js';
+import { ReportsController } from './reports/reports.controller.js';
+import { ReportsService } from './reports/reports.service.js';
 import { EMAIL_TRANSPORT_ADAPTER } from './notifications/transport/email-transport.interface.js';
 import { DisabledEmailTransportAdapter } from './notifications/transport/disabled-transport.adapter.js';
 
@@ -64,6 +66,7 @@ export class AppModule {
               OperationsController,
               MediaController,
               NotificationsController,
+              ReportsController,
             ]
           : []),
         // Financial endpoints are enabled when checkout is activated and validated.
@@ -89,6 +92,7 @@ export class AppModule {
         MembershipsService,
         InvitationsService,
         NotificationsService,
+        ReportsService,
         DisabledEmailTransportAdapter,
         {
           provide: EMAIL_TRANSPORT_ADAPTER,

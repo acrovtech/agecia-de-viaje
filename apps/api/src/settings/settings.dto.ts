@@ -33,3 +33,24 @@ export const updateLegalProfileSchema = z
   .strict();
 
 export type UpdateLegalProfileDto = z.infer<typeof updateLegalProfileSchema>;
+
+export const addLocaleSchema = z
+  .object({
+    locale: z.enum(['es', 'en', 'pt', 'fr', 'de', 'it'], {
+      message: 'El idioma seleccionado no es compatible actualmente',
+    }),
+  })
+  .strict();
+
+export type AddLocaleDto = z.infer<typeof addLocaleSchema>;
+
+export const createFeedbackSchema = z
+  .object({
+    type: z.enum(['BUG', 'IMPROVEMENT', 'FEATURE']),
+    title: z.string().trim().min(3, 'El título debe tener al menos 3 caracteres').max(120),
+    description: z.string().trim().min(5, 'La descripción debe tener al menos 5 caracteres').max(2000),
+  })
+  .strict();
+
+export type CreateFeedbackDto = z.infer<typeof createFeedbackSchema>;
+

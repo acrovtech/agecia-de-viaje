@@ -32,6 +32,7 @@ test('canonical clean routes and login reach their own server authorization', as
   const canonicalRoutes = [
     '/dashboard',
     '/reservations',
+    '/reports',
     '/operations',
     '/catalog/tours',
     '/catalog/transfers',

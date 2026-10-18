@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   Smartphone,
   Blocks,
+  Users,
+  HelpCircle,
   Search,
 } from 'lucide-react';
 import {
@@ -30,6 +32,10 @@ function renderOverviewIcon(iconName: SettingsIconName) {
   switch (iconName) {
     case 'user':
       return <User className={iconClass} />;
+    case 'users':
+      return <Users className={iconClass} />;
+    case 'help-circle':
+      return <HelpCircle className={iconClass} />;
     case 'sliders':
       return <Sliders className={iconClass} />;
     case 'palette':

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useActionState } from 'react';
-import { Sliders, Check, Building2, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Sliders, Check, Building2, CheckCircle2, AlertTriangle, Info, Globe } from 'lucide-react';
 import { updateAgencyProfileAction } from '../../../lib/settings-actions';
 import type { AgencyProfileData, NavIdentity, SettingsActionState } from '../types';
 
@@ -23,7 +23,7 @@ export function GeneralSection({
 
   const [timezone, setTimezone] = useState('America/Lima');
   const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('24h');
-  const [language, setLanguage] = useState<'es' | 'en'>('es');
+  const [interfaceLanguage, setInterfaceLanguage] = useState<'es' | 'en'>('es');
   const [monthlyDigestEnabled, setMonthlyDigestEnabled] = useState(true);
   const [monthlyDigestEmail, setMonthlyDigestEmail] = useState(
     initialProfile.email || identity?.email || ''
@@ -39,39 +39,39 @@ export function GeneralSection({
       <div className="p-3.5 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] flex items-start gap-2.5 text-xs text-[#374151]">
         <Info className="w-4 h-4 text-[#6b7280] shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold text-[#111111]">Vista preliminar de preferencias regionales: </span>
+          <span className="font-semibold text-[#111111]">Parámetros de configuración del sistema: </span>
           <span className="text-[#6b7280]">
-            El idioma, zona horaria y formato horario son funcionales en la sesión de interfaz; la persistencia duradera en base de datos central está programada para la siguiente fase. La información comercial a continuación sí es persistente.
+            El idioma de la interfaz del software es independiente de los idiomas en los que se publican los tours del catálogo. La información comercial a continuación es persistente en tu perfil de agencia.
           </span>
         </div>
       </div>
 
-      {/* Card: Parámetros del Sistema */}
+      {/* Card: Preferencias de la Interfaz */}
       <div className="product-card-surface p-5 space-y-5">
         <div>
           <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
             <Sliders className="w-4 h-4 text-[#6b7280]" />
-            <span>Preferencias Regionales y del Sistema</span>
+            <span>Preferencias de la Interfaz</span>
           </h3>
           <p className="text-xs text-[#6b7280] mt-0.5">
-            Configura idioma, huso horario oficial para el despacho y recepción de resúmenes.
+            Configura el idioma del panel administrativo, huso horario y formato de visualización de horas.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-[#e5e7eb]">
-          {/* Idioma */}
+          {/* Idioma de la interfaz */}
           <div>
-            <label className={labelClass}>Idioma de la Plataforma</label>
+            <label className={labelClass}>Idioma de la Interfaz</label>
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
+              value={interfaceLanguage}
+              onChange={(e) => setInterfaceLanguage(e.target.value as 'es' | 'en')}
               className={inputClass}
             >
-              <option value="es">Español (Predeterminado)</option>
+              <option value="es">Español (Activo)</option>
               <option value="en" disabled>Inglés (Próximamente)</option>
             </select>
             <p className="text-[11px] text-[#898989] mt-1">
-              La interfaz operativa y los comprobantes se emitirán en el idioma elegido.
+              Idioma en el que se muestran los menús y paneles del administrador.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export function GeneralSection({
               <option value="UTC">UTC (Tiempo Universal Coordinado)</option>
             </select>
             <p className="text-[11px] text-[#898989] mt-1">
-              Afecta el cálculo de fechas de despacho y horarios de recogida de traslados.
+              Huso horario oficial para la visualización de fechas y calendario.
             </p>
           </div>
         </div>
@@ -161,6 +161,44 @@ export function GeneralSection({
               />
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Card: Idiomas del Catálogo */}
+      <div className="product-card-surface p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[#6b7280]" />
+            <span>Idiomas del Catálogo</span>
+          </h3>
+          <p className="text-xs text-[#6b7280] mt-0.5">
+            Idiomas en los que tus experiencias y tours se comercializan ante clientes y en la tienda online.
+          </p>
+        </div>
+
+        <div className="pt-2 border-t border-[#e5e7eb] space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">🇵🇪</span>
+              <div>
+                <span className="text-xs font-semibold text-[#111111]">Español (es)</span>
+                <span className="ml-2 inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
+                  Principal
+                </span>
+                <p className="text-[11px] text-[#6b7280]">Idioma predeterminado para el contenido de tours y reservas.</p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold text-[#111111]">Activo</span>
+          </div>
+
+          <div className="p-3 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-between text-xs text-[#6b7280]">
+            <span>1 de 1 idiomas habilitados</span>
+            <span className="text-[11px] text-[#898989]">Tu configuración actual permite 1 idioma</span>
+          </div>
+
+          <p className="text-[11px] text-[#898989]">
+            El contenido en idiomas adicionales vive de forma desacoplada por tour, manteniendo inalterables las tarifas, disponibilidad y condiciones comerciales.
+          </p>
         </div>
       </div>
 

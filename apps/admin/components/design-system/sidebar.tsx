@@ -6,16 +6,12 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   CalendarCheck2,
-  Compass,
-  Layers,
   MapPin,
-  Car,
-  Users2,
   Bell,
   Settings,
   ChevronDown,
-  Tag,
-  Truck,
+  BarChart3,
+  HelpCircle,
 } from 'lucide-react';
 import { TenantAccountCard } from './tenant-account-card';
 
@@ -61,12 +57,6 @@ const mainNavItems: NavItem[] = [
     roles: ['OWNER', 'ADMIN', 'OPERATOR'],
   },
   {
-    label: 'Operaciones',
-    href: '/operations',
-    icon: Compass,
-    roles: ['OWNER', 'ADMIN', 'OPERATOR'],
-  },
-  {
     label: 'Tours',
     href: '/catalog/tours',
     icon: MapPin,
@@ -75,34 +65,13 @@ const mainNavItems: NavItem[] = [
         label: 'Categorías',
         href: '/resources/categories',
       },
-      {
-        label: 'Personal operativo',
-        href: '/resources/personnel',
-        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
-      },
     ],
   },
   {
-    label: 'Traslados',
-    href: '/catalog/transfers',
-    icon: Car,
-    children: [
-      {
-        label: 'Flota operativa',
-        href: '/resources/fleet',
-        roles: ['OWNER', 'ADMIN', 'OPERATOR'],
-      },
-      {
-        label: 'Vehículos comerciales',
-        href: '/resources/vehicles',
-      },
-    ],
-  },
-  {
-    label: 'Equipo',
-    href: '/team',
-    icon: Users2,
-    roles: ['OWNER', 'ADMIN'],
+    label: 'Reportes',
+    href: '/reports',
+    icon: BarChart3,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR'],
   },
 ];
 
@@ -117,6 +86,12 @@ const bottomNavItems: NavItem[] = [
     label: 'Ajustes',
     href: '/settings',
     icon: Settings,
+    roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
+  },
+  {
+    label: 'Ayuda y comentarios',
+    href: '/settings/feedback',
+    icon: HelpCircle,
     roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
   },
 ];

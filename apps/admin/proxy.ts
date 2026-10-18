@@ -19,6 +19,8 @@ export async function proxy(request: NextRequest) {
       pathname.startsWith('/dashboard/') ||
       pathname === '/reservations' ||
       pathname.startsWith('/reservations/') ||
+      pathname === '/reports' ||
+      pathname.startsWith('/reports/') ||
       pathname === '/operations' ||
       pathname.startsWith('/operations/') ||
       pathname === '/catalog' ||
