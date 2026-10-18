@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Info, ShieldCheck } from 'lucide-react';
+import { Sparkles, Info, ShieldCheck, AlertTriangle } from 'lucide-react';
 import type { AgencyProfileData } from '../types';
 
 export interface BillingSectionProps {
@@ -13,6 +13,7 @@ export interface BillingSectionProps {
 }
 
 export function BillingSection({ initialProfile, credits }: BillingSectionProps) {
+  const isUnavailable = credits === null || credits === undefined;
   const creditBalance = credits?.balance ?? 0;
   const ledger = credits?.ledger || [];
 
@@ -86,39 +87,48 @@ export function BillingSection({ initialProfile, credits }: BillingSectionProps)
         </div>
 
         <div className="space-y-3 pt-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold tracking-tight text-[#111111]">{creditBalance}</span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">créditos disponibles</span>
-          </div>
-
-          {ledger.length === 0 ? (
-            <div className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] text-xs text-[#6b7280]">
-              No hay movimientos de créditos registrados para esta agencia.
+          {isUnavailable ? (
+            <div className="p-3.5 rounded-lg border border-[#fecaca] bg-[#fef2f2] flex items-center gap-2.5 text-xs text-[#991b1b]">
+              <AlertTriangle className="w-4 h-4 text-[#dc2626] shrink-0" />
+              <span>No fue posible consultar el saldo de créditos.</span>
             </div>
           ) : (
-            <div className="space-y-2 pt-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7280] block">
-                Historial reciente de créditos
-              </span>
-              <div className="divide-y divide-[#e5e7eb] border border-[#e5e7eb] rounded-lg overflow-hidden text-xs">
-                {ledger.map((item) => {
-                  const amount = item.amount ?? item.delta ?? 0;
-                  return (
-                    <div key={item.id} className="p-2.5 flex items-center justify-between bg-white">
-                      <div>
-                        <span className="font-medium text-[#111111]">{item.reason}</span>
-                        <span className="text-[10px] text-[#6b7280] block">
-                          {new Date(item.createdAt).toLocaleDateString('es-PE', { dateStyle: 'medium' })}
-                        </span>
-                      </div>
-                      <span className={`font-mono font-semibold ${amount > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
-                        {amount > 0 ? `+${amount}` : amount}
-                      </span>
-                    </div>
-                  );
-                })}
+            <>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold tracking-tight text-[#111111]">{creditBalance}</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">créditos disponibles</span>
               </div>
-            </div>
+
+              {ledger.length === 0 ? (
+                <div className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] text-xs text-[#6b7280]">
+                  No hay movimientos de créditos registrados para esta agencia.
+                </div>
+              ) : (
+                <div className="space-y-2 pt-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7280] block">
+                    Historial reciente de créditos
+                  </span>
+                  <div className="divide-y divide-[#e5e7eb] border border-[#e5e7eb] rounded-lg overflow-hidden text-xs">
+                    {ledger.map((item) => {
+                      const amount = item.amount ?? item.delta ?? 0;
+                      return (
+                        <div key={item.id} className="p-2.5 flex items-center justify-between bg-white">
+                          <div>
+                            <span className="font-medium text-[#111111]">{item.reason}</span>
+                            <span className="text-[10px] text-[#6b7280] block">
+                              {new Date(item.createdAt).toLocaleDateString('es-PE', { dateStyle: 'medium' })}
+                            </span>
+                          </div>
+                          <span className={`font-mono font-semibold ${amount > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                            {amount > 0 ? `+${amount}` : amount}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

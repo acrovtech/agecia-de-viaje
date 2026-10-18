@@ -61,17 +61,24 @@ export default async function DashboardPage() {
   let dashboardData: any;
   try {
     dashboardData = await centralRequest(`${base}/dashboard`, token);
-  } catch {
-    dashboardData = {
-      reservationsToday: 0,
-      upcomingReservations: [],
-      attentionNeeded: [],
-      next7DaysLoad: [],
-      bookedValueSummary: {
-        totalCount: 0,
-        totalsByCurrency: {},
-      },
-    };
+  } catch (error) {
+    if (error instanceof CentralApiError && error.status === 401) {
+      redirect('/login?expired=1');
+    }
+    return (
+      <EmptyState
+        title="No fue posible cargar el resumen de la agencia"
+        description="Hubo un problema al consultar las métricas e información operativa en el servicio central."
+        action={
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors"
+          >
+            Reintentar
+          </Link>
+        }
+      />
+    );
   }
 
   return (

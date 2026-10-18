@@ -5,6 +5,8 @@ import { PageHeader } from '../../design-system/page-header';
 import { StatusBadge } from '../../design-system/status-badge';
 import type { NavIdentity } from '../../design-system/sidebar';
 
+import { formatMoneyAmount } from '../../../lib/money';
+
 export interface DashboardReservation {
   id: string;
   code: string | null;
@@ -21,6 +23,8 @@ export interface DashboardReservation {
   customerLastName: string;
   pickupHotel?: string | null;
 }
+
+export const formatReservationAmount = formatMoneyAmount;
 
 export interface DashboardViewProps {
   identity: NavIdentity;
@@ -140,7 +144,7 @@ export function DashboardView({
                 </div>
                 <div className="text-right shrink-0">
                   <span className="font-semibold text-[#111111]">
-                    ${((r.totalMinor ?? Math.round(r.totalPrice * 100)) / 100).toFixed(2)} USD
+                    {formatReservationAmount(r.totalPrice, r.totalMinor, r.currency)}
                   </span>
                   <Link
                     href={`/reservations?id=${r.id}`}
@@ -242,7 +246,7 @@ export function DashboardView({
                     <StatusBadge status={row.operationStatus || row.bookingStatus || 'PENDING'} />
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-[#111111]">
-                    ${((row.totalMinor ?? Math.round(row.totalPrice * 100)) / 100).toFixed(2)} USD
+                    {formatReservationAmount(row.totalPrice, row.totalMinor, row.currency)}
                   </td>
                 </tr>
               ))}

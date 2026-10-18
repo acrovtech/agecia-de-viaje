@@ -41,8 +41,8 @@ export default async function SettingsGeneralPage() {
       <GeneralSection
         initialProfile={profile}
         canEdit={canEdit}
-        initialEntitlements={entitlements || { maxCatalogLocales: locales.maxCatalogLocales, aiEnabled: false, aiMonthlyCredits: 0 }}
-        initialLocales={locales.locales}
+        initialEntitlements={entitlements || (locales ? { maxCatalogLocales: locales.maxCatalogLocales, aiEnabled: false, aiMonthlyCredits: 0 } : undefined)}
+        initialLocales={locales ? locales.locales : null}
       />
     </div>
   );

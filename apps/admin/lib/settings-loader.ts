@@ -85,7 +85,7 @@ export type AgencyLocalesResponse = z.infer<typeof agencyLocalesResponseSchema>;
 export async function fetchAgencyLocales(
   agencyId: string,
   token: string
-): Promise<AgencyLocalesResponse> {
+): Promise<AgencyLocalesResponse | null> {
   try {
     const data = await centralRequest(
       `/v1/agencies/${encodeURIComponent(agencyId)}/settings/locales`,
@@ -96,12 +96,7 @@ export async function fetchAgencyLocales(
     if (error instanceof CentralApiError && error.status === 401) {
       redirect('/login?expired=1');
     }
-    return {
-      locales: [{ id: 'default', locale: 'es', isDefault: true, enabled: true }],
-      defaultLocale: 'es',
-      maxCatalogLocales: 1,
-      enabledCount: 1,
-    };
+    return null;
   }
 }
 
@@ -111,14 +106,17 @@ export async function fetchAgencyCredits(agencyId: string, token: string): Promi
       `/v1/agencies/${encodeURIComponent(agencyId)}/settings/credits`,
       token,
     )) as any;
+    if (!data || typeof data.balance !== 'number') {
+      return null;
+    }
     return {
-      balance: typeof data?.balance === 'number' ? data.balance : 0,
+      balance: data.balance,
       ledger: Array.isArray(data?.ledger) ? data.ledger : (Array.isArray(data?.recentLedger) ? data.recentLedger : []),
     };
   } catch (error) {
     if (error instanceof CentralApiError && error.status === 401) {
       redirect('/login?expired=1');
     }
-    return { balance: 0, ledger: [] };
+    return null;
   }
 }

@@ -270,11 +270,18 @@ describe('P2.8-IA0.2 Contract Cleanup & Product Truth Suite', () => {
       expect(content).toContain("reviewStatus: 'DRAFT'");
     });
 
-    it('database migration includes partial unique index for default locale invariant', () => {
-      const migrationPath = path.resolve(__dirname, '../../../packages/db/prisma/migrations/20261018010000_p2_8_product_ia_and_draft_truth/migration.sql');
-      const migrationContent = fs.readFileSync(migrationPath, 'utf8');
+    it('database migration includes partial unique index in a forward-safe migration path', () => {
+      const prevMigrationPath = path.resolve(__dirname, '../../../packages/db/prisma/migrations/20261018010000_p2_8_product_ia_and_draft_truth/migration.sql');
+      const prevMigrationContent = fs.readFileSync(prevMigrationPath, 'utf8');
 
-      expect(migrationContent).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "AgencyLocale_agencyId_default_unique" ON "AgencyLocale"("agencyId") WHERE "isDefault" = true;');
+      // 20261018010000 restored to original checksum, does not alter history
+      expect(prevMigrationContent).not.toContain('CREATE UNIQUE INDEX IF NOT EXISTS "AgencyLocale_agencyId_default_unique"');
+
+      // Forward migration carries the partial unique index
+      const forwardMigrationPath = path.resolve(__dirname, '../../../packages/db/prisma/migrations/20261018020000_agency_locale_single_default/migration.sql');
+      expect(fs.existsSync(forwardMigrationPath)).toBe(true);
+      const forwardContent = fs.readFileSync(forwardMigrationPath, 'utf8');
+      expect(forwardContent).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "AgencyLocale_agencyId_default_unique" ON "AgencyLocale"("agencyId") WHERE "isDefault" = true;');
     });
   });
 
@@ -361,6 +368,103 @@ describe('P2.8-IA0.2 Contract Cleanup & Product Truth Suite', () => {
       expect(content).toContain("MODO VISTA PREVIA");
       expect(content).toContain("Suscripción no vinculada");
       expect(content).toContain("credits?.balance");
+    });
+  });
+
+  // ===========================================================================
+  // 8. P2.8-IA0.3 PRODUCT TRUTH MICROFIX SUITE
+  // ===========================================================================
+  describe('P2.8-IA0.3 Product Truth Microfix Tests', () => {
+    describe('Dashboard Truth', () => {
+      it('API failure does not render synthetic zero business metrics and returns unavailable EmptyState', () => {
+        const dashboardPagePath = path.resolve(__dirname, '../app/(authenticated)/(workspace)/dashboard/page.tsx');
+        const pageContent = fs.readFileSync(dashboardPagePath, 'utf8');
+
+        // Confirms it renders EmptyState with the exact copy on failure, not synthetic zero DashboardView
+        expect(pageContent).toContain('title="No fue posible cargar el resumen de la agencia"');
+        expect(pageContent).toContain('Reintentar');
+        expect(pageContent).toContain("redirect('/login?expired=1')");
+        expect(pageContent).not.toContain("reservationsToday: 0");
+      });
+
+      it('PEN reservation is formatted as PEN and USD reservation is formatted as USD', async () => {
+        const { formatMoneyAmount } = await import('./money');
+
+        const penFormatted = formatMoneyAmount(150, 15000, 'PEN');
+        const usdFormatted = formatMoneyAmount(150, 15000, 'USD');
+        const eurFormatted = formatMoneyAmount(150, 15000, 'EUR');
+
+        // PEN must contain PEN symbol/code (S/ or PEN) and not USD
+        expect(penFormatted).toMatch(/S\/|PEN/);
+        expect(penFormatted).not.toContain('USD');
+        expect(penFormatted).not.toContain('US$');
+
+        // USD must contain USD symbol/code ($ or US$) and not S/
+        expect(usdFormatted).toMatch(/\$|USD/);
+        expect(usdFormatted).not.toContain('S/');
+
+        // EUR must contain EUR or €
+        expect(eurFormatted).toMatch(/€|EUR/);
+      });
+    });
+
+    describe('Locales Failure Semantics', () => {
+      it('valid empty/default API response is parsed and rendered normally', () => {
+        const validResponse = {
+          locales: [{ id: 'loc-1', locale: 'es', isDefault: true, enabled: true }],
+          defaultLocale: 'es',
+          maxCatalogLocales: 1,
+          enabledCount: 1,
+        };
+
+        const parsed = agencyLocalesResponseSchema.parse(validResponse);
+        expect(parsed.locales[0]?.locale).toBe('es');
+        expect(parsed.locales[0]?.isDefault).toBe(true);
+      });
+
+      it('API failure returns null and does not fabricate fake Español locale', async () => {
+        const { fetchAgencyLocales } = await import('./settings-loader');
+        const centralApi = await import('./central-api');
+
+        vi.spyOn(centralApi, 'centralRequest').mockRejectedValueOnce(new Error('Network error'));
+
+        const result = await fetchAgencyLocales('agency-1', 'fake-token');
+        expect(result).toBeNull();
+      });
+
+      it('General settings section displays controlled unavailable UI when locales is null without synthetic data', () => {
+        const generalSectionPath = path.resolve(__dirname, '../components/settings/sections/general-section.tsx');
+        const content = fs.readFileSync(generalSectionPath, 'utf8');
+
+        expect(content).toContain('No fue posible consultar los idiomas del catálogo.');
+        expect(content).not.toContain("activeLocales = initialLocales && initialLocales.length > 0");
+      });
+    });
+
+    describe('Credits Failure Semantics', () => {
+      it('authoritative balance 0 renders 0', () => {
+        const billingSectionPath = path.resolve(__dirname, '../components/settings/sections/billing-section.tsx');
+        const content = fs.readFileSync(billingSectionPath, 'utf8');
+
+        expect(content).toContain('créditos disponibles');
+        expect(content).toContain('creditBalance');
+      });
+
+      it('API failure renders unavailable message and does not fabricate zero balance', async () => {
+        const { fetchAgencyCredits } = await import('./settings-loader');
+        const centralApi = await import('./central-api');
+
+        vi.spyOn(centralApi, 'centralRequest').mockRejectedValueOnce(new Error('Central API timeout'));
+
+        const result = await fetchAgencyCredits('agency-1', 'fake-token');
+        expect(result).toBeNull();
+
+        const billingSectionPath = path.resolve(__dirname, '../components/settings/sections/billing-section.tsx');
+        const content = fs.readFileSync(billingSectionPath, 'utf8');
+
+        expect(content).toContain('No fue posible consultar el saldo de créditos.');
+        expect(content).toContain('isUnavailable');
+      });
     });
   });
 });

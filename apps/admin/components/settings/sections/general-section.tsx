@@ -19,7 +19,7 @@ export interface GeneralSectionProps {
     locale: string;
     isDefault: boolean;
     enabled: boolean;
-  }>;
+  }> | null;
 }
 
 export function GeneralSection({
@@ -193,60 +193,73 @@ export function GeneralSection({
         </div>
 
         <div className="pt-2 border-t border-[#e5e7eb] space-y-3">
-          {(() => {
-            const maxLocales = initialEntitlements?.maxCatalogLocales ?? 1;
-            const activeLocales = initialLocales && initialLocales.length > 0
-              ? initialLocales
-              : [{ id: 'default', locale: 'es', isDefault: true, enabled: true }];
-            const enabledCount = activeLocales.filter((l) => l.enabled).length;
+          {initialLocales === null || initialLocales === undefined ? (
+            <div className="p-3.5 rounded-lg border border-[#fecaca] bg-[#fef2f2] flex items-center gap-2.5 text-xs text-[#991b1b]">
+              <AlertTriangle className="w-4 h-4 text-[#dc2626] shrink-0" />
+              <span>No fue posible consultar los idiomas del catálogo.</span>
+            </div>
+          ) : (
+            (() => {
+              const maxLocales = initialEntitlements?.maxCatalogLocales ?? 1;
+              const activeLocales = initialLocales;
+              const enabledCount = activeLocales.filter((l) => l.enabled).length;
 
-            const localeMeta: Record<string, { label: string; flag: string }> = {
-              es: { label: 'Español (es)', flag: '🇵🇪' },
-              en: { label: 'Inglés (en)', flag: '🇺🇸' },
-              pt: { label: 'Portugués (pt)', flag: '🇧🇷' },
-              fr: { label: 'Francés (fr)', flag: '🇫🇷' },
-              de: { label: 'Alemán (de)', flag: '🇩🇪' },
-              it: { label: 'Italiano (it)', flag: '🇮🇹' },
-            };
+              const localeMeta: Record<string, { label: string; flag: string }> = {
+                es: { label: 'Español (es)', flag: '🇵🇪' },
+                en: { label: 'Inglés (en)', flag: '🇺🇸' },
+                pt: { label: 'Portugués (pt)', flag: '🇧🇷' },
+                fr: { label: 'Francés (fr)', flag: '🇫🇷' },
+                de: { label: 'Alemán (de)', flag: '🇩🇪' },
+                it: { label: 'Italiano (it)', flag: '🇮🇹' },
+              };
 
-            return (
-              <>
-                {activeLocales.map((loc) => {
-                  const meta = localeMeta[loc.locale] || { label: loc.locale.toUpperCase(), flag: '🌐' };
-                  return (
-                    <div key={loc.id || loc.locale} className="flex items-center justify-between p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa]">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">{meta.flag}</span>
-                        <div>
-                          <span className="text-xs font-semibold text-[#111111]">{meta.label}</span>
-                          {loc.isDefault && (
-                            <span className="ml-2 inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
-                              Principal
-                            </span>
-                          )}
-                          <p className="text-[11px] text-[#6b7280]">
-                            {loc.isDefault
-                              ? 'Idioma predeterminado para el contenido de tours y reservas.'
-                              : 'Idioma secundario para traducción de contenido.'}
-                          </p>
+              if (activeLocales.length === 0) {
+                return (
+                  <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#6b7280]">
+                    No hay idiomas configurados en el catálogo.
+                  </div>
+                );
+              }
+
+              return (
+                <>
+                  {activeLocales.map((loc) => {
+                    const meta = localeMeta[loc.locale] || { label: loc.locale.toUpperCase(), flag: '🌐' };
+                    return (
+                      <div key={loc.id || loc.locale} className="flex items-center justify-between p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa]">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">{meta.flag}</span>
+                          <div>
+                            <span className="text-xs font-semibold text-[#111111]">{meta.label}</span>
+                            {loc.isDefault && (
+                              <span className="ml-2 inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
+                                Principal
+                              </span>
+                            )}
+                            <p className="text-[11px] text-[#6b7280]">
+                              {loc.isDefault
+                                ? 'Idioma predeterminado para el contenido de tours y reservas.'
+                                : 'Idioma secundario para traducción de contenido.'}
+                            </p>
+                          </div>
                         </div>
+                        <span className={`text-xs font-semibold ${loc.enabled ? 'text-[#111111]' : 'text-slate-400'}`}>
+                          {loc.enabled ? 'Activo' : 'Deshabilitado'}
+                        </span>
                       </div>
-                      <span className={`text-xs font-semibold ${loc.enabled ? 'text-[#111111]' : 'text-slate-400'}`}>
-                        {loc.enabled ? 'Activo' : 'Deshabilitado'}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
 
-                <div className="p-3 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-between text-xs text-[#6b7280]">
-                  <span>{enabledCount} de {maxLocales} {maxLocales === 1 ? 'idioma habilitado' : 'idiomas habilitados'}</span>
-                  <span className="text-[11px] text-[#898989]">
-                    Tu configuración actual permite {maxLocales} {maxLocales === 1 ? 'idioma' : 'idiomas'}
-                  </span>
-                </div>
-              </>
-            );
-          })()}
+                  <div className="p-3 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-between text-xs text-[#6b7280]">
+                    <span>{enabledCount} de {maxLocales} {maxLocales === 1 ? 'idioma habilitado' : 'idiomas habilitados'}</span>
+                    <span className="text-[11px] text-[#898989]">
+                      Tu configuración actual permite {maxLocales} {maxLocales === 1 ? 'idioma' : 'idiomas'}
+                    </span>
+                  </div>
+                </>
+              );
+            })()
+          )}
 
           <p className="text-[11px] text-[#898989]">
             El contenido en idiomas adicionales vive de forma desacoplada por tour, manteniendo inalterables las tarifas, disponibilidad y condiciones comerciales.
