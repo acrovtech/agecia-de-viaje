@@ -56,70 +56,35 @@ export default async function DashboardPage() {
   }
 
   const { token, identity } = session;
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
   const base = `/v1/agencies/${encodeURIComponent(identity.agencyId)}`;
 
-  const resData = await centralRequest(`${base}/reservations?limit=100`, token).catch(() => ({ data: [] }));
-  const reservations = z
-    .object({ data: z.array(reservationItemSchema) })
-    .safeParse(resData).data?.data || [];
-
-  // Metric 1: Hoy
-  const reservationsToday = reservations.filter((r) => r.date.slice(0, 10) === today).length;
-
-  // Metric 2: Requieren Atención
-  const attentionNeeded: { reservation: DashboardReservation; reason: string }[] = [];
-  for (const r of reservations) {
-    if (r.bookingStatus === 'PENDING') {
-      attentionNeeded.push({ reservation: r, reason: 'Reserva pendiente de confirmación' });
-    } else if (r.paymentStatus === 'PENDING') {
-      attentionNeeded.push({ reservation: r, reason: 'Pago pendiente de cobro' });
-    } else if (r.operationStatus === 'PENDING') {
-      attentionNeeded.push({ reservation: r, reason: 'Servicio en estado pendiente de coordinación' });
-    }
+  let dashboardData: any;
+  try {
+    dashboardData = await centralRequest(`${base}/dashboard`, token);
+  } catch {
+    dashboardData = {
+      reservationsToday: 0,
+      upcomingReservations: [],
+      attentionNeeded: [],
+      next7DaysLoad: [],
+      bookedValueSummary: {
+        totalMinor: 0,
+        formattedValue: '$0.00',
+        currency: 'USD',
+        totalCount: 0,
+      },
+    };
   }
-
-  // Metric 3: Próximas reservas (ordenadas cronológicamente)
-  const upcomingReservations = [...reservations]
-    .filter((r) => r.date.slice(0, 10) >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  // If no upcoming >= today, take latest reservations
-  const displayedUpcoming = upcomingReservations.length > 0
-    ? upcomingReservations
-    : [...reservations].sort((a, b) => b.date.localeCompare(a.date));
-
-  // Metric 4: Carga de los próximos 7 días
-  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  const nextDaysLoad = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().slice(0, 10);
-    const dayName = dayNames[d.getDay()] || '';
-    const count = reservations.filter((r) => r.date.slice(0, 10) === dateStr).length;
-    return { date: dateStr, dayName, count };
-  });
-
-  // Metric 5: Valor total pactado
-  const bookedMinorTotal = reservations.reduce((acc, r) => {
-    const minor = r.totalMinor ?? Math.round(r.totalPrice * 100);
-    return acc + (isNaN(minor) ? 0 : minor);
-  }, 0);
-
-  const formattedBookedValue = new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(bookedMinorTotal / 100);
 
   return (
     <DashboardView
       identity={identity}
-      reservationsToday={reservationsToday}
-      upcomingReservations={displayedUpcoming}
-      attentionNeeded={attentionNeeded}
-      nextDaysLoad={nextDaysLoad}
-      formattedBookedValue={formattedBookedValue}
-      totalReservationsCount={reservations.length}
+      reservationsToday={dashboardData.reservationsToday ?? 0}
+      upcomingReservations={dashboardData.upcomingReservations ?? []}
+      attentionNeeded={dashboardData.attentionNeeded ?? []}
+      nextDaysLoad={dashboardData.nextDaysLoad ?? []}
+      formattedBookedValue={dashboardData.bookedValueSummary?.formattedValue ?? '$0.00'}
+      totalReservationsCount={dashboardData.bookedValueSummary?.totalCount ?? 0}
     />
   );
 }

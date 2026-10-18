@@ -159,14 +159,14 @@ describe('Product IA Lock & Core Product Simplification (P2.8 Commit B)', () => 
     expect(plansContent).not.toContain('alert(');
   });
 
-  it('11. general section separates interface preferences from catalog languages', () => {
+  it('11. general section separates interface preferences from catalog languages and supports authoritative locales', () => {
     const generalPath = path.resolve(__dirname, '../components/settings/sections/general-section.tsx');
     const generalContent = fs.readFileSync(generalPath, 'utf8');
 
     expect(generalContent).toContain('Preferencias de la Interfaz');
     expect(generalContent).toContain('Idiomas del Catálogo');
-    expect(generalContent).toContain('1 de 1 idiomas habilitados');
-    expect(generalContent).toContain('Tu configuración actual permite 1 idioma');
+    expect(generalContent).toContain('initialLocales');
+    expect(generalContent).toContain('maxCatalogLocales');
   });
 
   // ---------------------------------------------------------------------------

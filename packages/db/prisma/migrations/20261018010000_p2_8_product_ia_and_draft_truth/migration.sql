@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS "TourLocalizedContent" (
   "focusKeyphrase" TEXT,
   "generatedByAi" BOOLEAN NOT NULL DEFAULT false,
   "sourceRevision" TEXT,
-  "reviewStatus" TEXT NOT NULL DEFAULT 'draft',
+  "reviewStatus" TEXT NOT NULL DEFAULT 'DRAFT',
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
   CONSTRAINT "TourLocalizedContent_tourId_fkey" FOREIGN KEY ("tourId") REFERENCES "Tour"("id") ON DELETE CASCADE ON UPDATE CASCADE

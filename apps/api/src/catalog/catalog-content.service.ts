@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@repo/db/prisma';
 import { z } from 'zod';
 import { PrismaService } from '../database/prisma.service.js';
@@ -33,20 +33,35 @@ const vehicle = z.object({
   maxLuggage: z.number().int().min(0).max(200), image,
   features: z.array(text).max(30), isActive: z.boolean(),
 }).strict();
+const translationItineraryItem = z.object({
+  title: z.string().trim().min(1).max(200),
+  content: z.string().trim().max(10000),
+  order: z.number().int().min(0).max(100).optional(),
+}).strict();
+
+const translationBulletItem = z.object({
+  content: z.string().trim().min(1).max(500),
+  order: z.number().int().min(0).max(100).optional(),
+}).strict();
+
+const translationFaqItem = z.object({
+  question: z.string().trim().min(1).max(300),
+  answer: z.string().trim().min(1).max(5000),
+  order: z.number().int().min(0).max(100).optional(),
+}).strict();
+
 const tourTranslationSchema = z.object({
   title: text,
   slug: z.string().trim().max(100).nullable().optional(),
   description: z.string().nullable().optional(),
-  itinerary: z.any().optional(),
-  inclusions: z.any().optional(),
-  exclusions: z.any().optional(),
-  recommendations: z.any().optional(),
-  faqs: z.any().optional(),
+  itinerary: z.array(translationItineraryItem).max(30).nullable().optional(),
+  inclusions: z.array(translationBulletItem).max(50).nullable().optional(),
+  exclusions: z.array(translationBulletItem).max(50).nullable().optional(),
+  recommendations: z.array(translationBulletItem).max(50).nullable().optional(),
+  faqs: z.array(translationFaqItem).max(50).nullable().optional(),
   metaTitle: z.string().trim().max(100).nullable().optional(),
   metaDescription: z.string().trim().max(300).nullable().optional(),
   focusKeyphrase: z.string().trim().max(100).nullable().optional(),
-  generatedByAi: z.boolean().optional(),
-  reviewStatus: z.enum(['DRAFT', 'REVIEWED', 'PUBLISHED']).optional(),
 }).strict();
 const categorySelect = {
   id: true,
@@ -261,6 +276,36 @@ export class CatalogContentService {
       throw new BadRequestException('Idioma no compatible');
     }
 
+    // 1. Locale must exist for this agency
+    const agencyLocale = await this.prisma.agencyLocale.findFirst({
+      where: { agencyId: who.agencyId, locale },
+    });
+    if (!agencyLocale) {
+      throw new BadRequestException('El idioma no está configurado en tu agencia');
+    }
+
+    // 2. Locale must be enabled
+    if (!agencyLocale.enabled) {
+      throw new BadRequestException('El idioma está deshabilitado para tu agencia');
+    }
+
+    // 3. Locale MUST NOT be the agency default locale (base tour content represents default)
+    if (agencyLocale.isDefault) {
+      throw new BadRequestException('El idioma principal se gestiona en la ficha base del tour');
+    }
+
+    // 4. Entitlement enforcement: total enabled locales cannot exceed maxCatalogLocales
+    const entitlement = await this.prisma.agencyEntitlement.findUnique({
+      where: { agencyId: who.agencyId },
+    });
+    const maxLocales = entitlement?.maxCatalogLocales ?? 1;
+    const enabledLocalesCount = await this.prisma.agencyLocale.count({
+      where: { agencyId: who.agencyId, enabled: true },
+    });
+    if (enabledLocalesCount > maxLocales) {
+      throw new ForbiddenException('Has superado el límite de idiomas permitidos en tu suscripción');
+    }
+
     const data = tourTranslationSchema.parse(body);
 
     return await this.prisma.tourLocalizedContent.upsert({
@@ -275,32 +320,31 @@ export class CatalogContentService {
         locale,
         title: data.title,
         slug: data.slug || `${tourId}-${locale}`,
-        description: data.description || null,
-        itinerary: data.itinerary ?? null,
-        inclusions: data.inclusions ?? null,
-        exclusions: data.exclusions ?? null,
-        recommendations: data.recommendations ?? null,
-        faqs: data.faqs ?? null,
+        itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
+        inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+        exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+        recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
+        faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
         metaTitle: data.metaTitle || null,
         metaDescription: data.metaDescription || null,
         focusKeyphrase: data.focusKeyphrase || null,
-        generatedByAi: Boolean(data.generatedByAi),
-        reviewStatus: data.reviewStatus || 'DRAFT',
+        generatedByAi: false,
+        reviewStatus: 'DRAFT',
       },
       update: {
         title: data.title,
         slug: data.slug || `${tourId}-${locale}`,
         description: data.description || null,
-        itinerary: data.itinerary ?? null,
-        inclusions: data.inclusions ?? null,
-        exclusions: data.exclusions ?? null,
-        recommendations: data.recommendations ?? null,
-        faqs: data.faqs ?? null,
+        itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
+        inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+        exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+        recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
+        faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
         metaTitle: data.metaTitle || null,
         metaDescription: data.metaDescription || null,
         focusKeyphrase: data.focusKeyphrase || null,
-        generatedByAi: Boolean(data.generatedByAi),
-        reviewStatus: data.reviewStatus || 'DRAFT',
+        generatedByAi: false,
+        reviewStatus: 'DRAFT',
       },
     });
   }

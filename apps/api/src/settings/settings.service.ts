@@ -393,6 +393,13 @@ export class SettingsService {
       throw new BadRequestException('No se puede establecer como predeterminado un idioma deshabilitado');
     }
 
+    const tourCount = await this.prisma.tour.count({ where: { agencyId } });
+    if (tourCount > 0) {
+      throw new ConflictException(
+        'No se puede cambiar el idioma principal de la agencia porque ya existen tours registrados en el catálogo.',
+      );
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       await tx.agencyLocale.updateMany({
         where: { agencyId, isDefault: true },

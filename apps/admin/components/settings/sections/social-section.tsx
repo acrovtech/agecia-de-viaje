@@ -18,6 +18,7 @@ export function SocialSection({ initialProfile }: SocialSectionProps) {
     tiktok: '@viajesconnosotros',
   });
 
+  const [savedNotice, setSavedNotice] = useState(false);
   const labelClass = 'block text-xs font-semibold text-[#111111] mb-1.5';
   const inputClass =
     'block w-full rounded-lg border border-[#e5e7eb] p-2.5 text-xs text-[#111111] bg-white shadow-product-card focus:outline-none focus:border-[#111111] transition-colors';
@@ -119,10 +120,18 @@ export function SocialSection({ initialProfile }: SocialSectionProps) {
               </div>
             </div>
 
-            <div className="flex justify-end pt-3">
+            <div className="flex items-center justify-between pt-3">
+              {savedNotice ? (
+                <span className="text-xs text-emerald-600 font-medium">
+                  Configuración guardada para vista previa local.
+                </span>
+              ) : <span />}
               <button
                 type="button"
-                onClick={() => alert('Página social en fase de vista previa.')}
+                onClick={() => {
+                  setSavedNotice(true);
+                  setTimeout(() => setSavedNotice(false), 3000);
+                }}
                 className="product-button-primary"
               >
                 Guardar página social (Vista preliminar)

@@ -1,5 +1,5 @@
 import React from 'react';
-import { requireSettingsSession, fetchAgencyProfile } from '@/lib/settings-loader';
+import { requireSettingsSession, fetchAgencyProfile, fetchAgencyCredits } from '@/lib/settings-loader';
 import { getSettingsConfigByPath } from '@/lib/settings-navigation';
 import { PageHeader } from '@/components/design-system/page-header';
 import { BillingSection } from '@/components/settings/sections/billing-section';
@@ -10,7 +10,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsBillingPage() {
   const { session } = await requireSettingsSession();
-  const profile = await fetchAgencyProfile(session.identity.agencyId, session.token);
+  const [profile, credits] = await Promise.all([
+    fetchAgencyProfile(session.identity.agencyId, session.token),
+    fetchAgencyCredits(session.identity.agencyId, session.token),
+  ]);
 
   if (!profile) {
     return (
@@ -34,7 +37,7 @@ export default async function SettingsBillingPage() {
         title={config.title}
         description={config.description}
       />
-      <BillingSection initialProfile={profile} />
+      <BillingSection initialProfile={profile} credits={credits} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { requireSettingsSession, fetchAgencyProfile } from '@/lib/settings-loader';
+import { requireSettingsSession, fetchAgencyProfile, fetchAgencyEntitlements, fetchAgencyLocales } from '@/lib/settings-loader';
 import { getSettingsConfigByPath } from '@/lib/settings-navigation';
 import { PageHeader } from '@/components/design-system/page-header';
 import { GeneralSection } from '@/components/settings/sections/general-section';
@@ -10,7 +10,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsGeneralPage() {
   const { session, canEdit } = await requireSettingsSession();
-  const profile = await fetchAgencyProfile(session.identity.agencyId, session.token);
+  const [profile, entitlements, locales] = await Promise.all([
+    fetchAgencyProfile(session.identity.agencyId, session.token),
+    fetchAgencyEntitlements(session.identity.agencyId, session.token),
+    fetchAgencyLocales(session.identity.agencyId, session.token),
+  ]);
 
   if (!profile) {
     return (
@@ -34,7 +38,12 @@ export default async function SettingsGeneralPage() {
         title={config.title}
         description={config.description}
       />
-      <GeneralSection initialProfile={profile} canEdit={canEdit} />
+      <GeneralSection
+        initialProfile={profile}
+        canEdit={canEdit}
+        initialEntitlements={entitlements || { maxCatalogLocales: 1, aiEnabled: false, aiMonthlyCredits: 0 }}
+        initialLocales={locales}
+      />
     </div>
   );
 }

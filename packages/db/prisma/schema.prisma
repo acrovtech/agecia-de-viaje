@@ -1327,7 +1327,7 @@ model TourLocalizedContent {
   focusKeyphrase  String?
   generatedByAi   Boolean  @default(false)
   sourceRevision  String?
-  reviewStatus    String   @default("draft") // "draft" | "reviewed" | "published"
+  reviewStatus    String   @default("DRAFT") // "DRAFT" | "REVIEWED" | "PUBLISHED"
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

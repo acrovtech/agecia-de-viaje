@@ -33,13 +33,11 @@ export async function submitFeedbackAction(
       `/v1/agencies/${encodeURIComponent(session.identity.agencyId)}/settings/feedback`,
       session.token,
       {
-        method: 'POST',
-        body: JSON.stringify({
-          type,
-          title: title.trim(),
-          description: description.trim(),
-        }),
+        type,
+        title: title.trim(),
+        description: description.trim(),
       },
+      'POST',
     );
 
     revalidatePath('/settings/feedback');

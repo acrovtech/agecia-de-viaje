@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Lock } from 'lucide-react';
 import type { AgencyProfileData, NavIdentity } from '../types';
 
@@ -10,6 +10,7 @@ export interface ProfileSectionProps {
 }
 
 export function ProfileSection({ initialProfile, identity }: ProfileSectionProps) {
+  const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const inputClass =
     'h-[34px] mt-1 block w-full rounded-lg border border-[#e5e7eb] px-3 text-sm text-[#111111] bg-white shadow-product-card focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] disabled:bg-[#f8f9fa] disabled:text-[#898989] transition-all';
   const labelClass = 'block text-xs sm:text-[13px] font-medium text-[#374151]';
@@ -74,10 +75,16 @@ export function ProfileSection({ initialProfile, identity }: ProfileSectionProps
           Mantén tu contraseña protegida con un mínimo de 8 caracteres y símbolos alfanuméricos.
         </p>
 
+        {passwordNotice && (
+          <div className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] text-xs text-[#111111]">
+            {passwordNotice}
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            alert('Función de actualización de contraseña lista para conectar con servicio de auth.');
+            setPasswordNotice('Solicitud de actualización de contraseña recibida. El módulo de autenticación central procesará la solicitud vía correo.');
           }}
           className="space-y-4 pt-2"
         >

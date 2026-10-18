@@ -1,17 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreditCard, Sparkles, Download, AlertTriangle, Info } from 'lucide-react';
-import { ConfirmDialog } from '../../design-system/confirm-dialog';
+import React from 'react';
+import { Sparkles, Info, ShieldCheck } from 'lucide-react';
 import type { AgencyProfileData } from '../types';
 
 export interface BillingSectionProps {
   initialProfile: AgencyProfileData;
+  credits?: {
+    balance: number;
+    ledger: Array<{ id: string; amount?: number; delta?: number; reason: string; createdAt: string }>;
+  } | null;
 }
 
-export function BillingSection({ initialProfile }: BillingSectionProps) {
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [planCancelled, setPlanCancelled] = useState(false);
+export function BillingSection({ initialProfile, credits }: BillingSectionProps) {
+  const creditBalance = credits?.balance ?? 0;
+  const ledger = credits?.ledger || [];
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -26,198 +29,115 @@ export function BillingSection({ initialProfile }: BillingSectionProps) {
         </div>
       </div>
 
+      {/* Subscription Status Card - Preview / Empty State */}
       <div className="product-card-surface p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#e5e7eb] pb-4">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7280]">
-              Suscripción Actual
+              Suscripción de la Agencia
             </span>
             <h3 className="text-base font-semibold text-[#111111] flex items-center gap-2">
-              <span>Plan Pro Crecimiento</span>
-              <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                {planCancelled ? 'CANCELACIÓN PROGRAMADA' : 'ACTIVO'}
+              <span>Plan Base de Plataforma</span>
+              <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-700 border border-slate-200">
+                MODO VISTA PREVIA
               </span>
             </h3>
             <p className="text-xs text-[#6b7280] mt-0.5">
-              $59.00 USD / mes · Próxima renovación: 28 de Octubre, 2026
+              La facturación recurrente SaaS se encuentra en fase de integración. Tu agencia opera con acceso estándar habilitado.
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            {!planCancelled ? (
-              <button
-                type="button"
-                onClick={() => setCancelModalOpen(true)}
-                className="product-button-secondary text-rose-600 hover:text-rose-700 border-rose-200 hover:bg-rose-50"
-              >
-                Deshabilitar o cancelar plan
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setPlanCancelled(false)}
-                className="product-button-primary"
-              >
-                Reactivar suscripción
-              </button>
-            )}
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f3f4f6] text-[#6b7280]">
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+              Suscripción no vinculada
+            </span>
           </div>
         </div>
 
-        {planCancelled && (
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>
-              Tu plan se encuentra en período de gracia. Mantendrás el acceso a todas las funcionalidades hasta el término del ciclo de facturación.
-            </span>
-          </div>
-        )}
-
-        <div className="grid gap-3 sm:grid-cols-3 text-xs pt-1">
+        <div className="grid gap-3 sm:grid-cols-2 text-xs pt-1">
           <div>
-            <span className="text-[#6b7280] block text-[11px]">Método de Pago:</span>
-            <span className="font-semibold text-[#111111]">Visa terminada en •••• 4242</span>
-          </div>
-          <div>
-            <span className="text-[#6b7280] block text-[11px]">Facturado a:</span>
+            <span className="text-[#6b7280] block text-[11px]">Titular de la Cuenta:</span>
             <span className="font-semibold text-[#111111]">{initialProfile.name}</span>
           </div>
           <div>
-            <span className="text-[#6b7280] block text-[11px]">Estado del Cobro:</span>
-            <span className="font-semibold text-emerald-700">Al día sin cargos pendientes</span>
+            <span className="text-[#6b7280] block text-[11px]">Método de Pago Registrado:</span>
+            <span className="font-medium text-[#6b7280]">Ninguna tarjeta o método registrado</span>
           </div>
         </div>
       </div>
 
+      {/* AI Credits Card - Authoritative Data */}
       <div className="product-card-surface p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[#111111] flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>Créditos de la Plataforma</span>
+              <span>Créditos de Inteligencia Artificial</span>
             </h3>
             <p className="text-xs text-[#6b7280] mt-0.5">
-              Utilizados para cotizaciones automáticas, notificaciones transaccionales y herramientas avanzadas.
+              Balance institucional verificado para asistencia de catálogo y optimización de contenido.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => alert('Próximamente: recarga de paquetes de 500 y 1,000 créditos.')}
-            className="product-button-secondary text-xs"
-          >
-            Recargar créditos
-          </button>
+          <div>
+            <span className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#f3f4f6] text-[#6b7280] border border-[#e5e7eb]">
+              Recargas próximamente
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#111111]">Saldo restante: 750 créditos</span>
-            <span className="text-[#6b7280]">Límite mensual: 1,000 créditos</span>
+        <div className="space-y-3 pt-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold tracking-tight text-[#111111]">{creditBalance}</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#6b7280]">créditos disponibles</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-[#f3f4f6] overflow-hidden">
-            <div className="h-full bg-[#111111] rounded-full w-3/4"></div>
-          </div>
-          <p className="text-[11px] text-[#898989]">
-            Se renovarán automáticamente 1,000 créditos al inicio del siguiente ciclo de facturación.
+
+          {ledger.length === 0 ? (
+            <div className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] text-xs text-[#6b7280]">
+              No hay movimientos de créditos registrados para esta agencia.
+            </div>
+          ) : (
+            <div className="space-y-2 pt-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7280] block">
+                Historial reciente de créditos
+              </span>
+              <div className="divide-y divide-[#e5e7eb] border border-[#e5e7eb] rounded-lg overflow-hidden text-xs">
+                {ledger.map((item) => {
+                  const amount = item.amount ?? item.delta ?? 0;
+                  return (
+                    <div key={item.id} className="p-2.5 flex items-center justify-between bg-white">
+                      <div>
+                        <span className="font-medium text-[#111111]">{item.reason}</span>
+                        <span className="text-[10px] text-[#6b7280] block">
+                          {new Date(item.createdAt).toLocaleDateString('es-PE', { dateStyle: 'medium' })}
+                        </span>
+                      </div>
+                      <span className={`font-mono font-semibold ${amount > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                        {amount > 0 ? `+${amount}` : amount}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Invoicing History - Preview / Empty State */}
+      <div className="product-card-surface p-5 space-y-3">
+        <div className="border-b border-[#e5e7eb] pb-3">
+          <h4 className="text-sm font-semibold text-[#111111]">
+            Comprobantes y Facturación
+          </h4>
+          <p className="text-xs text-[#6b7280]">
+            Historial de facturas y recibos emitidos por el servicio SaaS.
           </p>
         </div>
-      </div>
 
-      <div className="product-card-surface overflow-hidden">
-        <div className="p-4 border-b border-[#e5e7eb] flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-semibold text-[#111111]">
-              Registro de Gastos y Facturación Mensual
-            </h4>
-            <p className="text-xs text-[#6b7280]">
-              Histórico de recibos emitidos por el uso de la plataforma.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => alert('Generando reporte consolidado en PDF…')}
-            className="product-button-secondary text-xs"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Exportar historial</span>
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#f8f9fa] border-b border-[#e5e7eb] text-[#6b7280] uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="px-4 py-2.5">Factura / ID</th>
-                <th className="px-4 py-2.5">Fecha</th>
-                <th className="px-4 py-2.5">Concepto</th>
-                <th className="px-4 py-2.5">Importe</th>
-                <th className="px-4 py-2.5 text-right">Comprobante</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e5e7eb]">
-              <tr className="product-data-row">
-                <td className="px-4 py-3 font-mono text-[#111111]">INV-2026-0901</td>
-                <td className="px-4 py-3 text-[#6b7280]">01 Sep, 2026</td>
-                <td className="px-4 py-3">Suscripción Mensual - Plan Pro</td>
-                <td className="px-4 py-3 font-semibold text-[#111111]">$59.00 USD</td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => alert('Descargando comprobante INV-2026-0901.pdf')}
-                    className="text-xs text-[#111111] hover:underline"
-                  >
-                    PDF
-                  </button>
-                </td>
-              </tr>
-              <tr className="product-data-row">
-                <td className="px-4 py-3 font-mono text-[#111111]">INV-2026-0801</td>
-                <td className="px-4 py-3 text-[#6b7280]">01 Ago, 2026</td>
-                <td className="px-4 py-3">Suscripción Mensual - Plan Pro</td>
-                <td className="px-4 py-3 font-semibold text-[#111111]">$59.00 USD</td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => alert('Descargando comprobante INV-2026-0801.pdf')}
-                    className="text-xs text-[#111111] hover:underline"
-                  >
-                    PDF
-                  </button>
-                </td>
-              </tr>
-              <tr className="product-data-row">
-                <td className="px-4 py-3 font-mono text-[#111111]">INV-2026-0701</td>
-                <td className="px-4 py-3 text-[#6b7280]">01 Jul, 2026</td>
-                <td className="px-4 py-3">Suscripción Mensual - Plan Pro</td>
-                <td className="px-4 py-3 font-semibold text-[#111111]">$59.00 USD</td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => alert('Descargando comprobante INV-2026-0701.pdf')}
-                    className="text-xs text-[#111111] hover:underline"
-                  >
-                    PDF
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="py-6 text-center text-xs text-[#6b7280]">
+          No hay comprobantes emitidos. La emisión de facturas se activará cuando se configure un plan de pago.
         </div>
       </div>
-
-      <ConfirmDialog
-        isOpen={cancelModalOpen}
-        onClose={() => setCancelModalOpen(false)}
-        onConfirm={() => {
-          setPlanCancelled(true);
-          setCancelModalOpen(false);
-        }}
-        title="¿Deshabilitar o cancelar tu suscripción?"
-        description="Al cancelar el plan, tu suscripción no se renovará al final del ciclo actual. Podrás seguir operando hasta el 28 de Octubre, 2026."
-        confirmLabel="Confirmar cancelación"
-        cancelLabel="Mantener plan"
-        isDestructive={true}
-      />
     </div>
   );
 }

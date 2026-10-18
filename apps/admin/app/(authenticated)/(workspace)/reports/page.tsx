@@ -15,8 +15,23 @@ const reportsSchema = z.object({
     to: z.string(),
   }),
   totalReservations: z.number(),
+  activeReservations: z.number().default(0),
+  cancelledReservations: z.number().default(0),
   grossBookedValue: z.number(),
+  actualCollectedValue: z.number().default(0),
+  refundedValue: z.number().default(0),
   currency: z.string(),
+  totalsByCurrency: z.record(
+    z.string(),
+    z.object({
+      grossBookedValue: z.number(),
+      actualCollectedValue: z.number(),
+      refundedValue: z.number(),
+      totalReservations: z.number(),
+      activeReservations: z.number(),
+      cancelledReservations: z.number(),
+    })
+  ).default({}),
   paymentStatusBreakdown: z.record(z.string(), z.object({ count: z.number(), total: z.number() })),
   bookingStatusBreakdown: z.record(z.string(), z.number()),
   reservationsByDay: z.array(z.object({ date: z.string(), count: z.number(), total: z.number() })),

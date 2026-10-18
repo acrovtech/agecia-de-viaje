@@ -88,12 +88,6 @@ const bottomNavItems: NavItem[] = [
     icon: Settings,
     roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
   },
-  {
-    label: 'Ayuda y comentarios',
-    href: '/settings/feedback',
-    icon: HelpCircle,
-    roles: ['OWNER', 'ADMIN', 'OPERATOR', 'EDITOR', 'VIEWER'],
-  },
 ];
 
 export function Sidebar({ identity, onNavigate, className = '' }: SidebarProps) {

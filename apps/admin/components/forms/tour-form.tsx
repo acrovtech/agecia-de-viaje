@@ -109,7 +109,7 @@ export function TourForm({
   });
   const [region, setRegion] = useState<string>(initialData?.region || '');
   const [duration, setDuration] = useState<string>(initialData?.duration || '');
-  const [difficulty, setDifficulty] = useState<string>(initialData?.difficulty || 'Moderada');
+  const [difficulty, setDifficulty] = useState<string>(initialData?.difficulty || '');
   const [altitude, setAltitude] = useState<string>(
     initialData?.altitude?.replace(/\s*m\s*s\.\s*n\.\s*m\.\s*/gi, '').trim() || ''
   );
@@ -1156,9 +1156,9 @@ export function TourForm({
 
                   <div className="space-y-1.5">
                     <Label htmlFor="asistido_difficulty" className="text-xs font-medium text-slate-600 block truncate">Dificultad</Label>
-                    <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || 'Moderada'); setIsDirty(true); }}>
+                    <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || ''); setIsDirty(true); }}>
                       <SelectTrigger id="asistido_difficulty" className="w-full h-9 data-[size=default]:h-9 bg-white border-slate-300 text-xs font-medium rounded-lg">
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccionar..." />
                       </SelectTrigger>
                       <SelectContent alignItemWithTrigger={false} className="w-[--anchor-width] min-w-full text-xs font-medium">
                         <SelectItem value="Fácil">Fácil</SelectItem>
@@ -1540,7 +1540,7 @@ export function TourForm({
 
               <div className="space-y-1">
                 <Label htmlFor="difficulty" className="text-xs font-semibold text-slate-600">Dificultad</Label>
-                <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || 'Moderada'); setIsDirty(true); }}>
+                <Select name="difficulty" value={difficulty} onValueChange={(val) => { setDifficulty(val || ''); setIsDirty(true); }}>
                   <SelectTrigger className="w-full h-8 bg-white border-slate-300 text-xs font-semibold">
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>

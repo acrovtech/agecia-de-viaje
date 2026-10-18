@@ -13,7 +13,7 @@ const TourInputSchema = z.object({
   duration: z.string().default(''),
   altitude: z.string().default(''),
   groupSize: z.string().default(''),
-  difficulty: z.string().default('Fácil'),
+  difficulty: z.string().nullable().optional(),
 });
 
 export async function createTour(formData: FormData) {
@@ -29,7 +29,7 @@ export async function createTour(formData: FormData) {
     duration: (formData.get('duration') as string) || '',
     altitude: (formData.get('altitude') as string) || '',
     groupSize: (formData.get('groupSize') as string)?.trim() || '',
-    difficulty: (formData.get('difficulty') as string) || 'Fácil',
+    difficulty: (formData.get('difficulty') as string)?.trim() || null,
   });
 
   if (!validatedFields.success) {
@@ -79,7 +79,7 @@ export async function createTour(formData: FormData) {
   const duration = (formData.get('duration') as string)?.trim() || '';
   const altitude = (formData.get('altitude') as string)?.trim() || '';
   const groupSizeStr = (formData.get('groupSize') as string)?.trim() || '';
-  const difficulty = (formData.get('difficulty') as string)?.trim() || 'Fácil';
+  const difficulty = (formData.get('difficulty') as string)?.trim() || null;
   const mapEmbedUrl = (formData.get('mapEmbedUrl') as string)?.trim() || '';
   
   // Grouping & Featured

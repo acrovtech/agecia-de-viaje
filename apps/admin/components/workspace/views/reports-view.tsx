@@ -2,7 +2,16 @@
 
 import React from 'react';
 import { PageHeader } from '../../design-system/page-header';
-import { Calendar, DollarSign, TrendingUp, Layers, Compass, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Layers, CheckCircle2, AlertTriangle, ArrowDownRight, ShieldAlert } from 'lucide-react';
+
+export interface CurrencyFinancials {
+  grossBookedValue: number;
+  actualCollectedValue: number;
+  refundedValue: number;
+  totalReservations: number;
+  activeReservations: number;
+  cancelledReservations: number;
+}
 
 export interface ReportsData {
   period: {
@@ -10,8 +19,13 @@ export interface ReportsData {
     to: string;
   };
   totalReservations: number;
+  activeReservations: number;
+  cancelledReservations: number;
   grossBookedValue: number;
+  actualCollectedValue: number;
+  refundedValue: number;
   currency: string;
+  totalsByCurrency?: Record<string, CurrencyFinancials>;
   paymentStatusBreakdown: Record<string, { count: number; total: number }>;
   bookingStatusBreakdown: Record<string, number>;
   reservationsByDay: { date: string; count: number; total: number }[];
@@ -26,26 +40,34 @@ export interface ReportsViewProps {
 }
 
 export function ReportsView({ data, from, to }: ReportsViewProps) {
-  const formatMoney = (amount: number) => {
+  const formatMoney = (amount: number, currencyCode?: string) => {
     return new Intl.NumberFormat('es-PE', {
       style: 'currency',
-      currency: data.currency || 'USD',
+      currency: currencyCode || data.currency || 'USD',
     }).format(amount);
   };
 
   const paymentStatusLabels: Record<string, { label: string; color: string }> = {
     PAID: { label: 'Pagado', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    PARTIAL: { label: 'Parcial', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    PARTIALLY_PAID: { label: 'Pago Parcial', color: 'bg-amber-50 text-amber-700 border-amber-200' },
     PENDING: { label: 'Pendiente', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    REFUND_PENDING: { label: 'Reembolso Pendiente', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+    PARTIALLY_REFUNDED: { label: 'Reembolso Parcial', color: 'bg-rose-50 text-rose-700 border-rose-200' },
     REFUNDED: { label: 'Reembolsado', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+    PAYMENT_RECEIVED_REVIEW: { label: 'En Revisión', color: 'bg-blue-50 text-blue-700 border-blue-200' },
     FAILED: { label: 'Fallido', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+    EXPIRED: { label: 'Expirado', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+    LEGACY_UNKNOWN: { label: 'Desconocido', color: 'bg-gray-100 text-gray-600 border-gray-200' },
   };
+
+  const currenciesList = Object.entries(data.totalsByCurrency || {});
+  const hasMultipleCurrencies = currenciesList.length > 1;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reportes Comerciales"
-        description="Métricas consolidadas y agregados reales calculados a partir de las reservas de tu agencia."
+        description="Métricas consolidadas y agregados reales calculados a partir de las reservas registradas de tu agencia."
       />
 
       {/* Date Range Filter Bar */}
@@ -74,6 +96,9 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
             className="h-8 rounded-lg border border-[#e5e7eb] px-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#111111]"
           />
         </div>
+        <span className="text-[11px] text-[#6b7280] hidden md:inline-block">
+          (Reservas registradas durante el periodo)
+        </span>
         <button
           type="submit"
           className="product-button-primary py-1 px-3 text-xs ml-auto"
@@ -87,34 +112,102 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
         <div className="product-card-surface p-5 space-y-1">
           <span className="text-xs text-[#6b7280] font-medium block">Total Reservas</span>
           <div className="text-2xl font-bold text-[#111111] tracking-tight">{data.totalReservations}</div>
-          <p className="text-[11px] text-[#898989]">En el periodo consultado</p>
+          <p className="text-[11px] text-[#898989]">
+            {data.activeReservations} activas · {data.cancelledReservations} canceladas
+          </p>
         </div>
 
         <div className="product-card-surface p-5 space-y-1">
           <span className="text-xs text-[#6b7280] font-medium block">Valor Bruto Reservado</span>
           <div className="text-2xl font-bold text-[#111111] tracking-tight">{formatMoney(data.grossBookedValue)}</div>
-          <p className="text-[11px] text-[#898989]">Suma total de importes pactados</p>
+          <p className="text-[11px] text-[#898989]">Excluye reservas canceladas</p>
         </div>
 
         <div className="product-card-surface p-5 space-y-1">
-          <span className="text-xs text-[#6b7280] font-medium block">Pagadas / Confirmadas</span>
+          <span className="text-xs text-[#6b7280] font-medium block">Valor Cobrado Real</span>
           <div className="text-2xl font-bold text-emerald-600 tracking-tight">
-            {data.paymentStatusBreakdown['PAID']?.count || 0}
+            {formatMoney(data.actualCollectedValue)}
           </div>
           <p className="text-[11px] text-[#898989]">
-            {formatMoney(data.paymentStatusBreakdown['PAID']?.total || 0)} cobrados
+            Neto efectivamente percibido
           </p>
         </div>
 
         <div className="product-card-surface p-5 space-y-1">
-          <span className="text-xs text-[#6b7280] font-medium block">Pagos Pendientes</span>
-          <div className="text-2xl font-bold text-amber-600 tracking-tight">
-            {data.paymentStatusBreakdown['PENDING']?.count || 0}
+          <span className="text-xs text-[#6b7280] font-medium block">Total Reembolsos</span>
+          <div className="text-2xl font-bold text-rose-600 tracking-tight">
+            {formatMoney(data.refundedValue)}
           </div>
           <p className="text-[11px] text-[#898989]">
-            {formatMoney(data.paymentStatusBreakdown['PENDING']?.total || 0)} por cobrar
+            Importes devueltos a clientes
           </p>
         </div>
+      </div>
+
+      {/* Multi-Currency Breakdown if multiple currencies exist */}
+      {hasMultipleCurrencies && (
+        <div className="product-card-surface p-5 space-y-3">
+          <div className="border-b border-[#e5e7eb] pb-2">
+            <h3 className="text-sm font-semibold text-[#111111]">Totales Aislados por Moneda</h3>
+            <p className="text-xs text-[#6b7280]">
+              Cada divisa se totaliza de forma independiente para evitar sumas distorsionadas.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {currenciesList.map(([curr, fin]) => (
+              <div key={curr} className="p-3.5 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] space-y-1 text-xs">
+                <div className="flex items-center justify-between font-bold text-sm text-[#111111]">
+                  <span>{curr}</span>
+                  <span className="text-xs font-normal text-[#6b7280]">{fin.totalReservations} reservas</span>
+                </div>
+                <div className="flex justify-between text-[#6b7280] pt-1">
+                  <span>Bruto Reservado:</span>
+                  <span className="font-semibold text-[#111111]">{formatMoney(fin.grossBookedValue, curr)}</span>
+                </div>
+                <div className="flex justify-between text-[#6b7280]">
+                  <span>Cobrado Real:</span>
+                  <span className="font-semibold text-emerald-600">{formatMoney(fin.actualCollectedValue, curr)}</span>
+                </div>
+                <div className="flex justify-between text-[#6b7280]">
+                  <span>Reembolsado:</span>
+                  <span className="font-semibold text-rose-600">{formatMoney(fin.refundedValue, curr)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Status Breakdown */}
+      <div className="product-card-surface p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[#111111]">Estado de Pagos</h3>
+          <p className="text-xs text-[#6b7280]">Desglose de reservas según estado de cobranza registrado</p>
+        </div>
+
+        {Object.keys(data.paymentStatusBreakdown).length === 0 ? (
+          <p className="text-xs text-[#6b7280] py-2 text-center">No hay registros de pago en este periodo.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {Object.entries(data.paymentStatusBreakdown).map(([statusKey, info]) => {
+              const meta = paymentStatusLabels[statusKey] || {
+                label: statusKey,
+                color: 'bg-slate-100 text-slate-700 border-slate-200',
+              };
+              return (
+                <div key={statusKey} className="p-3 rounded-lg border border-[#e5e7eb] space-y-1">
+                  <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${meta.color}`}>
+                    {meta.label}
+                  </span>
+                  <div className="text-lg font-bold text-[#111111]">{info.count}</div>
+                  <span className="text-[11px] text-[#6b7280] block truncate">
+                    {formatMoney(info.total)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -122,7 +215,7 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
         <div className="product-card-surface p-5 space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-[#111111]">Tours Más Reservados</h3>
-            <p className="text-xs text-[#6b7280]">Ranking por cantidad de reservas en el periodo</p>
+            <p className="text-xs text-[#6b7280]">Ranking por cantidad de reservas registradas en el periodo</p>
           </div>
 
           {data.topTours.length === 0 ? (
@@ -183,8 +276,10 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
       {/* Daily Breakdown Table */}
       <div className="product-card-surface space-y-3">
         <div className="p-5 border-b border-[#e5e7eb]">
-          <h3 className="text-sm font-semibold text-[#111111]">Evolución Diaria</h3>
-          <p className="text-xs text-[#6b7280]">Detalle día a día de reservas generadas</p>
+          <h3 className="text-sm font-semibold text-[#111111]">Evolución Diaria de Ventas</h3>
+          <p className="text-xs text-[#6b7280]">
+            Reservas registradas durante el periodo (Fecha de registro de venta comercial)
+          </p>
         </div>
 
         {data.reservationsByDay.length === 0 ? (

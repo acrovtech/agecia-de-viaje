@@ -140,16 +140,23 @@ export async function saveTourAction(
     const galleryImage2 = parseStringValue('galleryImage_2');
     const galleryImage3 = parseStringValue('galleryImage_3');
     const galleryImage4 = parseStringValue('galleryImage_4');
-    const galleryUrls = [galleryImage1, galleryImage2, galleryImage3, galleryImage4].filter((url): url is string => Boolean(url));
-    const images = galleryUrls.map((url, i) => ({ url, alt: `Foto ${i + 1}`, order: i }));
+    const galleryUrls = [
+      { url: galleryImage1, alt: parseStringValue('galleryAlt_1') },
+      { url: galleryImage2, alt: parseStringValue('galleryAlt_2') },
+      { url: galleryImage3, alt: parseStringValue('galleryAlt_3') },
+      { url: galleryImage4, alt: parseStringValue('galleryAlt_4') },
+    ].filter((item): item is { url: string; alt: string | null } => Boolean(item.url));
+    const images = galleryUrls.map((item, i) => ({ url: item.url, alt: item.alt || null, order: i }));
 
     const itineraries: { title: string; content: string }[] = [];
     const itineraryCount = parseInt(str('itineraryCount')) || 50;
     for (let i = 0; i < itineraryCount; i++) {
       const dayTitle = str(`itinerary_title_${i}`);
       const dayContent = str(`itinerary_content_${i}`);
-      if (dayTitle || dayContent) {
-        itineraries.push({ title: dayTitle || `Día ${i + 1}`, content: dayContent || '' });
+      if (dayTitle && dayContent) {
+        itineraries.push({ title: dayTitle, content: dayContent });
+      } else if (dayTitle || dayContent) {
+        return { error: 'Cada día del itinerario debe tener tanto título como contenido descriptivo.' };
       }
     }
 
@@ -176,8 +183,10 @@ export async function saveTourAction(
     for (let i = 0; i < faqsCount; i++) {
       const q = str(`faq_question_${i}`);
       const a = str(`faq_answer_${i}`);
-      if (q || a) {
-        faqs.push({ question: q || `Pregunta ${i + 1}`, answer: a || '' });
+      if (q && a) {
+        faqs.push({ question: q, answer: a });
+      } else if (q || a) {
+        return { error: 'Cada pregunta frecuente debe tener tanto la pregunta como la respuesta.' };
       }
     }
 
@@ -279,18 +288,33 @@ export async function saveTourAction(
       };
       const updatedContent: any = await centralRequest(`${baseRoute}/${encodeURIComponent(id)}/content`, token, contentPayload, 'PUT');
 
-      // 3. Separate publication if state changed
-      const currentPublished = form.get('isPublished') === 'true';
-      if (desiredPublished !== currentPublished) {
+      // 3. Publication orchestration: base/content writes reset isPublished to false in Central API.
+      // Therefore, if desiredPublished is true, ALWAYS call publication endpoint with latest updatedAt.
+      if (desiredPublished) {
         try {
           await centralRequest(
             `${baseRoute}/${encodeURIComponent(id)}/publication`,
             token,
-            { expectedUpdatedAt: updatedContent.updatedAt, isPublished: desiredPublished },
+            { expectedUpdatedAt: updatedContent.updatedAt, isPublished: true },
             'PUT',
           );
         } catch {
           return { error: 'Los cambios se guardaron como borrador, pero no pudo publicarse el tour. Revisa los campos obligatorios.' };
+        }
+      } else {
+        // If user explicitly chose unpublished/Desactivado, unpublish if it was previously published
+        const currentPublished = form.get('isPublished') === 'true';
+        if (currentPublished) {
+          try {
+            await centralRequest(
+              `${baseRoute}/${encodeURIComponent(id)}/publication`,
+              token,
+              { expectedUpdatedAt: updatedContent.updatedAt, isPublished: false },
+              'PUT',
+            );
+          } catch {
+            // Ignored if already unpublished
+          }
         }
       }
     }

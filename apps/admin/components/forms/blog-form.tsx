@@ -51,15 +51,17 @@ export function BlogForm({ initialData }: { initialData?: any }) {
     setTimeout(() => setShowDeleteModal(false), 200);
   };
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const handleDeleteBlog = () => {
     if (!initialData?.id) return;
+    setDeleteError(null);
     startDeleteTransition(async () => {
       const res = await deleteBlog(initialData.id);
       if (res.success) {
         window.location.href = '/blogs';
       } else {
-        alert('Error al eliminar la publicación.');
-        setShowDeleteModal(false);
+        setDeleteError('No se pudo eliminar la publicación. Inténtalo nuevamente.');
       }
     });
   };
@@ -387,6 +389,12 @@ export function BlogForm({ initialData }: { initialData?: any }) {
             <p className="text-xs text-slate-600 leading-relaxed">
               ¿Estás seguro de que deseas eliminar permanentemente el artículo <span className="font-bold text-slate-900">"{initialData?.title}"</span>? Esta acción quitará la publicación del sitio web y no se podrá deshacer.
             </p>
+
+            {deleteError && (
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                {deleteError}
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button

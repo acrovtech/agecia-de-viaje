@@ -244,24 +244,8 @@ export default async function ReservationsPage({
     }
 
     try {
-      const [resRow, guidesBody, driversBody, vehiclesBody] = await Promise.all([
-        centralRequest(`${base}/reservations/${params.id}`, token),
-        centralRequest(`${base}/operations/resources?type=GUIDE&isActive=true`, token).catch(
-          () => ({ data: [] }),
-        ),
-        centralRequest(`${base}/operations/resources?type=DRIVER&isActive=true`, token).catch(
-          () => ({ data: [] }),
-        ),
-        centralRequest(`${base}/operations/vehicles?isActive=true`, token).catch(() => ({
-          data: [],
-        })),
-      ]);
-
+      const resRow = await centralRequest(`${base}/reservations/${params.id}`, token);
       const row = reservationDetailSchema.parse(resRow);
-      const guides = z.object({ data: z.array(serviceResourceSchema) }).parse(guidesBody).data;
-      const drivers = z.object({ data: z.array(serviceResourceSchema) }).parse(driversBody).data;
-      const vehicles = z.object({ data: z.array(fleetVehicleSchema) }).parse(vehiclesBody).data;
-
       const publicCode = row.code ?? row.id;
 
       return (
@@ -466,21 +450,12 @@ export default async function ReservationsPage({
             </div>
           </div>
 
-          {/* Formulario de Asignación de Recursos Operativos */}
-          <OperationsAssignmentForm
-            key={`ops-${row.updatedAt}`}
-            reservation={row}
-            guides={guides}
-            drivers={drivers}
-            vehicles={vehicles}
-          />
-
           {/* Formulario de Transición de Estado */}
           <StatusForm key={row.updatedAt} reservation={row} />
 
-          {/* Historial Operativo */}
+          {/* Historial de la reserva */}
           <div className="product-card-surface p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-[#111111]">Historial Operativo</h3>
+            <h3 className="text-sm font-semibold text-[#111111]">Historial de la reserva</h3>
             {!row.events.length && (
               <p className="text-xs text-[#898989]">
                 Esta reserva no tiene eventos registrados aún.
