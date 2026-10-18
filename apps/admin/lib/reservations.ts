@@ -21,6 +21,18 @@ export const assignmentResourceSchema = z.object({
 export const reservationDetailSchema = reservationSummarySchema.extend({
   serviceType: z.string().nullable(), unitPriceMinor: z.number().nullable(), pricingUnit: z.string().nullable(), vehicleName: z.string().nullable(),
   customerEmail: z.string(), customerPhone: z.string(), pickupHotel: z.string().nullable(), pickupTime: z.string().nullable(), specialRequirements: z.string().nullable(),
+  marketingCode: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  originalPrice: z.number().nullable().optional(),
+  paymentReference: z.string().nullable().optional(),
+  coupon: z.object({
+    id: z.string(),
+    code: z.string(),
+    name: z.string().nullable(),
+    channel: z.string().nullable().optional(),
+    discountType: z.string(),
+    discountValue: z.number(),
+  }).nullable().optional(),
   passengers: z.array(z.object({ firstName: z.string(), lastName: z.string(), docType: z.string(), docNumber: z.string() })),
   events: z.array(z.object({ id: z.string(), actorLabel: z.string(), fromStatus: z.string().nullable(), toStatus: z.string(), note: z.string(), createdAt: z.string() })),
   assignments: assignmentResourceSchema.optional(),

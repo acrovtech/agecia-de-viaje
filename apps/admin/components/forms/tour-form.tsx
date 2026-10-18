@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useTransition, useRef, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Map, Tag, Save, AlertCircle, X, Loader2, ExternalLink, Copy, ArrowDownToLine } from 'lucide-react';
 import { ImageDropzone } from '@/components/ui/image-dropzone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createTour, deleteTour } from '../../app/actions/tour';
+import { saveTourAction, deleteTourAction } from '@/app/workspace/catalog-actions';
 
 type Category = {
   id: string;
@@ -47,6 +47,7 @@ export function TourForm({
   initialData?: any;
   showCategories?: boolean;
 }) {
+  const [state, formAction, isPending] = useActionState(saveTourAction, null);
   const [creationMode, setCreationMode] = useState<'completo' | 'asistido'>('completo');
   const [assistedStep, setAssistedStep] = useState<number>(1);
   const [groupSize, setGroupSize] = useState<string>(initialData?.groupSize !== undefined && initialData?.groupSize !== null ? String(initialData.groupSize) : '');
@@ -420,11 +421,11 @@ export function TourForm({
   const handleDeleteTour = () => {
     if (!initialData?.id) return;
     startDeleteTransition(async () => {
-      const res = await deleteTour(initialData.id);
+      const res = await deleteTourAction(initialData.id);
       if (res.success) {
-        window.location.href = '/tours';
+        window.location.href = '/catalog/tours';
       } else {
-        alert('Error al eliminar el tour.');
+        alert(res.error || 'Error al eliminar el tour.');
         setShowDeleteModal(false);
       }
     });
@@ -483,19 +484,32 @@ export function TourForm({
   return (
     <form 
       ref={formRef}
-      action={createTour} 
+      action={formAction} 
       onSubmit={() => setIsDirty(false)}
       onChange={() => setIsDirty(true)}
       onInput={() => setIsDirty(true)}
       className="flex-1 w-full max-w-[1150px] mx-auto px-0 pb-6 select-none"
     >
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      <input type="hidden" name="updatedAt" value={initialData?.updatedAt || ''} />
+      <input type="hidden" name="isPublished" value={initialData?.isPublished ? 'true' : 'false'} />
       <input type="hidden" name="status" value={status === 'Activo' ? 'Active' : 'Draft'} />
       <input type="hidden" name="isFeatured" value={isFeatured === 'Activo' ? 'true' : 'false'} />
+      <input type="hidden" name="destinationType" value={destinationType} />
+      <input type="hidden" name="duration" value={duration} />
+      <input type="hidden" name="difficulty" value={difficulty} />
+      <input type="hidden" name="altitude" value={altitude} />
+      <input type="hidden" name="region" value={region} />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="metaTitle" value={`${title} - Agencia de Viajes`} />
       <input type="hidden" name="hasSharedService" value="on" />
       {hasPrivateService && <input type="hidden" name="hasPrivateService" value="on" />}
+
+      {state?.error && (
+        <div role="alert" className="mb-4 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs sm:text-sm font-medium">
+          {state.error}
+        </div>
+      )}
       
       {/* Header Fila de la página (Título + Acciones en la misma fila) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

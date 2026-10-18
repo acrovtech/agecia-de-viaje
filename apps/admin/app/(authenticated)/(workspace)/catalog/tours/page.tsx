@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { centralRequest, centralSession, CentralApiError } from '@/lib/central-api';
 import { isApiAdmin } from '@/lib/admin-mode';
 import { canEditCatalog, catalogDetailSchema } from '@/lib/catalog-editor';
+import { categorySchema, tourContentSchema } from '@/lib/catalog-content';
 import { CatalogView } from '@/components/workspace/views/catalog-view';
 
 export const dynamic = 'force-dynamic';
@@ -51,14 +52,18 @@ export default async function ToursCatalogPage({
   const after = typeof params.after === 'string' && params.after.length <= 128 ? params.after : '';
   const base = `/v1/agencies/${encodeURIComponent(identity.agencyId)}/catalog/tours`;
 
-  const body = await centralRequest(`${base}${after ? `?after=${encodeURIComponent(after)}` : ''}`, token);
+  const [body, categoriesRes] = await Promise.all([
+    centralRequest(`${base}${after ? `?after=${encodeURIComponent(after)}` : ''}`, token),
+    centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/catalog/categories`, token).catch(() => ({ data: [] })),
+  ]);
   const result = catalogSchema.parse(body);
+  const categories = z.object({ data: z.array(categorySchema) }).parse(categoriesRes).data;
 
   const editId = typeof params.edit === 'string' ? params.edit : undefined;
   let selected;
   if (editId && editId !== 'new') {
     try {
-      selected = catalogDetailSchema.parse(await centralRequest(`${base}/${encodeURIComponent(editId)}`, token));
+      selected = tourContentSchema.parse(await centralRequest(`${base}/${encodeURIComponent(editId)}/content`, token));
     } catch {
       selected = undefined;
     }
@@ -73,6 +78,7 @@ export default async function ToursCatalogPage({
       editing={Boolean(editId)}
       record={selected}
       editId={editId}
+      categories={categories}
       catalog={result}
       saved={params.saved === '1'}
       agencySlug={identity.agencySlug}

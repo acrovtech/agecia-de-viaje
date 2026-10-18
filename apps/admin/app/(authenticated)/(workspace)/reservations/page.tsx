@@ -18,6 +18,11 @@ import {
   ListFilter,
   ChevronLeft,
   ChevronRight,
+  Tag,
+  Globe,
+  Store,
+  ShoppingBag,
+  MessageSquare,
 } from 'lucide-react';
 import { centralRequest, centralSession, CentralApiError } from '@/lib/central-api';
 import { isApiAdmin } from '@/lib/admin-mode';
@@ -37,6 +42,60 @@ import { StatusBadge } from '@/components/design-system/status-badge';
 import { EmptyState } from '@/components/design-system/empty-state';
 
 export const dynamic = 'force-dynamic';
+
+function formatMarketingChannel(channel?: string | null): string {
+  if (!channel) return 'Canal no especificado';
+  switch (channel) {
+    case 'META_ADS':
+      return 'Meta Ads (Facebook / Instagram)';
+    case 'TIKTOK_ADS':
+      return 'TikTok Ads';
+    case 'GOOGLE_ADS':
+      return 'Google Ads';
+    case 'EMAIL_MARKETING':
+      return 'Email Marketing';
+    case 'ORGANIC_VIDEO':
+      return 'Contenido Orgánico (Reels / TikTok)';
+    default:
+      return channel;
+  }
+}
+
+function getSourceInfo(source?: string | null) {
+  const s = (source || 'WEB').toUpperCase();
+  switch (s) {
+    case 'WEB':
+      return {
+        label: 'Sitio Web Directo',
+        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: Globe,
+      };
+    case 'WHATSAPP':
+      return {
+        label: 'WhatsApp Directo',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        icon: MessageSquare,
+      };
+    case 'MANUAL':
+      return {
+        label: 'Venta Counter / Manual',
+        badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+        icon: Store,
+      };
+    case 'ECOMMERCE':
+      return {
+        label: 'Tienda E-Commerce',
+        badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        icon: ShoppingBag,
+      };
+    default:
+      return {
+        label: s,
+        badgeClass: 'bg-slate-50 text-slate-700 border-slate-200',
+        icon: Globe,
+      };
+  }
+}
 
 const MONTH_NAMES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -241,9 +300,59 @@ export default async function ReservationsPage({
                   <span>{row.customerPhone}</span>
                 </div>
               </div>
+
+              {/* Origen y Atribución Comercial */}
+              {(() => {
+                const sourceInfo = getSourceInfo(row.source);
+                const SourceIcon = sourceInfo.icon;
+                return (
+                  <div className="pt-3 border-t border-[#e5e7eb] space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[#898989]">Origen de reserva:</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${sourceInfo.badgeClass}`}>
+                        <SourceIcon className="w-3 h-3" />
+                        <span>{sourceInfo.label}</span>
+                      </span>
+                    </div>
+                    {row.marketingCode && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#898989]">Código de atribución:</span>
+                        <span className="font-mono text-[11px] font-semibold bg-[#f8f9fa] border border-[#e5e7eb] px-1.5 py-0.5 rounded text-[#111111]">
+                          {row.marketingCode}
+                        </span>
+                      </div>
+                    )}
+                    {row.coupon && (
+                      <div className="p-2.5 rounded-lg bg-emerald-50/80 border border-emerald-200/90 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 font-bold text-emerald-900 font-mono text-xs">
+                            <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{row.coupon.code}</span>
+                          </span>
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded">
+                            {row.coupon.discountType === 'PERCENTAGE'
+                              ? `${row.coupon.discountValue}% OFF`
+                              : `-$${(row.discountAmount || row.coupon.discountValue || 0).toFixed(2)} USD`}
+                          </span>
+                        </div>
+                        {row.coupon.name && (
+                          <p className="text-[11px] text-emerald-800">
+                            Campaña: <span className="font-medium">{row.coupon.name}</span>
+                          </p>
+                        )}
+                        {row.coupon.channel && (
+                          <p className="text-[10px] text-emerald-700">
+                            Canal: <span className="font-medium">{formatMarketingChannel(row.coupon.channel)}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Card 2: Instantánea Comercial (FROZEN / DEFERRED) */}
+            {/* Card 2: Instantánea Comercial */}
             <div className="product-card-surface p-5 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5" />
@@ -259,8 +368,37 @@ export default async function ReservationsPage({
                     {row.pricingUnit === 'GROUP' ? 'por vehículo' : 'por persona'}
                   </p>
                 )}
+
+                {/* Desglose de Cupón / Descuento */}
+                {((row.discountAmount && row.discountAmount > 0) || row.coupon || (row.originalPrice && row.originalPrice > row.totalPrice)) && (
+                  <div className="pt-2 border-t border-dashed border-[#e5e7eb] space-y-1 text-xs">
+                    <div className="flex justify-between items-center text-[#6b7280]">
+                      <span>Subtotal base</span>
+                      <span className="font-medium text-[#111111]">
+                        ${(row.originalPrice || (row.totalPrice + (row.discountAmount || 0))).toFixed(2)} {row.currency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-emerald-700 font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-emerald-600" />
+                        <span>Descuento cupón {row.coupon?.code ? `(${row.coupon.code})` : ''}</span>
+                      </span>
+                      <span>
+                        -${((row.discountAmount && row.discountAmount > 0) ? row.discountAmount : ((row.originalPrice || row.totalPrice) - row.totalPrice)).toFixed(2)} {row.currency}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {row.paymentReference && (
+                  <div className="pt-1 text-[11px] text-[#6b7280] flex justify-between items-center">
+                    <span>Referencia pasarela:</span>
+                    <span className="font-mono text-[#111111]">{row.paymentReference}</span>
+                  </div>
+                )}
+
                 <div className="pt-2 text-[11px] text-[#374151] bg-[#f8f9fa] p-2.5 rounded-lg">
-                  Estado de pagos: <strong>FROZEN / PROVIDER DEFERRED</strong>. No se procesan cobros en pasarela en esta versión.
+                  Estado de pagos: <strong>Diferido</strong>. No se procesan cobros en pasarela en esta versión.
                 </div>
               </div>
             </div>

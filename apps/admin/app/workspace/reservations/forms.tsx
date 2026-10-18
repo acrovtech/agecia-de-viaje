@@ -505,7 +505,7 @@ function CreateForm({
             className="w-4 h-4 rounded text-[#111111] focus:ring-[#111111] border-[#e5e7eb] mt-0.5"
           />
           <span>
-            Confirmo que revisé servicio, fecha, pasajeros e importe. Se creará una reserva operativa en estado PENDIENTE sin registrar cobros (pagos diferidos / frozen).
+            Confirmo que revisé servicio, fecha, pasajeros e importe. Se creará una reserva operativa en estado PENDIENTE sin registrar cobros (pagos diferidos).
           </span>
         </label>
 

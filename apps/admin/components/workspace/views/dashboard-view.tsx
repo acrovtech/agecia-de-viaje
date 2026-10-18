@@ -42,7 +42,7 @@ export function DashboardView({
         description={`Resumen operativo de ${identity.agencyName}`}
         actions={
           <Link
-            href="/tours/new"
+            href="/catalog/tours?edit=new"
             className="product-button-primary"
           >
             <Plus className="w-4 h-4" />
@@ -59,7 +59,7 @@ export function DashboardView({
             Correo transaccional pendiente de configurar
           </span>
           <span className="hidden sm:inline text-[#6b7280]">
-            — Outbox duradero y cifrado activo (LIVE EMAIL TRANSPORT: NOT CONFIGURED)
+            — Bandeja de salida duradera y cifrado activo (transporte de correo en vivo no configurado)
           </span>
         </div>
         <Link
@@ -98,7 +98,7 @@ export function DashboardView({
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-[#6b7280] font-medium block">Valor reservado</span>
             <span className="text-[10px] uppercase font-medium px-1.5 py-0.2 rounded bg-[#f3f4f6] text-[#6b7280] border border-[#e5e7eb]">
-              Frozen
+              Diferido
             </span>
           </div>
           <div className="text-2xl font-semibold text-[#111111] tracking-tight">{formattedBookedValue}</div>

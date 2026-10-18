@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { AgencyRoles } from '../security/public-route.js';
@@ -34,6 +34,10 @@ export class AdminCatalogController {
   @AgencyRoles('OWNER', 'ADMIN', 'EDITOR')
   updateTour(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) { return this.writes.updateTour(req.identity, id, body); }
 
+  @Delete('tours/:id')
+  @AgencyRoles('OWNER', 'ADMIN', 'EDITOR')
+  deleteTour(@Req() req: AuthenticatedRequest, @Param('id') id: string) { return this.writes.deleteTour(req.identity, id); }
+
   @Post('transfers')
   @AgencyRoles('OWNER', 'ADMIN', 'OPERATOR')
   createTransfer(@Req() req: AuthenticatedRequest, @Body() body: unknown) { return this.writes.createTransfer(req.identity, body); }
@@ -41,6 +45,10 @@ export class AdminCatalogController {
   @Put('transfers/:id')
   @AgencyRoles('OWNER', 'ADMIN', 'OPERATOR')
   updateTransfer(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) { return this.writes.updateTransfer(req.identity, id, body); }
+
+  @Delete('transfers/:id')
+  @AgencyRoles('OWNER', 'ADMIN', 'OPERATOR')
+  deleteTransfer(@Req() req: AuthenticatedRequest, @Param('id') id: string) { return this.writes.deleteTransfer(req.identity, id); }
 
   @Get('tours')
   async tours(@Req() req: AuthenticatedRequest, @Query() query: unknown) {

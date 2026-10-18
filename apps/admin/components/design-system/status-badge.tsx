@@ -36,7 +36,7 @@ const statusMap: Record<
   COMPLETED: { label: 'Completada', variant: 'success', icon: CheckCircle2 },
   CANCELLED: { label: 'Cancelada', variant: 'danger', icon: XCircle },
 
-  // Payments (FROZEN / PROVIDER DEFERRED)
+  // Payments (DIFERIDO / PROVEEDOR PENDIENTE)
   PAID: { label: 'Pagada', variant: 'success', icon: CheckCircle2 },
   PARTIALLY_PAID: { label: 'Pago parcial', variant: 'warning', icon: Clock },
   REFUNDED: { label: 'Reembolsada', variant: 'neutral', icon: AlertCircle },

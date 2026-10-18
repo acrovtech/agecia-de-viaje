@@ -38,6 +38,7 @@ export interface CatalogViewProps {
   editing: boolean;
   record?: CatalogDetail;
   editId?: string;
+  categories?: any[];
   catalog?: {
     data: CatalogItem[];
     nextCursor: string | null;
@@ -53,6 +54,7 @@ export function CatalogView({
   editing,
   record,
   editId,
+  categories,
   catalog,
   saved,
   errorMessage,
@@ -208,6 +210,7 @@ export function CatalogView({
           <CatalogEditor
             kind="tours"
             record={record}
+            categories={categories}
           />
         </div>
       );

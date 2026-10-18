@@ -41,6 +41,8 @@ const summarySelect = {
 const detailSelect = {
   ...summarySelect, serviceType: true, unitPriceMinor: true, pricingUnit: true, vehicleName: true,
   customerEmail: true, customerPhone: true, pickupHotel: true, pickupTime: true, specialRequirements: true,
+  marketingCode: true, discountAmount: true, originalPrice: true, paymentReference: true,
+  coupon: { select: { id: true, code: true, name: true, channel: true, discountType: true, discountValue: true } },
   passengers: { select: { firstName: true, lastName: true, docType: true, docNumber: true } },
   events: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { id: true, actorLabel: true, fromStatus: true, toStatus: true, note: true, createdAt: true } },
   resourceAssignments: {

@@ -21,7 +21,7 @@ export function BillingSection({ initialProfile }: BillingSectionProps) {
         <div>
           <span className="font-semibold">Suscripción SaaS y Gestión de Pagos: </span>
           <span>
-            Esta sección administra tu plan de acceso a la plataforma. Las pasarelas de cobro a clientes finales en reservas turísticas permanecen en estado <strong>FROZEN / PROVIDER DEFERRED</strong>.
+            Esta sección administra tu plan de acceso a la plataforma. Las pasarelas de cobro a clientes finales en reservas turísticas permanecen en estado <strong>DIFERIDO / PROVEEDOR PENDIENTE</strong>.
           </span>
         </div>
       </div>

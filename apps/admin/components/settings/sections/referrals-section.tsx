@@ -78,7 +78,7 @@ export function ReferralsSection({ initialProfile }: ReferralsSectionProps) {
           </button>
         </div>
         <p className="text-xs text-[#6b7280]">
-          Cualquier registro que ingrese por este enlace quedará automáticamente atribuido a tu cuenta de partner.
+          Cualquier registro que ingrese por este enlace quedará automáticamente atribuido a tu cuenta en el programa de referidos.
         </p>
       </div>
 

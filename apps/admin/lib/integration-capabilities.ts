@@ -117,7 +117,7 @@ export function getIntegrationCapabilities(): SafeIntegrationCapability[] {
     } else if (provider.id === 'stripe') {
       // Stripe is specifically disabled in the current phase as required by business policy
       status = 'disabled';
-      statusLabel = 'No disponible';
+      statusLabel = 'NO DISPONIBLE';
       badgeVariant = 'neutral';
     } else {
       if (configured) {

@@ -1,7 +1,18 @@
 import { z } from 'zod';
 import { catalogDetailSchema } from './catalog-editor';
 
-export const categorySchema = z.object({ id: z.string(), name: z.string(), slug: z.string(), updatedAt: z.string() });
+export const categorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  parentId: z.string().nullable().optional(),
+  parent: z.object({
+    id: z.string(),
+    name: z.string(),
+    slug: z.string().optional(),
+  }).nullable().optional(),
+  updatedAt: z.string(),
+});
 export const vehicleSchema = z.object({ id: z.string(), code: z.string(), name: z.string(), subtitle: z.string().nullable(), maxPax: z.number(), maxLuggage: z.number(), image: z.string(), features: z.array(z.string()), isActive: z.boolean(), updatedAt: z.string() });
 export const tourContentSchema = catalogDetailSchema.extend({
   categories: z.array(categorySchema),

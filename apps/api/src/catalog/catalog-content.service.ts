@@ -22,14 +22,31 @@ const transferContent = z.object({
   ...version, hasPrivateService: z.boolean(),
   vehiclePrices: z.array(z.object({ vehicleId: id, price: money }).strict()).max(100).refine((rows) => new Set(rows.map((row) => row.vehicleId)).size === rows.length),
 }).strict();
-const category = z.object({ name: text, slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) }).strict();
+const category = z.object({
+  name: text,
+  slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  parentId: id.nullable().optional(),
+}).strict();
 const vehicle = z.object({
   code: z.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), name: text,
   subtitle: z.string().trim().max(200).nullable(), maxPax: z.number().int().min(1).max(100),
   maxLuggage: z.number().int().min(0).max(200), image,
   features: z.array(text).max(30), isActive: z.boolean(),
 }).strict();
-const categorySelect = { id: true, name: true, slug: true, updatedAt: true } satisfies Prisma.CategorySelect;
+const categorySelect = {
+  id: true,
+  name: true,
+  slug: true,
+  parentId: true,
+  parent: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+  updatedAt: true,
+} satisfies Prisma.CategorySelect;
 const vehicleSelect = { id: true, code: true, name: true, subtitle: true, maxPax: true, maxLuggage: true, image: true, features: true, isActive: true, updatedAt: true } satisfies Prisma.VehicleTypeSelect;
 const nextVersion = (value: string) => new Date(Math.max(Date.now(), Date.parse(value) + 1));
 
@@ -146,7 +163,18 @@ export class CatalogContentService {
   async saveCategory(who: ApiIdentity, resourceId: string | undefined, body: unknown) {
     const data = resourceId ? parse(category.extend(version), body) : parse(category, body);
     try { return await this.transaction(async (tx) => {
-      const values = { name: data.name, slug: data.slug };
+      if (data.parentId) {
+        if (resourceId && data.parentId === resourceId) {
+          throw new BadRequestException('A category cannot be its own parent');
+        }
+        const parent = await tx.category.findFirst({
+          where: { id: data.parentId, agencyId: who.agencyId },
+        });
+        if (!parent) {
+          throw new BadRequestException('Parent category must exist in the same agency');
+        }
+      }
+      const values = { name: data.name, slug: data.slug, parentId: data.parentId ?? null };
       let row;
       if (resourceId) {
         const expected = (data as z.infer<typeof category> & { expectedUpdatedAt: string }).expectedUpdatedAt;

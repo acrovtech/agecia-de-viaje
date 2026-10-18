@@ -10,10 +10,7 @@ export interface IntegrationCardProps {
   badge: string;
   badgeVariant?: 'amber' | 'purple' | 'neutral' | 'emerald';
   logo: React.ReactNode;
-  // Future interaction contract (prepared for future connection flows, inactive today)
-  connectHref?: string;
-  onConnect?: () => void;
-  connectionState?: 'disconnected' | 'connecting' | 'connected';
+  disabled?: boolean;
 }
 
 function IntegrationCard({
@@ -21,10 +18,15 @@ function IntegrationCard({
   badge,
   badgeVariant = 'neutral',
   logo,
+  disabled = false,
 }: IntegrationCardProps) {
   return (
     <div
-      className="rounded-[10px] border border-[#e5e7eb] bg-white p-[0.725rem] transition-colors cursor-default hover:border-[#d1d5db]"
+      className={`rounded-[10px] border border-[#e5e7eb] bg-white p-[0.725rem] transition-colors select-none ${
+        disabled
+          ? 'opacity-70 cursor-not-allowed pointer-events-none'
+          : 'cursor-default hover:border-[#d1d5db]'
+      }`}
       style={{ padding: '0.725rem' }}
     >
       {/* Top row: Left column (provider icon only) & Right column (status badge + provider name stack) */}
@@ -47,7 +49,7 @@ function IntegrationCard({
                   ? 'bg-[#ede9fe] text-[#6d28d9]'
                   : badgeVariant === 'emerald'
                     ? 'bg-[#d1fae5] text-[#065f46]'
-                    : 'bg-[#f3f4f6] text-[#374151]'
+                    : 'bg-[#f3f4f6] text-[#6b7280]'
             }`}
           >
             {badge}
@@ -71,6 +73,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
   const izipayCap = getCap('izipay');
   const culqiCap = getCap('culqi');
   const mercadopagoCap = getCap('mercadopago');
+  const stripeCap = getCap('stripe');
   const gcalendarCap = getCap('gcalendar');
   const whatsappCap = getCap('whatsapp');
 
@@ -123,6 +126,23 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
         />
       ),
     },
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      badge: 'NO DISPONIBLE',
+      badgeVariant: 'neutral',
+      disabled: true,
+      logo: (
+        <Image
+          src="/integrations/stripe.png"
+          alt="Stripe"
+          width={40}
+          height={40}
+          unoptimized
+          className="w-full h-full object-cover grayscale opacity-60"
+        />
+      ),
+    },
   ];
 
   const toolIntegrations: IntegrationCardProps[] = [
@@ -162,7 +182,7 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
 
   return (
     <div className="space-y-8">
-      {/* Payments Section (Spanish label, 3 columns on md+) */}
+      {/* Payments Section (Spanish label, 2 columns on desktop) */}
       <section className="space-y-3">
         <div>
           <h3 className="text-base font-semibold text-[#111111] tracking-tight">
@@ -173,14 +193,14 @@ export function IntegrationsSection({ capabilities = [] }: IntegrationsSectionPr
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5">
           {paymentIntegrations.map((item) => (
             <IntegrationCard key={item.id} {...item} />
           ))}
         </div>
       </section>
 
-      {/* Tools & Automations Section (2 columns on md+) */}
+      {/* Tools & Automations Section (2 columns on desktop) */}
       <section className="space-y-3">
         <div>
           <h3 className="text-base font-semibold text-[#111111] tracking-tight">

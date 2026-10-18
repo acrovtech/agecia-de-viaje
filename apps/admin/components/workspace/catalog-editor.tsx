@@ -11,12 +11,13 @@ import { TourForm } from '../forms/tour-form';
 interface CatalogEditorProps {
   kind: CatalogKind;
   record?: CatalogDetail;
+  categories?: any[];
 }
 
-export function CatalogEditor({ kind, record }: CatalogEditorProps) {
+export function CatalogEditor({ kind, record, categories }: CatalogEditorProps) {
   // If editing/creating tours, render the exact TourForm design from the specification
   if (kind === 'tours') {
-    return <TourForm initialData={record} />;
+    return <TourForm initialData={record} categories={categories} />;
   }
 
   const [state, formAction, isPending] = useActionState(saveCatalogAction, null);

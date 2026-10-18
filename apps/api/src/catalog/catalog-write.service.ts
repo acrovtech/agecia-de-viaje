@@ -14,9 +14,22 @@ const common = {
   title: text, slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   duration: text, hasSharedService: z.boolean(), sharedPrice: money.nullable(),
 };
+const destinationType = z.enum(['Nacional', 'Internacional']);
 const tour = z.object({
-  ...common, description: z.string().trim().min(1).max(20000), bannerImage: image, cardImage: image,
-  region: z.string().trim().max(200).nullable(),
+  ...common,
+  description: z.string().trim().min(1).max(20000),
+  bannerImage: image,
+  cardImage: image,
+  region: z.string().trim().max(200).nullable().optional(),
+  menuGroup: z.string().trim().max(200).nullable().optional(),
+  destinationType: destinationType.nullable().optional(),
+  isFeatured: z.boolean().optional(),
+  altitude: z.string().trim().max(200).nullable().optional(),
+  groupSize: z.string().trim().max(100).nullable().optional(),
+  difficulty: z.string().trim().max(100).nullable().optional(),
+  mapImage: z.string().trim().max(2000).nullable().optional(),
+  metaTitle: z.string().trim().max(200).nullable().optional(),
+  metaDescription: z.string().trim().max(1000).nullable().optional(),
 }).strict();
 const transfer = z.object({
   ...common, description: z.string().trim().max(20000).nullable(), bannerImage: image.nullable(),
@@ -25,8 +38,27 @@ const transfer = z.object({
 const version = { expectedUpdatedAt: z.string().datetime() };
 export const tourSelect = {
   isPublished: true,
-  id: true, title: true, slug: true, duration: true, description: true, bannerImage: true, cardImage: true,
-  region: true, hasSharedService: true, sharedPrice: true, hasPrivateService: true, updatedAt: true,
+  id: true,
+  title: true,
+  slug: true,
+  duration: true,
+  description: true,
+  bannerImage: true,
+  cardImage: true,
+  region: true,
+  menuGroup: true,
+  destinationType: true,
+  isFeatured: true,
+  altitude: true,
+  groupSize: true,
+  difficulty: true,
+  mapImage: true,
+  metaTitle: true,
+  metaDescription: true,
+  hasSharedService: true,
+  sharedPrice: true,
+  hasPrivateService: true,
+  updatedAt: true,
 } satisfies Prisma.TourSelect;
 export const transferSelect = {
   isPublished: true,
@@ -77,7 +109,16 @@ export class CatalogWriteService {
     serviceMode(data);
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const record = await tx.tour.create({ data: { ...data, agencyId: identity.agencyId, hasPrivateService: false }, select: tourSelect });
+        const record = await tx.tour.create({
+          data: {
+            ...data,
+            agencyId: identity.agencyId,
+            destinationType: data.destinationType ?? 'Nacional',
+            isFeatured: data.isFeatured ?? false,
+            hasPrivateService: false,
+          },
+          select: tourSelect,
+        });
         await this.audit(tx, identity, 'Tour', record.id, 'SAAS_CATALOG_CREATE', Object.keys(data));
         return record;
       });
@@ -94,11 +135,28 @@ export class CatalogWriteService {
         const expected = new Date(expectedUpdatedAt);
         const changed = await tx.tour.updateMany({
           where: { id, agencyId: identity.agencyId, updatedAt: expected },
-          data: { ...data, isPublished: false, updatedAt: new Date(Math.max(Date.now(), expected.getTime() + 1)) },
+          data: {
+            ...data,
+            destinationType: data.destinationType !== undefined ? data.destinationType : undefined,
+            isPublished: false,
+            updatedAt: new Date(Math.max(Date.now(), expected.getTime() + 1)),
+          },
         });
         if (changed.count !== 1) throw new ConflictException();
         await this.audit(tx, identity, 'Tour', id, 'SAAS_CATALOG_UPDATE', Object.keys(data));
         return tx.tour.findFirstOrThrow({ where: { id, agencyId: identity.agencyId }, select: tourSelect });
+      });
+    } catch (error) { conflict(error); }
+  }
+
+  async deleteTour(identity: ApiIdentity, id: string) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.tour.findFirst({ where: { id, agencyId: identity.agencyId }, select: { id: true } });
+        if (!existing) throw new NotFoundException();
+        await tx.tour.delete({ where: { id, agencyId: identity.agencyId } });
+        await this.audit(tx, identity, 'Tour', id, 'SAAS_CATALOG_DELETE', []);
+        return { success: true };
       });
     } catch (error) { conflict(error); }
   }
@@ -130,6 +188,18 @@ export class CatalogWriteService {
         if (changed.count !== 1) throw new ConflictException();
         await this.audit(tx, identity, 'Transfer', id, 'SAAS_CATALOG_UPDATE', Object.keys(data));
         return tx.transfer.findFirstOrThrow({ where: { id, agencyId: identity.agencyId }, select: transferSelect });
+      });
+    } catch (error) { conflict(error); }
+  }
+
+  async deleteTransfer(identity: ApiIdentity, id: string) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.transfer.findFirst({ where: { id, agencyId: identity.agencyId }, select: { id: true } });
+        if (!existing) throw new NotFoundException();
+        await tx.transfer.delete({ where: { id, agencyId: identity.agencyId } });
+        await this.audit(tx, identity, 'Transfer', id, 'SAAS_CATALOG_DELETE', []);
+        return { success: true };
       });
     } catch (error) { conflict(error); }
   }

@@ -92,7 +92,7 @@ describe('Integration Capabilities Detection Model', () => {
     const stripe = capabilities.find((c) => c.id === 'stripe');
 
     expect(stripe?.status).toBe('disabled');
-    expect(stripe?.statusLabel).toBe('No disponible');
+    expect(stripe?.statusLabel).toBe('NO DISPONIBLE');
   });
 
   it('6. returns required env var names list without reading values', () => {
@@ -108,14 +108,14 @@ describe('Integration Capabilities Detection Model', () => {
       'Proveedor diferido',
       'Configuración detectada',
       'Próximamente',
-      'No disponible',
+      'NO DISPONIBLE',
     ];
     for (const item of capabilities) {
       expect(approvedLabels).toContain(item.statusLabel);
     }
   });
 
-  it('8. integrations section contains zero alert() calls and only approved providers', async () => {
+  it('8. integrations section contains zero alert() calls and only approved providers including Stripe in 2-col grid', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const filePath = path.resolve(__dirname, '../components/settings/sections/integrations-section.tsx');
@@ -125,7 +125,7 @@ describe('Integration Capabilities Detection Model', () => {
     expect(content).not.toContain('id: \'shopify\'');
     expect(content).not.toContain('id: \'polar\'');
     expect(content).not.toContain('id: \'webhooks\'');
-    expect(content).not.toContain('id: \'stripe\'');
-    expect(content).toContain('md:grid-cols-3');
+    expect(content).toContain('id: \'stripe\'');
+    expect(content).toContain('md:grid-cols-2');
   });
 });
