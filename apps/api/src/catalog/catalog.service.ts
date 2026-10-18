@@ -19,8 +19,8 @@ type PublicTour = Prisma.TourGetPayload<{ select: typeof publicTourSelect }>;
 
 function toSummary(tour: PublicTour): TourSummaryDto {
   return {
-    slug: tour.slug, title: tour.title, description: tour.description,
-    duration: tour.duration, cardImage: tour.cardImage, region: tour.region,
+    slug: tour.slug, title: tour.title, description: tour.description ?? '',
+    duration: tour.duration ?? '', cardImage: tour.cardImage ?? '', region: tour.region,
     hasSharedService: tour.hasSharedService, hasPrivateService: tour.hasPrivateService,
     sharedPrice: tour.hasSharedService ? tour.sharedPrice : null,
     currency: 'USD',
@@ -73,7 +73,7 @@ function toTourDetail(tour: PublicTourDetail): TourDetailDto {
   return {
     ...toSummary(tour),
     id: tour.id,
-    bannerImage: tour.bannerImage,
+    bannerImage: tour.bannerImage ?? '',
     altitude: tour.altitude,
     transport: tour.transport,
     groupSize: tour.groupSize,

@@ -132,9 +132,19 @@ export class CatalogContentService {
       if (kind === 'tours') {
         const row = await tx.tour.findFirst({ where: { id, agencyId: who.agencyId }, include: { privatePricing: true, categories: true } });
         if (!row) throw new NotFoundException();
-        if (data.isPublished && (!row.title.trim() || !row.description.trim() || !image.safeParse(row.bannerImage).success || !image.safeParse(row.cardImage).success ||
-          (!row.hasSharedService && !row.hasPrivateService) || (row.hasSharedService && !money.safeParse(row.sharedPrice).success) ||
-          (row.hasPrivateService && (!row.privatePricing.length || row.privatePricing.some((p) => !money.safeParse(p.price).success || p.pax < 1))) || row.categories.some((c) => c.agencyId !== who.agencyId))) throw new BadRequestException();
+        if (data.isPublished && (
+          !row.title?.trim() ||
+          !row.description?.trim() ||
+          !row.duration?.trim() ||
+          !row.bannerImage || !image.safeParse(row.bannerImage).success ||
+          !row.cardImage || !image.safeParse(row.cardImage).success ||
+          (!row.hasSharedService && !row.hasPrivateService) ||
+          (row.hasSharedService && (!row.sharedPrice || !money.safeParse(row.sharedPrice).success)) ||
+          (row.hasPrivateService && (!row.privatePricing.length || row.privatePricing.some((p) => !money.safeParse(p.price).success || p.pax < 1))) ||
+          row.categories.some((c) => c.agencyId !== who.agencyId)
+        )) {
+          throw new BadRequestException('El tour no cumple con los requisitos mínimos para ser publicado');
+        }
         const changed = await tx.tour.updateMany({ where: { id, agencyId: who.agencyId, updatedAt: new Date(data.expectedUpdatedAt) }, data: { isPublished: data.isPublished, updatedAt: nextVersion(data.expectedUpdatedAt) } });
         if (changed.count !== 1) throw new ConflictException();
       } else {

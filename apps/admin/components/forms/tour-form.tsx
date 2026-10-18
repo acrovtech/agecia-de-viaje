@@ -51,7 +51,10 @@ export function TourForm({
   const [creationMode, setCreationMode] = useState<'completo' | 'asistido'>('completo');
   const [assistedStep, setAssistedStep] = useState<number>(1);
   const [groupSize, setGroupSize] = useState<string>(initialData?.groupSize !== undefined && initialData?.groupSize !== null ? String(initialData.groupSize) : '');
-  const [status, setStatus] = useState<'Activo' | 'Desactivado'>(initialData?.status === 'Draft' ? 'Desactivado' : 'Activo');
+  const [status, setStatus] = useState<'Activo' | 'Desactivado'>(() => {
+    if (!initialData || !initialData.id) return 'Desactivado';
+    return initialData.isPublished ? 'Activo' : 'Desactivado';
+  });
   const [isFeatured, setIsFeatured] = useState<'Activo' | 'Desactivado'>(initialData?.isFeatured ? 'Activo' : 'Desactivado');
   const [title, setTitle] = useState(initialData?.title || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
@@ -82,11 +85,21 @@ export function TourForm({
       : [{ id: Date.now(), question: '', answer: '' }]
   );
   const [description, setDescription] = useState(initialData?.description || '');
-  const [focusKeyphrase, setFocusKeyphrase] = useState(initialData?.title ? `Tour ${initialData.title}` : '');
+  const [focusKeyphrase, setFocusKeyphrase] = useState<string>(initialData?.focusKeyphrase || '');
   const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || '');
-  const [hasPrivateService, setHasPrivateService] = useState<boolean>(
-    Boolean(initialData?.hasPrivateService || initialData?.privatePricing?.length > 0)
-  );
+  const [hasSharedService, setHasSharedService] = useState<boolean>(() => {
+    if (initialData?.hasSharedService !== undefined && initialData?.hasSharedService !== null) {
+      return Boolean(initialData.hasSharedService);
+    }
+    return false;
+  });
+  const [hasPrivateService, setHasPrivateService] = useState<boolean>(() => {
+    if (initialData?.hasPrivateService !== undefined && initialData?.hasPrivateService !== null) {
+      return Boolean(initialData.hasPrivateService);
+    }
+    return Boolean(initialData?.privatePricing?.length > 0);
+  });
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [destinationType, setDestinationType] = useState<string>(() => {
     if (initialData?.destinationType) return initialData.destinationType;
     if (initialData?.categories?.some((c: any) => String(c.slug || c.id || c.name).toLowerCase() === 'internacional')) {
@@ -420,20 +433,20 @@ export function TourForm({
 
   const handleDeleteTour = () => {
     if (!initialData?.id) return;
+    setDeleteError(null);
     startDeleteTransition(async () => {
       const res = await deleteTourAction(initialData.id);
       if (res.success) {
         window.location.href = '/catalog/tours';
       } else {
-        alert(res.error || 'Error al eliminar el tour.');
-        setShowDeleteModal(false);
+        setDeleteError(res.error || 'Error al eliminar el tour.');
       }
     });
   };
 
   const seoAnalysis = analyzeSeo({
     title,
-    metaTitle: `${title} - Agencia de Viajes`,
+    metaTitle: initialData?.metaTitle || title || '',
     metaDescription,
     slug,
     focusKeyphrase,
@@ -501,8 +514,8 @@ export function TourForm({
       <input type="hidden" name="altitude" value={altitude} />
       <input type="hidden" name="region" value={region} />
       <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="metaTitle" value={`${title} - Agencia de Viajes`} />
-      <input type="hidden" name="hasSharedService" value="on" />
+      {focusKeyphrase && <input type="hidden" name="focusKeyphrase" value={focusKeyphrase} />}
+      {hasSharedService && <input type="hidden" name="hasSharedService" value="on" />}
       {hasPrivateService && <input type="hidden" name="hasPrivateService" value="on" />}
 
       {state?.error && (
@@ -1085,7 +1098,7 @@ export function TourForm({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="asistido_category" className="text-xs font-semibold text-slate-700">Categorización</Label>
-                      <Link href="/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
+                      <Link href="/resources/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
                         Gestionar
                       </Link>
                     </div>
@@ -1206,18 +1219,36 @@ export function TourForm({
               {/* Fila 1: Precios (Grupal / Compartido y Privado) - Sin contenedor box exterior */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="space-y-1.5">
-                  <Label htmlFor="asistido_sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD) — Servicio Grupal</Label>
-                  <Input 
-                    id="asistido_sharedPrice" 
-                    name="sharedPrice" 
-                    type="number" 
-                    step="0.01" 
-                    value={sharedPrice} 
-                    onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
-                    placeholder="Ej. 45.00" 
-                    className="bg-white border-slate-300 h-10 text-sm font-medium rounded-lg" 
-                  />
-                  <p className="text-[11px] text-slate-400">Tarifa compartida base que se muestra en las cards del catálogo.</p>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 cursor-pointer flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={hasSharedService} 
+                        onChange={(e) => { setHasSharedService(e.target.checked); setIsDirty(true); }}
+                        className="rounded border-slate-300 text-[#0B4354] focus:ring-[#0B4354]"
+                      />
+                      <span>Servicio grupal / compartido</span>
+                    </label>
+                  </div>
+                  {hasSharedService ? (
+                    <>
+                      <Input 
+                        id="asistido_sharedPrice" 
+                        name="sharedPrice" 
+                        type="number" 
+                        step="0.01" 
+                        value={sharedPrice} 
+                        onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
+                        placeholder="Ej. 45.00" 
+                        className="bg-white border-slate-300 h-10 text-sm font-medium rounded-lg" 
+                      />
+                      <p className="text-[11px] text-slate-400">Tarifa compartida base por persona que se muestra en las cards del catálogo.</p>
+                    </>
+                  ) : (
+                    <div className="h-10 rounded-lg border border-dashed border-slate-300 bg-white flex items-center justify-center text-xs text-slate-400">
+                      <span>Sin servicio grupal habilitado.</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -1455,7 +1486,7 @@ export function TourForm({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold text-slate-700">Categorización</Label>
-                    <Link href="/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
+                    <Link href="/resources/categories" target="_blank" className="text-[10px] text-[#0B4354] hover:underline">
                       Gestionar
                     </Link>
                   </div>
@@ -1528,63 +1559,70 @@ export function TourForm({
               </div>
             </div>
 
-            {/* Card 6: Precios */}
+            {/* Card 6: Modalidades y Precios */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="sharedPrice" className="text-xs font-semibold text-slate-700">Precio por Persona ($ USD)</Label>
-                <Input 
-                  id="sharedPrice" 
-                  name="sharedPrice" 
-                  type="number" 
-                  step="0.01" 
-                  value={sharedPrice} 
-                  onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
-                  placeholder="Ej. 45.00" 
-                  className="bg-white border-slate-300 h-8 text-xs font-medium" 
-                />
+              <h3 className="font-semibold text-xs text-slate-800 border-b border-slate-100 pb-2">Modalidades de Servicio</h3>
+
+              {/* Servicio Compartido */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700 cursor-pointer flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    checked={hasSharedService} 
+                    onChange={(e) => { setHasSharedService(e.target.checked); setIsDirty(true); }}
+                    className="rounded border-slate-300 text-[#0B4354] focus:ring-[#0B4354]"
+                  />
+                  <span>Servicio grupal / compartido</span>
+                </label>
+
+                {hasSharedService && (
+                  <div className="pl-6 space-y-1">
+                    <Label htmlFor="sharedPrice" className="text-[11px] font-semibold text-slate-600">Precio por Persona ($ USD)</Label>
+                    <Input 
+                      id="sharedPrice" 
+                      name="sharedPrice" 
+                      type="number" 
+                      step="0.01" 
+                      value={sharedPrice} 
+                      onChange={(e) => { setSharedPrice(e.target.value); setIsDirty(true); }}
+                      placeholder="Ej. 45.00" 
+                      className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Servicio Privado (Opcional por botón) */}
-              {hasPrivateService ? (
-                <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="fixedPrivatePrice" className="text-xs font-semibold text-slate-700">Precio fijo del tour privado ($ USD)</Label>
-                    <button 
-                      type="button" 
-                      onClick={() => { setHasPrivateService(false); setIsDirty(true); }} 
-                      className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
-                    >
-                      Quitar privado
-                    </button>
-                  </div>
-
-                  <Input 
-                    id="fixedPrivatePrice"
-                    name="fixedPrivatePrice" 
-                    type="number" 
-                    step="0.01" 
-                    value={fixedPrivatePrice} 
-                    onChange={(e) => { setFixedPrivatePrice(e.target.value); setIsDirty(true); }}
-                    placeholder="Ej. 2000.00" 
-                    className="bg-white border-slate-300 h-8 text-xs font-medium" 
+              {/* Servicio Privado */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <label className="text-xs font-medium text-slate-700 cursor-pointer flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    checked={hasPrivateService} 
+                    onChange={(e) => { setHasPrivateService(e.target.checked); setIsDirty(true); }}
+                    className="rounded border-slate-300 text-[#0B4354] focus:ring-[#0B4354]"
                   />
+                  <span>Servicio privado</span>
+                </label>
 
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
-                    Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}. El importe por persona es solo una referencia.
-                  </p>
-                </div>
-              ) : (
-                <div className="pt-2 border-t border-slate-100">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => { setHasPrivateService(true); setIsDirty(true); }}
-                    className="w-full border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 text-xs h-8 rounded-lg font-medium cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Añadir precio privado
-                  </Button>
-                </div>
-              )}
+                {hasPrivateService && (
+                  <div className="pl-6 space-y-2">
+                    <Label htmlFor="fixedPrivatePrice" className="text-[11px] font-semibold text-slate-600">Precio fijo del tour privado ($ USD)</Label>
+                    <Input 
+                      id="fixedPrivatePrice"
+                      name="fixedPrivatePrice" 
+                      type="number" 
+                      step="0.01" 
+                      value={fixedPrivatePrice} 
+                      onChange={(e) => { setFixedPrivatePrice(e.target.value); setIsDirty(true); }}
+                      placeholder="Ej. 2000.00" 
+                      className="bg-white border-slate-300 h-8 text-xs font-medium" 
+                    />
+                    <p className="text-[10px] text-slate-500 leading-relaxed">
+                      Se cobra una sola vez por el grupo{groupSize ? `, hasta ${groupSize} pasajeros` : ''}.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Card 7: Optimización SEO */}
@@ -1745,6 +1783,11 @@ export function TourForm({
 
             {/* Body Modal */}
             <div className="p-5">
+              {deleteError && (
+                <div role="alert" className="mb-3 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  {deleteError}
+                </div>
+              )}
               <p className="text-xs text-slate-600 leading-relaxed">
                 Si eliminas <strong className="font-semibold text-slate-900">{initialData?.title || title}</strong>, esta acción no se puede deshacer. Se quitará el tour de la web y todos sus datos e itinerarios asociados se eliminarán permanentemente.
               </p>

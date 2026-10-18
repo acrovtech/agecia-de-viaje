@@ -35,10 +35,10 @@ export async function generateMetadata({ params }: TourPageProps) {
 
   return {
     title: tour.metaTitle || `${tour.title} - Agencia de Viajes`,
-    description: tour.metaDescription || tour.description.slice(0, 160),
+    description: tour.metaDescription || (tour.description ? tour.description.slice(0, 160) : ''),
     openGraph: {
       title: tour.title,
-      description: tour.description.slice(0, 160),
+      description: tour.description ? tour.description.slice(0, 160) : '',
       images: [
         {
           url: imageUrl,
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: TourPageProps) {
     twitter: {
       card: 'summary_large_image',
       title: tour.title,
-      description: tour.description.slice(0, 160),
+      description: tour.description ? tour.description.slice(0, 160) : '',
       images: [imageUrl],
     },
   };
@@ -112,7 +112,7 @@ export default async function TourPage({ params }: TourPageProps) {
     difficulty: tour.difficulty || 'Moderada',
     groupSize: formatGroupSize(tour.groupSize),
     maxAltitude: formatAltitude(tour.altitude),
-    overview: tour.description,
+    overview: tour.description || '',
     mapImage: tour.mapImage,
     itinerary: tour.itineraries.map((it, idx) => ({
       day: idx + 1,
@@ -135,7 +135,7 @@ export default async function TourPage({ params }: TourPageProps) {
         '@type': 'TouristTrip',
         '@id': `${siteUrl}/tours/${tour.slug}#trip`,
         name: tour.title,
-        description: tour.description.slice(0, 300),
+        description: tour.description ? tour.description.slice(0, 300) : '',
         image: isValidImage ? [rawImage] : ['https://pub-f6310552a1b646efb46a653a7f05720c.r2.dev/assets/Hero-Home.webp'],
         touristType: ['AdventureTourism', 'CulturalTourism'],
         provider: {

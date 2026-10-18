@@ -51,6 +51,11 @@ model Agency {
   fleetVehicles       FleetVehicle[]
   resourceAssignments ReservationResourceAssignment[]
   transactionalNotifications TransactionalNotification[]
+  entitlement         AgencyEntitlement?
+  locales             AgencyLocale[]
+  aiCreditAccount     AiCreditAccount?
+  aiCreditLedgers     AiCreditLedger[]
+  feedbacks           ProductFeedback[]
 
   @@index([slug])
   @@index([subdomain])
@@ -68,7 +73,7 @@ model Tour {
   agency            Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   title             String
   slug              String
-  description       String   @db.Text
+  description       String?  @db.Text
   
   // Megamenu / Grouping
   region            String?  // e.g. "Cusco", "Lima"
@@ -77,11 +82,11 @@ model Tour {
   isFeatured        Boolean  @default(false)
   
   // Images
-  bannerImage       String
-  cardImage         String
+  bannerImage       String?
+  cardImage         String?
   
   // Details
-  duration          String
+  duration          String?
   altitude          String?
   transport         String?
   groupSize         String?
@@ -89,13 +94,14 @@ model Tour {
   mapImage          String?  @db.Text
   
   // Pricing
-  hasSharedService  Boolean  @default(true)
+  hasSharedService  Boolean  @default(false)
   sharedPrice       Float?
   hasPrivateService Boolean  @default(false)
 
   // SEO
   metaTitle         String?
   metaDescription   String?  @db.Text
+  focusKeyphrase    String?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -112,6 +118,7 @@ model Tour {
   recommendations   TourRecommendation[]
   faqs              TourFaq[]
   privatePricing    TourPrivatePricing[]
+  localizedContents TourLocalizedContent[]
 
   @@unique([agencyId, slug])
   @@index([agencyId])
@@ -200,7 +207,7 @@ model Category {
   slug      String
   
   parentId  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children  Category[] @relation("CategoryHierarchy")
   
   tours     Tour[]
@@ -1271,6 +1278,103 @@ model TransactionalNotification {
   @@index([agencyId, createdAt])
   @@index([state, nextAttemptAt])
   @@index([state, claimExpiresAt])
+}
+
+// -----------------------------------------------------------------------------
+// PRODUCT IA LOCK: ENTITLEMENTS, LOCALES, TRANSLATIONS, CREDITS, FEEDBACK
+// -----------------------------------------------------------------------------
+
+model AgencyEntitlement {
+  id                String   @id @default(cuid())
+  agencyId          String   @unique
+  agency            Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  maxCatalogLocales Int      @default(1)
+  aiEnabled         Boolean  @default(false)
+  aiMonthlyCredits  Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AgencyLocale {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  locale    String
+  isDefault Boolean  @default(false)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, locale])
+  @@index([agencyId])
+}
+
+model TourLocalizedContent {
+  id              String   @id @default(cuid())
+  tourId          String
+  tour            Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  locale          String
+  title           String
+  slug            String
+  description     String?  @db.Text
+  itinerary       Json?
+  inclusions      Json?
+  exclusions      Json?
+  recommendations Json?
+  faqs            Json?
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  focusKeyphrase  String?
+  generatedByAi   Boolean  @default(false)
+  sourceRevision  String?
+  reviewStatus    String   @default("draft") // "draft" | "reviewed" | "published"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tourId, locale])
+  @@index([tourId])
+}
+
+model AiCreditAccount {
+  id        String   @id @default(cuid())
+  agencyId  String   @unique
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AiCreditLedger {
+  id            String   @id @default(cuid())
+  agencyId      String
+  agency        Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId        String?
+  delta         Int
+  reason        String   // PLAN_GRANT, PURCHASE, FEEDBACK_REWARD, PROMOTION, AI_USAGE, ADMIN_ADJUSTMENT, EXPIRATION
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime @default(now())
+
+  @@index([agencyId])
+}
+
+model ProductFeedback {
+  id            String    @id @default(cuid())
+  agencyId      String
+  agency        Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId        String?
+  type          String    // bug, improvement, feature_request
+  title         String
+  description   String    @db.Text
+  status        String    @default("open") // open, under_review, planned, resolved, closed
+  clusterKey    String?
+  rewardCredits Int?
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([agencyId])
+  @@index([clusterKey])
 }
 
 

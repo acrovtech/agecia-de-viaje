@@ -10,16 +10,16 @@ export const image = z.string().max(2000).refine((value) => {
   try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password; } catch { return false; }
 });
 export const money = z.number().finite().positive().max(1_000_000).refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.000001);
-const common = {
-  title: text, slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  duration: text, hasSharedService: z.boolean(), sharedPrice: money.nullable(),
-};
 const destinationType = z.enum(['Nacional', 'Internacional']);
 const tour = z.object({
-  ...common,
-  description: z.string().trim().min(1).max(20000),
-  bannerImage: image,
-  cardImage: image,
+  title: text,
+  slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  duration: z.string().trim().max(200).nullable().optional(),
+  hasSharedService: z.boolean().default(false),
+  sharedPrice: money.nullable().optional(),
+  description: z.string().trim().max(20000).nullable().optional(),
+  bannerImage: image.nullable().optional(),
+  cardImage: image.nullable().optional(),
   region: z.string().trim().max(200).nullable().optional(),
   menuGroup: z.string().trim().max(200).nullable().optional(),
   destinationType: destinationType.nullable().optional(),
@@ -30,7 +30,12 @@ const tour = z.object({
   mapImage: z.string().trim().max(2000).nullable().optional(),
   metaTitle: z.string().trim().max(200).nullable().optional(),
   metaDescription: z.string().trim().max(1000).nullable().optional(),
+  focusKeyphrase: z.string().trim().max(200).nullable().optional(),
 }).strict();
+const common = {
+  title: text, slug: z.string().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  duration: text, hasSharedService: z.boolean(), sharedPrice: money.nullable(),
+};
 const transfer = z.object({
   ...common, description: z.string().trim().max(20000).nullable(), bannerImage: image.nullable(),
   origin: text, destination: text, tripType: z.enum(['Solo ida', 'Ida y vuelta']), isActive: z.boolean(),
@@ -55,6 +60,7 @@ export const tourSelect = {
   mapImage: true,
   metaTitle: true,
   metaDescription: true,
+  focusKeyphrase: true,
   hasSharedService: true,
   sharedPrice: true,
   hasPrivateService: true,
@@ -72,8 +78,10 @@ export function parse<T>(schema: z.ZodType<T>, body: unknown): T {
   if (!result.success) throw new BadRequestException();
   return result.data;
 }
-function serviceMode(data: { hasSharedService: boolean; sharedPrice: number | null }) {
-  if (data.hasSharedService && data.sharedPrice === null) throw new BadRequestException();
+function serviceMode(data: { hasSharedService?: boolean; sharedPrice?: number | null }) {
+  if (data.hasSharedService && (data.sharedPrice === null || data.sharedPrice === undefined)) {
+    throw new BadRequestException('El precio compartido es requerido cuando el servicio grupal está habilitado');
+  }
   if (!data.hasSharedService) data.sharedPrice = null;
 }
 export function conflict(error: unknown): never {
@@ -138,6 +146,7 @@ export class CatalogWriteService {
           data: {
             ...data,
             destinationType: data.destinationType !== undefined ? data.destinationType : undefined,
+            focusKeyphrase: data.focusKeyphrase !== undefined ? data.focusKeyphrase : undefined,
             isPublished: false,
             updatedAt: new Date(Math.max(Date.now(), expected.getTime() + 1)),
           },

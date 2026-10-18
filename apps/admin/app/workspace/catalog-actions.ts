@@ -75,8 +75,8 @@ export async function saveTourAction(
       return { error: 'El slug solo debe contener letras minúsculas, números y guiones.' };
     }
 
-    const description = str('description') || 'Descripción del tour.';
-    const duration = str('duration') || '1 día';
+    const description = str('description') || null;
+    const duration = str('duration') || null;
     const region = str('region') || null;
     let menuGroup = str('menuGroup') || null;
     if (menuGroup === 'none') menuGroup = null;
@@ -87,21 +87,19 @@ export async function saveTourAction(
     const isFeatured = form.get('isFeatured') === 'true' || form.get('isFeatured') === 'Activo';
     const altitude = str('altitude') ? `${str('altitude')} m s. n. m.` : null;
     const groupSize = str('groupSize') || null;
-    const difficulty = str('difficulty') || 'Moderada';
+    const difficulty = str('difficulty') || null;
     const mapImage = str('mapImage') || null;
 
-    const parseStringValue = (fieldName: string, fallback = ''): string => {
+    const parseStringValue = (fieldName: string): string | null => {
       const urlInput = form.get(`${fieldName}_url`);
       if (typeof urlInput === 'string' && urlInput.trim()) return urlInput.trim();
       const val = form.get(fieldName);
       if (typeof val === 'string' && val.trim()) return val.trim();
-      return fallback;
+      return null;
     };
 
-    let bannerImage = parseStringValue('bannerImage');
-    if (!bannerImage) bannerImage = '/tours/machu-picchu.webp';
-    let cardImage = parseStringValue('cardImage');
-    if (!cardImage) cardImage = bannerImage;
+    const bannerImage = parseStringValue('bannerImage');
+    const cardImage = parseStringValue('cardImage');
 
     const hasSharedService = form.get('hasSharedService') === 'on' || form.get('hasSharedService') === 'true';
     const sharedPriceRaw = str('sharedPrice');
@@ -112,8 +110,9 @@ export async function saveTourAction(
 
     const hasPrivateService = form.get('hasPrivateService') === 'on' || form.get('hasPrivateService') === 'true';
 
-    const metaTitle = str('metaTitle') || `${title} - Agencia de Viajes`;
-    const metaDescription = str('metaDescription') || (description.slice(0, 150));
+    const metaTitle = str('metaTitle') || null;
+    const metaDescription = str('metaDescription') || null;
+    const focusKeyphrase = str('focusKeyphrase') || null;
 
     const baseTourPayload = {
       title,
@@ -134,13 +133,14 @@ export async function saveTourAction(
       sharedPrice,
       metaTitle,
       metaDescription,
+      focusKeyphrase,
     };
 
     const galleryImage1 = parseStringValue('galleryImage_1');
     const galleryImage2 = parseStringValue('galleryImage_2');
     const galleryImage3 = parseStringValue('galleryImage_3');
     const galleryImage4 = parseStringValue('galleryImage_4');
-    const galleryUrls = [galleryImage1, galleryImage2, galleryImage3, galleryImage4].filter(Boolean);
+    const galleryUrls = [galleryImage1, galleryImage2, galleryImage3, galleryImage4].filter((url): url is string => Boolean(url));
     const images = galleryUrls.map((url, i) => ({ url, alt: `Foto ${i + 1}`, order: i }));
 
     const itineraries: { title: string; content: string }[] = [];
@@ -149,7 +149,7 @@ export async function saveTourAction(
       const dayTitle = str(`itinerary_title_${i}`);
       const dayContent = str(`itinerary_content_${i}`);
       if (dayTitle || dayContent) {
-        itineraries.push({ title: dayTitle || `Día ${i + 1}`, content: dayContent || 'Actividades programadas.' });
+        itineraries.push({ title: dayTitle || `Día ${i + 1}`, content: dayContent || '' });
       }
     }
 
@@ -177,7 +177,7 @@ export async function saveTourAction(
       const q = str(`faq_question_${i}`);
       const a = str(`faq_answer_${i}`);
       if (q || a) {
-        faqs.push({ question: q || `Pregunta ${i + 1}`, answer: a || 'Respuesta.' });
+        faqs.push({ question: q || `Pregunta ${i + 1}`, answer: a || '' });
       }
     }
 
@@ -202,9 +202,6 @@ export async function saveTourAction(
         }
       }
       privatePricing.sort((a, b) => a.pax - b.pax);
-      if (privatePricing.length === 0) {
-        privatePricing.push({ pax: 1, price: sharedPrice || 100 });
-      }
     }
 
     // Tenant Categories: filter out fake fallback IDs (Requirement 7)
@@ -255,8 +252,8 @@ export async function saveTourAction(
             { expectedUpdatedAt: contentRes.updatedAt, isPublished: true },
             'PUT',
           );
-        } catch (pubErr) {
-          console.warn('Publication skipped/failed:', pubErr);
+        } catch {
+          return { error: 'El tour se guardó como borrador, pero no pudo publicarse. Revisa los campos obligatorios.' };
         }
       }
     } else {
@@ -285,12 +282,16 @@ export async function saveTourAction(
       // 3. Separate publication if state changed
       const currentPublished = form.get('isPublished') === 'true';
       if (desiredPublished !== currentPublished) {
-        await centralRequest(
-          `${baseRoute}/${encodeURIComponent(id)}/publication`,
-          token,
-          { expectedUpdatedAt: updatedContent.updatedAt, isPublished: desiredPublished },
-          'PUT',
-        );
+        try {
+          await centralRequest(
+            `${baseRoute}/${encodeURIComponent(id)}/publication`,
+            token,
+            { expectedUpdatedAt: updatedContent.updatedAt, isPublished: desiredPublished },
+            'PUT',
+          );
+        } catch {
+          return { error: 'Los cambios se guardaron como borrador, pero no pudo publicarse el tour. Revisa los campos obligatorios.' };
+        }
       }
     }
   } catch (error) {
