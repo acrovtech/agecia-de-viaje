@@ -31,7 +31,8 @@ export interface DashboardViewProps {
     reason: string;
   }[];
   nextDaysLoad: { date: string; dayName: string; count: number }[];
-  formattedBookedValue: string;
+  formattedBookedValue?: string;
+  totalsByCurrency?: Record<string, number>;
   totalReservationsCount: number;
 }
 
@@ -42,6 +43,7 @@ export function DashboardView({
   attentionNeeded,
   nextDaysLoad,
   formattedBookedValue,
+  totalsByCurrency,
   totalReservationsCount,
 }: DashboardViewProps) {
   return (
@@ -91,7 +93,19 @@ export function DashboardView({
               Total
             </span>
           </div>
-          <div className="text-2xl font-bold text-[#111111] tracking-tight">{formattedBookedValue}</div>
+          {totalsByCurrency && Object.keys(totalsByCurrency).length > 0 ? (
+            <div className="space-y-0.5">
+              {Object.entries(totalsByCurrency).map(([curr, amt]) => (
+                <div key={curr} className="text-xl font-bold text-[#111111] tracking-tight">
+                  {new Intl.NumberFormat('es-PE', { style: 'currency', currency: curr }).format(amt)}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-2xl font-bold text-[#111111] tracking-tight">
+              {formattedBookedValue || '$0.00'}
+            </div>
+          )}
           <p className="text-[11px] text-[#898989]">{totalReservationsCount} reservas registradas</p>
         </div>
       </div>

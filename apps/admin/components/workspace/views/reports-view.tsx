@@ -26,10 +26,10 @@ export interface ReportsData {
   refundedValue: number;
   currency: string;
   totalsByCurrency?: Record<string, CurrencyFinancials>;
-  paymentStatusBreakdown: Record<string, { count: number; total: number }>;
+  paymentStatusBreakdown: Record<string, { count: number; totalsByCurrency: Record<string, number> }>;
   bookingStatusBreakdown: Record<string, number>;
-  reservationsByDay: { date: string; count: number; total: number }[];
-  topTours: { title: string; count: number; total: number }[];
+  reservationsByDay: { date: string; count: number; totalsByCurrency: Record<string, number> }[];
+  topTours: { title: string; count: number }[];
   sourceBreakdown: Record<string, number>;
 }
 
@@ -194,15 +194,24 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
                 label: statusKey,
                 color: 'bg-slate-100 text-slate-700 border-slate-200',
               };
+              const currencyEntries = Object.entries(info.totalsByCurrency || {});
               return (
                 <div key={statusKey} className="p-3 rounded-lg border border-[#e5e7eb] space-y-1">
                   <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${meta.color}`}>
                     {meta.label}
                   </span>
                   <div className="text-lg font-bold text-[#111111]">{info.count}</div>
-                  <span className="text-[11px] text-[#6b7280] block truncate">
-                    {formatMoney(info.total)}
-                  </span>
+                  <div className="space-y-0.5">
+                    {currencyEntries.length > 0 ? (
+                      currencyEntries.map(([curr, amt]) => (
+                        <span key={curr} className="text-[11px] text-[#6b7280] block truncate">
+                          {formatMoney(amt, curr)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-[#6b7280] block">$0.00</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -232,7 +241,6 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="font-semibold text-[#111111]">{t.count} res.</span>
-                    <span className="text-[11px] text-[#6b7280] block">{formatMoney(t.total)}</span>
                   </div>
                 </div>
               ))}
@@ -291,17 +299,24 @@ export function ReportsView({ data, from, to }: ReportsViewProps) {
                 <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa] text-[#6b7280] uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-4 font-medium">Fecha</th>
                   <th className="py-2.5 px-4 font-medium text-center">Cantidad Reservas</th>
-                  <th className="py-2.5 px-4 font-medium text-right">Monto Acumulado</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Monto por Moneda</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]">
-                {data.reservationsByDay.map((day) => (
-                  <tr key={day.date} className="product-data-row">
-                    <td className="py-2.5 px-4 font-mono text-[#111111]">{day.date}</td>
-                    <td className="py-2.5 px-4 text-center font-medium text-[#111111]">{day.count}</td>
-                    <td className="py-2.5 px-4 text-right font-medium text-[#111111]">{formatMoney(day.total)}</td>
-                  </tr>
-                ))}
+                {data.reservationsByDay.map((day) => {
+                  const dayCurrs = Object.entries(day.totalsByCurrency || {});
+                  return (
+                    <tr key={day.date} className="product-data-row">
+                      <td className="py-2.5 px-4 font-mono text-[#111111]">{day.date}</td>
+                      <td className="py-2.5 px-4 text-center font-medium text-[#111111]">{day.count}</td>
+                      <td className="py-2.5 px-4 text-right font-medium text-[#111111]">
+                        {dayCurrs.length > 0
+                          ? dayCurrs.map(([curr, amt]) => formatMoney(amt, curr)).join(' · ')
+                          : '$0.00'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

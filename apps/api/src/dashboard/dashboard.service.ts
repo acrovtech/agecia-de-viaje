@@ -31,10 +31,8 @@ export interface DashboardData {
     count: number;
   }[];
   bookedValueSummary: {
-    totalMinor: number;
-    formattedValue: string;
-    currency: string;
     totalCount: number;
+    totalsByCurrency: Record<string, number>;
   };
 }
 
@@ -105,7 +103,7 @@ export class DashboardService {
       } else if (r.paymentStatus === 'PENDING') {
         attentionNeeded.push({ reservation: dto, reason: 'Pago pendiente de cobro' });
       } else if (r.operationStatus === 'PENDING') {
-        attentionNeeded.push({ reservation: dto, reason: 'Servicio en estado pendiente de coordinación' });
+        attentionNeeded.push({ reservation: dto, reason: 'Reserva pendiente de gestión' });
       }
     }
 
@@ -153,22 +151,18 @@ export class DashboardService {
       return { date: targetDateStr, dayName, count };
     });
 
-    // 5. Booked value summary (non-cancelled only)
+    // 5. Booked value summary (non-cancelled only, isolated by currency)
     const activeReservations = reservations.filter(
       (r) => r.bookingStatus !== 'CANCELLED' && r.status !== 'CANCELLED',
     );
-    const bookedMinorTotal = activeReservations.reduce((acc, r) => {
-      const minor = typeof r.totalMinor === 'number' && !isNaN(r.totalMinor)
-        ? r.totalMinor
-        : Math.round((r.totalPrice || 0) * 100);
-      return acc + minor;
-    }, 0);
-
-    const currency = activeReservations[0]?.currency || 'USD';
-    const formattedValue = new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency,
-    }).format(bookedMinorTotal / 100);
+    const totalsByCurrency: Record<string, number> = {};
+    for (const r of activeReservations) {
+      const curr = r.currency || 'USD';
+      const price = typeof r.totalMinor === 'number' && !isNaN(r.totalMinor)
+        ? r.totalMinor / 100
+        : (typeof r.totalPrice === 'number' ? r.totalPrice : 0);
+      totalsByCurrency[curr] = Math.round(((totalsByCurrency[curr] || 0) + price) * 100) / 100;
+    }
 
     return {
       reservationsToday,
@@ -176,10 +170,8 @@ export class DashboardService {
       attentionNeeded,
       next7DaysLoad,
       bookedValueSummary: {
-        totalMinor: bookedMinorTotal,
-        formattedValue,
-        currency,
-        totalCount: reservations.length,
+        totalCount: activeReservations.length,
+        totalsByCurrency,
       },
     };
   }

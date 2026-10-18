@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS "AgencyLocale" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "AgencyLocale_agencyId_locale_key" ON "AgencyLocale"("agencyId", "locale");
 CREATE INDEX IF NOT EXISTS "AgencyLocale_agencyId_idx" ON "AgencyLocale"("agencyId");
+CREATE UNIQUE INDEX IF NOT EXISTS "AgencyLocale_agencyId_default_unique" ON "AgencyLocale"("agencyId") WHERE "isDefault" = true;
 
 -- Tour Localized Content Snapshot Model
 CREATE TABLE IF NOT EXISTS "TourLocalizedContent" (

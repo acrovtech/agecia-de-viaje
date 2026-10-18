@@ -320,6 +320,7 @@ export class CatalogContentService {
         locale,
         title: data.title,
         slug: data.slug || `${tourId}-${locale}`,
+        description: data.description || null,
         itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
         inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
         exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),

@@ -68,10 +68,8 @@ export default async function DashboardPage() {
       attentionNeeded: [],
       next7DaysLoad: [],
       bookedValueSummary: {
-        totalMinor: 0,
-        formattedValue: '$0.00',
-        currency: 'USD',
         totalCount: 0,
+        totalsByCurrency: {},
       },
     };
   }
@@ -82,8 +80,9 @@ export default async function DashboardPage() {
       reservationsToday={dashboardData.reservationsToday ?? 0}
       upcomingReservations={dashboardData.upcomingReservations ?? []}
       attentionNeeded={dashboardData.attentionNeeded ?? []}
-      nextDaysLoad={dashboardData.nextDaysLoad ?? []}
-      formattedBookedValue={dashboardData.bookedValueSummary?.formattedValue ?? '$0.00'}
+      nextDaysLoad={dashboardData.next7DaysLoad ?? dashboardData.nextDaysLoad ?? []}
+      totalsByCurrency={dashboardData.bookedValueSummary?.totalsByCurrency ?? {}}
+      formattedBookedValue={dashboardData.bookedValueSummary?.formattedValue}
       totalReservationsCount={dashboardData.bookedValueSummary?.totalCount ?? 0}
     />
   );

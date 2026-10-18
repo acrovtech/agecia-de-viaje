@@ -32,11 +32,9 @@ import {
   priceLabel,
   reservationSummarySchema,
   reservationDetailSchema,
-  serviceResourceSchema,
-  fleetVehicleSchema,
 } from '@/lib/reservations';
 import { tourContentSchema, transferContentSchema } from '@/lib/catalog-content';
-import { BookingForm, StatusForm, OperationsAssignmentForm } from '@/app/workspace/reservations/forms';
+import { BookingForm, StatusForm } from '@/app/workspace/reservations/forms';
 import { PageHeader } from '@/components/design-system/page-header';
 import { StatusBadge } from '@/components/design-system/status-badge';
 import { EmptyState } from '@/components/design-system/empty-state';

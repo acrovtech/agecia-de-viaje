@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { isApiAdmin } from './admin-mode';
 import { centralRequest, centralSession, CentralApiError } from './central-api';
 import type { AgencyProfileData, LegalProfileData } from '@/components/settings/types';
@@ -65,18 +66,42 @@ export async function fetchAgencyEntitlements(agencyId: string, token: string): 
   }
 }
 
-export async function fetchAgencyLocales(agencyId: string, token: string): Promise<Array<{ id: string; locale: string; isDefault: boolean; enabled: boolean }>> {
+export const agencyLocalesResponseSchema = z.object({
+  locales: z.array(
+    z.object({
+      id: z.string(),
+      locale: z.string(),
+      isDefault: z.boolean(),
+      enabled: z.boolean(),
+    })
+  ),
+  defaultLocale: z.string(),
+  maxCatalogLocales: z.number(),
+  enabledCount: z.number(),
+});
+
+export type AgencyLocalesResponse = z.infer<typeof agencyLocalesResponseSchema>;
+
+export async function fetchAgencyLocales(
+  agencyId: string,
+  token: string
+): Promise<AgencyLocalesResponse> {
   try {
-    const data = (await centralRequest(
+    const data = await centralRequest(
       `/v1/agencies/${encodeURIComponent(agencyId)}/settings/locales`,
       token,
-    )) as any;
-    return Array.isArray(data) ? data : [];
+    );
+    return agencyLocalesResponseSchema.parse(data);
   } catch (error) {
     if (error instanceof CentralApiError && error.status === 401) {
       redirect('/login?expired=1');
     }
-    return [{ id: 'default', locale: 'es', isDefault: true, enabled: true }];
+    return {
+      locales: [{ id: 'default', locale: 'es', isDefault: true, enabled: true }],
+      defaultLocale: 'es',
+      maxCatalogLocales: 1,
+      enabledCount: 1,
+    };
   }
 }
 

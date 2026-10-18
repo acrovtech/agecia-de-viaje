@@ -32,10 +32,22 @@ const reportsSchema = z.object({
       cancelledReservations: z.number(),
     })
   ).default({}),
-  paymentStatusBreakdown: z.record(z.string(), z.object({ count: z.number(), total: z.number() })),
+  paymentStatusBreakdown: z.record(
+    z.string(),
+    z.object({
+      count: z.number(),
+      totalsByCurrency: z.record(z.string(), z.number()).default({}),
+    })
+  ),
   bookingStatusBreakdown: z.record(z.string(), z.number()),
-  reservationsByDay: z.array(z.object({ date: z.string(), count: z.number(), total: z.number() })),
-  topTours: z.array(z.object({ title: z.string(), count: z.number(), total: z.number() })),
+  reservationsByDay: z.array(
+    z.object({
+      date: z.string(),
+      count: z.number(),
+      totalsByCurrency: z.record(z.string(), z.number()).default({}),
+    })
+  ),
+  topTours: z.array(z.object({ title: z.string(), count: z.number() })),
   sourceBreakdown: z.record(z.string(), z.number()),
 });
 

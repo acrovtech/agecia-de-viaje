@@ -25,10 +25,10 @@ export interface ReportSummary {
   refundedValue: number;
   currency: string;
   totalsByCurrency: Record<string, CurrencyFinancials>;
-  paymentStatusBreakdown: Record<string, { count: number; total: number }>;
+  paymentStatusBreakdown: Record<string, { count: number; totalsByCurrency: Record<string, number> }>;
   bookingStatusBreakdown: Record<string, number>;
-  reservationsByDay: { date: string; count: number; total: number }[];
-  topTours: { title: string; count: number; total: number }[];
+  reservationsByDay: { date: string; count: number; totalsByCurrency: Record<string, number> }[];
+  topTours: { title: string; count: number }[];
   sourceBreakdown: Record<string, number>;
 }
 
@@ -98,10 +98,10 @@ export class ReportsService {
     let totalCancelled = 0;
 
     const totalsByCurrency: Record<string, CurrencyFinancials> = {};
-    const paymentStatusBreakdown: Record<string, { count: number; total: number }> = {};
+    const paymentStatusBreakdown: Record<string, { count: number; totalsByCurrency: Record<string, number> }> = {};
     const bookingStatusBreakdown: Record<string, number> = {};
-    const dayMap = new Map<string, { count: number; total: number }>();
-    const tourMap = new Map<string, { count: number; total: number }>();
+    const dayMap = new Map<string, { count: number; totalsByCurrency: Record<string, number> }>();
+    const tourMap = new Map<string, number>();
     const sourceBreakdown: Record<string, number> = {};
 
     for (const r of reservations) {
@@ -128,39 +128,41 @@ export class ReportsService {
       const refunded = typeof r.refundedMinor === 'number' && !isNaN(r.refundedMinor) ? r.refundedMinor / 100 : 0;
       const collected = Math.max(0, paid - refunded);
 
+      // Cash truth: actualCollectedValue and refundedValue follow real cash movements for all reservations
+      totalsByCurrency[currency].actualCollectedValue = Math.round((totalsByCurrency[currency].actualCollectedValue + collected) * 100) / 100;
+      totalsByCurrency[currency].refundedValue = Math.round((totalsByCurrency[currency].refundedValue + refunded) * 100) / 100;
+
       if (isCancelled) {
         totalCancelled += 1;
         totalsByCurrency[currency].cancelledReservations += 1;
-        totalsByCurrency[currency].refundedValue = Math.round((totalsByCurrency[currency].refundedValue + refunded) * 100) / 100;
       } else {
         totalActive += 1;
         totalsByCurrency[currency].activeReservations += 1;
         totalsByCurrency[currency].grossBookedValue = Math.round((totalsByCurrency[currency].grossBookedValue + price) * 100) / 100;
-        totalsByCurrency[currency].actualCollectedValue = Math.round((totalsByCurrency[currency].actualCollectedValue + collected) * 100) / 100;
-        totalsByCurrency[currency].refundedValue = Math.round((totalsByCurrency[currency].refundedValue + refunded) * 100) / 100;
 
-        // By Day (only active reservations contribute to commercial revenue curve)
+        // By Day (active reservations with isolated currency totals)
         const dateStr = r.createdAt.toISOString().slice(0, 10);
-        const dayData = dayMap.get(dateStr) || { count: 0, total: 0 };
+        let dayData = dayMap.get(dateStr);
+        if (!dayData) {
+          dayData = { count: 0, totalsByCurrency: {} };
+          dayMap.set(dateStr, dayData);
+        }
         dayData.count += 1;
-        dayData.total = Math.round((dayData.total + price) * 100) / 100;
-        dayMap.set(dateStr, dayData);
+        dayData.totalsByCurrency[currency] = Math.round(((dayData.totalsByCurrency[currency] || 0) + price) * 100) / 100;
 
-        // Top Tours
+        // Top Tours: rank only by reservation count (Option B)
         const tourTitle = r.serviceTitle || 'Servicio sin título';
-        const tourData = tourMap.get(tourTitle) || { count: 0, total: 0 };
-        tourData.count += 1;
-        tourData.total = Math.round((tourData.total + price) * 100) / 100;
-        tourMap.set(tourTitle, tourData);
+        tourMap.set(tourTitle, (tourMap.get(tourTitle) || 0) + 1);
       }
 
-      // Payment status (authoritative enum: PENDING, PARTIALLY_PAID, PAID, etc.)
+      // Payment status (authoritative enum with isolated currency totals)
       const pStatus = r.paymentStatus || 'PENDING';
       if (!paymentStatusBreakdown[pStatus]) {
-        paymentStatusBreakdown[pStatus] = { count: 0, total: 0 };
+        paymentStatusBreakdown[pStatus] = { count: 0, totalsByCurrency: {} };
       }
       paymentStatusBreakdown[pStatus].count += 1;
-      paymentStatusBreakdown[pStatus].total = Math.round((paymentStatusBreakdown[pStatus].total + price) * 100) / 100;
+      paymentStatusBreakdown[pStatus].totalsByCurrency[currency] =
+        Math.round(((paymentStatusBreakdown[pStatus].totalsByCurrency[currency] || 0) + price) * 100) / 100;
 
       // Booking status
       const bStatus = r.bookingStatus || r.status || 'PENDING';
@@ -172,11 +174,11 @@ export class ReportsService {
     }
 
     const reservationsByDay = Array.from(dayMap.entries())
-      .map(([date, data]) => ({ date, count: data.count, total: data.total }))
+      .map(([date, data]) => ({ date, count: data.count, totalsByCurrency: data.totalsByCurrency }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const topTours = Array.from(tourMap.entries())
-      .map(([title, data]) => ({ title, count: data.count, total: data.total }))
+      .map(([title, count]) => ({ title, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
