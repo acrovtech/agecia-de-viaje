@@ -14,7 +14,8 @@ export default async function ReservaDetailPage({ params }: { params: Promise<{ 
       tour: true, 
       transfer: true, 
       vehicleType: true, 
-      passengers: true 
+      passengers: true,
+      coupon: true,
     }
   });
 
