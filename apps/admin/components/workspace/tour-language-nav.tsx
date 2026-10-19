@@ -111,8 +111,8 @@ export function TourLanguageNav({
           const isStale = Boolean(
             existingTrans &&
               (existingTrans.isStale ||
+                !existingTrans.sourceRevision ||
                 (currentSourceRevision &&
-                  existingTrans.sourceRevision &&
                   existingTrans.sourceRevision !== currentSourceRevision))
           );
 

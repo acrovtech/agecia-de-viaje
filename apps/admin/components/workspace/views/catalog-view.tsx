@@ -49,7 +49,7 @@ export interface CatalogViewProps {
   saved?: boolean;
   errorMessage?: string;
   agencySlug: string;
-  agencyLocales?: AgencyLocalesResponse;
+  agencyLocales?: AgencyLocalesResponse | null;
   translationsData?: TourTranslationsResponse | null;
   selectedLocale?: string;
 }

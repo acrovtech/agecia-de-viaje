@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { API_SESSION_COOKIE, isApiAdmin } from './admin-mode';
 
 export class CentralApiError extends Error {
-  constructor(public readonly status: number) { super('No se pudo completar la solicitud a la API central.'); }
+  constructor(public readonly status: number, message?: string) {
+    super(message || 'No se pudo completar la solicitud a la API central.');
+  }
 }
 
 const identitySchema = z.object({
@@ -36,7 +38,18 @@ export async function centralRequest(path: string, token?: string, body?: unknow
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8000),
     });
-    if (!response.ok) throw new CentralApiError(response.status);
+    if (!response.ok) {
+      let serverMsg: string | undefined;
+      try {
+        const errJson = await response.json();
+        if (typeof errJson?.message === 'string') {
+          serverMsg = errJson.message;
+        } else if (Array.isArray(errJson?.message)) {
+          serverMsg = errJson.message.join(', ');
+        }
+      } catch {}
+      throw new CentralApiError(response.status, serverMsg);
+    }
     return response.status === 204 ? null : await response.json();
   } catch (error) {
     if (error instanceof CentralApiError) throw error;

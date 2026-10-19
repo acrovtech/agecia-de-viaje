@@ -16,7 +16,7 @@ interface CatalogEditorProps {
   kind: CatalogKind;
   record?: CatalogDetail;
   categories?: any[];
-  agencyLocales?: AgencyLocalesResponse;
+  agencyLocales?: AgencyLocalesResponse | null;
   translationsData?: TourTranslationsResponse | null;
   selectedLocale?: string;
   editId?: string;
@@ -41,7 +41,7 @@ export function CatalogEditor({
 
     return (
       <div className="w-full">
-        {agencyLocales && (
+        {agencyLocales ? (
           <TourLanguageNav
             tourId={editId || record?.id}
             defaultLocale={agencyLocales.defaultLocale}
@@ -50,6 +50,10 @@ export function CatalogEditor({
             translations={translationsData?.translations}
             currentSourceRevision={translationsData?.currentSourceRevision}
           />
+        ) : (
+          <div className="mb-5 p-3 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-900 text-xs flex items-center gap-2">
+            <span>La configuración de idiomas no está disponible temporalmente. Solo se puede editar el tour en su versión base.</span>
+          </div>
         )}
         {isSecondaryLocale && selectedLocale && agencyLocales ? (
           <TourTranslationForm

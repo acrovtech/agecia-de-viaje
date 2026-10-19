@@ -65,7 +65,7 @@ export function TourTranslationForm({
 
   const isStale = Boolean(
     translation &&
-    (translation.isStale || (currentSourceRevision && translation.sourceRevision && translation.sourceRevision !== currentSourceRevision))
+    (!translation.sourceRevision || translation.sourceRevision !== currentSourceRevision)
   );
 
   // Deterministic SEO Diagnostics for this localized language
@@ -254,6 +254,39 @@ export function TourTranslationForm({
                 </ul>
               </div>
             )}
+            {sourceTour?.exclusions && sourceTour.exclusions.length > 0 && (
+              <div>
+                <span className="font-semibold text-slate-700 block mb-1">No incluye original:</span>
+                <ul className="list-disc pl-5 bg-white p-2.5 rounded border border-blue-100 text-slate-700">
+                  {sourceTour.exclusions.map((exc: any, i: number) => (
+                    <li key={i}>{exc.content}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sourceTour?.recommendations && sourceTour.recommendations.length > 0 && (
+              <div>
+                <span className="font-semibold text-slate-700 block mb-1">Recomendaciones originales:</span>
+                <ul className="list-disc pl-5 bg-white p-2.5 rounded border border-blue-100 text-slate-700">
+                  {sourceTour.recommendations.map((rec: any, i: number) => (
+                    <li key={i}>{rec.content}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sourceTour?.faqs && sourceTour.faqs.length > 0 && (
+              <div>
+                <span className="font-semibold text-slate-700 block mb-1">Preguntas frecuentes originales:</span>
+                <div className="space-y-1.5 bg-white p-2.5 rounded border border-blue-100">
+                  {sourceTour.faqs.map((f: any, i: number) => (
+                    <div key={i} className="pb-1.5 border-b border-slate-100 last:border-b-0">
+                      <span className="font-semibold text-slate-800">{f.question}</span>
+                      <p className="text-slate-600 mt-0.5">{f.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -263,6 +296,7 @@ export function TourTranslationForm({
         <input type="hidden" name="tourId" value={tourId} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="expectedUpdatedAt" value={translation?.updatedAt || ''} />
+        <input type="hidden" name="expectedSourceRevision" value={currentSourceRevision || ''} />
         <input type="hidden" name="itineraryCount" value={itinerary.length} />
         <input type="hidden" name="faqsCount" value={faqs.length} />
 

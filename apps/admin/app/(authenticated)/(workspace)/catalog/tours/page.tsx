@@ -56,15 +56,9 @@ export default async function ToursCatalogPage({
   const [body, categoriesRes, agencyLocalesRes] = await Promise.all([
     centralRequest(`${base}${after ? `?after=${encodeURIComponent(after)}` : ''}`, token),
     centralRequest(`/v1/agencies/${encodeURIComponent(identity.agencyId)}/catalog/categories`, token).catch(() => ({ data: [] })),
-    fetchAgencyLocales(token, identity.agencyId),
+    fetchAgencyLocales(identity.agencyId, token),
   ]);
-  const agencyLocales = agencyLocalesRes || {
-    locales: [{ id: 'default', locale: 'es', isDefault: true, enabled: true }],
-    defaultLocale: 'es',
-    enabledCount: 1,
-    maxCatalogLocales: 1,
-    supportedLocales: ['es', 'en', 'pt', 'fr', 'de', 'it'],
-  };
+  const agencyLocales = agencyLocalesRes ?? null;
   const result = catalogSchema.parse(body);
   const categories = z.object({ data: z.array(categorySchema) }).parse(categoriesRes).data;
 
@@ -72,9 +66,23 @@ export default async function ToursCatalogPage({
   let selected;
   let translationsData = null;
   const rawLocale = typeof params.locale === 'string' ? params.locale.trim().toLowerCase() : undefined;
-  let selectedLocale = agencyLocales.defaultLocale;
+  let selectedLocale: string | undefined = agencyLocales ? agencyLocales.defaultLocale : undefined;
 
-  if (editId === 'new') {
+  if (agencyLocales === null) {
+    // Requirement 2: If locale configuration is unavailable and URL contains a locale query,
+    // do not render an editable secondary translation. Redirect to base edit route
+    if (rawLocale && editId) {
+      redirect(`/catalog/tours?edit=${encodeURIComponent(editId)}`);
+    }
+    if (editId && editId !== 'new') {
+      try {
+        const contentRes = await centralRequest(`${base}/${encodeURIComponent(editId)}/content`, token);
+        selected = tourContentSchema.parse(contentRes);
+      } catch {
+        selected = undefined;
+      }
+    }
+  } else if (editId === 'new') {
     // New tour can ONLY be created in default locale (Requirement 9 & 23)
     if (rawLocale && rawLocale !== agencyLocales.defaultLocale) {
       redirect('/catalog/tours?edit=new');

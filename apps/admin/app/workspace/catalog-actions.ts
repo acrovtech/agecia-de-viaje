@@ -363,9 +363,13 @@ export async function saveTourTranslationAction(
   const tourId = str('tourId');
   const locale = str('locale');
   const expectedUpdatedAt = str('expectedUpdatedAt') || null;
+  const expectedSourceRevision = str('expectedSourceRevision');
 
   if (!tourId || !locale) {
     return { error: 'Identificador de tour e idioma requeridos.' };
+  }
+  if (!expectedSourceRevision) {
+    return { error: 'Revisión del contenido base requerida. Recarga la página.' };
   }
 
   try {
@@ -433,6 +437,7 @@ export async function saveTourTranslationAction(
 
     const payload = {
       expectedUpdatedAt,
+      expectedSourceRevision,
       title,
       slug,
       description,
@@ -451,13 +456,13 @@ export async function saveTourTranslationAction(
   } catch (error) {
     if (error instanceof CentralApiError) {
       if (error.status === 409) {
-        return { error: 'Esta traducción fue modificada por otro usuario. Recarga antes de guardar.' };
+        return { error: error.message || 'Esta traducción fue modificada por otro usuario. Recarga antes de guardar.' };
       }
       if (error.status === 403) {
-        return { error: 'No tienes permiso o tu suscripción no permite este idioma.' };
+        return { error: error.message || 'No tienes permiso o tu suscripción no permite este idioma.' };
       }
       if (error.status === 400) {
-        return { error: 'Revisa los campos requeridos de la traducción y el formato del slug.' };
+        return { error: error.message || 'Revisa los campos requeridos de la traducción y el formato del slug.' };
       }
     }
     return { error: 'Error al guardar la traducción en el API central.' };

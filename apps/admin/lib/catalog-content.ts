@@ -56,6 +56,8 @@ export const tourTranslationsResponseSchema = z.object({
 });
 
 export const tourTranslationSchema = z.object({
+  expectedUpdatedAt: z.string().nullable().optional(),
+  expectedSourceRevision: z.string().trim().min(1, 'La revisión del contenido base es obligatoria'),
   title: z.string().min(1).max(255),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'El slug solo puede contener letras minúsculas, números y guiones').min(1).max(100),
   description: z.string().optional(),
@@ -84,7 +86,6 @@ export const tourTranslationSchema = z.object({
   metaTitle: z.string().max(255).optional(),
   metaDescription: z.string().optional(),
   focusKeyphrase: z.string().max(100).optional(),
-  expectedUpdatedAt: z.string().nullable().optional(),
 });
 
 export type TourTranslationInput = z.infer<typeof tourTranslationSchema>;

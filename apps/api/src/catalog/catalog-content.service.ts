@@ -53,6 +53,7 @@ const translationFaqItem = z.object({
 
 const tourTranslationSchema = z.object({
   expectedUpdatedAt: z.string().datetime().nullable().optional(),
+  expectedSourceRevision: z.string().trim().min(1, 'La revisión del contenido base es obligatoria'),
   title: text,
   slug: z.string().trim().min(1, 'El slug es obligatorio').max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'El slug debe contener solo letras minúsculas, números y guiones'),
   description: z.string().nullable().optional(),
@@ -299,7 +300,7 @@ export class CatalogContentService {
       generatedByAi: t.generatedByAi,
       sourceRevision: t.sourceRevision,
       updatedAt: t.updatedAt.toISOString(),
-      isStale: Boolean(t.sourceRevision && t.sourceRevision !== currentSourceRevision),
+      isStale: Boolean(!t.sourceRevision || t.sourceRevision !== currentSourceRevision),
     }));
 
     return {
@@ -311,58 +312,83 @@ export class CatalogContentService {
   }
 
   async saveTourTranslation(who: ApiIdentity, tourId: string, locale: string, body: unknown) {
-    const tour = await this.prisma.tour.findFirst({
-      where: { id: tourId, agencyId: who.agencyId },
-      include: {
-        itineraries: { orderBy: { order: 'asc' } },
-        inclusions: { orderBy: { order: 'asc' } },
-        exclusions: { orderBy: { order: 'asc' } },
-        recommendations: { orderBy: { order: 'asc' } },
-        faqs: { orderBy: { order: 'asc' } },
-      },
-    });
-    if (!tour) throw new NotFoundException('Tour no encontrado');
-
     const supportedLocales = ['es', 'en', 'pt', 'fr', 'de', 'it'];
     if (!supportedLocales.includes(locale)) {
       throw new BadRequestException('Idioma no compatible');
     }
 
-    // 1. Locale must exist for this agency
-    const agencyLocale = await this.prisma.agencyLocale.findFirst({
-      where: { agencyId: who.agencyId, locale },
-    });
-    if (!agencyLocale) {
-      throw new BadRequestException('El idioma no está configurado en tu agencia');
-    }
-
-    // 2. Locale must be enabled
-    if (!agencyLocale.enabled) {
-      throw new BadRequestException('El idioma está deshabilitado para tu agencia');
-    }
-
-    // 3. Locale MUST NOT be the agency default locale (base tour content represents default)
-    if (agencyLocale.isDefault) {
-      throw new BadRequestException('El idioma principal se gestiona en la ficha base del tour');
-    }
-
-    // 4. Entitlement enforcement: total enabled locales cannot exceed maxCatalogLocales
-    const entitlement = await this.prisma.agencyEntitlement.findUnique({
-      where: { agencyId: who.agencyId },
-    });
-    const maxLocales = entitlement?.maxCatalogLocales ?? 1;
-    const enabledLocalesCount = await this.prisma.agencyLocale.count({
-      where: { agencyId: who.agencyId, enabled: true },
-    });
-    if (enabledLocalesCount > maxLocales) {
-      throw new ForbiddenException('Has superado el límite de idiomas permitidos en tu suscripción');
-    }
-
     const data = tourTranslationSchema.parse(body);
 
-    const currentSourceRevision = computeSourceRevision(tour);
-
     return await this.transaction(async (tx) => {
+      // 1. Authoritative lock on Agency to serialize concurrent translation saves and avoid TOCTOU
+      await tx.$queryRaw`
+        SELECT id
+        FROM "Agency"
+        WHERE id = ${who.agencyId}
+        FOR UPDATE;
+      `;
+
+      // 2. Fetch base tour and translatable content inside transaction
+      const tour = await tx.tour.findFirst({
+        where: { id: tourId, agencyId: who.agencyId },
+        include: {
+          itineraries: { orderBy: { order: 'asc' } },
+          inclusions: { orderBy: { order: 'asc' } },
+          exclusions: { orderBy: { order: 'asc' } },
+          recommendations: { orderBy: { order: 'asc' } },
+          faqs: { orderBy: { order: 'asc' } },
+        },
+      });
+      if (!tour) throw new NotFoundException('Tour no encontrado');
+
+      // 3. Locale must exist and be enabled for this agency
+      const agencyLocale = await tx.agencyLocale.findFirst({
+        where: { agencyId: who.agencyId, locale },
+      });
+      if (!agencyLocale) {
+        throw new BadRequestException('El idioma no está configurado en tu agencia');
+      }
+      if (!agencyLocale.enabled) {
+        throw new BadRequestException('El idioma está deshabilitado para tu agencia');
+      }
+      if (agencyLocale.isDefault) {
+        throw new BadRequestException('El idioma principal se gestiona en la ficha base del tour');
+      }
+
+      // 4. Entitlement enforcement: total enabled locales cannot exceed maxCatalogLocales
+      const entitlement = await tx.agencyEntitlement.findUnique({
+        where: { agencyId: who.agencyId },
+      });
+      const maxLocales = entitlement?.maxCatalogLocales ?? 1;
+      const enabledLocalesCount = await tx.agencyLocale.count({
+        where: { agencyId: who.agencyId, enabled: true },
+      });
+      if (enabledLocalesCount > maxLocales) {
+        throw new ForbiddenException('Has superado el límite de idiomas permitidos en tu suscripción');
+      }
+
+      // 5. Source revision concurrency check (Requirement 6 & 7)
+      const currentSourceRevision = computeSourceRevision(tour);
+      if (data.expectedSourceRevision !== currentSourceRevision) {
+        throw new ConflictException(
+          'El contenido principal cambió mientras editabas esta traducción. Recarga para revisar la versión más reciente.'
+        );
+      }
+
+      // 6. Localized slug collision safety within agency + locale (Requirement 8)
+      const slugCollision = await tx.tourLocalizedContent.findFirst({
+        where: {
+          locale,
+          slug: data.slug,
+          tour: { agencyId: who.agencyId },
+          tourId: { not: tourId },
+        },
+      });
+      if (slugCollision) {
+        throw new ConflictException('Este enlace ya está siendo usado por otro tour en este idioma.');
+      }
+
+      // 7. Exact translation optimistic concurrency check (Requirement 5)
       const existing = await tx.tourLocalizedContent.findUnique({
         where: {
           tourId_locale: {
@@ -376,14 +402,16 @@ export class CatalogContentService {
         if (!data.expectedUpdatedAt) {
           throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
         }
-        const expected = new Date(data.expectedUpdatedAt).getTime();
-        const actual = new Date(existing.updatedAt).getTime();
-        if (Math.abs(expected - actual) > 1000) {
+        const expectedDate = new Date(data.expectedUpdatedAt);
+        if (isNaN(expectedDate.getTime()) || existing.updatedAt.getTime() !== expectedDate.getTime()) {
           throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
         }
 
-        const updated = await tx.tourLocalizedContent.update({
-          where: { id: existing.id },
+        const updateResult = await tx.tourLocalizedContent.updateMany({
+          where: {
+            id: existing.id,
+            updatedAt: existing.updatedAt,
+          },
           data: {
             title: data.title,
             slug: data.slug,
@@ -399,8 +427,15 @@ export class CatalogContentService {
             generatedByAi: false,
             reviewStatus: 'DRAFT',
             sourceRevision: currentSourceRevision,
-            updatedAt: nextVersion(existing.updatedAt.toISOString()),
           },
+        });
+
+        if (updateResult.count !== 1) {
+          throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
+        }
+
+        const updated = await tx.tourLocalizedContent.findUniqueOrThrow({
+          where: { id: existing.id },
         });
         await this.audit(tx, who, 'TourLocalizedContent', updated.id, 'SAAS_TRANSLATION_UPDATE');
         return updated;
@@ -408,6 +443,7 @@ export class CatalogContentService {
         if (data.expectedUpdatedAt) {
           throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
         }
+
         const created = await tx.tourLocalizedContent.create({
           data: {
             tourId,

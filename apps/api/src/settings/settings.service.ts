@@ -319,8 +319,15 @@ export class SettingsService {
             enabled: true,
           },
         });
-      } catch {
-        // Race-safe bootstrap: if concurrent request created default locale, ignore unique collision and re-read
+      } catch (error: any) {
+        // Race-safe bootstrap: only catch expected Prisma unique constraint collision (P2002)
+        const isUniqueCollision =
+          error?.code === 'P2002' ||
+          (typeof error?.message === 'string' &&
+            (error.message.includes('Unique constraint') || error.message.includes('P2002')));
+        if (!isUniqueCollision) {
+          throw error;
+        }
       }
       locales = await this.prisma.agencyLocale.findMany({
         where: { agencyId },
@@ -352,36 +359,55 @@ export class SettingsService {
     }
     const { locale } = parsed.data;
 
-    const entitlements = await this.getEntitlements(agencyId);
-    const existingLocales = await this.prisma.agencyLocale.findMany({
-      where: { agencyId },
-    });
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Authoritative lock on Agency to serialize concurrent locale entitlement decisions
+      const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM "Agency"
+        WHERE id = ${agencyId}
+        FOR UPDATE;
+      `;
+      if (!lockedRows || lockedRows.length === 0) {
+        throw new NotFoundException('Agencia no encontrada');
+      }
 
-    const activeCount = existingLocales.filter((l) => l.enabled).length;
-    const isAlreadyPresentAndActive = existingLocales.some((l) => l.locale === locale && l.enabled);
+      // 2. Read entitlements inside transaction
+      const entitlement = await tx.agencyEntitlement.findUnique({
+        where: { agencyId },
+      });
+      const maxCatalogLocales = entitlement?.maxCatalogLocales ?? 1;
 
-    if (!isAlreadyPresentAndActive && activeCount >= entitlements.maxCatalogLocales) {
-      throw new ForbiddenException(
-        `Tu configuración actual permite un máximo de ${entitlements.maxCatalogLocales} idioma(s) de catálogo.`
-      );
-    }
+      // 3. Read existing locales inside transaction
+      const existingLocales = await tx.agencyLocale.findMany({
+        where: { agencyId },
+      });
 
-    return await this.prisma.agencyLocale.upsert({
-      where: {
-        agencyId_locale: {
+      const activeCount = existingLocales.filter((l) => l.enabled).length;
+      const isAlreadyPresentAndActive = existingLocales.some((l) => l.locale === locale && l.enabled);
+
+      if (!isAlreadyPresentAndActive && activeCount >= maxCatalogLocales) {
+        throw new ForbiddenException(
+          `Tu configuración actual permite un máximo de ${maxCatalogLocales} idioma(s) de catálogo.`
+        );
+      }
+
+      return await tx.agencyLocale.upsert({
+        where: {
+          agencyId_locale: {
+            agencyId,
+            locale,
+          },
+        },
+        create: {
           agencyId,
           locale,
+          enabled: true,
+          isDefault: existingLocales.length === 0,
         },
-      },
-      create: {
-        agencyId,
-        locale,
-        enabled: true,
-        isDefault: existingLocales.length === 0,
-      },
-      update: {
-        enabled: true,
-      },
+        update: {
+          enabled: true,
+        },
+      });
     });
   }
 
