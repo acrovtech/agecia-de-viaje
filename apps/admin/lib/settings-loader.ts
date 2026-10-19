@@ -78,6 +78,7 @@ export const agencyLocalesResponseSchema = z.object({
   defaultLocale: z.string(),
   maxCatalogLocales: z.number(),
   enabledCount: z.number(),
+  supportedLocales: z.array(z.string()).default(['es', 'en', 'pt', 'fr', 'de', 'it']),
 });
 
 export type AgencyLocalesResponse = z.infer<typeof agencyLocalesResponseSchema>;

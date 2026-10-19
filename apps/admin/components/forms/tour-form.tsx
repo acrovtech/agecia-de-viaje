@@ -524,19 +524,6 @@ export function TourForm({
         </div>
       )}
       
-      {/* Idiomas del Tour (Language Tabs Foundation - B16) */}
-      <div className="flex items-center gap-2 border-b border-[#e5e7eb] pb-2.5 mb-5">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#111111] text-white shadow-2xs">
-          <span>🇵🇪</span>
-          <span>Español</span>
-          <span className="text-[10px] uppercase font-bold text-slate-300 ml-1">Principal</span>
-        </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#6b7280] bg-[#f8f9fa] border border-[#e5e7eb] opacity-75">
-          <span>🇺🇸</span>
-          <span>Inglés</span>
-          <span className="text-[10px] text-[#898989] ml-1">(No configurado)</span>
-        </div>
-      </div>
 
       {/* Header Fila de la página (Título + Acciones en la misma fila) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

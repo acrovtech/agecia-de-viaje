@@ -34,9 +34,11 @@ export const updateLegalProfileSchema = z
 
 export type UpdateLegalProfileDto = z.infer<typeof updateLegalProfileSchema>;
 
+export const SUPPORTED_CATALOG_LOCALES = ['es', 'en', 'pt', 'fr', 'de', 'it'] as const;
+
 export const addLocaleSchema = z
   .object({
-    locale: z.enum(['es', 'en', 'pt', 'fr', 'de', 'it'], {
+    locale: z.enum(SUPPORTED_CATALOG_LOCALES, {
       message: 'El idioma seleccionado no es compatible actualmente',
     }),
   })

@@ -135,3 +135,72 @@ export async function updateLegalProfileAction(
     return { error: 'Ocurrió un error inesperado al actualizar el perfil legal.' };
   }
 }
+
+export async function addAgencyLocaleAction(
+  _prevState: SettingsActionState | null,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  try {
+    const { token, identity } = await centralSession();
+    if (!['OWNER', 'ADMIN'].includes(identity.role)) {
+      return { error: 'No tienes permiso para agregar idiomas al catálogo.' };
+    }
+
+    const locale = formData.get('locale')?.toString().trim();
+    if (!locale) {
+      return { error: 'Debes seleccionar un idioma válido.' };
+    }
+
+    await centralRequest(
+      `/v1/agencies/${encodeURIComponent(identity.agencyId)}/settings/locales`,
+      token,
+      { locale },
+      'POST',
+    );
+
+    revalidatePath('/settings');
+    revalidatePath('/settings/general');
+    revalidatePath('/catalog/tours');
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof CentralApiError) {
+      if (error.status === 403) {
+        return { error: error.message || 'Has alcanzado el límite de idiomas de catálogo permitidos.' };
+      }
+      if (error.status === 400) {
+        return { error: error.message || 'Idioma no válido o no soportado.' };
+      }
+    }
+    return { error: 'Ocurrió un error al habilitar el idioma.' };
+  }
+}
+
+export async function disableAgencyLocaleAction(
+  localeId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { token, identity } = await centralSession();
+    if (!['OWNER', 'ADMIN'].includes(identity.role)) {
+      return { success: false, error: 'No tienes permiso para deshabilitar idiomas del catálogo.' };
+    }
+
+    await centralRequest(
+      `/v1/agencies/${encodeURIComponent(identity.agencyId)}/settings/locales/${encodeURIComponent(localeId)}`,
+      token,
+      undefined,
+      'DELETE',
+    );
+
+    revalidatePath('/settings');
+    revalidatePath('/settings/general');
+    revalidatePath('/catalog/tours');
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof CentralApiError) {
+      return { success: false, error: error.message || 'No se pudo deshabilitar el idioma.' };
+    }
+    return { success: false, error: 'Ocurrió un error al deshabilitar el idioma.' };
+  }
+}

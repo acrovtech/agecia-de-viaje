@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useActionState } from 'react';
-import { Sliders, Check, Building2, CheckCircle2, AlertTriangle, Info, Globe } from 'lucide-react';
-import { updateAgencyProfileAction } from '../../../lib/settings-actions';
+import React, { useState, useActionState, useTransition } from 'react';
+import { Sliders, Check, Building2, CheckCircle2, AlertTriangle, Info, Globe, Plus, X } from 'lucide-react';
+import { updateAgencyProfileAction, addAgencyLocaleAction, disableAgencyLocaleAction } from '../../../lib/settings-actions';
 import type { AgencyProfileData, NavIdentity, SettingsActionState } from '../types';
 
 export interface GeneralSectionProps {
@@ -20,6 +20,8 @@ export interface GeneralSectionProps {
     isDefault: boolean;
     enabled: boolean;
   }> | null;
+  maxCatalogLocales?: number;
+  supportedLocales?: string[];
 }
 
 export function GeneralSection({
@@ -28,11 +30,36 @@ export function GeneralSection({
   identity,
   initialEntitlements,
   initialLocales,
+  maxCatalogLocales,
+  supportedLocales,
 }: GeneralSectionProps) {
   const [profileState, profileAction, isProfilePending] = useActionState<
     SettingsActionState | null,
     FormData
   >(updateAgencyProfileAction, null);
+
+  const [addLocaleState, addLocaleAction, isAddLocalePending] = useActionState<
+    SettingsActionState | null,
+    FormData
+  >(addAgencyLocaleAction, null);
+
+  const [isAddingLocale, setIsAddingLocale] = useState(false);
+  const [selectedLocaleToAdd, setSelectedLocaleToAdd] = useState('');
+  const [disablingLocaleId, setDisablingLocaleId] = useState<string | null>(null);
+  const [localeError, setLocaleError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDisableLocale = (localeId: string) => {
+    setLocaleError(null);
+    setDisablingLocaleId(localeId);
+    startTransition(async () => {
+      const res = await disableAgencyLocaleAction(localeId);
+      if (!res.success && res.error) {
+        setLocaleError(res.error);
+      }
+      setDisablingLocaleId(null);
+    });
+  };
 
   const [timezone, setTimezone] = useState('America/Lima');
   const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('24h');
@@ -200,62 +227,162 @@ export function GeneralSection({
             </div>
           ) : (
             (() => {
-              const maxLocales = initialEntitlements?.maxCatalogLocales ?? 1;
+              const maxLocales = maxCatalogLocales ?? initialEntitlements?.maxCatalogLocales ?? 1;
               const activeLocales = initialLocales;
               const enabledCount = activeLocales.filter((l) => l.enabled).length;
 
               const localeMeta: Record<string, { label: string; flag: string }> = {
-                es: { label: 'Español (es)', flag: '🇵🇪' },
-                en: { label: 'Inglés (en)', flag: '🇺🇸' },
-                pt: { label: 'Portugués (pt)', flag: '🇧🇷' },
-                fr: { label: 'Francés (fr)', flag: '🇫🇷' },
-                de: { label: 'Alemán (de)', flag: '🇩🇪' },
-                it: { label: 'Italiano (it)', flag: '🇮🇹' },
+                es: { label: 'Español', flag: '🇵🇪' },
+                en: { label: 'Inglés', flag: '🇺🇸' },
+                pt: { label: 'Portugués', flag: '🇧🇷' },
+                fr: { label: 'Francés', flag: '🇫🇷' },
+                de: { label: 'Alemán', flag: '🇩🇪' },
+                it: { label: 'Italiano', flag: '🇮🇹' },
               };
 
-              if (activeLocales.length === 0) {
-                return (
-                  <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#6b7280]">
-                    No hay idiomas configurados en el catálogo.
-                  </div>
-                );
-              }
+              const allSupported = supportedLocales && supportedLocales.length > 0
+                ? supportedLocales
+                : ['es', 'en', 'pt', 'fr', 'de', 'it'];
+
+              const availableToAdd = allSupported.filter(
+                (code) => !activeLocales.some((l) => l.locale === code && l.enabled)
+              );
 
               return (
                 <>
-                  {activeLocales.map((loc) => {
-                    const meta = localeMeta[loc.locale] || { label: loc.locale.toUpperCase(), flag: '🌐' };
-                    return (
-                      <div key={loc.id || loc.locale} className="flex items-center justify-between p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa]">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-base">{meta.flag}</span>
-                          <div>
-                            <span className="text-xs font-semibold text-[#111111]">{meta.label}</span>
-                            {loc.isDefault && (
-                              <span className="ml-2 inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
-                                Principal
-                              </span>
+                  {localeError && (
+                    <div className="p-3 rounded-lg border border-[#fecaca] bg-[#fef2f2] text-xs text-[#991b1b] flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#dc2626] shrink-0" />
+                      <span>{localeError}</span>
+                    </div>
+                  )}
+
+                  {addLocaleState?.error && (
+                    <div className="p-3 rounded-lg border border-[#fecaca] bg-[#fef2f2] text-xs text-[#991b1b] flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#dc2626] shrink-0" />
+                      <span>{addLocaleState.error}</span>
+                    </div>
+                  )}
+
+                  {activeLocales.length === 0 ? (
+                    <div className="p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] text-xs text-[#6b7280]">
+                      No hay idiomas configurados en el catálogo.
+                    </div>
+                  ) : (
+                    activeLocales.map((loc) => {
+                      const meta = localeMeta[loc.locale] || { label: loc.locale.toUpperCase(), flag: '🌐' };
+                      return (
+                        <div key={loc.id || loc.locale} className="flex items-center justify-between p-3 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa]">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 uppercase">
+                              {loc.locale.toUpperCase()}
+                            </span>
+                            <span className="text-base">{meta.flag}</span>
+                            <div>
+                              <span className="text-xs font-semibold text-[#111111]">{meta.label}</span>
+                              {loc.isDefault ? (
+                                <span className="ml-2 inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
+                                  Principal
+                                </span>
+                              ) : (
+                                <span className="ml-2 inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                                  Idioma adicional
+                                </span>
+                              )}
+                              <p className="text-[11px] text-[#6b7280]">
+                                {loc.isDefault
+                                  ? 'Idioma predeterminado para el contenido de tours y reservas.'
+                                  : 'Idioma secundario para traducción de contenido.'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-semibold ${loc.enabled ? 'text-emerald-700' : 'text-slate-400'}`}>
+                              {loc.enabled ? 'Activo' : 'Deshabilitado'}
+                            </span>
+                            {canEdit && !loc.isDefault && loc.enabled && (
+                              <button
+                                type="button"
+                                disabled={disablingLocaleId === loc.id || isPending}
+                                onClick={() => handleDisableLocale(loc.id)}
+                                className="text-[11px] font-medium text-rose-600 hover:text-rose-800 hover:underline cursor-pointer disabled:opacity-50"
+                              >
+                                {disablingLocaleId === loc.id ? 'Deshabilitando…' : 'Deshabilitar'}
+                              </button>
                             )}
-                            <p className="text-[11px] text-[#6b7280]">
-                              {loc.isDefault
-                                ? 'Idioma predeterminado para el contenido de tours y reservas.'
-                                : 'Idioma secundario para traducción de contenido.'}
-                            </p>
                           </div>
                         </div>
-                        <span className={`text-xs font-semibold ${loc.enabled ? 'text-[#111111]' : 'text-slate-400'}`}>
-                          {loc.enabled ? 'Activo' : 'Deshabilitado'}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
 
                   <div className="p-3 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-between text-xs text-[#6b7280]">
                     <span>{enabledCount} de {maxLocales} {maxLocales === 1 ? 'idioma habilitado' : 'idiomas habilitados'}</span>
                     <span className="text-[11px] text-[#898989]">
-                      Tu configuración actual permite {maxLocales} {maxLocales === 1 ? 'idioma' : 'idiomas'}
+                      Tu configuración actual permite {maxLocales} {maxLocales === 1 ? 'idioma' : 'idiomas'} de catálogo.
                     </span>
                   </div>
+
+                  {canEdit && (
+                    enabledCount < maxLocales ? (
+                      !isAddingLocale ? (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddingLocale(true);
+                              setSelectedLocaleToAdd(availableToAdd[0] || '');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e5e7eb] bg-white text-xs font-semibold text-[#111111] hover:bg-[#f8f9fa] shadow-2xs transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-[#111111]" />
+                            <span>Añadir idioma</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <form action={addLocaleAction} onSubmit={() => setIsAddingLocale(false)} className="p-3.5 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-[#111111]">Seleccionar nuevo idioma de catálogo</span>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingLocale(false)}
+                              className="text-slate-400 hover:text-slate-700"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <select
+                              name="locale"
+                              value={selectedLocaleToAdd}
+                              onChange={(e) => setSelectedLocaleToAdd(e.target.value)}
+                              className="h-[34px] flex-1 rounded-lg border border-[#e5e7eb] px-3 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#111111]"
+                            >
+                              {availableToAdd.map((code) => {
+                                const meta = localeMeta[code] || { label: code.toUpperCase(), flag: '🌐' };
+                                return (
+                                  <option key={code} value={code}>
+                                    {meta.flag} {meta.label} ({code.toUpperCase()})
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <button
+                              type="submit"
+                              disabled={isAddLocalePending || !selectedLocaleToAdd}
+                              className="h-[34px] px-3 bg-[#111111] text-white rounded-lg text-xs font-semibold hover:bg-black transition-colors disabled:opacity-50"
+                            >
+                              {isAddLocalePending ? 'Habilitando…' : 'Habilitar idioma'}
+                            </button>
+                          </div>
+                        </form>
+                      )
+                    ) : (
+                      <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                        Tu configuración actual permite {maxLocales} {maxLocales === 1 ? 'idioma' : 'idiomas'} de catálogo.
+                      </div>
+                    )
+                  )}
                 </>
               );
             })()

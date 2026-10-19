@@ -18,6 +18,9 @@ import { StatusBadge } from '../../design-system/status-badge';
 import { CatalogEditor } from '../catalog-editor';
 import type { CatalogDetail } from '../../../lib/catalog-editor';
 
+import type { AgencyLocalesResponse } from '../../../lib/settings-loader';
+import type { TourTranslationsResponse } from '../../../lib/catalog-content';
+
 export interface CatalogItem {
   id: string;
   title: string;
@@ -46,6 +49,9 @@ export interface CatalogViewProps {
   saved?: boolean;
   errorMessage?: string;
   agencySlug: string;
+  agencyLocales?: AgencyLocalesResponse;
+  translationsData?: TourTranslationsResponse | null;
+  selectedLocale?: string;
 }
 
 export function CatalogView({
@@ -59,6 +65,9 @@ export function CatalogView({
   saved,
   errorMessage,
   agencySlug,
+  agencyLocales,
+  translationsData,
+  selectedLocale,
 }: CatalogViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'DRAFT'>('ALL');
@@ -211,6 +220,10 @@ export function CatalogView({
             kind="tours"
             record={record}
             categories={categories}
+            agencyLocales={agencyLocales}
+            translationsData={translationsData}
+            selectedLocale={selectedLocale}
+            editId={editId}
           />
         </div>
       );

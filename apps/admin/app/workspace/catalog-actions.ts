@@ -350,3 +350,120 @@ export async function deleteTourAction(id: string): Promise<{ success: boolean; 
     return { success: false, error: 'Error al eliminar el tour en el API central.' };
   }
 }
+
+export async function saveTourTranslationAction(
+  _previous: { error?: string } | null,
+  form: FormData,
+): Promise<{ error?: string }> {
+  const str = (key: string) => {
+    const value = form.get(key);
+    return typeof value === 'string' ? value.trim() : '';
+  };
+
+  const tourId = str('tourId');
+  const locale = str('locale');
+  const expectedUpdatedAt = str('expectedUpdatedAt') || null;
+
+  if (!tourId || !locale) {
+    return { error: 'Identificador de tour e idioma requeridos.' };
+  }
+
+  try {
+    const { token, identity } = await centralSession();
+    if (!canEditCatalog(identity.role, 'tours')) {
+      return { error: 'Tu rol no permite modificar traducciones de tours.' };
+    }
+
+    const title = str('title');
+    if (!title || title.length < 2) {
+      return { error: 'El título traducido es obligatorio (mínimo 2 caracteres).' };
+    }
+
+    const slug = str('slug').toLowerCase();
+    if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      return { error: 'El enlace traducido (slug) es obligatorio y solo debe contener letras minúsculas, números y guiones.' };
+    }
+
+    const description = str('description') || null;
+    const metaTitle = str('metaTitle') || null;
+    const metaDescription = str('metaDescription') || null;
+    const focusKeyphrase = str('focusKeyphrase') || null;
+
+    const itineraries: { title: string; content: string }[] = [];
+    const itineraryCount = parseInt(str('itineraryCount')) || 50;
+    for (let i = 0; i < itineraryCount; i++) {
+      const dayTitle = str(`itinerary_title_${i}`);
+      const dayContent = str(`itinerary_content_${i}`);
+      if (dayTitle && dayContent) {
+        itineraries.push({ title: dayTitle, content: dayContent });
+      } else if (dayTitle || dayContent) {
+        return { error: 'Cada día del itinerario debe tener tanto título como contenido descriptivo.' };
+      }
+    }
+
+    const inclusions = str('inclusions')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((content) => ({ content }));
+
+    const exclusions = str('exclusions')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((content) => ({ content }));
+
+    const recommendations = str('recommendations')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((content) => ({ content }));
+
+    const faqs: { question: string; answer: string }[] = [];
+    const faqsCount = parseInt(str('faqsCount')) || 50;
+    for (let i = 0; i < faqsCount; i++) {
+      const q = str(`faq_question_${i}`);
+      const a = str(`faq_answer_${i}`);
+      if (q && a) {
+        faqs.push({ question: q, answer: a });
+      } else if (q || a) {
+        return { error: 'Cada pregunta frecuente debe tener tanto la pregunta como la respuesta.' };
+      }
+    }
+
+    const payload = {
+      expectedUpdatedAt,
+      title,
+      slug,
+      description,
+      itinerary: itineraries,
+      inclusions,
+      exclusions,
+      recommendations,
+      faqs,
+      metaTitle,
+      metaDescription,
+      focusKeyphrase,
+    };
+
+    const route = `/v1/agencies/${encodeURIComponent(identity.agencyId)}/catalog/tours/${encodeURIComponent(tourId)}/translations/${encodeURIComponent(locale)}`;
+    await centralRequest(route, token, payload, 'PUT');
+  } catch (error) {
+    if (error instanceof CentralApiError) {
+      if (error.status === 409) {
+        return { error: 'Esta traducción fue modificada por otro usuario. Recarga antes de guardar.' };
+      }
+      if (error.status === 403) {
+        return { error: 'No tienes permiso o tu suscripción no permite este idioma.' };
+      }
+      if (error.status === 400) {
+        return { error: 'Revisa los campos requeridos de la traducción y el formato del slug.' };
+      }
+    }
+    return { error: 'Error al guardar la traducción en el API central.' };
+  }
+
+  revalidatePath('/workspace');
+  revalidatePath('/catalog/tours');
+  redirect(`/catalog/tours?edit=${encodeURIComponent(tourId)}&locale=${encodeURIComponent(locale)}&saved=1`);
+}

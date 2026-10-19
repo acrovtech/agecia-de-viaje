@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';
 import { image, money, text, parse, conflict, tourSelect, transferSelect } from './catalog-write.service.js';
+import { computeSourceRevision } from './source-revision.js';
 
 const version = { expectedUpdatedAt: z.string().datetime() };
 const id = z.string().min(1).max(128);
@@ -51,8 +52,9 @@ const translationFaqItem = z.object({
 }).strict();
 
 const tourTranslationSchema = z.object({
+  expectedUpdatedAt: z.string().datetime().nullable().optional(),
   title: text,
-  slug: z.string().trim().max(100).nullable().optional(),
+  slug: z.string().trim().min(1, 'El slug es obligatorio').max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'El slug debe contener solo letras minúsculas, números y guiones'),
   description: z.string().nullable().optional(),
   itinerary: z.array(translationItineraryItem).max(30).nullable().optional(),
   inclusions: z.array(translationBulletItem).max(50).nullable().optional(),
@@ -254,20 +256,70 @@ export class CatalogContentService {
   async getTourTranslations(agencyId: string, tourId: string) {
     const tour = await this.prisma.tour.findFirst({
       where: { id: tourId, agencyId },
-      select: { id: true, agencyId: true },
+      include: {
+        itineraries: { orderBy: { order: 'asc' } },
+        inclusions: { orderBy: { order: 'asc' } },
+        exclusions: { orderBy: { order: 'asc' } },
+        recommendations: { orderBy: { order: 'asc' } },
+        faqs: { orderBy: { order: 'asc' } },
+      },
     });
     if (!tour) throw new NotFoundException('Tour no encontrado');
 
-    return await this.prisma.tourLocalizedContent.findMany({
+    const agencyLocales = await this.prisma.agencyLocale.findMany({
+      where: { agencyId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const defaultLocale = agencyLocales.find((l) => l.isDefault)?.locale || 'es';
+    const enabledLocales = agencyLocales.filter((l) => l.enabled).map((l) => l.locale);
+
+    const currentSourceRevision = computeSourceRevision(tour);
+
+    const translations = await this.prisma.tourLocalizedContent.findMany({
       where: { tourId },
       orderBy: { locale: 'asc' },
     });
+
+    const formattedTranslations = translations.map((t) => ({
+      id: t.id,
+      locale: t.locale,
+      title: t.title,
+      slug: t.slug,
+      description: t.description,
+      itinerary: (Array.isArray(t.itinerary) ? t.itinerary : []) as Array<{ title: string; content: string }>,
+      inclusions: (Array.isArray(t.inclusions) ? t.inclusions : []) as Array<{ content: string }>,
+      exclusions: (Array.isArray(t.exclusions) ? t.exclusions : []) as Array<{ content: string }>,
+      recommendations: (Array.isArray(t.recommendations) ? t.recommendations : []) as Array<{ content: string }>,
+      faqs: (Array.isArray(t.faqs) ? t.faqs : []) as Array<{ question: string; answer: string }>,
+      metaTitle: t.metaTitle,
+      metaDescription: t.metaDescription,
+      focusKeyphrase: t.focusKeyphrase,
+      reviewStatus: t.reviewStatus,
+      generatedByAi: t.generatedByAi,
+      sourceRevision: t.sourceRevision,
+      updatedAt: t.updatedAt.toISOString(),
+      isStale: Boolean(t.sourceRevision && t.sourceRevision !== currentSourceRevision),
+    }));
+
+    return {
+      defaultLocale,
+      enabledLocales,
+      currentSourceRevision,
+      translations: formattedTranslations,
+    };
   }
 
   async saveTourTranslation(who: ApiIdentity, tourId: string, locale: string, body: unknown) {
     const tour = await this.prisma.tour.findFirst({
       where: { id: tourId, agencyId: who.agencyId },
-      select: { id: true, agencyId: true },
+      include: {
+        itineraries: { orderBy: { order: 'asc' } },
+        inclusions: { orderBy: { order: 'asc' } },
+        exclusions: { orderBy: { order: 'asc' } },
+        recommendations: { orderBy: { order: 'asc' } },
+        faqs: { orderBy: { order: 'asc' } },
+      },
     });
     if (!tour) throw new NotFoundException('Tour no encontrado');
 
@@ -308,45 +360,77 @@ export class CatalogContentService {
 
     const data = tourTranslationSchema.parse(body);
 
-    return await this.prisma.tourLocalizedContent.upsert({
-      where: {
-        tourId_locale: {
-          tourId,
-          locale,
+    const currentSourceRevision = computeSourceRevision(tour);
+
+    return await this.transaction(async (tx) => {
+      const existing = await tx.tourLocalizedContent.findUnique({
+        where: {
+          tourId_locale: {
+            tourId,
+            locale,
+          },
         },
-      },
-      create: {
-        tourId,
-        locale,
-        title: data.title,
-        slug: data.slug || `${tourId}-${locale}`,
-        description: data.description || null,
-        itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
-        inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
-        exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
-        recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
-        faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
-        metaTitle: data.metaTitle || null,
-        metaDescription: data.metaDescription || null,
-        focusKeyphrase: data.focusKeyphrase || null,
-        generatedByAi: false,
-        reviewStatus: 'DRAFT',
-      },
-      update: {
-        title: data.title,
-        slug: data.slug || `${tourId}-${locale}`,
-        description: data.description || null,
-        itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
-        inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
-        exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
-        recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
-        faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
-        metaTitle: data.metaTitle || null,
-        metaDescription: data.metaDescription || null,
-        focusKeyphrase: data.focusKeyphrase || null,
-        generatedByAi: false,
-        reviewStatus: 'DRAFT',
-      },
+      });
+
+      if (existing) {
+        if (!data.expectedUpdatedAt) {
+          throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
+        }
+        const expected = new Date(data.expectedUpdatedAt).getTime();
+        const actual = new Date(existing.updatedAt).getTime();
+        if (Math.abs(expected - actual) > 1000) {
+          throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
+        }
+
+        const updated = await tx.tourLocalizedContent.update({
+          where: { id: existing.id },
+          data: {
+            title: data.title,
+            slug: data.slug,
+            description: data.description || null,
+            itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
+            inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+            exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+            recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
+            faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
+            metaTitle: data.metaTitle || null,
+            metaDescription: data.metaDescription || null,
+            focusKeyphrase: data.focusKeyphrase || null,
+            generatedByAi: false,
+            reviewStatus: 'DRAFT',
+            sourceRevision: currentSourceRevision,
+            updatedAt: nextVersion(existing.updatedAt.toISOString()),
+          },
+        });
+        await this.audit(tx, who, 'TourLocalizedContent', updated.id, 'SAAS_TRANSLATION_UPDATE');
+        return updated;
+      } else {
+        if (data.expectedUpdatedAt) {
+          throw new ConflictException('Esta traducción fue modificada por otro usuario. Recarga antes de guardar.');
+        }
+        const created = await tx.tourLocalizedContent.create({
+          data: {
+            tourId,
+            locale,
+            title: data.title,
+            slug: data.slug,
+            description: data.description || null,
+            itinerary: (data.itinerary ? (data.itinerary as Prisma.InputJsonValue) : Prisma.DbNull),
+            inclusions: (data.inclusions ? (data.inclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+            exclusions: (data.exclusions ? (data.exclusions as Prisma.InputJsonValue) : Prisma.DbNull),
+            recommendations: (data.recommendations ? (data.recommendations as Prisma.InputJsonValue) : Prisma.DbNull),
+            faqs: (data.faqs ? (data.faqs as Prisma.InputJsonValue) : Prisma.DbNull),
+            metaTitle: data.metaTitle || null,
+            metaDescription: data.metaDescription || null,
+            focusKeyphrase: data.focusKeyphrase || null,
+            generatedByAi: false,
+            reviewStatus: 'DRAFT',
+            sourceRevision: currentSourceRevision,
+          },
+        });
+        await this.audit(tx, who, 'TourLocalizedContent', created.id, 'SAAS_TRANSLATION_CREATE');
+        return created;
+      }
     });
   }
 }

@@ -7,17 +7,73 @@ import type { CatalogDetail, CatalogKind } from '../../lib/catalog-editor';
 import { saveCatalogAction } from '../../app/workspace/catalog-actions';
 import { MediaUploader } from './media-uploader';
 import { TourForm } from '../forms/tour-form';
+import { TourLanguageNav, LOCALE_META } from './tour-language-nav';
+import { TourTranslationForm } from '../forms/tour-translation-form';
+import type { AgencyLocalesResponse } from '../../lib/settings-loader';
+import type { TourTranslationsResponse } from '../../lib/catalog-content';
 
 interface CatalogEditorProps {
   kind: CatalogKind;
   record?: CatalogDetail;
   categories?: any[];
+  agencyLocales?: AgencyLocalesResponse;
+  translationsData?: TourTranslationsResponse | null;
+  selectedLocale?: string;
+  editId?: string;
 }
 
-export function CatalogEditor({ kind, record, categories }: CatalogEditorProps) {
-  // If editing/creating tours, render the exact TourForm design from the specification
+export function CatalogEditor({
+  kind,
+  record,
+  categories,
+  agencyLocales,
+  translationsData,
+  selectedLocale,
+  editId,
+}: CatalogEditorProps) {
+  // If editing/creating tours, render language nav + appropriate form (TourForm or TourTranslationForm)
   if (kind === 'tours') {
-    return <TourForm initialData={record} categories={categories} />;
+    const isSecondaryLocale = Boolean(
+      selectedLocale &&
+        agencyLocales &&
+        selectedLocale !== agencyLocales.defaultLocale
+    );
+
+    return (
+      <div className="w-full">
+        {agencyLocales && (
+          <TourLanguageNav
+            tourId={editId || record?.id}
+            defaultLocale={agencyLocales.defaultLocale}
+            enabledLocales={agencyLocales.locales.filter((l) => l.enabled)}
+            selectedLocale={selectedLocale || agencyLocales.defaultLocale}
+            translations={translationsData?.translations}
+            currentSourceRevision={translationsData?.currentSourceRevision}
+          />
+        )}
+        {isSecondaryLocale && selectedLocale && agencyLocales ? (
+          <TourTranslationForm
+            tourId={editId || record?.id || ''}
+            locale={selectedLocale}
+            localeMeta={
+              LOCALE_META[selectedLocale] || {
+                label: selectedLocale.toUpperCase(),
+                flag: '🌐',
+                code: selectedLocale.toUpperCase(),
+              }
+            }
+            defaultLocale={agencyLocales.defaultLocale}
+            sourceTour={record}
+            translation={
+              translationsData?.translations?.find((t) => t.locale === selectedLocale) || null
+            }
+            currentSourceRevision={translationsData?.currentSourceRevision}
+          />
+        ) : (
+          <TourForm initialData={record} categories={categories} />
+        )}
+      </div>
+    );
   }
 
   const [state, formAction, isPending] = useActionState(saveCatalogAction, null);

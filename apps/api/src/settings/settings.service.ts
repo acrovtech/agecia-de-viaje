@@ -11,6 +11,7 @@ import {
   updateAgencyProfileSchema,
   updateLegalProfileSchema,
   addLocaleSchema,
+  SUPPORTED_CATALOG_LOCALES,
   createFeedbackSchema,
   type UpdateAgencyProfileDto,
   type UpdateLegalProfileDto,
@@ -309,15 +310,22 @@ export class SettingsService {
     });
 
     if (locales.length === 0) {
-      const defaultLocale = await this.prisma.agencyLocale.create({
-        data: {
-          agencyId,
-          locale: 'es',
-          isDefault: true,
-          enabled: true,
-        },
+      try {
+        await this.prisma.agencyLocale.create({
+          data: {
+            agencyId,
+            locale: 'es',
+            isDefault: true,
+            enabled: true,
+          },
+        });
+      } catch {
+        // Race-safe bootstrap: if concurrent request created default locale, ignore unique collision and re-read
+      }
+      locales = await this.prisma.agencyLocale.findMany({
+        where: { agencyId },
+        orderBy: { createdAt: 'asc' },
       });
-      locales = [defaultLocale];
     }
 
     const entitlements = await this.getEntitlements(agencyId);
@@ -328,6 +336,7 @@ export class SettingsService {
       defaultLocale,
       maxCatalogLocales: entitlements.maxCatalogLocales,
       enabledCount: locales.filter((l) => l.enabled).length,
+      supportedLocales: [...SUPPORTED_CATALOG_LOCALES],
     };
   }
 
@@ -349,9 +358,9 @@ export class SettingsService {
     });
 
     const activeCount = existingLocales.filter((l) => l.enabled).length;
-    const isAlreadyPresent = existingLocales.some((l) => l.locale === locale && l.enabled);
+    const isAlreadyPresentAndActive = existingLocales.some((l) => l.locale === locale && l.enabled);
 
-    if (!isAlreadyPresent && activeCount >= entitlements.maxCatalogLocales) {
+    if (!isAlreadyPresentAndActive && activeCount >= entitlements.maxCatalogLocales) {
       throw new ForbiddenException(
         `Tu configuración actual permite un máximo de ${entitlements.maxCatalogLocales} idioma(s) de catálogo.`
       );
@@ -427,18 +436,20 @@ export class SettingsService {
     }
 
     if (target.isDefault) {
-      throw new BadRequestException('No puedes eliminar el idioma principal del catálogo sin asignar otro primero');
+      throw new BadRequestException('No puedes deshabilitar el idioma principal del catálogo');
     }
 
-    const allLocales = await this.prisma.agencyLocale.findMany({
-      where: { agencyId },
+    const activeLocales = await this.prisma.agencyLocale.findMany({
+      where: { agencyId, enabled: true },
     });
-    if (allLocales.length <= 1) {
-      throw new BadRequestException('La agencia debe tener al menos un idioma en su catálogo');
+    if (activeLocales.length <= 1) {
+      throw new BadRequestException('La agencia debe tener al menos un idioma habilitado en su catálogo');
     }
 
-    return await this.prisma.agencyLocale.delete({
+    // Disable rather than destroy, preserving TourLocalizedContent and restoring access if re-enabled
+    return await this.prisma.agencyLocale.update({
       where: { id: target.id },
+      data: { enabled: false },
     });
   }
 

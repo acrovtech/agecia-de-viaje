@@ -255,15 +255,13 @@ describe('P2.8-IA0.2 Contract Cleanup & Product Truth Suite', () => {
       expect(parsed.enabledCount).toBe(2);
     });
 
-    it('Translation CREATE and UPDATE both persist description and server-enforced provenance', () => {
+    it('Translation CREATE and UPDATE both persist description and server-enforced provenance without hidden fallback', () => {
       const catalogContentPath = path.resolve(__dirname, '../../api/src/catalog/catalog-content.service.ts');
       const content = fs.readFileSync(catalogContentPath, 'utf8');
 
-      // CREATE block contains description
-      expect(content).toContain("create: {\n        tourId,\n        locale,\n        title: data.title,\n        slug: data.slug || `${tourId}-${locale}`,\n        description: data.description || null,");
-
-      // UPDATE block contains description
-      expect(content).toContain("update: {\n        title: data.title,\n        slug: data.slug || `${tourId}-${locale}`,\n        description: data.description || null,");
+      // CREATE and UPDATE blocks contain description and explicit slug
+      expect(content).toContain("title: data.title,\n            slug: data.slug,\n            description: data.description || null,");
+      expect(content).not.toContain("`${tourId}-${locale}`");
 
       // Server enforces provenance and draft status
       expect(content).toContain("generatedByAi: false");
