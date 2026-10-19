@@ -5,6 +5,7 @@
     "postinstall": "pnpm --filter @repo/db generate",
     "db:seed": "pnpm --filter @repo/db seed",
     "db:deploy": "node scripts/deploy-db.mjs",
+    "platform-admin:create": "pnpm --filter @repo/db exec tsx scripts/create-platform-admin.ts",
     "build": "turbo run build",
     "start": "pnpm --filter web start",
     "dev:api": "pnpm --filter api dev",

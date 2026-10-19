@@ -9,7 +9,7 @@
     "start": "node dist/main.js",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs test/image-validator.mjs test/media.e2e.mjs test/settings.e2e.mjs test/memberships-invitations.e2e.mjs test/storefront-resolution.e2e.mjs test/operations.e2e.mjs",
+    "test": "pnpm build && node --test test/http.e2e.mjs test/postgres-gate-safety.e2e.mjs test/image-validator.mjs test/media.e2e.mjs test/settings.e2e.mjs test/memberships-invitations.e2e.mjs test/storefront-resolution.e2e.mjs test/operations.e2e.mjs test/platform-control-plane.e2e.mjs",
     "test:admin": "node --test test/admin.smoke.mjs",
     "test:payments:postgres": "pnpm build && node scripts/test-payments-postgres.mjs",
     "test:media:postgres": "pnpm build && node scripts/test-media-postgres.mjs",

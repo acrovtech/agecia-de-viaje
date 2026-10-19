@@ -61,6 +61,15 @@ export type {
   AdminSession,
   AdminAuditLog,
   PasswordResetToken,
+  PlatformAdmin,
+  PlatformSession,
+  PlatformSettings,
+  PlatformAuditLog,
+  AgencyBrandingPreference,
+  BrandingRewardClaim,
+  AiCreditAccount,
+  AiCreditLedger,
+  ProductFeedback,
 } from "@prisma/client";
 
 // Re-export / override Role with full 5-role enum

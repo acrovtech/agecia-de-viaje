@@ -1,4 +1,6 @@
 export const API_SESSION_COOKIE = 'admin_api_session';
+export const PLATFORM_SESSION_COOKIE = 'platform_admin_session';
+export const TENANT_HINT_COOKIE = 'admin_tenant_hint';
 
 export function isApiAdmin(): boolean {
   const isProduction = process.env.NODE_ENV === 'production';

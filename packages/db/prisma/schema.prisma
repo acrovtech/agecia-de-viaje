@@ -56,6 +56,8 @@ model Agency {
   aiCreditAccount     AiCreditAccount?
   aiCreditLedgers     AiCreditLedger[]
   feedbacks           ProductFeedback[]
+  brandingPreference  AgencyBrandingPreference?
+  brandingRewardClaims BrandingRewardClaim[]
 
   @@index([slug])
   @@index([subdomain])
@@ -1350,7 +1352,7 @@ model AiCreditLedger {
   agency        Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   userId        String?
   delta         Int
-  reason        String   // PLAN_GRANT, PURCHASE, FEEDBACK_REWARD, PROMOTION, AI_USAGE, ADMIN_ADJUSTMENT, EXPIRATION
+  reason        String   // PLAN_GRANT, PURCHASE, FEEDBACK_REWARD, PROMOTION, AI_USAGE, ADMIN_ADJUSTMENT, EXPIRATION, BRANDING_REWARD
   referenceType String?
   referenceId   String?
   createdAt     DateTime @default(now())
@@ -1377,5 +1379,90 @@ model ProductFeedback {
   @@index([clusterKey])
 }
 
+// -----------------------------------------------------------------------------
+// CONTROL PLANE & PLATFORM MANAGEMENT
+// -----------------------------------------------------------------------------
 
+model PlatformAdmin {
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  password            String
+  displayName         String?
+  role                String              @default("SUPERADMIN") // SUPERADMIN | SUPPORT | BILLING | PRODUCT
+  isActive            Boolean             @default(true)
+  failedLoginAttempts Int                 @default(0)
+  lockedUntil         DateTime?
+  tokenVersion        Int                 @default(1)
+  lastLoginAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  sessions            PlatformSession[]
+  auditLogs           PlatformAuditLog[]
+}
 
+model PlatformSession {
+  id              String         @id @default(cuid())
+  platformAdminId String
+  platformAdmin   PlatformAdmin  @relation(fields: [platformAdminId], references: [id], onDelete: Cascade)
+  tokenHash       String         @unique
+  tokenVersion    Int
+  passwordHash    String
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime       @default(now())
+
+  @@index([platformAdminId])
+}
+
+model PlatformSettings {
+  id                     String   @id @default("global")
+  productName            String   @default("Acrov SaaS")
+  logoUrl                String?
+  iconUrl                String?
+  supportEmail           String?
+  brandingRewardEnabled  Boolean  @default(true)
+  brandingRewardCredits  Int      @default(10)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model PlatformAuditLog {
+  id              String         @id @default(cuid())
+  platformAdminId String?
+  platformAdmin   PlatformAdmin? @relation(fields: [platformAdminId], references: [id], onDelete: SetNull)
+  action          String
+  entity          String
+  entityId        String?
+  details         Json?
+  createdAt       DateTime       @default(now())
+
+  @@index([platformAdminId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+model AgencyBrandingPreference {
+  id                      String   @id @default(cuid())
+  agencyId                String   @unique
+  agency                  Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  platformBrandingEnabled Boolean  @default(true)
+  rewardLockedUntil       DateTime?
+  lastRewardPeriod        String?  // 'YYYY-MM'
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model BrandingRewardClaim {
+  id          String   @id @default(cuid())
+  agencyId    String
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  period      String   // 'YYYY-MM'
+  credits     Int
+  lockedUntil DateTime
+  ledgerId    String?  @unique
+  createdAt   DateTime @default(now())
+
+  @@unique([agencyId, period])
+  @@index([agencyId])
+}

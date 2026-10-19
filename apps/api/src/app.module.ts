@@ -44,6 +44,8 @@ import { DashboardController } from './dashboard/dashboard.controller.js';
 import { DashboardService } from './dashboard/dashboard.service.js';
 import { EMAIL_TRANSPORT_ADAPTER } from './notifications/transport/email-transport.interface.js';
 import { DisabledEmailTransportAdapter } from './notifications/transport/disabled-transport.adapter.js';
+import { PlatformAuthController } from './platform/platform-auth.controller.js';
+import { PlatformAuthService } from './platform/platform-auth.service.js';
 
 @Module({})
 export class AppModule {
@@ -70,6 +72,7 @@ export class AppModule {
               NotificationsController,
               ReportsController,
               DashboardController,
+              PlatformAuthController,
             ]
           : []),
         // Financial endpoints are enabled when checkout is activated and validated.
@@ -79,6 +82,7 @@ export class AppModule {
         { provide: API_CONFIG, useValue: config },
         PrismaService,
         AuthService,
+        PlatformAuthService,
         TenantService,
         StorefrontResolverService,
         CatalogService,
