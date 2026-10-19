@@ -67,8 +67,12 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       { id: 'agency-inactive-id', slug: 'inactive-agency', name: 'Inactive Agency', logoUrl: null, iconUrl: null, isActive: false },
     ],
     brandingPreferences: [
-      { agencyId: 'agency-a-id', platformBrandingEnabled: true },
+      { id: 'pref-1', agencyId: 'agency-a-id', platformBrandingEnabled: true, rewardLockedUntil: null, lastRewardPeriod: null },
     ],
+    brandingRewardClaims: [],
+    aiCreditAccounts: [],
+    aiCreditLedgers: [],
+    adminAuditLogs: [],
     platformSettings: {
       id: 'global',
       productName: 'Acrov SaaS',
@@ -188,10 +192,84 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       findUnique: async ({ where }) => {
         return state.brandingPreferences.find((b) => b.agencyId === where.agencyId) || null;
       },
+      upsert: async ({ where, create, update }) => {
+        let pref = state.brandingPreferences.find((b) => b.agencyId === where.agencyId);
+        if (!pref) {
+          pref = { id: `pref-${state.brandingPreferences.length + 1}`, ...create };
+          state.brandingPreferences.push(pref);
+        } else {
+          Object.assign(pref, update);
+        }
+        return pref;
+      },
+      update: async ({ where, data }) => {
+        const pref = state.brandingPreferences.find((b) => b.agencyId === where.agencyId);
+        if (!pref) throw new Error('Preference not found');
+        Object.assign(pref, data);
+        return pref;
+      },
+    },
+    brandingRewardClaim: {
+      findUnique: async ({ where }) => {
+        if (where.agencyId_period) {
+          return state.brandingRewardClaims.find(
+            (c) => c.agencyId === where.agencyId_period.agencyId && c.period === where.agencyId_period.period
+          ) || null;
+        }
+        return null;
+      },
+      create: async ({ data }) => {
+        const existing = state.brandingRewardClaims.find(
+          (c) => c.agencyId === data.agencyId && c.period === data.period
+        );
+        if (existing) {
+          const err = new Error('Unique constraint failed on the fields: (`agencyId`,`period`)');
+          err.code = 'P2002';
+          throw err;
+        }
+        const row = { id: `brc-${state.brandingRewardClaims.length + 1}`, createdAt: new Date(), ...data };
+        state.brandingRewardClaims.push(row);
+        return row;
+      },
+    },
+    aiCreditAccount: {
+      findUnique: async ({ where }) => {
+        return state.aiCreditAccounts.find((a) => a.agencyId === where.agencyId) || null;
+      },
+      create: async ({ data }) => {
+        const row = { id: `aca-${state.aiCreditAccounts.length + 1}`, ...data };
+        state.aiCreditAccounts.push(row);
+        return row;
+      },
+      update: async ({ where, data }) => {
+        const account = state.aiCreditAccounts.find((a) => a.id === where.id);
+        if (!account) throw new Error('Account not found');
+        if (data.balance?.increment !== undefined) {
+          account.balance += data.balance.increment;
+        } else if (typeof data.balance === 'number') {
+          account.balance = data.balance;
+        }
+        return account;
+      },
+    },
+    aiCreditLedger: {
+      create: async ({ data }) => {
+        const row = { id: `acl-${state.aiCreditLedgers.length + 1}`, createdAt: new Date(), ...data };
+        state.aiCreditLedgers.push(row);
+        return row;
+      },
+    },
+    adminAuditLog: {
+      create: async ({ data }) => {
+        const row = { id: `aaudit-${state.adminAuditLogs.length + 1}`, createdAt: new Date(), ...data };
+        state.adminAuditLogs.push(row);
+        return row;
+      },
     },
     platformSettings: {
       findUnique: async () => state.platformSettings,
     },
+    $queryRaw: async () => [{ id: 'agency-a-id' }],
     $transaction: async (tasks) => {
       if (Array.isArray(tasks)) {
         return Promise.all(tasks);
@@ -324,6 +402,79 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     await request(server)
       .get('/v1/public/admin-login-context/nonexistent-agency')
       .expect(404);
+  });
+
+  await t.test('12. GET /v1/agencies/:agencyId/settings/branding returns current preference and reward availability', async () => {
+    const res = await request(server)
+      .get('/v1/agencies/agency-a-id/settings/branding')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .expect(200);
+
+    assert.equal(res.body.platformBrandingEnabled, true);
+    assert.equal(res.body.isLocked, false);
+    assert.equal(res.body.isCurrentPeriodClaimed, false);
+    assert.equal(res.body.rewardCredits, 10);
+    assert.equal(res.body.productName, 'Acrov SaaS');
+  });
+
+  await t.test('13. POST /v1/agencies/:agencyId/settings/branding/reward claims reward, increments credits, creates ledger and locks', async () => {
+    const res = await request(server)
+      .post('/v1/agencies/agency-a-id/settings/branding/reward')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .expect(201);
+
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.claimed, true);
+    assert.equal(res.body.creditsAwarded, 10);
+    assert.equal(res.body.balance, 10);
+    assert.ok(res.body.lockedUntil);
+    assert.ok(res.body.period);
+
+    // Verify DB state
+    const account = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id');
+    assert.equal(account.balance, 10);
+
+    const ledger = state.aiCreditLedgers.find((l) => l.agencyId === 'agency-a-id');
+    assert.ok(ledger);
+    assert.equal(ledger.delta, 10);
+    assert.equal(ledger.reason, 'BRANDING_REWARD');
+    assert.equal(ledger.referenceType, 'BRANDING_PERIOD');
+    assert.equal(ledger.referenceId, res.body.period);
+
+    const claim = state.brandingRewardClaims.find((c) => c.agencyId === 'agency-a-id');
+    assert.ok(claim);
+    assert.equal(claim.period, res.body.period);
+    assert.equal(claim.credits, 10);
+  });
+
+  await t.test('14. Disabling co-branding while locked returns 409 Conflict', async () => {
+    const res = await request(server)
+      .put('/v1/agencies/agency-a-id/settings/branding')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .send({ platformBrandingEnabled: false })
+      .expect(409);
+
+    const errorMsg = res.body.error?.message || res.body.message || '';
+    assert.match(errorMsg, /bloqueado hasta el próximo ciclo/i);
+
+    // Verify preference is still enabled
+    const pref = state.brandingPreferences.find((p) => p.agencyId === 'agency-a-id');
+    assert.equal(pref.platformBrandingEnabled, true);
+  });
+
+  await t.test('15. Second claim in same period is rejected with 409 and does not mint duplicate credits', async () => {
+    await request(server)
+      .post('/v1/agencies/agency-a-id/settings/branding/reward')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .expect(409);
+
+    // Balance remains 10 (not 20)
+    const account = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id');
+    assert.equal(account.balance, 10);
+
+    // Ledger has exactly 1 entry
+    const ledgers = state.aiCreditLedgers.filter((l) => l.agencyId === 'agency-a-id');
+    assert.equal(ledgers.length, 1);
   });
 
   await app.close();

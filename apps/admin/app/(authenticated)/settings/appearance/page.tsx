@@ -1,8 +1,9 @@
 import React from 'react';
-import { requireSettingsSession, fetchAgencyProfile } from '@/lib/settings-loader';
+import { requireSettingsSession, fetchAgencyProfile, fetchAgencyBranding } from '@/lib/settings-loader';
 import { getSettingsConfigByPath } from '@/lib/settings-navigation';
 import { PageHeader } from '@/components/design-system/page-header';
 import { AppearanceSection } from '@/components/settings/sections/appearance-section';
+import { CoBrandingSection } from '@/components/settings/sections/co-branding-section';
 import { EmptyState } from '@/components/design-system/empty-state';
 import Link from 'next/link';
 
@@ -10,7 +11,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsAppearancePage() {
   const { session, canEdit } = await requireSettingsSession();
-  const profile = await fetchAgencyProfile(session.identity.agencyId, session.token);
+  const [profile, brandingInfo] = await Promise.all([
+    fetchAgencyProfile(session.identity.agencyId, session.token),
+    fetchAgencyBranding(session.identity.agencyId, session.token),
+  ]);
 
   if (!profile) {
     return (
@@ -29,12 +33,19 @@ export default async function SettingsAppearancePage() {
   const config = getSettingsConfigByPath('/settings/appearance');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title={config.title}
         description={config.description}
       />
       <AppearanceSection initialProfile={profile} canEdit={canEdit} />
+      {brandingInfo && (
+        <CoBrandingSection
+          brandingInfo={brandingInfo}
+          agency={profile}
+          canEdit={canEdit}
+        />
+      )}
     </div>
   );
 }

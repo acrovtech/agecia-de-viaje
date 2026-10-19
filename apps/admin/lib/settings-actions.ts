@@ -204,3 +204,68 @@ export async function disableAgencyLocaleAction(
     return { success: false, error: 'Ocurrió un error al deshabilitar el idioma.' };
   }
 }
+
+export async function updateAgencyBrandingAction(
+  _prevState: SettingsActionState | null,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  try {
+    const { token, identity } = await centralSession();
+    if (!['OWNER', 'ADMIN'].includes(identity.role)) {
+      return { error: 'No tienes permiso para modificar el co-branding de la agencia.' };
+    }
+
+    const platformBrandingEnabled = formData.get('platformBrandingEnabled') === 'true';
+
+    await centralRequest(
+      `/v1/agencies/${encodeURIComponent(identity.agencyId)}/settings/branding`,
+      token,
+      { platformBrandingEnabled },
+      'PUT',
+    );
+
+    revalidatePath('/settings');
+    revalidatePath('/settings/appearance');
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof CentralApiError) {
+      return { success: false, error: error.message || 'No se pudo actualizar la preferencia de co-branding.' };
+    }
+    return { success: false, error: 'Ocurrió un error al guardar la preferencia de marca.' };
+  }
+}
+
+export async function claimBrandingRewardAction(
+  _prevState: SettingsActionState | null,
+  _formData?: FormData,
+): Promise<SettingsActionState> {
+  try {
+    const { token, identity } = await centralSession();
+    if (!['OWNER', 'ADMIN'].includes(identity.role)) {
+      return { success: false, error: 'No tienes permiso para reclamar recompensas para esta agencia.' };
+    }
+
+    const res = await centralRequest(
+      `/v1/agencies/${encodeURIComponent(identity.agencyId)}/settings/branding/reward`,
+      token,
+      {},
+      'POST',
+    );
+
+    revalidatePath('/settings');
+    revalidatePath('/settings/appearance');
+    revalidatePath('/dashboard');
+
+    return {
+      success: true,
+      message: `¡Recompensa activada! Se añadieron +${res?.creditsAwarded ?? 10} créditos IA a tu cuenta.`,
+    };
+  } catch (error) {
+    if (error instanceof CentralApiError) {
+      return { success: false, error: error.message || 'No se pudo reclamar la recompensa de co-branding.' };
+    }
+    return { success: false, error: 'Ocurrió un error al reclamar la recompensa.' };
+  }
+}
+

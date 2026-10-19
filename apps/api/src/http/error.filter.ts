@@ -23,10 +23,23 @@ export class ApiErrorFilter implements ExceptionFilter {
       400: 'INVALID_REQUEST', 401: 'UNAUTHORIZED', 403: 'FORBIDDEN',
       404: 'NOT_FOUND', 409: 'CONFLICT', 413: 'PAYLOAD_TOO_LARGE', 429: 'RATE_LIMITED', 503: 'UNAVAILABLE',
     };
+    let clientMessage: string | null = null;
+    if (status < 500 && exception instanceof HttpException) {
+      const res = exception.getResponse();
+      if (typeof res === 'string') {
+        clientMessage = res;
+      } else if (typeof (res as any)?.message === 'string') {
+        clientMessage = (res as any).message;
+      } else if (Array.isArray((res as any)?.message)) {
+        clientMessage = (res as any).message.join(', ');
+      }
+    }
     response.status(status).json({
       error: {
         code: codes[status] ?? 'INTERNAL_ERROR',
-        message: status >= 500 ? 'Servicio no disponible temporalmente.' : 'La solicitud no pudo procesarse.',
+        message: status >= 500
+          ? 'Servicio no disponible temporalmente.'
+          : (clientMessage || 'La solicitud no pudo procesarse.'),
         requestId,
       },
     });

@@ -13,6 +13,7 @@ import {
   addLocaleSchema,
   SUPPORTED_CATALOG_LOCALES,
   createFeedbackSchema,
+  updateBrandingSchema,
   type UpdateAgencyProfileDto,
   type UpdateLegalProfileDto,
 } from './settings.dto.js';
@@ -541,5 +542,219 @@ export class SettingsService {
       take: 50,
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // CO-BRANDING & MONTHLY AI CREDIT REWARD
+  // ---------------------------------------------------------------------------
+  async getBranding(agencyId: string) {
+    const now = new Date();
+    const { period } = getCurrentRewardPeriodAndBoundary(now);
+
+    const [brandingPref, platformSettings, currentClaim] = await Promise.all([
+      this.prisma.agencyBrandingPreference.findUnique({
+        where: { agencyId },
+      }),
+      this.prisma.platformSettings.findUnique({
+        where: { id: 'global' },
+      }),
+      this.prisma.brandingRewardClaim.findUnique({
+        where: { agencyId_period: { agencyId, period } },
+      }),
+    ]);
+
+    const isLocked = Boolean(brandingPref?.rewardLockedUntil && brandingPref.rewardLockedUntil > now);
+
+    return {
+      platformBrandingEnabled: brandingPref ? brandingPref.platformBrandingEnabled : true,
+      rewardLockedUntil: brandingPref?.rewardLockedUntil || null,
+      lastRewardPeriod: brandingPref?.lastRewardPeriod || null,
+      isLocked,
+      isCurrentPeriodClaimed: Boolean(currentClaim),
+      currentPeriod: period,
+      rewardCredits: platformSettings?.brandingRewardCredits ?? 10,
+      brandingRewardEnabledGlobally: platformSettings?.brandingRewardEnabled ?? true,
+      productName: platformSettings?.productName || 'Acrov SaaS',
+      platformLogoUrl: platformSettings?.logoUrl || null,
+      platformIconUrl: platformSettings?.iconUrl || null,
+    };
+  }
+
+  async updateBranding(identity: ApiIdentity, agencyId: string, rawBody: unknown) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para modificar el co-branding de esta agencia');
+    }
+
+    const parsed = updateBrandingSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      throw new BadRequestException('Configuración de branding inválida');
+    }
+    const { platformBrandingEnabled } = parsed.data;
+
+    return await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const existing = await tx.agencyBrandingPreference.findUnique({
+        where: { agencyId },
+      });
+
+      // Si se intenta desactivar el co-branding mientras está bloqueado por recompensa activa
+      if (!platformBrandingEnabled && existing?.rewardLockedUntil && existing.rewardLockedUntil > now) {
+        throw new ConflictException(
+          'El co-branding está bloqueado hasta el próximo ciclo porque esta agencia recibió la recompensa de créditos IA.'
+        );
+      }
+
+      const updated = await tx.agencyBrandingPreference.upsert({
+        where: { agencyId },
+        update: { platformBrandingEnabled },
+        create: { agencyId, platformBrandingEnabled },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          userId: identity.userId,
+          action: platformBrandingEnabled ? 'SAAS_BRANDING_ENABLED' : 'SAAS_BRANDING_DISABLED',
+          entity: 'AgencyBrandingPreference',
+          entityId: updated.id,
+          details: { agencyId, platformBrandingEnabled },
+        },
+      });
+
+      return {
+        platformBrandingEnabled: updated.platformBrandingEnabled,
+        rewardLockedUntil: updated.rewardLockedUntil,
+        isLocked: Boolean(updated.rewardLockedUntil && updated.rewardLockedUntil > now),
+      };
+    });
+  }
+
+  async claimBrandingReward(identity: ApiIdentity, agencyId: string) {
+    if (identity.agencyId !== agencyId) {
+      throw new ForbiddenException('No tienes permiso para reclamar recompensas para esta agencia');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Authoritative lock on Agency
+      const agency = await tx.agency.findUnique({ where: { id: agencyId } });
+      if (!agency) {
+        throw new NotFoundException('Agencia no encontrada');
+      }
+      if (typeof (tx as any).$queryRaw === 'function') {
+        try {
+          await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
+        } catch {
+          // If the underlying database / mock doesn't support raw FOR UPDATE, continue safely
+        }
+      }
+
+      // 2. Read PlatformSettings
+      const platformSettings = await tx.platformSettings.findUnique({
+        where: { id: 'global' },
+      });
+
+      if (!platformSettings || !platformSettings.brandingRewardEnabled) {
+        throw new BadRequestException('El programa de recompensas de co-branding está deshabilitado globalmente.');
+      }
+
+      const now = new Date();
+      const { period, lockedUntil } = getCurrentRewardPeriodAndBoundary(now);
+      const rewardCredits = platformSettings.brandingRewardCredits;
+
+      // 3. Check idempotency: at most once per reward period
+      const existingClaim = await tx.brandingRewardClaim.findUnique({
+        where: { agencyId_period: { agencyId, period } },
+      });
+
+      if (existingClaim) {
+        throw new ConflictException('Esta agencia ya recibió la recompensa de créditos IA correspondiente a este período.');
+      }
+
+      // 4. Upsert AgencyBrandingPreference: enable branding and lock until next period
+      await tx.agencyBrandingPreference.upsert({
+        where: { agencyId },
+        update: {
+          platformBrandingEnabled: true,
+          rewardLockedUntil: lockedUntil,
+          lastRewardPeriod: period,
+        },
+        create: {
+          agencyId,
+          platformBrandingEnabled: true,
+          rewardLockedUntil: lockedUntil,
+          lastRewardPeriod: period,
+        },
+      });
+
+      // 5. Increment AiCreditAccount balance
+      let account = await tx.aiCreditAccount.findUnique({
+        where: { agencyId },
+      });
+      if (!account) {
+        account = await tx.aiCreditAccount.create({
+          data: { agencyId, balance: 0 },
+        });
+      }
+
+      const updatedAccount = await tx.aiCreditAccount.update({
+        where: { id: account.id },
+        data: { balance: { increment: rewardCredits } },
+      });
+
+      // 6. Record in AiCreditLedger
+      const ledger = await tx.aiCreditLedger.create({
+        data: {
+          agencyId,
+          userId: identity.userId,
+          delta: rewardCredits,
+          reason: 'BRANDING_REWARD',
+          referenceType: 'BRANDING_PERIOD',
+          referenceId: period,
+        },
+      });
+
+      // 7. Persist BrandingRewardClaim idempotency record
+      const claim = await tx.brandingRewardClaim.create({
+        data: {
+          agencyId,
+          period,
+          credits: rewardCredits,
+          lockedUntil,
+          ledgerId: ledger.id,
+        },
+      });
+
+      // 8. Audit event
+      await tx.adminAuditLog.create({
+        data: {
+          userId: identity.userId,
+          action: 'SAAS_BRANDING_REWARD_CLAIMED',
+          entity: 'BrandingRewardClaim',
+          entityId: claim.id,
+          details: { agencyId, period, credits: rewardCredits, lockedUntil },
+        },
+      });
+
+      return {
+        success: true,
+        claimed: true,
+        creditsAwarded: rewardCredits,
+        period,
+        lockedUntil,
+        balance: updatedAccount.balance,
+        newBalance: updatedAccount.balance,
+      };
+    });
+  }
 }
+
+function getCurrentRewardPeriodAndBoundary(now: Date = new Date()): { period: string; lockedUntil: Date } {
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const monthStr = String(month + 1).padStart(2, '0');
+  const period = `${year}-${monthStr}`;
+  const nextMonthYear = month === 11 ? year + 1 : year;
+  const nextMonth = month === 11 ? 0 : month + 1;
+  const lockedUntil = new Date(Date.UTC(nextMonthYear, nextMonth, 1, 0, 0, 0, 0));
+  return { period, lockedUntil };
+}
+
 

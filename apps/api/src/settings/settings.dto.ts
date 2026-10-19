@@ -56,3 +56,11 @@ export const createFeedbackSchema = z
 
 export type CreateFeedbackDto = z.infer<typeof createFeedbackSchema>;
 
+export const updateBrandingSchema = z
+  .object({
+    platformBrandingEnabled: z.boolean(),
+  })
+  .strict();
+
+export type UpdateBrandingDto = z.infer<typeof updateBrandingSchema>;
+

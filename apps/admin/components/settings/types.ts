@@ -33,5 +33,6 @@ export interface LegalProfileData {
 export interface SettingsActionState {
   success?: boolean;
   error?: string;
+  message?: string;
   updatedAt?: string;
 }

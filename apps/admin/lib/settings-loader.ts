@@ -121,3 +121,33 @@ export async function fetchAgencyCredits(agencyId: string, token: string): Promi
     return null;
   }
 }
+
+export interface AgencyBrandingInfo {
+  platformBrandingEnabled: boolean;
+  rewardLockedUntil: string | null;
+  lastRewardPeriod: string | null;
+  isLocked: boolean;
+  isCurrentPeriodClaimed: boolean;
+  currentPeriod: string;
+  rewardCredits: number;
+  brandingRewardEnabledGlobally: boolean;
+  productName: string;
+  platformLogoUrl: string | null;
+  platformIconUrl: string | null;
+}
+
+export async function fetchAgencyBranding(agencyId: string, token: string): Promise<AgencyBrandingInfo | null> {
+  try {
+    const data = await centralRequest(
+      `/v1/agencies/${encodeURIComponent(agencyId)}/settings/branding`,
+      token
+    );
+    return data as AgencyBrandingInfo;
+  } catch (error) {
+    if (error instanceof CentralApiError && error.status === 401) {
+      redirect('/login?expired=1');
+    }
+    return null;
+  }
+}
+

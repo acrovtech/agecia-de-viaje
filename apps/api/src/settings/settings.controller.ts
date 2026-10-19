@@ -152,4 +152,39 @@ export class SettingsController {
   async listFeedback(@Param('agencyId') agencyId: string) {
     return this.settingsService.listFeedback(agencyId);
   }
+
+  // ---------------------------------------------------------------------------
+  // CO-BRANDING & MONTHLY AI CREDIT REWARD
+  // ---------------------------------------------------------------------------
+  @Get('branding')
+  @AgencyRoles('OWNER', 'ADMIN', 'EDITOR', 'OPERATOR', 'VIEWER')
+  @ApiOperation({ summary: 'Obtener configuración de co-branding y estado de recompensa de la agencia' })
+  @ApiParam({ name: 'agencyId', description: 'ID de la agencia' })
+  async getBranding(@Param('agencyId') agencyId: string) {
+    return this.settingsService.getBranding(agencyId);
+  }
+
+  @Put('branding')
+  @AgencyRoles('OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Actualizar preferencia de co-branding de la agencia' })
+  @ApiParam({ name: 'agencyId', description: 'ID de la agencia' })
+  async updateBranding(
+    @Req() req: AuthenticatedRequest,
+    @Param('agencyId') agencyId: string,
+    @Body() body: unknown
+  ) {
+    return this.settingsService.updateBranding(req.identity, agencyId, body);
+  }
+
+  @Post('branding/reward')
+  @AgencyRoles('OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Reclamar recompensa mensual de créditos IA por mantener co-branding activo' })
+  @ApiParam({ name: 'agencyId', description: 'ID de la agencia' })
+  async claimBrandingReward(
+    @Req() req: AuthenticatedRequest,
+    @Param('agencyId') agencyId: string
+  ) {
+    return this.settingsService.claimBrandingReward(req.identity, agencyId);
+  }
 }
+
