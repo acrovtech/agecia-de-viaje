@@ -28,6 +28,9 @@ export async function centralRequest(path: string, token?: string, body?: unknow
   if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin || !path.startsWith('/v1/')) {
     throw new CentralApiError(503);
   }
+  if (path.startsWith('/v1/platform')) {
+    throw new CentralApiError(403, 'Acceso denegado: las credenciales de tenant no pueden acceder al plano de control de la plataforma.');
+  }
   try {
     const response = await fetch(`${origin}${path}`, {
       method: method ?? (body === undefined ? 'GET' : 'POST'),

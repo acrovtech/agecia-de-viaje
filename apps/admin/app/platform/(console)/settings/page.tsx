@@ -13,6 +13,7 @@ export default async function PlatformSettingsPage() {
     logoUrl: null,
     iconUrl: null,
     supportEmail: null,
+    coBrandingEnabled: true,
     brandingRewardEnabled: true,
     brandingRewardCredits: 10,
     updatedAt: new Date().toISOString(),

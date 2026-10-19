@@ -22,6 +22,7 @@ export function CoBrandingSection({ brandingInfo, agency, canEdit }: CoBrandingS
 
   const {
     platformBrandingEnabled,
+    coBrandingGloballyEnabled = true,
     rewardLockedUntil,
     isLocked,
     isCurrentPeriodClaimed,
@@ -31,6 +32,9 @@ export function CoBrandingSection({ brandingInfo, agency, canEdit }: CoBrandingS
     platformLogoUrl,
     platformIconUrl,
   } = brandingInfo;
+
+  const isGloballyDisabled = !coBrandingGloballyEnabled;
+  const isEffectiveBrandingVisible = !isGloballyDisabled && platformBrandingEnabled;
 
   const initial = agency.name ? agency.name[0]?.toUpperCase() : 'A';
 
@@ -59,18 +63,37 @@ export function CoBrandingSection({ brandingInfo, agency, canEdit }: CoBrandingS
           </h3>
           <span
             className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-              platformBrandingEnabled
+              isGloballyDisabled
+                ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                : platformBrandingEnabled
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : 'bg-slate-100 text-slate-600 border border-slate-200'
             }`}
           >
-            {platformBrandingEnabled ? '● Visible en login' : 'Desactivada'}
+            {isGloballyDisabled
+              ? 'Desactivado por plataforma'
+              : platformBrandingEnabled
+              ? '● Visible en login'
+              : 'Desactivada'}
           </span>
         </div>
         <p className="text-xs text-[#6b7280] mt-1 leading-relaxed">
           Muestra el logotipo de la plataforma junto al de tu agencia en las pantallas públicas de inicio de sesión.
         </p>
       </div>
+
+      {/* Global Disable Platform Notice */}
+      {isGloballyDisabled && (
+        <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 space-y-1">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+            <AlertTriangle className="w-3.5 h-3.5 text-slate-600" />
+            <span>El co-branding está temporalmente desactivado por la plataforma.</span>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            La administración global de la plataforma ha desactivado temporalmente la visualización de la marca del SaaS. La preferencia individual de tu agencia sigue guardada y volverá a mostrarse cuando la plataforma lo reactive.
+          </p>
+        </div>
+      )}
 
       {/* Live Preview */}
       <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 flex flex-col items-center justify-center gap-3">
@@ -93,7 +116,7 @@ export function CoBrandingSection({ brandingInfo, agency, canEdit }: CoBrandingS
             )}
           </div>
 
-          {platformBrandingEnabled && (
+          {isEffectiveBrandingVisible && (
             <>
               <div className="h-5 w-[1px] bg-slate-300" />
               <div className="flex items-center gap-1.5">
@@ -150,8 +173,21 @@ export function CoBrandingSection({ brandingInfo, agency, canEdit }: CoBrandingS
         </div>
       )}
 
+      {/* Monthly Reward Disabled by Platform Kill Switch Notice */}
+      {isGloballyDisabled && !isCurrentPeriodClaimed && brandingRewardEnabledGlobally && (
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <Sparkles className="w-4 h-4 text-slate-400" />
+            <span>Programa de recompensa de co-branding no disponible temporalmente</span>
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            No es posible reclamar recompensas de co-branding mientras la marca se encuentre desactivada globalmente por la plataforma.
+          </p>
+        </div>
+      )}
+
       {/* Monthly Reward Banner */}
-      {brandingRewardEnabledGlobally && !isCurrentPeriodClaimed && (
+      {!isGloballyDisabled && brandingRewardEnabledGlobally && !isCurrentPeriodClaimed && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-400" />

@@ -197,6 +197,7 @@ export interface PlatformSettingsData {
   logoUrl: string | null;
   iconUrl: string | null;
   supportEmail: string | null;
+  coBrandingEnabled: boolean;
   brandingRewardEnabled: boolean;
   brandingRewardCredits: number;
   updatedAt: string;

@@ -19,6 +19,7 @@ export function PlatformSettingsForm({
   const [productName, setProductName] = useState(initialSettings.productName);
   const [logoUrl, setLogoUrl] = useState(initialSettings.logoUrl || '');
   const [iconUrl, setIconUrl] = useState(initialSettings.iconUrl || '');
+  const [coBrandingEnabled, setCoBrandingEnabled] = useState(initialSettings.coBrandingEnabled ?? true);
   const [rewardEnabled, setRewardEnabled] = useState(initialSettings.brandingRewardEnabled);
   const [rewardCredits, setRewardCredits] = useState(initialSettings.brandingRewardCredits.toString());
 
@@ -156,6 +157,43 @@ export function PlatformSettingsForm({
         </div>
       </div>
 
+      {/* Global Co-Branding Visibility Kill Switch */}
+      <div className="p-6 rounded-2xl bg-card border border-border shadow-sm space-y-6">
+        <div>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Visibilidad Global de Co-Branding
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Interruptor maestro de plataforma para gobernar la visualización de la marca de plataforma en todas las agencias.
+          </p>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/40 border border-border">
+          <input
+            type="checkbox"
+            id="coBrandingEnabled"
+            name="coBrandingEnabled"
+            value="true"
+            checked={coBrandingEnabled}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoBrandingEnabled(e.target.checked)}
+            disabled={!canEdit || isPending}
+            className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary"
+          />
+          <div>
+            <label
+              htmlFor="coBrandingEnabled"
+              className="text-sm font-semibold text-foreground cursor-pointer"
+            >
+              Mostrar co-branding de la plataforma globalmente
+            </label>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              Si se desactiva, la marca de la plataforma desaparecerá de inmediato de todas las pantallas de inicio de sesión de los tenants, incluso si las agencias la tienen activada. No modifica ni sobrescribe las preferencias guardadas de las agencias ni cancela bloqueos de recompensas previas.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Co-Branding Reward Program Section */}
       <div className="p-6 rounded-2xl bg-card border border-border shadow-sm space-y-6">
         <div>
@@ -185,10 +223,10 @@ export function PlatformSettingsForm({
                 htmlFor="brandingRewardEnabled"
                 className="text-sm font-semibold text-foreground cursor-pointer"
               >
-                Habilitar programa de recompensas mensual
+                Habilitar recompensa mensual de co-branding
               </label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Si está deshabilitado, los tenants no podrán reclamar créditos IA mensuales por co-branding.
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Controla la concesión mensual de créditos IA. Desactivar este programa no oculta el co-branding de la plataforma, solo impide que los tenants reclamen nuevos créditos IA este mes.
               </p>
             </div>
           </div>
@@ -198,7 +236,7 @@ export function PlatformSettingsForm({
               htmlFor="brandingRewardCredits"
               className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
             >
-              Créditos IA a otorgar por ciclo mensual *
+              Créditos IA de recompensa *
             </label>
             <div className="max-w-xs">
               <input
