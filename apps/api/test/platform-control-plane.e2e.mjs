@@ -827,17 +827,107 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     assert.equal(r3.period, '2026-12');
     assert.equal(r3.lockedUntil.toISOString(), '2027-01-01T00:00:00.000Z');
 
-    // 4. Leap year February: 2024-02-28T23:59:59.999Z -> period '2024-02', lockedUntil '2024-03-01T00:00:00.000Z'
-    const leapFeb = new Date('2024-02-28T23:59:59.999Z');
-    const r4 = getCurrentRewardPeriodAndBoundary(leapFeb);
+    // 4. Leap year February final instant: 2024-02-29T23:59:59.999Z -> period '2024-02', lockedUntil '2024-03-01T00:00:00.000Z'
+    const leapFebFinal = new Date('2024-02-29T23:59:59.999Z');
+    const r4 = getCurrentRewardPeriodAndBoundary(leapFebFinal);
     assert.equal(r4.period, '2024-02');
     assert.equal(r4.lockedUntil.toISOString(), '2024-03-01T00:00:00.000Z');
 
-    // 5. Non-leap year February: 2026-02-28T23:59:59.999Z -> period '2026-02', lockedUntil '2026-03-01T00:00:00.000Z'
-    const nonLeapFeb = new Date('2026-02-28T23:59:59.999Z');
-    const r5 = getCurrentRewardPeriodAndBoundary(nonLeapFeb);
-    assert.equal(r5.period, '2026-02');
-    assert.equal(r5.lockedUntil.toISOString(), '2026-03-01T00:00:00.000Z');
+    // 5. Leap year February start of leap day: 2024-02-29T00:00:00.000Z -> period '2024-02', lockedUntil '2024-03-01T00:00:00.000Z'
+    const leapFebStart = new Date('2024-02-29T00:00:00.000Z');
+    const r5 = getCurrentRewardPeriodAndBoundary(leapFebStart);
+    assert.equal(r5.period, '2024-02');
+    assert.equal(r5.lockedUntil.toISOString(), '2024-03-01T00:00:00.000Z');
+
+    // 6. Non-leap year February final instant: 2026-02-28T23:59:59.999Z -> period '2026-02', lockedUntil '2026-03-01T00:00:00.000Z'
+    const nonLeapFebFinal = new Date('2026-02-28T23:59:59.999Z');
+    const r6 = getCurrentRewardPeriodAndBoundary(nonLeapFebFinal);
+    assert.equal(r6.period, '2026-02');
+    assert.equal(r6.lockedUntil.toISOString(), '2026-03-01T00:00:00.000Z');
+
+    // 7. Non-leap year March first instant: 2026-03-01T00:00:00.000Z -> period '2026-03', lockedUntil '2026-04-01T00:00:00.000Z'
+    const nonLeapMarchStart = new Date('2026-03-01T00:00:00.000Z');
+    const r7 = getCurrentRewardPeriodAndBoundary(nonLeapMarchStart);
+    assert.equal(r7.period, '2026-03');
+    assert.equal(r7.lockedUntil.toISOString(), '2026-04-01T00:00:00.000Z');
+  });
+
+  await t.test('29. CSRF & BEARER BOUNDARY: Cookie-only requests or cross-origin requests without Bearer token are rejected with 401', async () => {
+    // 1. Cross-origin request with only platform cookie (no Authorization header)
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `platform_admin_session=${activePlatformToken}`)
+      .send({ productName: 'CSRF Attack', coBrandingEnabled: false, brandingRewardEnabled: false, brandingRewardCredits: 0 })
+      .expect(401);
+
+    // 2. Cross-origin request with only tenant cookie on tenant branding mutation
+    await request(server)
+      .put('/v1/agencies/agency-a-id/settings/branding')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `admin_api_session=${tenantRawToken}`)
+      .send({ platformBrandingEnabled: false })
+      .expect(401);
+
+    // 3. Cross-origin request with only tenant cookie on reward claim
+    await request(server)
+      .post('/v1/agencies/agency-a-id/settings/branding/reward')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `admin_api_session=${tenantRawToken}`)
+      .expect(401);
+  });
+
+  await t.test('30. CONCURRENCY: Global coBranding disable vs Tenant claim reward race resolves into valid serializable outcome', async () => {
+    // Setup clean agency state
+    state.brandingRewardClaims = [];
+    let acc = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id');
+    if (!acc) {
+      acc = { id: 'aca-agency-a', agencyId: 'agency-a-id', balance: 0 };
+      state.aiCreditAccounts.push(acc);
+    } else {
+      acc.balance = 0;
+    }
+    state.aiCreditLedgers = [];
+    const pref = state.brandingPreferences.find((p) => p.agencyId === 'agency-a-id');
+    if (pref) pref.rewardLockedUntil = null;
+
+    // Reset platform coBranding to true initially
+    state.platformSettings.coBrandingEnabled = true;
+
+    // Concurrently launch SUPERADMIN disable and Tenant reward claim
+    const [disableRes, claimRes] = await Promise.all([
+      request(server)
+        .put('/v1/platform/settings')
+        .set('Authorization', `Bearer ${activePlatformToken}`)
+        .send({
+          productName: 'Acrov SaaS',
+          coBrandingEnabled: false,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        }),
+      request(server)
+        .post('/v1/agencies/agency-a-id/settings/branding/reward')
+        .set('Authorization', `Bearer ${tenantRawToken}`),
+    ]);
+
+    assert.equal(disableRes.status, 200, 'SUPERADMIN disable must succeed');
+    assert.ok(
+      claimRes.status === 201 || claimRes.status === 409,
+      `Claim must either succeed (201) if ordered before disable or fail with conflict (409) if ordered after disable. Received: ${claimRes.status}`
+    );
+
+    if (claimRes.status === 201) {
+      // Claim won the race: reward was minted before disable completed
+      assert.equal(state.brandingRewardClaims.length, 1);
+      assert.equal(acc.balance, 10);
+    } else {
+      // Disable won the race: reward was rejected
+      assert.equal(state.brandingRewardClaims.length, 0);
+      assert.equal(acc.balance, 0);
+    }
+
+    // Restore platform settings to true for subsequent tests
+    state.platformSettings.coBrandingEnabled = true;
   });
 
   await app.close();
