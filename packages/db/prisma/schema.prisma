@@ -1420,6 +1420,7 @@ model PlatformSettings {
   logoUrl                String?
   iconUrl                String?
   supportEmail           String?
+  coBrandingEnabled      Boolean  @default(true)
   brandingRewardEnabled  Boolean  @default(true)
   brandingRewardCredits  Int      @default(10)
   createdAt              DateTime @default(now())

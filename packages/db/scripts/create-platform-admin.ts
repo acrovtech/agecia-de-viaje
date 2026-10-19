@@ -16,12 +16,18 @@ async function main() {
   const email = (getArgValue(args, '--email') || process.env.PLATFORM_ADMIN_EMAIL || '').trim().toLowerCase();
   const password = getArgValue(args, '--password') || process.env.PLATFORM_ADMIN_PASSWORD || '';
   const displayName = getArgValue(args, '--name') || process.env.PLATFORM_ADMIN_NAME || 'Platform Administrator';
-  const role = getArgValue(args, '--role') || 'SUPERADMIN';
+  const rawRole = (getArgValue(args, '--role') || 'SUPERADMIN').toUpperCase();
+  const validRoles = ['SUPERADMIN', 'SUPPORT', 'BILLING', 'PRODUCT'];
+  if (!validRoles.includes(rawRole)) {
+    console.error(`❌ Error: El rol '${rawRole}' no es válido. Roles válidos: ${validRoles.join(', ')}`);
+    process.exit(1);
+  }
+  const role = rawRole;
 
   if (!email || !password) {
     console.error('❌ Error: Se requieren correo y contraseña para crear el administrador de plataforma.');
     console.error('Uso:');
-    console.error('  pnpm platform-admin:create --email admin@example.com --password "TuClaveSegura" [--name "Nombre"]');
+    console.error('  pnpm platform-admin:create --email admin@example.com --password "TuClaveSegura" [--name "Nombre"] [--role SUPERADMIN]');
     console.error('O defina las variables de entorno:');
     console.error('  PLATFORM_ADMIN_EMAIL, PLATFORM_ADMIN_PASSWORD, PLATFORM_ADMIN_NAME');
     process.exit(1);
@@ -72,6 +78,7 @@ async function main() {
     create: {
       id: 'global',
       productName: 'Acrov SaaS',
+      coBrandingEnabled: true,
       brandingRewardEnabled: true,
       brandingRewardCredits: 10,
     },
