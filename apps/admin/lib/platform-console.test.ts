@@ -170,6 +170,7 @@ describe('P2.8-AUTH1 — Platform Console Shell & Control Plane Suite', () => {
       logoUrl: 'https://r2.test/platform-logo.webp',
       iconUrl: null,
       supportEmail: 'support@acrov.test',
+      coBrandingEnabled: true,
       brandingRewardEnabled: true,
       brandingRewardCredits: 10,
       updatedAt: '2026-10-18T00:00:00.000Z',
@@ -185,6 +186,7 @@ describe('P2.8-AUTH1 — Platform Console Shell & Control Plane Suite', () => {
     const result = await fetchPlatformSettings(dummyPlatformToken);
     expect(result).not.toBeNull();
     expect(result?.productName).toBe('Acrov SaaS');
+    expect(result?.coBrandingEnabled).toBe(true);
     expect(result?.brandingRewardCredits).toBe(10);
   });
 
@@ -212,12 +214,14 @@ describe('P2.8-AUTH1 — Platform Console Shell & Control Plane Suite', () => {
     formData.set('productName', 'New SaaS Name');
     formData.set('logoUrl', 'https://r2.test/new-logo.webp');
     formData.set('iconUrl', '');
+    formData.set('coBrandingEnabled', 'true');
     formData.set('brandingRewardEnabled', 'true');
     formData.set('brandingRewardCredits', '15');
 
     const result = await updatePlatformSettingsAction(null, formData);
     expect(result.success).toBe(true);
     expect(capturedBody.productName).toBe('New SaaS Name');
+    expect(capturedBody.coBrandingEnabled).toBe(true);
     expect(capturedBody.brandingRewardCredits).toBe(15);
   });
 
