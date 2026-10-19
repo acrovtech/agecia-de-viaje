@@ -138,6 +138,8 @@ export class PlatformService {
       },
       coBranding: {
         platformBrandingEnabled: brandingPref?.platformBrandingEnabled ?? true,
+        coBrandingGloballyEnabled: platformSettings?.coBrandingEnabled ?? true,
+        effectivePlatformBranding: (platformSettings?.coBrandingEnabled ?? true) && (brandingPref?.platformBrandingEnabled ?? true),
         isLocked,
         rewardLockedUntil: brandingPref?.rewardLockedUntil ?? null,
         currentPeriodReward,
@@ -159,6 +161,7 @@ export class PlatformService {
           productName: 'Acrov SaaS',
           logoUrl: null,
           iconUrl: null,
+          coBrandingEnabled: true,
           brandingRewardEnabled: true,
           brandingRewardCredits: 10,
         },
@@ -170,6 +173,7 @@ export class PlatformService {
       logoUrl: settings.logoUrl,
       iconUrl: settings.iconUrl,
       supportEmail: settings.supportEmail,
+      coBrandingEnabled: settings.coBrandingEnabled,
       brandingRewardEnabled: settings.brandingRewardEnabled,
       brandingRewardCredits: settings.brandingRewardCredits,
       updatedAt: settings.updatedAt,
@@ -183,7 +187,7 @@ export class PlatformService {
       throw new BadRequestException(msg);
     }
 
-    const { productName, logoUrl, iconUrl, brandingRewardEnabled, brandingRewardCredits } = parsed.data;
+    const { productName, logoUrl, iconUrl, coBrandingEnabled, brandingRewardEnabled, brandingRewardCredits } = parsed.data;
 
     const updated = await this.prisma.platformSettings.upsert({
       where: { id: 'global' },
@@ -191,6 +195,7 @@ export class PlatformService {
         productName,
         logoUrl: logoUrl ?? null,
         iconUrl: iconUrl ?? null,
+        coBrandingEnabled,
         brandingRewardEnabled,
         brandingRewardCredits,
       },
@@ -199,6 +204,7 @@ export class PlatformService {
         productName,
         logoUrl: logoUrl ?? null,
         iconUrl: iconUrl ?? null,
+        coBrandingEnabled,
         brandingRewardEnabled,
         brandingRewardCredits,
       },
@@ -218,6 +224,7 @@ export class PlatformService {
       productName: updated.productName,
       logoUrl: updated.logoUrl,
       iconUrl: updated.iconUrl,
+      coBrandingEnabled: updated.coBrandingEnabled,
       brandingRewardEnabled: updated.brandingRewardEnabled,
       brandingRewardCredits: updated.brandingRewardCredits,
       updatedAt: updated.updatedAt,
