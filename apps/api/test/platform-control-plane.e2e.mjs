@@ -183,9 +183,23 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     },
     agency: {
       findUnique: async ({ where }) => {
-        if (where.slug) return state.agencies.find((a) => a.slug === where.slug) || null;
-        if (where.id) return state.agencies.find((a) => a.id === where.id) || null;
-        return null;
+        let agency = null;
+        if (where.slug) agency = state.agencies.find((a) => a.slug === where.slug) || null;
+        if (where.id) agency = state.agencies.find((a) => a.id === where.id) || null;
+        if (!agency) return null;
+        return {
+          ...agency,
+          _count: { memberships: 1, tours: 2, locales: 1 },
+          locales: [{ id: 'loc-1', locale: 'es', isDefault: true, enabled: true }],
+          entitlements: { maxCatalogLocales: 5, aiEnabled: true, aiMonthlyCredits: 10 },
+          brandingPreference: state.brandingPreferences.find((b) => b.agencyId === agency.id) || null,
+        };
+      },
+      findMany: async () => {
+        return state.agencies.map((agency) => ({
+          ...agency,
+          _count: { memberships: 1, tours: 2, locales: 1 },
+        }));
       },
     },
     agencyBrandingPreference: {
@@ -236,6 +250,9 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       findUnique: async ({ where }) => {
         return state.aiCreditAccounts.find((a) => a.agencyId === where.agencyId) || null;
       },
+      findMany: async () => {
+        return state.aiCreditAccounts;
+      },
       create: async ({ data }) => {
         const row = { id: `aca-${state.aiCreditAccounts.length + 1}`, ...data };
         state.aiCreditAccounts.push(row);
@@ -268,6 +285,10 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     },
     platformSettings: {
       findUnique: async () => state.platformSettings,
+      upsert: async ({ create, update }) => {
+        state.platformSettings = { ...state.platformSettings, ...update };
+        return state.platformSettings;
+      },
     },
     $queryRaw: async () => [{ id: 'agency-a-id' }],
     $transaction: async (tasks) => {
@@ -475,6 +496,100 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     // Ledger has exactly 1 entry
     const ledgers = state.aiCreditLedgers.filter((l) => l.agencyId === 'agency-a-id');
     assert.equal(ledgers.length, 1);
+  });
+
+  await t.test('16. CONTROL PLANE: GET /v1/platform/agencies requires PlatformSession (tenant token returns 401)', async () => {
+    await request(server)
+      .get('/v1/platform/agencies')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .expect(401);
+  });
+
+  await t.test('17. CONTROL PLANE: GET /v1/platform/agencies returns real tenant data and authoritative AI credit balance', async () => {
+    // Log back in to get a fresh platform token
+    const login = await request(server)
+      .post('/v1/platform/auth/login')
+      .send({ email: 'superadmin@platform.test', password: superAdminPassword })
+      .expect(200);
+
+    const activePlatformToken = login.body.accessToken;
+
+    const res = await request(server)
+      .get('/v1/platform/agencies')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .expect(200);
+
+    assert.ok(Array.isArray(res.body));
+    const agencyA = res.body.find((a) => a.id === 'agency-a-id');
+    assert.ok(agencyA);
+    assert.equal(agencyA.name, 'Agency A');
+    assert.equal(agencyA.slug, 'agency-a');
+    assert.equal(agencyA.isActive, true);
+    assert.equal(agencyA.aiCreditBalance, 10);
+    assert.equal(agencyA.membershipCount, 1);
+    assert.equal(agencyA.tourCount, 2);
+  });
+
+  await t.test('18. CONTROL PLANE: GET /v1/platform/agencies/:agencyId returns tenant detail with lock and reward state', async () => {
+    const login = await request(server)
+      .post('/v1/platform/auth/login')
+      .send({ email: 'superadmin@platform.test', password: superAdminPassword })
+      .expect(200);
+
+    const activePlatformToken = login.body.accessToken;
+
+    const res = await request(server)
+      .get('/v1/platform/agencies/agency-a-id')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .expect(200);
+
+    assert.equal(res.body.agency.name, 'Agency A');
+    assert.equal(res.body.aiCredits.balance, 10);
+    assert.equal(res.body.coBranding.platformBrandingEnabled, true);
+    assert.equal(res.body.coBranding.isLocked, true);
+    assert.equal(res.body.coBranding.currentPeriodReward, 'CLAIMED');
+  });
+
+  await t.test('19. CONTROL PLANE: GET /v1/platform/agencies/:agencyId returns 404 for nonexistent agency', async () => {
+    const login = await request(server)
+      .post('/v1/platform/auth/login')
+      .send({ email: 'superadmin@platform.test', password: superAdminPassword })
+      .expect(200);
+
+    const activePlatformToken = login.body.accessToken;
+
+    await request(server)
+      .get('/v1/platform/agencies/nonexistent-id')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .expect(404);
+  });
+
+  await t.test('20. CONTROL PLANE: PUT /v1/platform/settings modifies global settings and writes PlatformAuditLog', async () => {
+    const login = await request(server)
+      .post('/v1/platform/auth/login')
+      .send({ email: 'superadmin@platform.test', password: superAdminPassword })
+      .expect(200);
+
+    const activePlatformToken = login.body.accessToken;
+
+    const updateRes = await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .send({
+        productName: 'Acrov Platform 2.8',
+        logoUrl: 'https://r2.test/updated-logo.webp',
+        iconUrl: null,
+        brandingRewardEnabled: true,
+        brandingRewardCredits: 15,
+      })
+      .expect(200);
+
+    assert.equal(updateRes.body.productName, 'Acrov Platform 2.8');
+    assert.equal(updateRes.body.brandingRewardCredits, 15);
+
+    const audit = state.platformAuditLogs.find((l) => l.action === 'PLATFORM_SETTINGS_UPDATE');
+    assert.ok(audit, 'PlatformAuditLog must be recorded for settings update');
+    assert.equal(audit.entity, 'PlatformSettings');
   });
 
   await app.close();

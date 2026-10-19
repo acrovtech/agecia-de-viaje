@@ -1,5 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { PLATFORM_SESSION_COOKIE, isApiAdmin } from './admin-mode';
 import { CentralApiError } from './central-api';
@@ -104,3 +105,109 @@ export async function platformLogout(token: string) {
     if (!(error instanceof CentralApiError) || error.status !== 401) throw error;
   }
 }
+
+export async function requirePlatformSession() {
+  if (!isApiAdmin()) {
+    redirect('/platform/login');
+  }
+  try {
+    return await platformSession();
+  } catch (error) {
+    redirect('/platform/login');
+  }
+}
+
+export interface PlatformAgencyItem {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  logoUrl: string | null;
+  iconUrl: string | null;
+  createdAt: string;
+  membershipCount: number;
+  tourCount: number;
+  enabledCatalogLocaleCount: number;
+  aiCreditBalance: number;
+}
+
+export async function fetchPlatformAgencies(token: string): Promise<PlatformAgencyItem[]> {
+  try {
+    const data = await platformRequest('/v1/platform/agencies', token);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export interface PlatformAgencyDetail {
+  agency: {
+    id: string;
+    name: string;
+    slug: string;
+    isActive: boolean;
+    logoUrl: string | null;
+    iconUrl: string | null;
+    createdAt: string;
+  };
+  counts: {
+    membershipCount: number;
+    tourCount: number;
+    localeCount: number;
+    enabledCatalogLocaleCount: number;
+  };
+  locales: Array<{
+    id: string;
+    locale: string;
+    isDefault: boolean;
+    enabled: boolean;
+  }>;
+  entitlements: {
+    maxCatalogLocales: number;
+    aiEnabled: boolean;
+    aiMonthlyCredits: number;
+  };
+  aiCredits: {
+    balance: number;
+  };
+  coBranding: {
+    platformBrandingEnabled: boolean;
+    isLocked: boolean;
+    rewardLockedUntil: string | null;
+    currentPeriodReward: 'CLAIMED' | 'AVAILABLE' | 'DISABLED';
+    lastRewardedPeriod: string | null;
+    rewardAmount: number;
+  };
+}
+
+export async function fetchPlatformAgencyDetail(
+  agencyId: string,
+  token: string
+): Promise<PlatformAgencyDetail | null> {
+  try {
+    const data = await platformRequest(`/v1/platform/agencies/${encodeURIComponent(agencyId)}`, token);
+    return data as PlatformAgencyDetail;
+  } catch {
+    return null;
+  }
+}
+
+export interface PlatformSettingsData {
+  productName: string;
+  logoUrl: string | null;
+  iconUrl: string | null;
+  supportEmail: string | null;
+  brandingRewardEnabled: boolean;
+  brandingRewardCredits: number;
+  updatedAt: string;
+}
+
+export async function fetchPlatformSettings(token: string): Promise<PlatformSettingsData | null> {
+  try {
+    const data = await platformRequest('/v1/platform/settings', token);
+    return data as PlatformSettingsData;
+  } catch {
+    return null;
+  }
+}
+
