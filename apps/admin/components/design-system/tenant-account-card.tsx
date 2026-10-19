@@ -99,9 +99,10 @@ export function TenantAccountCard({
               }`}
             />
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-[#6b7280] font-mono truncate leading-tight mt-0.5">
-            <Building2 className="w-3 h-3 shrink-0 text-[#898989]" />
-            <span className="truncate">{identity.agencySlug}</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280] truncate leading-tight mt-0.5">
+            <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#374151] uppercase tracking-wider">
+              {identity.role}
+            </span>
           </div>
         </div>
       </button>

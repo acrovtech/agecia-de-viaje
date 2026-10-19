@@ -11,6 +11,7 @@ import { TenantService } from './tenant/tenant.service.js';
 import { TenantInterceptor } from './tenant/tenant.interceptor.js';
 import { StorefrontResolutionController } from './tenant/storefront-resolution.controller.js';
 import { StorefrontResolverService } from './tenant/storefront-resolver.service.js';
+import { PublicTenantLoginController } from './tenant/public-tenant-login.controller.js';
 import { CheckoutController } from './checkout/checkout.controller.js';
 import { CheckoutService } from './checkout/checkout.service.js';
 import { PaymentsController } from './payments/payments.controller.js';
@@ -57,6 +58,7 @@ export class AppModule {
         HealthController,
         CatalogController,
         StorefrontResolutionController,
+        PublicTenantLoginController,
         ...(config.authEnabled
           ? [
               AuthController,

@@ -77,3 +77,36 @@ export async function centralLogout(token: string) {
     if (!(error instanceof CentralApiError) || error.status !== 401) throw error;
   }
 }
+
+const publicLoginContextSchema = z.object({
+  agency: z.object({
+    slug: z.string(),
+    name: z.string(),
+    logoUrl: z.string().nullable(),
+    iconUrl: z.string().nullable(),
+  }),
+  platformBranding: z.object({
+    enabled: z.boolean(),
+    productName: z.string(),
+    logoUrl: z.string().nullable(),
+    iconUrl: z.string().nullable(),
+  }),
+});
+
+export type PublicAdminLoginContext = z.infer<typeof publicLoginContextSchema>;
+
+export async function fetchPublicAdminLoginContext(agencySlug: string): Promise<PublicAdminLoginContext | null> {
+  const normalizedSlug = (agencySlug || '').trim().toLowerCase();
+  if (!normalizedSlug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+    return null;
+  }
+  try {
+    const data = await centralRequest(`/v1/public/admin-login-context/${normalizedSlug}`);
+    const parsed = publicLoginContextSchema.safeParse(data);
+    return parsed.success ? parsed.data : null;
+  } catch (error) {
+    if (error instanceof CentralApiError && error.status === 404) return null;
+    return null;
+  }
+}
+

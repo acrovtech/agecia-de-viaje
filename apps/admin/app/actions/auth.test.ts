@@ -27,6 +27,7 @@ test('central login sets an HttpOnly cookie and never returns the bearer to clie
   vi.stubEnv('NODE_ENV', 'production');
   await expect(loginAction(null, form())).rejects.toThrow('REDIRECT:/dashboard');
   expect(cookieStore.set).toHaveBeenCalledWith('admin_api_session', 'a'.repeat(43), expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'lax', path: '/' }));
+  expect(cookieStore.set).toHaveBeenCalledWith('admin_tenant_hint', 'agency-a', expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }));
   expect(cookieStore.delete).toHaveBeenCalledWith('admin_session');
   expect(dbLookup).not.toHaveBeenCalled();
 });
@@ -42,11 +43,24 @@ test('missing agency is rejected before contacting API', async () => {
   expect(await loginAction(null, data)).toHaveProperty('error');
   expect(fetchMock).not.toHaveBeenCalled();
 });
-test('logout revokes upstream before deleting the browser session', async () => {
+test('logout revokes upstream before deleting the browser session and redirects to generic /login without hint', async () => {
   const fetchMock = setup(204);
-  cookieStore.get.mockReturnValue({ value: 'a'.repeat(43) });
+  cookieStore.get.mockImplementation((key: string) => {
+    if (key === 'admin_api_session') return { value: 'a'.repeat(43) };
+    return undefined;
+  });
   await expect(logoutAction()).rejects.toThrow('REDIRECT:/login');
   expect(fetchMock.mock.calls[0]![0]).toMatch(/\/v1\/auth\/logout$/);
+  expect(cookieStore.delete).toHaveBeenCalledWith('admin_api_session');
+});
+test('logout redirects to tenant branded login when admin_tenant_hint cookie is present', async () => {
+  setup(204);
+  cookieStore.get.mockImplementation((key: string) => {
+    if (key === 'admin_api_session') return { value: 'a'.repeat(43) };
+    if (key === 'admin_tenant_hint') return { value: 'incabound' };
+    return undefined;
+  });
+  await expect(logoutAction()).rejects.toThrow('REDIRECT:/a/incabound/login');
   expect(cookieStore.delete).toHaveBeenCalledWith('admin_api_session');
 });
 test('failed revocation preserves the cookie and offers retry instead of claiming logout', async () => {
@@ -55,3 +69,4 @@ test('failed revocation preserves the cookie and offers retry instead of claimin
   await expect(logoutAction()).rejects.toThrow('REDIRECT:/dashboard?logout=unavailable');
   expect(cookieStore.delete).not.toHaveBeenCalled();
 });
+

@@ -62,6 +62,21 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       },
     ],
     apiSessions: [],
+    agencies: [
+      { id: 'agency-a-id', slug: 'agency-a', name: 'Agency A', logoUrl: 'https://r2.test/agency-a.webp', iconUrl: null, isActive: true },
+      { id: 'agency-inactive-id', slug: 'inactive-agency', name: 'Inactive Agency', logoUrl: null, iconUrl: null, isActive: false },
+    ],
+    brandingPreferences: [
+      { agencyId: 'agency-a-id', platformBrandingEnabled: true },
+    ],
+    platformSettings: {
+      id: 'global',
+      productName: 'Acrov SaaS',
+      logoUrl: 'https://r2.test/platform-logo.webp',
+      iconUrl: null,
+      brandingRewardEnabled: true,
+      brandingRewardCredits: 10,
+    },
   };
 
   const mockPrisma = {
@@ -161,6 +176,21 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
         return { ...sess, membership };
       },
       updateMany: async () => ({ count: 0 }),
+    },
+    agency: {
+      findUnique: async ({ where }) => {
+        if (where.slug) return state.agencies.find((a) => a.slug === where.slug) || null;
+        if (where.id) return state.agencies.find((a) => a.id === where.id) || null;
+        return null;
+      },
+    },
+    agencyBrandingPreference: {
+      findUnique: async ({ where }) => {
+        return state.brandingPreferences.find((b) => b.agencyId === where.agencyId) || null;
+      },
+    },
+    platformSettings: {
+      findUnique: async () => state.platformSettings,
     },
     $transaction: async (tasks) => {
       if (Array.isArray(tasks)) {
@@ -263,6 +293,37 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       .get('/v1/platform/auth/me')
       .set('Authorization', `Bearer ${platformToken}`)
       .expect(401);
+  });
+
+  await t.test('9. Public admin login context returns safe branding and NEVER exposes agencyId or secrets', async () => {
+    const res = await request(server)
+      .get('/v1/public/admin-login-context/agency-a')
+      .expect(200);
+
+    assert.equal(res.body.agency.slug, 'agency-a');
+    assert.equal(res.body.agency.name, 'Agency A');
+    assert.equal(res.body.agency.logoUrl, 'https://r2.test/agency-a.webp');
+    assert.equal(res.body.platformBranding.enabled, true);
+    assert.equal(res.body.platformBranding.productName, 'Acrov SaaS');
+
+    // Security assertions
+    assert.equal(res.body.agency.id, undefined);
+    assert.equal(res.body.agencyId, undefined);
+    assert.equal(res.body.entitlements, undefined);
+    assert.equal(res.body.credits, undefined);
+    assert.equal(res.body.balance, undefined);
+  });
+
+  await t.test('10. Inactive agency returns 404 on public login context', async () => {
+    await request(server)
+      .get('/v1/public/admin-login-context/inactive-agency')
+      .expect(404);
+  });
+
+  await t.test('11. Nonexistent agency returns 404 on public login context', async () => {
+    await request(server)
+      .get('/v1/public/admin-login-context/nonexistent-agency')
+      .expect(404);
   });
 
   await app.close();

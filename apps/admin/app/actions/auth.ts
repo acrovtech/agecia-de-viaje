@@ -6,7 +6,7 @@ import { prisma } from '@repo/db';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { createAdminToken } from '../../lib/jwt';
-import { API_SESSION_COOKIE, isApiAdmin } from '../../lib/admin-mode';
+import { API_SESSION_COOKIE, TENANT_HINT_COOKIE, isApiAdmin } from '../../lib/admin-mode';
 import { centralLogin, centralLogout, CentralApiError } from '../../lib/central-api';
 
 const EIGHT_HOURS_IN_SECONDS = 60 * 60 * 8; // 8 Horas de sesión laboral segura
@@ -30,6 +30,10 @@ export async function loginAction(prevState: any, formData: FormData) {
       store.set(API_SESSION_COOKIE, session.accessToken, {
         httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
         expires: new Date(session.expiresAt),
+      });
+      store.set(TENANT_HINT_COOKIE, parsed.data.agencySlug, {
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
+        maxAge: 30 * 24 * 60 * 60,
       });
       store.delete('admin_session');
     } catch (error) {
@@ -171,6 +175,10 @@ export async function logoutAction() {
     }
     cookieStore.delete(API_SESSION_COOKIE);
   }
+  const tenantHint = cookieStore.get(TENANT_HINT_COOKIE)?.value;
   cookieStore.delete('admin_session');
+  if (tenantHint && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantHint)) {
+    redirect(`/a/${tenantHint}/login`);
+  }
   redirect('/login');
 }
