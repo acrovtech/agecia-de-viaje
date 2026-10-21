@@ -109,7 +109,7 @@ describe('P2.8-L10.1 Multilingual Catalog Correctness Gate Suite', () => {
   describe('Atomic Entitlement Decision Boundary', () => {
     it('SettingsService.addLocale executes inside a serialized transaction with Agency row lock', () => {
       const settingsServicePath = path.resolve(__dirname, '../../api/src/settings/settings.service.ts');
-      const content = fs.readFileSync(settingsServicePath, 'utf8');
+      const content = fs.readFileSync(settingsServicePath, 'utf8').replace(/\r\n/g, '\n');
 
       expect(content).toContain('return await this.prisma.$transaction(async (tx) => {');
       expect(content).toContain('SELECT id\n        FROM "Agency"\n        WHERE id = ${agencyId}\n        FOR UPDATE;');
