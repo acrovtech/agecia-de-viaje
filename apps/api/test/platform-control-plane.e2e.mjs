@@ -4,6 +4,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { application, config } from './helpers.mjs';
+import { getCurrentRewardPeriodAndBoundary } from '../dist/settings/settings.service.js';
 
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 
@@ -32,6 +33,18 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
         displayName: 'Inactive Admin',
         role: 'SUPERADMIN',
         isActive: false,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        tokenVersion: 1,
+        lastLoginAt: null,
+      },
+      {
+        id: 'p-admin-support',
+        email: 'support@platform.test',
+        password: superAdminPasswordHash,
+        displayName: 'Platform Support',
+        role: 'SUPPORT',
+        isActive: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         tokenVersion: 1,
@@ -78,6 +91,7 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       productName: 'Acrov SaaS',
       logoUrl: 'https://r2.test/platform-logo.webp',
       iconUrl: null,
+      coBrandingEnabled: true,
       brandingRewardEnabled: true,
       brandingRewardCredits: 10,
     },
@@ -564,13 +578,14 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       .expect(404);
   });
 
+  let activePlatformToken;
   await t.test('20. CONTROL PLANE: PUT /v1/platform/settings modifies global settings and writes PlatformAuditLog', async () => {
     const login = await request(server)
       .post('/v1/platform/auth/login')
       .send({ email: 'superadmin@platform.test', password: superAdminPassword })
       .expect(200);
 
-    const activePlatformToken = login.body.accessToken;
+    activePlatformToken = login.body.accessToken;
 
     const updateRes = await request(server)
       .put('/v1/platform/settings')
@@ -590,6 +605,347 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     const audit = state.platformAuditLogs.find((l) => l.action === 'PLATFORM_SETTINGS_UPDATE');
     assert.ok(audit, 'PlatformAuditLog must be recorded for settings update');
     assert.equal(audit.entity, 'PlatformSettings');
+  });
+
+  await t.test('21. PLATFORM RBAC: Non-SUPERADMIN (SUPPORT) role receives 403 Forbidden on PUT /v1/platform/settings', async () => {
+    const supportToken = randomBytes(32).toString('base64url');
+    state.platformSessions.push({
+      id: 'psess-support',
+      platformAdminId: 'p-admin-support',
+      tokenHash: digest(supportToken),
+      tokenVersion: 1,
+      passwordHash: digest(superAdminPasswordHash),
+      expiresAt: new Date(Date.now() + 3600_000),
+      revokedAt: null,
+    });
+
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${supportToken}`)
+      .send({
+        productName: 'Hacked SaaS Name',
+        coBrandingEnabled: false,
+        brandingRewardEnabled: false,
+        brandingRewardCredits: 0,
+      })
+      .expect(403);
+  });
+
+  await t.test('22. URL SECURITY: Unsafe protocols (javascript:, file:) on logoUrl or iconUrl are rejected with 400', async () => {
+    // javascript: URL
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .send({
+        productName: 'Acrov SaaS',
+        logoUrl: 'javascript:alert(1)',
+        brandingRewardEnabled: true,
+        brandingRewardCredits: 10,
+      })
+      .expect(400);
+
+    // file: URL
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .send({
+        productName: 'Acrov SaaS',
+        iconUrl: 'file:///etc/passwd',
+        brandingRewardEnabled: true,
+        brandingRewardCredits: 10,
+      })
+      .expect(400);
+  });
+
+  await t.test('23. GLOBAL KILL SWITCH: Disabling coBrandingEnabled causes public login context to return enabled = false without altering tenant preference', async () => {
+    // 1. Disable globally
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .send({
+        productName: 'Acrov SaaS',
+        coBrandingEnabled: false,
+        brandingRewardEnabled: true,
+        brandingRewardCredits: 10,
+      })
+      .expect(200);
+
+    // 2. Verify public login context returns platformBranding.enabled = false
+    const publicCtx = await request(server)
+      .get('/v1/public/admin-login-context/agency-a')
+      .expect(200);
+
+    assert.equal(publicCtx.body.platformBranding.enabled, false);
+
+    // 3. Verify tenant preference was NOT rewritten
+    const tenantPref = state.brandingPreferences.find((p) => p.agencyId === 'agency-a-id');
+    assert.equal(tenantPref.platformBrandingEnabled, true);
+  });
+
+  await t.test('24. GLOBAL KILL SWITCH: Claiming branding reward while coBrandingEnabled is false returns 409 Conflict', async () => {
+    // Attempt claim for an agency while global coBrandingEnabled is false
+    // First reset claims to ensure clean period
+    state.brandingRewardClaims = [];
+
+    const res = await request(server)
+      .post('/v1/agencies/agency-a-id/settings/branding/reward')
+      .set('Authorization', `Bearer ${tenantRawToken}`)
+      .expect(409);
+
+    const errorMsg = res.body?.error?.message || res.body?.message || '';
+    assert.match(errorMsg, /desactivado globalmente/i);
+    assert.equal(state.brandingRewardClaims.length, 0);
+  });
+
+  await t.test('25. GLOBAL KILL SWITCH: Re-enabling coBrandingEnabled restores platform branding visibility', async () => {
+    // Re-enable globally
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Authorization', `Bearer ${activePlatformToken}`)
+      .send({
+        productName: 'Acrov SaaS',
+        coBrandingEnabled: true,
+        brandingRewardEnabled: true,
+        brandingRewardCredits: 10,
+      })
+      .expect(200);
+
+    const publicCtx = await request(server)
+      .get('/v1/public/admin-login-context/agency-a')
+      .expect(200);
+
+    assert.equal(publicCtx.body.platformBranding.enabled, true);
+  });
+
+  await t.test('26. SESSION SECURITY: Session fails closed on admin deactivation, tokenVersion increment, or password change', async () => {
+    // 1. Create a platform session token for p-admin-1
+    const sessionToken = randomBytes(32).toString('base64url');
+    state.platformSessions.push({
+      id: 'psess-test26',
+      platformAdminId: 'p-admin-1',
+      tokenHash: digest(sessionToken),
+      tokenVersion: 1,
+      passwordHash: digest(superAdminPasswordHash),
+      expiresAt: new Date(Date.now() + 3600_000),
+      revokedAt: null,
+    });
+
+    // 2. Verified active
+    await request(server)
+      .get('/v1/platform/auth/me')
+      .set('Authorization', `Bearer ${sessionToken}`)
+      .expect(200);
+
+    // 3. Admin deactivated
+    const admin = state.platformAdmins.find((a) => a.id === 'p-admin-1');
+    admin.isActive = false;
+
+    await request(server)
+      .get('/v1/platform/auth/me')
+      .set('Authorization', `Bearer ${sessionToken}`)
+      .expect(401);
+
+    // Restore active
+    admin.isActive = true;
+    await request(server)
+      .get('/v1/platform/auth/me')
+      .set('Authorization', `Bearer ${sessionToken}`)
+      .expect(200);
+
+    // 4. tokenVersion increment
+    admin.tokenVersion = 2;
+    await request(server)
+      .get('/v1/platform/auth/me')
+      .set('Authorization', `Bearer ${sessionToken}`)
+      .expect(401);
+
+    // Restore tokenVersion
+    admin.tokenVersion = 1;
+
+    // 5. Password changed
+    admin.password = await bcrypt.hash('BrandNewPassword2026!', 10);
+    await request(server)
+      .get('/v1/platform/auth/me')
+      .set('Authorization', `Bearer ${sessionToken}`)
+      .expect(401);
+
+    // Restore original password
+    admin.password = superAdminPasswordHash;
+  });
+
+  await t.test('27. CONCURRENCY: Simultaneous concurrent reward claims serialize idempotently (exactly 1 succeeds, balance increments once)', async () => {
+    // Reset claims and account for agency-a-id
+    state.brandingRewardClaims = [];
+    let acc = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id');
+    if (!acc) {
+      acc = { id: 'aca-agency-a', agencyId: 'agency-a-id', balance: 0 };
+      state.aiCreditAccounts.push(acc);
+    } else {
+      acc.balance = 0;
+    }
+    state.aiCreditLedgers = [];
+
+    // Ensure preference is not locked
+    const pref = state.brandingPreferences.find((p) => p.agencyId === 'agency-a-id');
+    if (pref) pref.rewardLockedUntil = null;
+
+    // Launch 10 simultaneous claims
+    const promises = Array.from({ length: 10 }, () =>
+      request(server)
+        .post('/v1/agencies/agency-a-id/settings/branding/reward')
+        .set('Authorization', `Bearer ${tenantRawToken}`)
+    );
+
+    const results = await Promise.all(promises);
+
+    const successes = results.filter((r) => r.status === 201);
+    const conflicts = results.filter((r) => r.status === 409);
+
+    assert.equal(successes.length, 1, 'Exactly one claim must succeed');
+    assert.equal(conflicts.length, 9, 'All other concurrent claims must return 409 Conflict');
+    assert.equal(state.brandingRewardClaims.length, 1, 'Exactly 1 claim record in DB');
+    assert.equal(state.aiCreditLedgers.length, 1, 'Exactly 1 ledger entry');
+    assert.equal(acc.balance, 10, 'Balance must increment exactly once by 10 credits');
+  });
+
+  await t.test('28. UTC BOUNDARIES: Reward period and lock expiration use canonical UTC calendar boundaries', async () => {
+    // 1. Month-end: 2026-10-31T23:59:59.999Z -> period '2026-10', lockedUntil '2026-11-01T00:00:00.000Z'
+    const octEnd = new Date('2026-10-31T23:59:59.999Z');
+    const r1 = getCurrentRewardPeriodAndBoundary(octEnd);
+    assert.equal(r1.period, '2026-10');
+    assert.equal(r1.lockedUntil.toISOString(), '2026-11-01T00:00:00.000Z');
+
+    // 2. Month-start: 2026-11-01T00:00:00.000Z -> period '2026-11', lockedUntil '2026-12-01T00:00:00.000Z'
+    const novStart = new Date('2026-11-01T00:00:00.000Z');
+    const r2 = getCurrentRewardPeriodAndBoundary(novStart);
+    assert.equal(r2.period, '2026-11');
+    assert.equal(r2.lockedUntil.toISOString(), '2026-12-01T00:00:00.000Z');
+
+    // 3. Year rollover: 2026-12-31T23:59:59.999Z -> period '2026-12', lockedUntil '2027-01-01T00:00:00.000Z'
+    const decEnd = new Date('2026-12-31T23:59:59.999Z');
+    const r3 = getCurrentRewardPeriodAndBoundary(decEnd);
+    assert.equal(r3.period, '2026-12');
+    assert.equal(r3.lockedUntil.toISOString(), '2027-01-01T00:00:00.000Z');
+
+    // 4. Leap year February final instant: 2024-02-29T23:59:59.999Z -> period '2024-02', lockedUntil '2024-03-01T00:00:00.000Z'
+    const leapFebFinal = new Date('2024-02-29T23:59:59.999Z');
+    const r4 = getCurrentRewardPeriodAndBoundary(leapFebFinal);
+    assert.equal(r4.period, '2024-02');
+    assert.equal(r4.lockedUntil.toISOString(), '2024-03-01T00:00:00.000Z');
+
+    // 5. Leap year February start of leap day: 2024-02-29T00:00:00.000Z -> period '2024-02', lockedUntil '2024-03-01T00:00:00.000Z'
+    const leapFebStart = new Date('2024-02-29T00:00:00.000Z');
+    const r5 = getCurrentRewardPeriodAndBoundary(leapFebStart);
+    assert.equal(r5.period, '2024-02');
+    assert.equal(r5.lockedUntil.toISOString(), '2024-03-01T00:00:00.000Z');
+
+    // 6. Non-leap year February final instant: 2026-02-28T23:59:59.999Z -> period '2026-02', lockedUntil '2026-03-01T00:00:00.000Z'
+    const nonLeapFebFinal = new Date('2026-02-28T23:59:59.999Z');
+    const r6 = getCurrentRewardPeriodAndBoundary(nonLeapFebFinal);
+    assert.equal(r6.period, '2026-02');
+    assert.equal(r6.lockedUntil.toISOString(), '2026-03-01T00:00:00.000Z');
+
+    // 7. Non-leap year March first instant: 2026-03-01T00:00:00.000Z -> period '2026-03', lockedUntil '2026-04-01T00:00:00.000Z'
+    const nonLeapMarchStart = new Date('2026-03-01T00:00:00.000Z');
+    const r7 = getCurrentRewardPeriodAndBoundary(nonLeapMarchStart);
+    assert.equal(r7.period, '2026-03');
+    assert.equal(r7.lockedUntil.toISOString(), '2026-04-01T00:00:00.000Z');
+  });
+
+  await t.test('29. CSRF & BEARER BOUNDARY: Cookie-only requests or cross-origin requests without Bearer token are rejected with 401', async () => {
+    // Snapshot authoritative state before negative requests
+    const initialSettings = { ...state.platformSettings };
+    const initialBranding = state.brandingPreferences.map((p) => ({ ...p }));
+    const initialClaimsCount = state.brandingRewardClaims.length;
+    const initialLedgersCount = state.aiCreditLedgers.length;
+    const initialBalance = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id')?.balance ?? 0;
+
+    // 1. Cross-origin request with only platform cookie (platform_admin_session, no Authorization header)
+    await request(server)
+      .put('/v1/platform/settings')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `platform_admin_session=${activePlatformToken}`)
+      .send({ productName: 'CSRF Attack', coBrandingEnabled: false, brandingRewardEnabled: false, brandingRewardCredits: 0 })
+      .expect(401);
+
+    // Verify PlatformSettings completely unmutated
+    assert.deepStrictEqual(state.platformSettings, initialSettings);
+
+    // 2. Cross-origin request with only tenant cookie on tenant branding mutation
+    await request(server)
+      .put('/v1/agencies/agency-a-id/settings/branding')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `admin_api_session=${tenantRawToken}`)
+      .send({ platformBrandingEnabled: false })
+      .expect(401);
+
+    // Verify AgencyBrandingPreference completely unmutated
+    assert.deepStrictEqual(state.brandingPreferences, initialBranding);
+
+    // 3. Cross-origin request with only tenant cookie on reward claim
+    await request(server)
+      .post('/v1/agencies/agency-a-id/settings/branding/reward')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', `admin_api_session=${tenantRawToken}`)
+      .expect(401);
+
+    // Verify Claims, Ledgers, and Balance completely unmutated
+    assert.strictEqual(state.brandingRewardClaims.length, initialClaimsCount);
+    assert.strictEqual(state.aiCreditLedgers.length, initialLedgersCount);
+    assert.strictEqual(state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id')?.balance ?? 0, initialBalance);
+  });
+
+  await t.test('30. CONCURRENCY: Global coBranding disable vs Tenant claim reward race resolves into valid serializable outcome', async () => {
+    // Setup clean agency state
+    state.brandingRewardClaims = [];
+    let acc = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id');
+    if (!acc) {
+      acc = { id: 'aca-agency-a', agencyId: 'agency-a-id', balance: 0 };
+      state.aiCreditAccounts.push(acc);
+    } else {
+      acc.balance = 0;
+    }
+    state.aiCreditLedgers = [];
+    const pref = state.brandingPreferences.find((p) => p.agencyId === 'agency-a-id');
+    if (pref) pref.rewardLockedUntil = null;
+
+    // Reset platform coBranding to true initially
+    state.platformSettings.coBrandingEnabled = true;
+
+    // Concurrently launch SUPERADMIN disable and Tenant reward claim
+    const [disableRes, claimRes] = await Promise.all([
+      request(server)
+        .put('/v1/platform/settings')
+        .set('Authorization', `Bearer ${activePlatformToken}`)
+        .send({
+          productName: 'Acrov SaaS',
+          coBrandingEnabled: false,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        }),
+      request(server)
+        .post('/v1/agencies/agency-a-id/settings/branding/reward')
+        .set('Authorization', `Bearer ${tenantRawToken}`),
+    ]);
+
+    assert.equal(disableRes.status, 200, 'SUPERADMIN disable must succeed');
+    assert.ok(
+      claimRes.status === 201 || claimRes.status === 409,
+      `Claim must either succeed (201) if ordered before disable or fail with conflict (409) if ordered after disable. Received: ${claimRes.status}`
+    );
+
+    if (claimRes.status === 201) {
+      // Claim won the race: reward was minted before disable completed
+      assert.equal(state.brandingRewardClaims.length, 1);
+      assert.equal(acc.balance, 10);
+    } else {
+      // Disable won the race: reward was rejected
+      assert.equal(state.brandingRewardClaims.length, 0);
+      assert.equal(acc.balance, 0);
+    }
+
+    // Restore platform settings to true for subsequent tests
+    state.platformSettings.coBrandingEnabled = true;
   });
 
   await app.close();

@@ -62,6 +62,8 @@ describe('P2.8-AUTH1 — Co-Branding & Monthly AI Credit Reward Suite', () => {
   test('1. fetchAgencyBranding returns branding preference, reward state and platform configuration', async () => {
     const mockBranding: AgencyBrandingInfo = {
       platformBrandingEnabled: true,
+      coBrandingGloballyEnabled: true,
+      effectivePlatformBranding: true,
       rewardLockedUntil: '2026-11-01T00:00:00.000Z',
       lastRewardPeriod: '2026-10',
       isLocked: true,

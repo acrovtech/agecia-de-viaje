@@ -23,6 +23,7 @@ export async function updatePlatformSettingsAction(
     const productName = formData.get('productName')?.toString().trim();
     const logoUrl = formData.get('logoUrl')?.toString().trim() || null;
     const iconUrl = formData.get('iconUrl')?.toString().trim() || null;
+    const coBrandingEnabled = formData.get('coBrandingEnabled') === 'true';
     const brandingRewardEnabled = formData.get('brandingRewardEnabled') === 'true';
     const rawCredits = formData.get('brandingRewardCredits')?.toString().trim();
     const brandingRewardCredits = Number.parseInt(rawCredits || '10', 10);
@@ -42,6 +43,7 @@ export async function updatePlatformSettingsAction(
         productName,
         logoUrl,
         iconUrl,
+        coBrandingEnabled,
         brandingRewardEnabled,
         brandingRewardCredits,
       },

@@ -63,9 +63,14 @@ export class PublicTenantLoginController {
           productName: true,
           logoUrl: true,
           iconUrl: true,
+          coBrandingEnabled: true,
         },
       }),
     ]);
+
+    const isGlobalCoBrandingEnabled = platformSettings?.coBrandingEnabled ?? true;
+    const isTenantBrandingEnabled = branding ? branding.platformBrandingEnabled : true;
+    const effectiveEnabled = isGlobalCoBrandingEnabled && isTenantBrandingEnabled;
 
     return {
       agency: {
@@ -75,7 +80,7 @@ export class PublicTenantLoginController {
         iconUrl: agency.iconUrl || null,
       },
       platformBranding: {
-        enabled: branding ? branding.platformBrandingEnabled : true,
+        enabled: effectiveEnabled,
         productName: platformSettings?.productName || 'Acrov SaaS',
         logoUrl: platformSettings?.logoUrl || null,
         iconUrl: platformSettings?.iconUrl || null,

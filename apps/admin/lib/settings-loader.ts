@@ -124,6 +124,8 @@ export async function fetchAgencyCredits(agencyId: string, token: string): Promi
 
 export interface AgencyBrandingInfo {
   platformBrandingEnabled: boolean;
+  coBrandingGloballyEnabled: boolean;
+  effectivePlatformBranding: boolean;
   rewardLockedUntil: string | null;
   lastRewardPeriod: string | null;
   isLocked: boolean;
