@@ -853,13 +853,23 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
   });
 
   await t.test('29. CSRF & BEARER BOUNDARY: Cookie-only requests or cross-origin requests without Bearer token are rejected with 401', async () => {
-    // 1. Cross-origin request with only platform cookie (no Authorization header)
+    // Snapshot authoritative state before negative requests
+    const initialSettings = { ...state.platformSettings };
+    const initialBranding = state.brandingPreferences.map((p) => ({ ...p }));
+    const initialClaimsCount = state.brandingRewardClaims.length;
+    const initialLedgersCount = state.aiCreditLedgers.length;
+    const initialBalance = state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id')?.balance ?? 0;
+
+    // 1. Cross-origin request with only platform cookie (platform_admin_session, no Authorization header)
     await request(server)
       .put('/v1/platform/settings')
       .set('Origin', 'https://evil.example')
       .set('Cookie', `platform_admin_session=${activePlatformToken}`)
       .send({ productName: 'CSRF Attack', coBrandingEnabled: false, brandingRewardEnabled: false, brandingRewardCredits: 0 })
       .expect(401);
+
+    // Verify PlatformSettings completely unmutated
+    assert.deepStrictEqual(state.platformSettings, initialSettings);
 
     // 2. Cross-origin request with only tenant cookie on tenant branding mutation
     await request(server)
@@ -869,12 +879,20 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       .send({ platformBrandingEnabled: false })
       .expect(401);
 
+    // Verify AgencyBrandingPreference completely unmutated
+    assert.deepStrictEqual(state.brandingPreferences, initialBranding);
+
     // 3. Cross-origin request with only tenant cookie on reward claim
     await request(server)
       .post('/v1/agencies/agency-a-id/settings/branding/reward')
       .set('Origin', 'https://evil.example')
       .set('Cookie', `admin_api_session=${tenantRawToken}`)
       .expect(401);
+
+    // Verify Claims, Ledgers, and Balance completely unmutated
+    assert.strictEqual(state.brandingRewardClaims.length, initialClaimsCount);
+    assert.strictEqual(state.aiCreditLedgers.length, initialLedgersCount);
+    assert.strictEqual(state.aiCreditAccounts.find((a) => a.agencyId === 'agency-a-id')?.balance ?? 0, initialBalance);
   });
 
   await t.test('30. CONCURRENCY: Global coBranding disable vs Tenant claim reward race resolves into valid serializable outcome', async () => {
