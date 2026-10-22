@@ -597,13 +597,7 @@ export class SettingsService {
 
     return await this.prisma.$transaction(async (tx) => {
       // Authoritative row lock on Agency to serialize against concurrent reward claims
-      if (typeof (tx as any).$queryRaw === 'function') {
-        try {
-          await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
-        } catch {
-          // If the underlying database / mock doesn't support raw FOR UPDATE, continue safely
-        }
-      }
+      await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
 
       const now = new Date();
       const existing = await tx.agencyBrandingPreference.findUnique({
@@ -653,13 +647,7 @@ export class SettingsService {
         if (!agency) {
           throw new NotFoundException('Agencia no encontrada');
         }
-        if (typeof (tx as any).$queryRaw === 'function') {
-          try {
-            await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
-          } catch {
-            // If the underlying database / mock doesn't support raw FOR UPDATE, continue safely
-          }
-        }
+        await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
 
         // 2. Read PlatformSettings
         const platformSettings = await tx.platformSettings.findUnique({
