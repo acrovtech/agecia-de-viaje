@@ -309,7 +309,17 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
       if (Array.isArray(tasks)) {
         return Promise.all(tasks);
       }
-      return tasks(mockPrisma);
+      const snapshot = JSON.stringify(state);
+      try {
+        return await tasks(mockPrisma);
+      } catch (err) {
+        const restored = JSON.parse(snapshot);
+        for (const k of Object.keys(state)) {
+          delete state[k];
+        }
+        Object.assign(state, restored);
+        throw err;
+      }
     },
   };
 
@@ -605,6 +615,30 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     const audit = state.platformAuditLogs.find((l) => l.action === 'PLATFORM_SETTINGS_UPDATE');
     assert.ok(audit, 'PlatformAuditLog must be recorded for settings update');
     assert.equal(audit.entity, 'PlatformSettings');
+
+    // Atomicity verification: if audit log creation fails, settings mutation rolls back
+    const settingsBeforeFail = { ...state.platformSettings };
+    const originalAuditCreate = mockPrisma.platformAuditLog.create;
+    mockPrisma.platformAuditLog.create = async () => {
+      throw new Error('Forced Audit Failure');
+    };
+
+    try {
+      await request(server)
+        .put('/v1/platform/settings')
+        .set('Authorization', `Bearer ${activePlatformToken}`)
+        .send({
+          productName: 'Uncommitted Settings Name',
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 99,
+        })
+        .expect(500);
+
+      assert.deepEqual(state.platformSettings, settingsBeforeFail, 'PlatformSettings must remain unchanged on audit write failure');
+    } finally {
+      mockPrisma.platformAuditLog.create = originalAuditCreate;
+    }
   });
 
   await t.test('21. PLATFORM RBAC: Non-SUPERADMIN (SUPPORT) role receives 403 Forbidden on PUT /v1/platform/settings', async () => {

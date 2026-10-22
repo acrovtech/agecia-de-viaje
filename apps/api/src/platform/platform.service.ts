@@ -189,35 +189,39 @@ export class PlatformService {
 
     const { productName, logoUrl, iconUrl, coBrandingEnabled, brandingRewardEnabled, brandingRewardCredits } = parsed.data;
 
-    const updated = await this.prisma.platformSettings.upsert({
-      where: { id: 'global' },
-      update: {
-        productName,
-        logoUrl: logoUrl ?? null,
-        iconUrl: iconUrl ?? null,
-        coBrandingEnabled,
-        brandingRewardEnabled,
-        brandingRewardCredits,
-      },
-      create: {
-        id: 'global',
-        productName,
-        logoUrl: logoUrl ?? null,
-        iconUrl: iconUrl ?? null,
-        coBrandingEnabled,
-        brandingRewardEnabled,
-        brandingRewardCredits,
-      },
-    });
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const settings = await tx.platformSettings.upsert({
+        where: { id: 'global' },
+        update: {
+          productName,
+          logoUrl: logoUrl ?? null,
+          iconUrl: iconUrl ?? null,
+          coBrandingEnabled,
+          brandingRewardEnabled,
+          brandingRewardCredits,
+        },
+        create: {
+          id: 'global',
+          productName,
+          logoUrl: logoUrl ?? null,
+          iconUrl: iconUrl ?? null,
+          coBrandingEnabled,
+          brandingRewardEnabled,
+          brandingRewardCredits,
+        },
+      });
 
-    await this.prisma.platformAuditLog.create({
-      data: {
-        platformAdminId,
-        action: 'PLATFORM_SETTINGS_UPDATE',
-        entity: 'PlatformSettings',
-        entityId: 'global',
-        details: parsed.data,
-      },
+      await tx.platformAuditLog.create({
+        data: {
+          platformAdminId,
+          action: 'PLATFORM_SETTINGS_UPDATE',
+          entity: 'PlatformSettings',
+          entityId: 'global',
+          details: parsed.data,
+        },
+      });
+
+      return settings;
     });
 
     return {
