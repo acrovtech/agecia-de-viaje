@@ -7,13 +7,14 @@ import { loginAction } from '@/app/actions/auth';
 import type { PublicAdminLoginContext } from '@/lib/central-api';
 
 export interface TenantLoginFormProps {
-  agencySlug: string;
+  action: (prevState: any, formData: FormData) => Promise<any>;
+  agencySlug?: string;
   context: PublicAdminLoginContext;
   isExpired?: boolean;
 }
 
-export function TenantLoginForm({ agencySlug, context, isExpired }: TenantLoginFormProps) {
-  const [state, formAction, isPending] = useActionState(loginAction, null);
+export function TenantLoginForm({ action, context, isExpired }: TenantLoginFormProps) {
+  const [state, formAction, isPending] = useActionState(action, null);
   const [showPassword, setShowPassword] = useState(false);
 
   const { agency, platformBranding } = context;
@@ -120,9 +121,8 @@ export function TenantLoginForm({ agencySlug, context, isExpired }: TenantLoginF
             </div>
           )}
 
-          {/* Login Form: No editable agencySlug field */}
+          {/* Login Form: No editable or hidden agencySlug field */}
           <form action={formAction} className="space-y-4">
-            <input type="hidden" name="agencySlug" value={agencySlug} />
 
             <div>
               <label

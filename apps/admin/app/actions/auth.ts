@@ -16,6 +16,90 @@ const LoginSchema = z.object({
   password: z.string().min(1, 'La contraseña es requerida'),
 });
 
+export async function tenantLoginAction(
+  authoritativeAgencySlug: string,
+  prevState: any,
+  formData: FormData
+) {
+  const slugValidation = z
+    .string()
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .safeParse(authoritativeAgencySlug);
+
+  if (!slugValidation.success) {
+    return { error: 'Identificador de agencia inválido.' };
+  }
+  const canonicalSlug = slugValidation.data;
+
+  // IMPORTANT: agencySlug MUST NOT come from FormData.
+  // The client form submits ONLY email and password.
+  const credentials = z.object({
+    email: z.string().trim().toLowerCase().email('Ingrese un correo electrónico válido').max(254),
+    password: z.string().min(1, 'La contraseña es requerida').refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'La contraseña excede el límite permitido'),
+  }).safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
+
+  if (!credentials.success) {
+    return { error: credentials.error.issues[0]?.message || 'Credenciales inválidas' };
+  }
+
+  if (isApiAdmin()) {
+    try {
+      const session = await centralLogin(credentials.data.email, credentials.data.password, canonicalSlug);
+      const store = await cookies();
+      store.set(API_SESSION_COOKIE, session.accessToken, {
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
+        expires: new Date(session.expiresAt),
+      });
+      store.set(TENANT_HINT_COOKIE, canonicalSlug, {
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+      store.delete('admin_session');
+    } catch (error) {
+      return {
+        error: error instanceof CentralApiError && error.status === 401
+          ? 'No pudimos iniciar sesión. Revisa tus credenciales y el acceso a la agencia.'
+          : 'No pudimos iniciar sesión en este momento. Inténtalo nuevamente en unos minutos.'
+      };
+    }
+    redirect('/dashboard');
+  }
+
+  const normalizedEmail = credentials.data.email;
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: { agency: true }
+  });
+
+  if (!user || !user.isActive) {
+    return { error: 'Credenciales inválidas o cuenta desactivada' };
+  }
+
+  if (user.agency?.slug !== canonicalSlug) {
+    return { error: 'No pudimos iniciar sesión. Revisa tus credenciales y el acceso a la agencia.' };
+  }
+
+  const isValid = await bcrypt.compare(credentials.data.password, user.password);
+  if (!isValid) {
+    return { error: 'Credenciales inválidas' };
+  }
+
+  const token = await createAdminToken(user.id, user.email, user.role);
+  const store = await cookies();
+  store.set('admin_session', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: EIGHT_HOURS_IN_SECONDS,
+    path: '/',
+  });
+  redirect('/dashboard');
+}
+
 export async function loginAction(prevState: any, formData: FormData) {
   if (isApiAdmin()) {
     const parsed = z.object({

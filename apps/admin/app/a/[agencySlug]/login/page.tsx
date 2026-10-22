@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { fetchPublicAdminLoginContext } from '@/lib/central-api';
 import { TenantLoginForm } from '@/components/auth/tenant-login-form';
+import { tenantLoginAction } from '@/app/actions/auth';
 import { EmptyState } from '@/components/design-system/empty-state';
 
 export const dynamic = 'force-dynamic';
@@ -42,8 +43,11 @@ export default async function TenantBrandedLoginPage({ params, searchParams }: P
     );
   }
 
+  const boundLoginAction = tenantLoginAction.bind(null, agencySlug);
+
   return (
     <TenantLoginForm
+      action={boundLoginAction}
       agencySlug={agencySlug}
       context={context}
       isExpired={expired === '1'}

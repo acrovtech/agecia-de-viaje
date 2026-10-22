@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { fetchPublicAdminLoginContext, type PublicAdminLoginContext } from './central-api';
-import { loginAction } from '../app/actions/auth';
+import { loginAction, tenantLoginAction } from '../app/actions/auth';
 import { API_SESSION_COOKIE, TENANT_HINT_COOKIE } from './admin-mode';
 
 describe('P2.8-AUTH1 — Tenant Branded Login & Context Suite', () => {
@@ -129,7 +129,7 @@ describe('P2.8-AUTH1 — Tenant Branded Login & Context Suite', () => {
     expect(result?.platformBranding.productName).toBe('Acrov SaaS');
   });
 
-  test('6. Login action transmits route-resolved agencySlug to Central API with email/password', async () => {
+  test('6. Tenant login action transmits route-resolved agencySlug to Central API with email/password', async () => {
     const fetchMock = mockFetch(200, {
       accessToken: 't'.repeat(43),
       tokenType: 'Bearer',
@@ -137,12 +137,12 @@ describe('P2.8-AUTH1 — Tenant Branded Login & Context Suite', () => {
       agencyId: 'agency_inca',
     });
 
+    // Form submits ONLY email and password - NO agencySlug in formData
     const formData = new FormData();
     formData.set('email', 'guide@incabound.test');
     formData.set('password', 'ValidPass2026!');
-    formData.set('agencySlug', 'incabound'); // From hidden route context
 
-    await expect(loginAction(null, formData)).rejects.toThrow('REDIRECT:/dashboard');
+    await expect(tenantLoginAction('incabound', null, formData)).rejects.toThrow('REDIRECT:/dashboard');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -172,12 +172,45 @@ describe('P2.8-AUTH1 — Tenant Branded Login & Context Suite', () => {
     const formData = new FormData();
     formData.set('email', 'guide@other-agency.test');
     formData.set('password', 'ValidPass2026!');
-    formData.set('agencySlug', 'incabound');
 
-    const result = await loginAction(null, formData);
+    const result = await tenantLoginAction('incabound', null, formData);
 
     expect(result).toHaveProperty('error');
     expect(result.error).toContain('Revisa tus credenciales y el acceso a la agencia');
     expect(cookieStore.set).not.toHaveBeenCalled();
+  });
+
+  test('8. ADVERSARIAL: Client-injected agencySlug in FormData is completely ignored in favor of route slug', async () => {
+    const fetchMock = mockFetch(200, {
+      accessToken: 't'.repeat(43),
+      tokenType: 'Bearer',
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      agencyId: 'agency_inca',
+    });
+
+    // Attacker visits /a/agency-a/login but injects agencySlug = agency-b in formData
+    const maliciousFormData = new FormData();
+    maliciousFormData.set('email', 'attacker@example.test');
+    maliciousFormData.set('password', 'ValidPass2026!');
+    maliciousFormData.set('agencySlug', 'agency-b'); // Malicious override attempt
+
+    await expect(tenantLoginAction('agency-a', null, maliciousFormData)).rejects.toThrow('REDIRECT:/dashboard');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(init.body);
+    // MUST be bound strictly to agency-a, agency-b in formData must be ignored
+    expect(body.agencySlug).toBe('agency-a');
+    expect(body.agencySlug).not.toBe('agency-b');
+  });
+
+  test('9. Invalid or non-canonical route slug is rejected before reaching API', async () => {
+    const formData = new FormData();
+    formData.set('email', 'test@example.test');
+    formData.set('password', 'ValidPass2026!');
+
+    const result = await tenantLoginAction('INVALID SLUG WITH SPACES!', null, formData);
+    expect(result).toHaveProperty('error');
+    expect(result.error).toContain('Identificador de agencia inválido');
   });
 });
