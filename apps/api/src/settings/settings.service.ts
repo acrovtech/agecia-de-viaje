@@ -562,7 +562,7 @@ export class SettingsService {
       }),
     ]);
 
-    const isLocked = Boolean(brandingPref?.rewardLockedUntil && brandingPref.rewardLockedUntil > now);
+    const isLocked = Boolean(brandingPref?.rewardLockedUntil && new Date(brandingPref.rewardLockedUntil) > now);
     const coBrandingGloballyEnabled = platformSettings?.coBrandingEnabled ?? true;
     const isTenantEnabled = brandingPref ? brandingPref.platformBrandingEnabled : true;
     const effectivePlatformBranding = coBrandingGloballyEnabled && isTenantEnabled;
@@ -607,7 +607,7 @@ export class SettingsService {
           });
 
           // Si se intenta desactivar el co-branding mientras está bloqueado por recompensa activa
-          if (!platformBrandingEnabled && existing?.rewardLockedUntil && existing.rewardLockedUntil > now) {
+          if (!platformBrandingEnabled && existing?.rewardLockedUntil && new Date(existing.rewardLockedUntil) > now) {
             throw new ConflictException(
               'El co-branding está bloqueado hasta el próximo ciclo porque esta agencia recibió la recompensa de créditos IA.'
             );
@@ -632,7 +632,7 @@ export class SettingsService {
           return {
             platformBrandingEnabled: updated.platformBrandingEnabled,
             rewardLockedUntil: updated.rewardLockedUntil,
-            isLocked: Boolean(updated.rewardLockedUntil && updated.rewardLockedUntil > now),
+            isLocked: Boolean(updated.rewardLockedUntil && new Date(updated.rewardLockedUntil) > now),
           };
         },
         { maxWait: 10000, timeout: 30000 }

@@ -88,7 +88,13 @@ export async function tenantLoginAction(
     return { error: 'Credenciales inválidas' };
   }
 
-  const token = await createAdminToken(user.id, user.email, user.role);
+  const token = await createAdminToken({
+    id: user.id,
+    name: user.name || undefined,
+    role: user.role,
+    email: user.email,
+    tokenVersion: user.tokenVersion,
+  });
   const store = await cookies();
   store.set('admin_session', token, {
     httpOnly: true,

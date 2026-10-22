@@ -93,7 +93,7 @@ export class PlatformService {
 
     const now = new Date();
     const brandingPref = agency.brandingPreference;
-    const isLocked = Boolean(brandingPref?.rewardLockedUntil && brandingPref.rewardLockedUntil > now);
+    const isLocked = Boolean(brandingPref?.rewardLockedUntil && new Date(brandingPref.rewardLockedUntil) > now);
     const year = now.getUTCFullYear();
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     const currentPeriod = `${year}-${month}`;
