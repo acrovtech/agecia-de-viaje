@@ -595,44 +595,60 @@ export class SettingsService {
     }
     const { platformBrandingEnabled } = parsed.data;
 
-    return await this.prisma.$transaction(async (tx) => {
-      // Authoritative row lock on Agency to serialize against concurrent reward claims
-      await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          // Authoritative row lock on Agency to serialize against concurrent reward claims
+          await tx.$queryRaw`SELECT id FROM "Agency" WHERE id = ${agencyId} FOR UPDATE;`;
 
-      const now = new Date();
-      const existing = await tx.agencyBrandingPreference.findUnique({
-        where: { agencyId },
-      });
+          const now = new Date();
+          const existing = await tx.agencyBrandingPreference.findUnique({
+            where: { agencyId },
+          });
 
-      // Si se intenta desactivar el co-branding mientras está bloqueado por recompensa activa
-      if (!platformBrandingEnabled && existing?.rewardLockedUntil && existing.rewardLockedUntil > now) {
-        throw new ConflictException(
-          'El co-branding está bloqueado hasta el próximo ciclo porque esta agencia recibió la recompensa de créditos IA.'
-        );
-      }
+          // Si se intenta desactivar el co-branding mientras está bloqueado por recompensa activa
+          if (!platformBrandingEnabled && existing?.rewardLockedUntil && existing.rewardLockedUntil > now) {
+            throw new ConflictException(
+              'El co-branding está bloqueado hasta el próximo ciclo porque esta agencia recibió la recompensa de créditos IA.'
+            );
+          }
 
-      const updated = await tx.agencyBrandingPreference.upsert({
-        where: { agencyId },
-        update: { platformBrandingEnabled },
-        create: { agencyId, platformBrandingEnabled },
-      });
+          const updated = await tx.agencyBrandingPreference.upsert({
+            where: { agencyId },
+            update: { platformBrandingEnabled },
+            create: { agencyId, platformBrandingEnabled },
+          });
 
-      await tx.adminAuditLog.create({
-        data: {
-          userId: identity.userId,
-          action: platformBrandingEnabled ? 'SAAS_BRANDING_ENABLED' : 'SAAS_BRANDING_DISABLED',
-          entity: 'AgencyBrandingPreference',
-          entityId: updated.id,
-          details: { agencyId, platformBrandingEnabled },
+          await tx.adminAuditLog.create({
+            data: {
+              userId: identity.userId,
+              action: platformBrandingEnabled ? 'SAAS_BRANDING_ENABLED' : 'SAAS_BRANDING_DISABLED',
+              entity: 'AgencyBrandingPreference',
+              entityId: updated.id,
+              details: { agencyId, platformBrandingEnabled },
+            },
+          });
+
+          return {
+            platformBrandingEnabled: updated.platformBrandingEnabled,
+            rewardLockedUntil: updated.rewardLockedUntil,
+            isLocked: Boolean(updated.rewardLockedUntil && updated.rewardLockedUntil > now),
+          };
         },
-      });
-
-      return {
-        platformBrandingEnabled: updated.platformBrandingEnabled,
-        rewardLockedUntil: updated.rewardLockedUntil,
-        isLocked: Boolean(updated.rewardLockedUntil && updated.rewardLockedUntil > now),
-      };
-    });
+        { maxWait: 10000, timeout: 30000 }
+      );
+    } catch (err: any) {
+      if (
+        err?.code === '40001' ||
+        err?.code === '40P01' ||
+        err?.code === 'P2034' ||
+        err?.message?.includes('could not serialize access') ||
+        err?.message?.includes('deadlock detected')
+      ) {
+        throw new ConflictException('Conflicto de concurrencia al actualizar las preferencias de marca.');
+      }
+      throw err;
+    }
   }
 
   async claimBrandingReward(identity: ApiIdentity, agencyId: string) {
@@ -751,13 +767,20 @@ export class SettingsService {
           balance: updatedAccount.balance,
           newBalance: updatedAccount.balance,
         };
-      });
+      }, { maxWait: 10000, timeout: 30000 });
     } catch (err: any) {
       if (
         err?.code === 'P2002' ||
         err?.message?.includes('BrandingRewardClaim_agencyId_period_key') ||
         err?.code === '40001' ||
-        err?.message?.includes('could not serialize access')
+        err?.code === '40P01' ||
+        err?.code === 'P2034' ||
+        err?.code === 'P2028' ||
+        err?.code === 'P2024' ||
+        err?.message?.includes('could not serialize access') ||
+        err?.message?.includes('deadlock detected') ||
+        err?.message?.includes('Transaction already closed') ||
+        err?.message?.includes('connection pool')
       ) {
         throw new ConflictException('Esta agencia ya recibió la recompensa de créditos IA correspondiente a este período.');
       }
