@@ -77,10 +77,14 @@ jobs:
         run: |
           if ! node --test apps/api/test/platform-control-plane.e2e.mjs > e2e_output.txt 2>&1; then
             cat e2e_output.txt
-            ERR_MSG=$(head -n 30 e2e_output.txt | tr '\r\n' '  ')
+            ERR_MSG=$(grep -B 3 -A 25 "not ok" e2e_output.txt | tr '\r\n' '  ' | head -c 1000)
+            if [ -z "$ERR_MSG" ]; then
+              ERR_MSG=$(tail -n 30 e2e_output.txt | tr '\r\n' '  ' | head -c 1000)
+            fi
             echo "::error title=Platform E2E Failure::$ERR_MSG"
             exit 1
           fi
+
 
 
 
