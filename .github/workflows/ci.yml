@@ -74,7 +74,10 @@ jobs:
         run: pnpm vitest run
 
       - name: Run Platform Control Plane E2E
-        run: node --test apps/api/test/platform-control-plane.e2e.mjs
+        run: |
+          node --test apps/api/test/platform-control-plane.e2e.mjs > e2e_output.txt 2>&1 || (cat e2e_output.txt >> $GITHUB_STEP_SUMMARY && cat e2e_output.txt && exit 1)
+          cat e2e_output.txt >> $GITHUB_STEP_SUMMARY
+
 
       - name: Run Safety Guard Unit Tests
         run: node --test apps/api/test/postgres-concurrency-safety.test.mjs
