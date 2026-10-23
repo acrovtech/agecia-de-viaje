@@ -23,8 +23,9 @@ test('PostgreSQL real: two agencies, orphan records and disabled agency remain i
     const agencyA = await prisma.agency.create({ data: { slug: a, subdomain: a, name: 'Agency A' } });
     agencyIds.push(agencyA.id);
     const agencyB = await prisma.agency.create({ data: { slug: b, subdomain: b, name: 'Agency B' } });
-    agencyIds.push(agencyB.id);
-    for (const [agencyId, title, slug] of [[agencyA.id, 'Tour A', a], [agencyB.id, 'Tour B', b], [null, 'Orphan', `orphan-${suffix}`]]) {
+    const agencyC = await prisma.agency.create({ data: { slug: `c-${suffix}`, subdomain: `c-${suffix}`, name: 'Agency C' } });
+    agencyIds.push(agencyC.id);
+    for (const [agencyId, title, slug] of [[agencyA.id, 'Tour A', a], [agencyB.id, 'Tour B', b], [agencyC.id, 'Orphan', `orphan-${suffix}`]]) {
       const tour = await prisma.tour.create({ data: { isPublished: true, agencyId, title, slug, description: 'Test', duration: '1 day', bannerImage: '/test.webp', cardImage: '/test.webp' } });
       tourIds.push(tour.id);
       const transfer = await prisma.transfer.create({ data: {

@@ -17,13 +17,14 @@ test('manual reservations: tenant isolation, authoritative quotes and durable op
   try {
     const a = await prisma.agency.create({ data: { name: 'Reservations A', slug: `res-a-${suffix}`, subdomain: `res-a-${suffix}` } }); agencies.push(a.id);
     const b = await prisma.agency.create({ data: { name: 'Reservations B', slug: `res-b-${suffix}`, subdomain: `res-b-${suffix}` } }); agencies.push(b.id);
+    const c = await prisma.agency.create({ data: { name: 'Reservations C', slug: `res-c-${suffix}`, subdomain: `res-c-${suffix}` } }); agencies.push(c.id);
     const password = randomUUID();
     user = await prisma.user.create({ data: { email: `${suffix}@example.test`, password: await hash(password, 10) } });
     const membership = await prisma.agencyMembership.create({ data: { agencyId: a.id, userId: user.id, role: 'OPERATOR' } });
     const tourData = { title: 'Original title', slug: `res-tour-${suffix}`, description: 'Tour', duration: '1 day', bannerImage: '/a.webp', cardImage: '/b.webp', isPublished: true, hasSharedService: true, sharedPrice: 10.15, hasPrivateService: true };
     const tour = await prisma.tour.create({ data: { ...tourData, agencyId: a.id, privatePricing: { create: { pax: 2, price: 17.25 } } } });
     const foreign = await prisma.tour.create({ data: { ...tourData, agencyId: b.id, slug: `foreign-${suffix}` } });
-    const orphan = await prisma.tour.create({ data: { ...tourData, slug: `orphan-${suffix}` } }); orphans.push(orphan.id);
+    const orphan = await prisma.tour.create({ data: { ...tourData, agencyId: c.id, slug: `orphan-${suffix}` } }); orphans.push(orphan.id);
     const vehicleData = { code: `v-${suffix}`, name: 'Car original', maxPax: 3, maxLuggage: 2, image: '/car.webp', features: [], isActive: true };
     const vehicle = await prisma.vehicleType.create({ data: { ...vehicleData, agencyId: a.id } });
     const otherVehicle = await prisma.vehicleType.create({ data: { ...vehicleData, code: `vb-${suffix}`, agencyId: b.id } });

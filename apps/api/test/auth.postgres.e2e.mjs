@@ -42,7 +42,7 @@ test('persistent authentication and membership authorization', async (t) => {
       const server = await resetApp();
       for (let i = 0; i < 53; i++) {
         const id = randomUUID();
-        const agencyId = i < 51 ? a.id : i === 51 ? b.id : null;
+        const agencyId = i < 51 ? a.id : b.id;
         const slug = `test-${i}-${suffix}`;
         await prisma.tour.create({ data: { id, agencyId, slug, title: `Tour ${i}`, description: 'Fixture', duration: '1 day', bannerImage: '/x', cardImage: '/x' } });
         tourIds.push(id);
