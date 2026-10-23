@@ -52,6 +52,9 @@ jobs:
       - name: Validate Prisma Schema
         run: pnpm --filter @repo/db exec prisma validate
 
+      - name: Deploy Migrations to Ephemeral Postgres
+        run: pnpm --filter @repo/db exec prisma migrate deploy
+
       - name: Check Types (Admin)
         run: pnpm --filter admin check-types
 
@@ -64,6 +67,9 @@ jobs:
       - name: Build API
         run: pnpm --filter api build
 
+      - name: Build Admin (API auth mode)
+        run: ADMIN_AUTH_MODE=api pnpm --filter admin build
+
       - name: Run Vitest Unit Tests
         run: pnpm vitest run
 
@@ -73,11 +79,6 @@ jobs:
       - name: Run Safety Guard Unit Tests
         run: node --test apps/api/test/postgres-concurrency-safety.test.mjs
 
-      - name: Build Admin (API auth mode)
-        run: ADMIN_AUTH_MODE=api pnpm --filter admin build
-
-      - name: Deploy Migrations to Ephemeral Postgres
-        run: pnpm --filter @repo/db exec prisma migrate deploy
-
       - name: Run PostgreSQL Concurrency Integration Gate
         run: node --test apps/api/test/branding-concurrency.postgres.e2e.mjs
+
