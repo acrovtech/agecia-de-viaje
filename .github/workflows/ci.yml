@@ -75,8 +75,13 @@ jobs:
 
       - name: Run Platform Control Plane E2E
         run: |
-          node --test apps/api/test/platform-control-plane.e2e.mjs > e2e_output.txt 2>&1 || (cat e2e_output.txt >> $GITHUB_STEP_SUMMARY && cat e2e_output.txt && exit 1)
-          cat e2e_output.txt >> $GITHUB_STEP_SUMMARY
+          if ! node --test apps/api/test/platform-control-plane.e2e.mjs > e2e_output.txt 2>&1; then
+            cat e2e_output.txt
+            ERR_MSG=$(head -n 30 e2e_output.txt | tr '\r\n' '  ')
+            echo "::error title=Platform E2E Failure::$ERR_MSG"
+            exit 1
+          fi
+
 
 
       - name: Run Safety Guard Unit Tests
