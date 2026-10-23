@@ -100,7 +100,7 @@ test('manual reservations: tenant isolation, authoritative quotes and durable op
       const data = { customerFirstName: 'Legacy', customerLastName: 'Client', customerEmail: 'legacy@example.test', customerPhone: '12345', date: new Date(), pax: 1, totalPrice: 7 };
       const own = await prisma.reservation.create({ data: { ...data, agencyId: a.id } });
       const foreignBooking = await prisma.reservation.create({ data: { ...data, agencyId: b.id } });
-      const noAgency = await prisma.reservation.create({ data });
+      const noAgency = await prisma.reservation.create({ data: { ...data, agencyId: c.id } });
       try {
         assert.equal((await send('get', `/${own.id}`).expect(200)).body.operationStatus, null);
         await send('put', `/${own.id}/status`, { expectedUpdatedAt: own.updatedAt.toISOString(), status: 'CONFIRMED', note: 'No migration' }).expect(400);
