@@ -140,11 +140,17 @@ export function isAllowedDatabaseName(dbName) {
   );
 }
 
-export function validatePostgresIntegrationGuard({
-  allowOptIn = process.env.ALLOW_POSTGRES_INTEGRATION_TESTS,
-  testDatabaseUrl = process.env.TEST_DATABASE_URL,
-  prodDatabaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL,
-} = {}) {
+export function validatePostgresIntegrationGuard(options = {}) {
+  const allowOptIn = 'allowOptIn' in options
+    ? options.allowOptIn
+    : process.env.ALLOW_POSTGRES_INTEGRATION_TESTS;
+  const testDatabaseUrl = 'testDatabaseUrl' in options
+    ? options.testDatabaseUrl
+    : process.env.TEST_DATABASE_URL;
+  const prodDatabaseUrl = 'prodDatabaseUrl' in options
+    ? options.prodDatabaseUrl
+    : (process.env.PROD_DATABASE_URL || (process.env.DATABASE_URL !== process.env.TEST_DATABASE_URL ? process.env.DATABASE_URL : undefined));
+
   // 1. Mandatory opt-in
   if (allowOptIn !== 'true') {
     return {
