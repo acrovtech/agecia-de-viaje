@@ -324,7 +324,11 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
   };
 
   const app = await application(config({ API_AUTH_ENABLED: 'true' }), mockPrisma);
+  await app.listen(0);
   const server = app.getHttpServer();
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+
 
   await t.test('1. PlatformAdmin can log in with valid credentials, getting 43-char token and audit log', async () => {
     const res = await request(server)
@@ -827,8 +831,10 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     const promises = Array.from({ length: 10 }, () =>
       request(server)
         .post('/v1/agencies/agency-a-id/settings/branding/reward')
+        .set('Connection', 'close')
         .set('Authorization', `Bearer ${tenantRawToken}`)
     );
+
 
     const results = await Promise.all(promises);
 
@@ -950,6 +956,7 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
     const [disableRes, claimRes] = await Promise.all([
       request(server)
         .put('/v1/platform/settings')
+        .set('Connection', 'close')
         .set('Authorization', `Bearer ${activePlatformToken}`)
         .send({
           productName: 'Acrov SaaS',
@@ -959,8 +966,10 @@ test('Platform Control Plane & Auth Boundary Suite', async (t) => {
         }),
       request(server)
         .post('/v1/agencies/agency-a-id/settings/branding/reward')
+        .set('Connection', 'close')
         .set('Authorization', `Bearer ${tenantRawToken}`),
     ]);
+
 
     assert.equal(disableRes.status, 200, 'SUPERADMIN disable must succeed');
     assert.ok(
