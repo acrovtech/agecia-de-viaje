@@ -114,3 +114,98 @@ export function isSafeTestDatabaseUrl(testUrl, prodUrl) {
   const result = validatePostgresTestTarget(testUrl, prodUrl);
   return result.ok;
 }
+
+export function isAllowedDatabaseName(dbName) {
+  if (!dbName || typeof dbName !== 'string') return false;
+  const lower = dbName.toLowerCase();
+  // Explicitly forbidden production/system databases
+  if (
+    lower === 'dbtravel' ||
+    lower === 'production' ||
+    lower === 'prod' ||
+    lower === 'postgres' ||
+    lower === 'template1'
+  ) {
+    return false;
+  }
+  // Authorized test database conventions (*_test, *_ci, *_integration, *_integration_test, test_*)
+  return (
+    lower.endsWith('_test') ||
+    lower.endsWith('_ci') ||
+    lower.endsWith('_integration') ||
+    lower.endsWith('_integration_test') ||
+    lower.startsWith('test_') ||
+    lower.includes('integration_test') ||
+    lower.includes('_test_')
+  );
+}
+
+export function validatePostgresIntegrationGuard({
+  allowOptIn = process.env.ALLOW_POSTGRES_INTEGRATION_TESTS,
+  testDatabaseUrl = process.env.TEST_DATABASE_URL,
+  prodDatabaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL,
+} = {}) {
+  // 1. Mandatory opt-in
+  if (allowOptIn !== 'true') {
+    return {
+      ok: false,
+      skipped: true,
+      reason:
+        'ALLOW_POSTGRES_INTEGRATION_TESTS must be explicitly "true" to execute mutating PostgreSQL integration tests.',
+    };
+  }
+
+  // 2. Mandatory TEST_DATABASE_URL
+  if (!testDatabaseUrl || typeof testDatabaseUrl !== 'string' || testDatabaseUrl.trim() === '') {
+    return {
+      ok: false,
+      skipped: true,
+      reason:
+        'Missing TEST_DATABASE_URL environment variable. Mutating tests will NEVER fall back to DATABASE_URL.',
+    };
+  }
+
+  // 3. Reject invalid or unsafe database name
+  const target = parsePostgresTarget(testDatabaseUrl);
+  if (!target || !target.database) {
+    return {
+      ok: false,
+      skipped: false,
+      reason: 'TEST_DATABASE_URL is not a valid PostgreSQL connection URL.',
+    };
+  }
+
+  if (!isAllowedDatabaseName(target.database)) {
+    return {
+      ok: false,
+      skipped: false,
+      reason: `UNSAFE_DATABASE_TARGET: Target database "${target.database}" is not an authorized test database (*_test, *_ci, *_integration, *_integration_test). Refusing execution.`,
+    };
+  }
+
+  // 4. Refuse targeting same production database
+  if (prodDatabaseUrl && typeof prodDatabaseUrl === 'string' && prodDatabaseUrl.trim() !== '') {
+    const prodTarget = parsePostgresTarget(prodDatabaseUrl);
+    if (prodTarget) {
+      const isSameHost = target.hostname === prodTarget.hostname;
+      const isSamePort = target.port === prodTarget.port;
+      const isSameDb = target.database === prodTarget.database;
+      const isSameSchema = target.schema === prodTarget.schema;
+      if (isSameHost && isSamePort && isSameDb && isSameSchema) {
+        return {
+          ok: false,
+          skipped: false,
+          reason: `TEST_DATABASE_URL points to the exact same database and schema as DATABASE_URL ("${target.database}"). Execution refused for safety.`,
+        };
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    skipped: false,
+    databaseName: target.database,
+    target,
+    testDatabaseUrl,
+  };
+}
