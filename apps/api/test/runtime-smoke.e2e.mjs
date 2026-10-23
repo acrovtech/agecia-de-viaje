@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import request from 'supertest';
+import { PrismaClient } from '@repo/db/prisma';
 import { createApplication } from '../dist/application.js';
 import { parseConfig } from '../dist/config.js';
 
@@ -13,6 +14,28 @@ test('RUNTIME SMOKE SUITE (Phase 6 Post-Merge)', async (t) => {
     ...process.env,
     API_AUTH_ENABLED: 'true',
   });
+
+  const prisma = new PrismaClient({
+    datasources: { db: { url: config.databaseUrl } },
+  });
+  let createdDemoAgency = false;
+  try {
+    const existingDemo = await prisma.agency.findUnique({ where: { slug: 'demo' } });
+    if (!existingDemo) {
+      await prisma.agency.create({
+        data: {
+          name: 'Demo Agency',
+          slug: 'demo',
+          subdomain: 'demo',
+          isActive: true,
+        },
+      });
+      createdDemoAgency = true;
+    }
+  } catch (err) {
+    // If DB is unreachable, let subsequent app.init or tests fail authoritatively
+  }
+
   const app = await createApplication(config);
   await app.init();
   const server = app.getHttpServer();
@@ -78,5 +101,14 @@ test('RUNTIME SMOKE SUITE (Phase 6 Post-Merge)', async (t) => {
     });
   } finally {
     await app.close();
+    if (createdDemoAgency) {
+      try {
+        await prisma.agencyBrandingPreference.deleteMany({ where: { agency: { slug: 'demo' } } });
+        await prisma.agency.deleteMany({ where: { slug: 'demo' } });
+      } catch {
+        // Ignore cleanup error
+      }
+    }
+    await prisma.$disconnect();
   }
 });

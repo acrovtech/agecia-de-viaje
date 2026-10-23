@@ -84,17 +84,7 @@ jobs:
         run: pnpm --filter api test
 
       - name: Run PostgreSQL Integration Suite
-        run: |
-          if ! pnpm --filter api test:integration > integration_output.txt 2>&1; then
-            cat integration_output.txt
-            ERR_MSG=$(grep -B 3 -A 25 "not ok" integration_output.txt | tr '\r\n' '  ' | head -c 1000)
-            if [ -z "$ERR_MSG" ]; then
-              ERR_MSG=$(tail -n 30 integration_output.txt | tr '\r\n' '  ' | head -c 1000)
-            fi
-            echo "::error title=Postgres Integration Failure::$ERR_MSG"
-            exit 1
-          fi
-          cat integration_output.txt
+        run: pnpm --filter api test:integration
 
       - name: Run Runtime Smoke Suite
         run: node --test apps/api/test/runtime-smoke.e2e.mjs
