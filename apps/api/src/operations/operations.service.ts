@@ -4,7 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, type ServiceResourceType, type AssignmentResourceType, type OperationalStatus } from '@repo/db/prisma';
+import { Prisma, type ServiceResourceType, type OperationalStatus } from '@repo/db/prisma';
+
 import { z } from 'zod';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';

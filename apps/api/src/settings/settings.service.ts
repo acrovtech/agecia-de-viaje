@@ -15,8 +15,6 @@ import {
   SUPPORTED_CATALOG_LOCALES,
   createFeedbackSchema,
   updateBrandingSchema,
-  type UpdateAgencyProfileDto,
-  type UpdateLegalProfileDto,
 } from './settings.dto.js';
 
 @Injectable()

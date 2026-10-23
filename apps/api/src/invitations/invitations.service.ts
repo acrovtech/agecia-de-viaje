@@ -3,7 +3,6 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
   Optional,
@@ -15,8 +14,6 @@ import type { ApiIdentity } from '../auth/auth.service.js';
 import {
   createInvitationSchema,
   acceptInvitationSchema,
-  type CreateInvitationDto,
-  type AcceptInvitationDto,
 } from './invitations.dto.js';
 import type { AgencyMemberRole } from '@repo/db/prisma';
 import { NotificationsService } from '../notifications/notifications.service.js';

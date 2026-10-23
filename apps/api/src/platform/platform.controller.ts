@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+
 import { PlatformSessionRoute, PlatformRoles } from '../security/public-route.js';
 import { PlatformService } from './platform.service.js';
 import { UpdatePlatformSettingsDto } from './platform.dto.js';

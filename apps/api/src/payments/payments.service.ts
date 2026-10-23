@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import {
   BadGatewayException,
   BadRequestException,
-  ConflictException,
   GatewayTimeoutException,
   Inject,
   Injectable,
@@ -18,7 +17,6 @@ import { API_CONFIG, ApiConfig } from '../config.js';
 import { PrismaService } from '../database/prisma.service.js';
 import {
   IpnProcessResultDto,
-  IzipayIpnAnswerDto,
   IzipayIpnPayloadDto,
   ipnAnswerSchema,
 } from './payments.dto.js';

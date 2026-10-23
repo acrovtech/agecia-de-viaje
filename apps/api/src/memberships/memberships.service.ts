@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';
-import { updateMembershipSchema, type UpdateMembershipDto } from './memberships.dto.js';
+import { updateMembershipSchema } from './memberships.dto.js';
+
 import type { AgencyMemberRole } from '@repo/db/prisma';
 
 @Injectable()

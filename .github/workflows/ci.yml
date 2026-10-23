@@ -12,22 +12,23 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: travel_integration_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: api_test_ci
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U test_user -d travel_integration_test"
+          --health-cmd "pg_isready -U test -d api_test_ci"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/travel_integration_test
-      DIRECT_URL: postgresql://test_user:test_password@127.0.0.1:5432/travel_integration_test
-      TEST_DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/travel_integration_test
+      DATABASE_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
+      DIRECT_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
+      TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
+      API_TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/api_test_ci
       ALLOW_POSTGRES_INTEGRATION_TESTS: 'true'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: 'true'
@@ -36,6 +37,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22'
@@ -44,7 +46,6 @@ jobs:
         run: |
           corepack enable
           corepack prepare pnpm@12.0.0 --activate
-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -64,8 +65,14 @@ jobs:
       - name: Check Types (Web)
         run: pnpm --filter web check-types
 
+      - name: Lint API
+        run: pnpm --filter api lint
+
       - name: Build API
         run: pnpm --filter api build
+
+      - name: Build Web
+        run: pnpm --filter web build
 
       - name: Build Admin (API auth mode)
         run: ADMIN_AUTH_MODE=api pnpm --filter admin build
@@ -73,16 +80,17 @@ jobs:
       - name: Run Vitest Unit Tests
         run: pnpm vitest run
 
-      - name: Run Platform Control Plane E2E
-        run: node --test apps/api/test/platform-control-plane.e2e.mjs
+      - name: Run API E2E Regression Suite
+        run: pnpm --filter api test
 
+      - name: Run PostgreSQL Integration Suite
+        run: pnpm --filter api test:integration
 
+      - name: Run Runtime Smoke Suite
+        run: node --test apps/api/test/runtime-smoke.e2e.mjs
 
-
-
-      - name: Run Safety Guard Unit Tests
+      - name: Run Concurrency Safety Guard Unit Tests
         run: node --test apps/api/test/postgres-concurrency-safety.test.mjs
 
       - name: Run PostgreSQL Concurrency Integration Gate
         run: node --test apps/api/test/branding-concurrency.postgres.e2e.mjs
-
