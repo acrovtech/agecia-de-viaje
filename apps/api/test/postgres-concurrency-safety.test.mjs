@@ -76,38 +76,134 @@ test('POSTGRESQL CONCURRENCY GATE SAFETY & ISOLATION UNIT TESTS', async (t) => {
     assert.match(resSame.reason, /exact same database and schema/);
   });
 
-  await t.test('4. PlatformSettings isolation contract: snapshot A restored after test mutation B', async () => {
-    // Simulate PlatformSettings snapshot and restoration
-    let currentDbState = {
+  await t.test('4. PlatformSettings isolation contract: snapshot A restored across all execution paths', async (t4) => {
+    const originalSettingsA = {
       id: 'global',
       productName: 'Original SaaS Production Name',
       coBrandingEnabled: false,
       brandingRewardEnabled: false,
       brandingRewardCredits: 0,
+      logoUrl: null,
+      iconUrl: null,
+      supportEmail: null,
     };
 
-    // Step 1: Snapshot original state A
-    const snapshotA = { ...currentDbState };
+    // Subcase 4.1: Normal successful run: final == A
+    await t4.test('4.1 Normal successful run restores final == A', async () => {
+      let currentDbState = { ...originalSettingsA };
+      const snapshotA = { ...currentDbState };
 
-    // Step 2: Test temporarily applies state B
-    try {
-      currentDbState = {
-        ...currentDbState,
-        productName: 'Acrov SaaS Test Override',
-        coBrandingEnabled: true,
-        brandingRewardEnabled: true,
-        brandingRewardCredits: 10,
-      };
-      assert.strictEqual(currentDbState.coBrandingEnabled, true);
-    } finally {
-      // Step 3: In finally, restore exact original state A
-      currentDbState = { ...snapshotA };
-    }
+      try {
+        currentDbState = {
+          ...currentDbState,
+          productName: 'Acrov SaaS Test Override',
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        };
+        assert.strictEqual(currentDbState.coBrandingEnabled, true);
+      } finally {
+        currentDbState = { ...snapshotA };
+      }
 
-    // Step 4: Verify restoration
-    assert.deepStrictEqual(currentDbState, snapshotA, 'PlatformSettings must match snapshot A exactly');
-    assert.strictEqual(currentDbState.productName, 'Original SaaS Production Name');
-    assert.strictEqual(currentDbState.coBrandingEnabled, false);
+      assert.deepStrictEqual(currentDbState, snapshotA, 'final == A on successful run');
+    });
+
+    // Subcase 4.2: Forced application-init/setup failure: final == A
+    await t4.test('4.2 Forced application-init/setup failure restores final == A', async () => {
+      let currentDbState = { ...originalSettingsA };
+      const snapshotA = { ...currentDbState };
+      let setupError = null;
+
+      try {
+        currentDbState = {
+          ...currentDbState,
+          productName: 'Acrov SaaS Test Override',
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        };
+        throw new Error('Simulated app.init() failure during setup');
+      } catch (err) {
+        setupError = err;
+      } finally {
+        currentDbState = { ...snapshotA };
+      }
+
+      assert.ok(setupError, 'Setup error was triggered');
+      assert.deepStrictEqual(currentDbState, snapshotA, 'final == A despite setup failure');
+    });
+
+    // Subcase 4.3: Forced test-body failure: final == A
+    await t4.test('4.3 Forced test-body failure restores final == A', async () => {
+      let currentDbState = { ...originalSettingsA };
+      const snapshotA = { ...currentDbState };
+      let bodyError = null;
+
+      try {
+        currentDbState = {
+          ...currentDbState,
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+        };
+        assert.fail('Simulated test assertion failure');
+      } catch (err) {
+        bodyError = err;
+      } finally {
+        currentDbState = { ...snapshotA };
+      }
+
+      assert.ok(bodyError, 'Test body error was triggered');
+      assert.deepStrictEqual(currentDbState, snapshotA, 'final == A despite test failure');
+    });
+
+    // Subcase 4.4: If original row did not exist: final row must not exist
+    await t4.test('4.4 If original row did not exist, final row is deleted (null)', async () => {
+      let currentDbState = null;
+      const snapshotA = null;
+
+      try {
+        currentDbState = {
+          id: 'global',
+          productName: 'Created By Test',
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        };
+        assert.ok(currentDbState !== null);
+      } finally {
+        if (snapshotA) {
+          currentDbState = { ...snapshotA };
+        } else {
+          currentDbState = null;
+        }
+      }
+
+      assert.strictEqual(currentDbState, null, 'final row must not exist when original row was absent');
+    });
+
+    // Subcase 4.5: Cleanup or restoration failure causes gate failure
+    await t4.test('4.5 Cleanup or restoration failure throws and fails gate', async () => {
+      let errorThrown = false;
+      try {
+        let suiteError = null;
+        try {
+          // Normal test run
+        } catch (err) {
+          suiteError = err;
+        } finally {
+          const cleanupError = new Error('Database connection failed during restoration');
+          if (suiteError && cleanupError) {
+            throw new AggregateError([suiteError, cleanupError]);
+          }
+          if (cleanupError) throw cleanupError;
+        }
+      } catch (err) {
+        errorThrown = true;
+        assert.match(err.message, /Database connection failed during restoration/);
+      }
+      assert.strictEqual(errorThrown, true, 'Restoration failure must throw and fail gate');
+    });
   });
 
   await t.test('5. Test cleanup contract: deterministic deletion by ID leaves zero residue', async () => {

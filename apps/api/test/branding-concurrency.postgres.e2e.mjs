@@ -54,36 +54,40 @@ if (!guard.ok) {
       where: { id: 'global' },
     });
 
-    // Configure global platform settings for branding reward
-    await prisma.platformSettings.upsert({
-      where: { id: 'global' },
-      update: {
-        coBrandingEnabled: true,
-        brandingRewardEnabled: true,
-        brandingRewardCredits: 10,
-      },
-      create: {
-        id: 'global',
-        productName: 'Acrov SaaS',
-        coBrandingEnabled: true,
-        brandingRewardEnabled: true,
-        brandingRewardCredits: 10,
-      },
-    });
-
-    const config = parseConfig({
-      ...process.env,
-      DATABASE_URL: effectiveTestUrl,
-      API_AUTH_ENABLED: 'true',
-    });
-    const app = await createApplication(config);
-    await app.init();
-    const server = app.getHttpServer();
-
-    // Track created resources by authoritative ID for clean teardown
+    let app = null;
+    let server = null;
     const createdAgencyIds = [];
     const createdUserIds = [];
     const createdMembershipIds = [];
+    let suiteError = null;
+
+    try {
+      // Configure global platform settings for branding reward
+      await prisma.platformSettings.upsert({
+        where: { id: 'global' },
+        update: {
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        },
+        create: {
+          id: 'global',
+          productName: 'Acrov SaaS',
+          coBrandingEnabled: true,
+          brandingRewardEnabled: true,
+          brandingRewardCredits: 10,
+        },
+      });
+
+      const config = parseConfig({
+        ...process.env,
+        DATABASE_URL: effectiveTestUrl,
+        API_AUTH_ENABLED: 'true',
+      });
+      app = await createApplication(config);
+      await app.init();
+      server = app.getHttpServer();
+
 
     async function createTestTenant(prefix) {
       const suffix = randomBytes(4).toString('hex');
@@ -148,8 +152,8 @@ if (!guard.ok) {
       };
     }
 
-    try {
       // -------------------------------------------------------------------------
+
       // TEST A: 20 CONCURRENT REWARD CLAIMS
       // -------------------------------------------------------------------------
       await t.test(
@@ -395,10 +399,21 @@ if (!guard.ok) {
           assert.strictEqual(claimsAfter.length, 0, 'Claim record must be absent');
         }
       );
+    } catch (err) {
+      suiteError = err;
     } finally {
-      await app.close();
+      let cleanupError = null;
 
-      // 4. PlatformSettings Restoration
+      // 1. Close application if initialized
+      if (app) {
+        try {
+          await app.close();
+        } catch (err) {
+          if (!cleanupError) cleanupError = err;
+        }
+      }
+
+      // 2. PlatformSettings Restoration - Failure MUST NOT be swallowed
       try {
         if (originalPlatformSettings) {
           await prisma.platformSettings.update({
@@ -417,52 +432,66 @@ if (!guard.ok) {
           await prisma.platformSettings.deleteMany({ where: { id: 'global' } });
         }
       } catch (err) {
-        console.error('Failed to restore PlatformSettings:', err);
+        const restoreErr = new Error(`PlatformSettings restoration failed: ${err.message}`);
+        if (!cleanupError) cleanupError = restoreErr;
       }
 
-      // 5. Deterministic Test Artifact Cleanup
-      if (createdAgencyIds.length > 0) {
-        await prisma.brandingRewardClaim.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
-        await prisma.aiCreditLedger.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
-        await prisma.aiCreditAccount.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
-        await prisma.agencyBrandingPreference.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
-        await prisma.apiSession.deleteMany({ where: { membership: { agencyId: { in: createdAgencyIds } } } });
-        await prisma.agencyMembership.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
-        await prisma.agency.deleteMany({ where: { id: { in: createdAgencyIds } } });
-      }
-      if (createdUserIds.length > 0) {
-        await prisma.adminAuditLog.deleteMany({ where: { userId: { in: createdUserIds } } });
-        await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
-      }
+      // 3. Deterministic Test Artifact Cleanup - Failure MUST NOT be swallowed
+      try {
+        if (createdAgencyIds.length > 0) {
+          await prisma.brandingRewardClaim.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
+          await prisma.aiCreditLedger.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
+          await prisma.aiCreditAccount.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
+          await prisma.agencyBrandingPreference.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
+          await prisma.apiSession.deleteMany({ where: { membership: { agencyId: { in: createdAgencyIds } } } });
+          await prisma.agencyMembership.deleteMany({ where: { agencyId: { in: createdAgencyIds } } });
+          await prisma.agency.deleteMany({ where: { id: { in: createdAgencyIds } } });
+        }
+        if (createdUserIds.length > 0) {
+          await prisma.adminAuditLog.deleteMany({ where: { userId: { in: createdUserIds } } });
+          await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
+        }
 
-      // Assert zero residue
-      const remainingAgencies = await prisma.agency.count({ where: { id: { in: createdAgencyIds } } });
-      const remainingUsers = await prisma.user.count({ where: { id: { in: createdUserIds } } });
-      const remainingClaims = await prisma.brandingRewardClaim.count({
-        where: { agencyId: { in: createdAgencyIds } },
-      });
-      const remainingLedgers = await prisma.aiCreditLedger.count({
-        where: { agencyId: { in: createdAgencyIds } },
-      });
-      const remainingAccounts = await prisma.aiCreditAccount.count({
-        where: { agencyId: { in: createdAgencyIds } },
-      });
-      const remainingPrefs = await prisma.agencyBrandingPreference.count({
-        where: { agencyId: { in: createdAgencyIds } },
-      });
-      const remainingAudits = await prisma.adminAuditLog.count({
-        where: { userId: { in: createdUserIds } },
-      });
+        // Assert zero residue
+        const remainingAgencies = await prisma.agency.count({ where: { id: { in: createdAgencyIds } } });
+        const remainingUsers = await prisma.user.count({ where: { id: { in: createdUserIds } } });
+        const remainingClaims = await prisma.brandingRewardClaim.count({
+          where: { agencyId: { in: createdAgencyIds } },
+        });
+        const remainingLedgers = await prisma.aiCreditLedger.count({
+          where: { agencyId: { in: createdAgencyIds } },
+        });
+        const remainingAccounts = await prisma.aiCreditAccount.count({
+          where: { agencyId: { in: createdAgencyIds } },
+        });
+        const remainingPrefs = await prisma.agencyBrandingPreference.count({
+          where: { agencyId: { in: createdAgencyIds } },
+        });
+        const remainingAudits = await prisma.adminAuditLog.count({
+          where: { userId: { in: createdUserIds } },
+        });
 
-      assert.strictEqual(remainingAgencies, 0, 'Residual test agencies must be 0');
-      assert.strictEqual(remainingUsers, 0, 'Residual test users must be 0');
-      assert.strictEqual(remainingClaims, 0, 'Residual test claims must be 0');
-      assert.strictEqual(remainingLedgers, 0, 'Residual test ledgers must be 0');
-      assert.strictEqual(remainingAccounts, 0, 'Residual test accounts must be 0');
-      assert.strictEqual(remainingPrefs, 0, 'Residual test preferences must be 0');
-      assert.strictEqual(remainingAudits, 0, 'Residual test audit logs must be 0');
+        assert.strictEqual(remainingAgencies, 0, 'Residual test agencies must be 0');
+        assert.strictEqual(remainingUsers, 0, 'Residual test users must be 0');
+        assert.strictEqual(remainingClaims, 0, 'Residual test claims must be 0');
+        assert.strictEqual(remainingLedgers, 0, 'Residual test ledgers must be 0');
+        assert.strictEqual(remainingAccounts, 0, 'Residual test accounts must be 0');
+        assert.strictEqual(remainingPrefs, 0, 'Residual test preferences must be 0');
+        assert.strictEqual(remainingAudits, 0, 'Residual test audit logs must be 0');
+      } catch (err) {
+        if (!cleanupError) cleanupError = err;
+      }
 
       await prisma.$disconnect();
+
+      if (suiteError && cleanupError) {
+        throw new AggregateError(
+          [suiteError, cleanupError],
+          `PostgreSQL Concurrency Suite failed (${suiteError.message}) AND cleanup/restoration failed (${cleanupError.message})`
+        );
+      }
+      if (suiteError) throw suiteError;
+      if (cleanupError) throw cleanupError;
     }
   });
 }
