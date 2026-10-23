@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';
@@ -640,12 +641,20 @@ export class SettingsService {
     } catch (err: any) {
       if (
         err?.code === '40001' ||
-        err?.code === '40P01' ||
-        err?.code === 'P2034' ||
-        err?.message?.includes('could not serialize access') ||
-        err?.message?.includes('deadlock detected')
+        err?.message?.includes('could not serialize access')
       ) {
         throw new ConflictException('Conflicto de concurrencia al actualizar las preferencias de marca.');
+      }
+      if (
+        err?.code === '40P01' ||
+        err?.code === 'P2034' ||
+        err?.code === 'P2024' ||
+        err?.code === 'P2028' ||
+        err?.message?.includes('deadlock detected') ||
+        err?.message?.includes('connection pool') ||
+        err?.message?.includes('Transaction already closed')
+      ) {
+        throw new ServiceUnavailableException('Servicio temporalmente no disponible por contención de recursos. Intente nuevamente.');
       }
       throw err;
     }
@@ -773,16 +782,20 @@ export class SettingsService {
         err?.code === 'P2002' ||
         err?.message?.includes('BrandingRewardClaim_agencyId_period_key') ||
         err?.code === '40001' ||
-        err?.code === '40P01' ||
-        err?.code === 'P2034' ||
-        err?.code === 'P2028' ||
-        err?.code === 'P2024' ||
-        err?.message?.includes('could not serialize access') ||
-        err?.message?.includes('deadlock detected') ||
-        err?.message?.includes('Transaction already closed') ||
-        err?.message?.includes('connection pool')
+        err?.message?.includes('could not serialize access')
       ) {
         throw new ConflictException('Esta agencia ya recibió la recompensa de créditos IA correspondiente a este período.');
+      }
+      if (
+        err?.code === 'P2024' ||
+        err?.code === 'P2028' ||
+        err?.code === '40P01' ||
+        err?.code === 'P2034' ||
+        err?.message?.includes('Transaction already closed') ||
+        err?.message?.includes('connection pool') ||
+        err?.message?.includes('deadlock detected')
+      ) {
+        throw new ServiceUnavailableException('Servicio temporalmente no disponible por contención o sobrecarga de base de datos. Intente nuevamente.');
       }
       throw err;
     }
