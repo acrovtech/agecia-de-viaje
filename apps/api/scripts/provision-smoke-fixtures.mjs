@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { PrismaClient } from '@repo/db/prisma';
-import { validatePostgresTestTarget } from './postgres-gate-safety.mjs';
+import { validatePostgresTestTarget, isAllowedDatabaseName } from './postgres-gate-safety.mjs';
 
 const rootDir = fileURLToPath(new URL('../../../', import.meta.url));
 const apiDir = fileURLToPath(new URL('../', import.meta.url));
@@ -18,12 +18,20 @@ if (existsSync(apiEnv)) {
 
 // Strictly require API_TEST_DATABASE_URL or TEST_DATABASE_URL. Never fall back to normal DATABASE_URL.
 const rawTestDbUrl = process.env.API_TEST_DATABASE_URL || process.env.TEST_DATABASE_URL;
-const validation = validatePostgresTestTarget(rawTestDbUrl, process.env.PROD_DATABASE_URL || process.env.DATABASE_URL);
+const validation = validatePostgresTestTarget(rawTestDbUrl);
 
 if (!validation.ok) {
   console.error('--------------------------------------------------------------------------------');
   console.error(`[SMOKE FIXTURE ERROR] ${validation.reason}`);
   console.error('[SMOKE FIXTURE ERROR] SAFETY POLICY: Refusing non-test target. Never mutate production.');
+  console.error('--------------------------------------------------------------------------------');
+  process.exit(1);
+}
+
+if (!isAllowedDatabaseName(validation.target.database)) {
+  console.error('--------------------------------------------------------------------------------');
+  console.error(`[SMOKE FIXTURE ERROR] Target database "${validation.target.database}" is not an authorized test database naming convention.`);
+  console.error('[SMOKE FIXTURE ERROR] SAFETY POLICY: Refusing non-test target.');
   console.error('--------------------------------------------------------------------------------');
   process.exit(1);
 }
