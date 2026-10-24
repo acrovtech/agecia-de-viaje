@@ -86,6 +86,9 @@ jobs:
       - name: Run PostgreSQL Integration Suite
         run: pnpm --filter api test:integration
 
+      - name: Provision Ephemeral Smoke Fixtures
+        run: node apps/api/scripts/provision-smoke-fixtures.mjs
+
       - name: Run Runtime Smoke Suite
         run: node --test apps/api/test/runtime-smoke.e2e.mjs
 

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   validatePostgresTestTarget,
   parsePostgresTarget,
@@ -131,3 +132,31 @@ test('7. credentials never appear in sanitized output or formatted summaries', (
   assert.ok(!summary.includes('super_secret'));
   assert.ok(!summary.includes('saas_admin'));
 });
+
+test('8. runtime-smoke suite is strictly read-only and contains zero database mutation paths', () => {
+  const smokeSuitePath = new URL('./runtime-smoke.e2e.mjs', import.meta.url);
+  const smokeSource = readFileSync(smokeSuitePath, 'utf8');
+
+  // Verify no PrismaClient is imported or used for database mutation
+  assert.ok(!smokeSource.includes('PrismaClient'), 'runtime smoke suite must not instantiate PrismaClient');
+  assert.ok(!smokeSource.includes('agency.create'), 'runtime smoke suite must not call agency.create');
+  assert.ok(!smokeSource.includes('agency.deleteMany'), 'runtime smoke suite must not call agency.deleteMany');
+  assert.ok(!smokeSource.includes('agencyBrandingPreference.deleteMany'), 'runtime smoke suite must not call agencyBrandingPreference.deleteMany');
+  assert.ok(!smokeSource.includes('Ignore cleanup error'), 'runtime smoke suite must not swallow cleanup errors');
+
+  // Forbidden direct DB write operations
+  const forbiddenWrites = ['.create(', '.update(', '.upsert(', '.delete(', '.deleteMany(', '.updateMany('];
+  for (const op of forbiddenWrites) {
+    assert.ok(!smokeSource.includes(op), `runtime smoke suite must not contain database mutation operation: ${op}`);
+  }
+});
+
+test('9. provision-smoke-fixtures script enforces safe test target validation without fallback', () => {
+  const fixtureScriptPath = new URL('../scripts/provision-smoke-fixtures.mjs', import.meta.url);
+  const fixtureSource = readFileSync(fixtureScriptPath, 'utf8');
+
+  assert.ok(fixtureSource.includes('validatePostgresTestTarget'), 'Fixture script must validate postgres test target');
+  assert.ok(fixtureSource.includes('API_TEST_DATABASE_URL'), 'Fixture script must require API_TEST_DATABASE_URL or TEST_DATABASE_URL');
+  assert.ok(!fixtureSource.includes('process.env.DATABASE_URL ||'), 'Fixture script must not fall back to normal DATABASE_URL');
+});
+

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   isAllowedDatabaseName,
   validatePostgresIntegrationGuard,
@@ -233,4 +234,26 @@ test('POSTGRESQL CONCURRENCY GATE SAFETY & ISOLATION UNIT TESTS', async (t) => {
     assert.strictEqual(remainingAgencies.length, 0, 'Residual agencies must be 0');
     assert.strictEqual(remainingUsers.length, 0, 'Residual users must be 0');
   });
+
+  await t.test('6. Runtime smoke safety invariant: zero database mutation and externalized fixtures', () => {
+    const smokeSuitePath = new URL('./runtime-smoke.e2e.mjs', import.meta.url);
+    const smokeSource = readFileSync(smokeSuitePath, 'utf8');
+
+    assert.ok(!smokeSource.includes('PrismaClient'), 'runtime smoke must not import or instantiate PrismaClient');
+    assert.ok(!smokeSource.includes('agency.create'), 'runtime smoke must not call agency.create');
+    assert.ok(!smokeSource.includes('agency.deleteMany'), 'runtime smoke must not call agency.deleteMany');
+    assert.ok(!smokeSource.includes('agencyBrandingPreference.deleteMany'), 'runtime smoke must not call agencyBrandingPreference.deleteMany');
+    assert.ok(!smokeSource.includes('Ignore cleanup error'), 'runtime smoke must not swallow cleanup errors');
+
+    const forbiddenWrites = ['.create(', '.update(', '.upsert(', '.delete(', '.deleteMany(', '.updateMany('];
+    for (const op of forbiddenWrites) {
+      assert.ok(!smokeSource.includes(op), `runtime smoke must not perform database mutation: ${op}`);
+    }
+
+    const fixtureScriptPath = new URL('../scripts/provision-smoke-fixtures.mjs', import.meta.url);
+    const fixtureSource = readFileSync(fixtureScriptPath, 'utf8');
+    assert.ok(fixtureSource.includes('validatePostgresTestTarget'), 'smoke fixture setup must validate safe test target');
+    assert.ok(!fixtureSource.includes('process.env.DATABASE_URL ||'), 'smoke fixture setup must never fallback to production DATABASE_URL');
+  });
 });
+
