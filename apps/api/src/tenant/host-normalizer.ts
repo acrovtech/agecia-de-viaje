@@ -29,6 +29,7 @@ export function normalizeHost(rawHost: unknown): string | null {
   }
 
   // 1. Rechazar caracteres de control
+  // eslint-disable-next-line no-control-regex -- control character validation for HTTP host headers
   if (/[\x00-\x1F\x7F]/.test(host)) {
     return null;
   }

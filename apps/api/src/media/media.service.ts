@@ -8,7 +8,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import type { Prisma } from '@repo/db/prisma';
+import type { Prisma, MediaAsset } from '@repo/db/prisma';
 import { API_CONFIG, type ApiConfig } from '../config.js';
 import { PrismaService } from '../database/prisma.service.js';
 import type { ApiIdentity } from '../auth/auth.service.js';
@@ -134,7 +134,7 @@ export class MediaService {
       ? file.originalname.slice(0, 200).replace(/[^\w.\-\s]/g, '_')
       : null;
 
-    let record: any;
+    let record: MediaAsset;
     try {
       record = await this.prisma.$transaction(async (tx) => {
         const created = await tx.mediaAsset.create({

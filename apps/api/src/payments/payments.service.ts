@@ -99,8 +99,9 @@ export class PaymentsService {
         }),
         signal: AbortSignal.timeout(10000),
       });
-    } catch (fetchErr: any) {
-      if (fetchErr.name === 'TimeoutError' || String(fetchErr?.message).includes('timeout')) {
+    } catch (fetchErr: unknown) {
+      const err = typeof fetchErr === 'object' && fetchErr !== null ? (fetchErr as { name?: string; message?: string }) : null;
+      if (err?.name === 'TimeoutError' || String(err?.message).includes('timeout')) {
         throw new GatewayTimeoutException({
           statusCode: 504,
           error: 'Gateway Timeout',
@@ -134,9 +135,9 @@ export class PaymentsService {
       });
     }
 
-    let data: any;
+    let data: { status?: string; answer?: { formToken?: string } };
     try {
-      data = await response.json();
+      data = (await response.json()) as { status?: string; answer?: { formToken?: string } };
     } catch {
       throw new BadGatewayException({
         statusCode: 502,
@@ -169,7 +170,7 @@ export class PaymentsService {
     }
 
     // 2. Parseo y validación de estructura solo posterior a firma válida (Ticket P1)
-    let answerObj: any;
+    let answerObj: unknown;
     try {
       answerObj = typeof rawAnswer === 'string' ? JSON.parse(rawAnswer) : rawAnswer;
     } catch {
@@ -178,7 +179,7 @@ export class PaymentsService {
 
     const parsedAnswer = ipnAnswerSchema.safeParse(answerObj);
     if (!parsedAnswer.success) {
-      const issues = parsedAnswer.error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join(', ');
+      const issues = parsedAnswer.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
       throw new BadRequestException(`Estructura de IPN inválida: ${issues}`);
     }
 

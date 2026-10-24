@@ -29,14 +29,14 @@ export class InvitationsService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional()
-    notificationsServiceOrAdapter?: any,
+    notificationsServiceOrAdapter?: unknown,
     @Optional()
     maybeNotificationsService?: NotificationsService,
   ) {
     const notifService =
       maybeNotificationsService ??
-      (notificationsServiceOrAdapter?.queueNotification
-        ? notificationsServiceOrAdapter
+      (notificationsServiceOrAdapter && typeof notificationsServiceOrAdapter === 'object' && 'queueNotification' in notificationsServiceOrAdapter
+        ? (notificationsServiceOrAdapter as NotificationsService)
         : undefined);
 
     this.notifications =

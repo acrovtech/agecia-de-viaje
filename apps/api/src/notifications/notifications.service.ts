@@ -206,12 +206,14 @@ export class NotificationsService {
     const firstAttemptAt = job.firstAttemptAt ?? now;
 
     // 1. Decrypt payload
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- decrypted dynamic payload envelope
     let payloadData: Record<string, any>;
     try {
       if (!this.config.notificationPayloadKey) {
         throw new Error('Key not configured');
       }
       const envelope = JSON.parse(job.encryptedPayload);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- decrypted dynamic payload envelope
       payloadData = decryptPayload<Record<string, any>>(envelope, this.config.notificationPayloadKey);
     } catch {
       await this.conditionalUpdate(job.id, workerId, {
@@ -364,7 +366,7 @@ export class NotificationsService {
   private async conditionalUpdate(
     jobId: string,
     workerId: string,
-    data: Record<string, any>,
+    data: Prisma.TransactionalNotificationUncheckedUpdateManyInput,
   ): Promise<void> {
     await this.prisma.transactionalNotification.updateMany({
       where: {

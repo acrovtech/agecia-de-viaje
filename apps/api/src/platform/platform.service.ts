@@ -29,15 +29,15 @@ export class PlatformService {
       },
     });
 
-    const agencyIds = agencies.map((a: any) => a.id);
+    const agencyIds = agencies.map((a) => a.id);
     const creditAccounts = await this.prisma.aiCreditAccount.findMany({
       where: { agencyId: { in: agencyIds } },
       select: { agencyId: true, balance: true },
     });
 
-    const balancesByAgencyId = new Map(creditAccounts.map((c: any) => [c.agencyId, c.balance]));
+    const balancesByAgencyId = new Map(creditAccounts.map((c) => [c.agencyId, c.balance]));
 
-    return agencies.map((agency: any) => ({
+    return agencies.map((agency) => ({
       id: agency.id,
       name: agency.name,
       slug: agency.slug,
@@ -121,7 +121,7 @@ export class PlatformService {
         membershipCount: agency._count.memberships,
         tourCount: agency._count.tours,
         localeCount: agency._count.locales,
-        enabledCatalogLocaleCount: agency.locales.filter((l: any) => l.enabled).length,
+        enabledCatalogLocaleCount: agency.locales.filter((l) => l.enabled).length,
       },
       locales: agency.locales,
       entitlements: agency.entitlement ? {

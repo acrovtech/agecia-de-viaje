@@ -7,6 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
+import type { Prisma } from '@repo/db/prisma';
 import type { ApiIdentity } from '../auth/auth.service.js';
 import {
   updateAgencyProfileSchema,
@@ -152,7 +153,7 @@ export class SettingsService {
       where: { agencyId },
     });
 
-    const data = (legalProfile?.data as Record<string, any>) || {};
+    const data = (legalProfile?.data as Record<string, string>) || {};
 
     return {
       ruc: data.ruc || '',
@@ -215,7 +216,7 @@ export class SettingsService {
         }
       }
 
-      const before = (existing?.data as Record<string, any>) || {};
+      const before = (existing?.data as Prisma.InputJsonObject) || {};
       const after = {
         ruc: dto.ruc,
         legalName: dto.legalName,
@@ -257,7 +258,7 @@ export class SettingsService {
   private async validateMediaUrl(
     url: string | null | undefined,
     agencyId: string,
-    db: any = this.prisma
+    db: PrismaService | Prisma.TransactionClient = this.prisma
   ) {
     if (!url) return;
 
@@ -319,12 +320,13 @@ export class SettingsService {
             enabled: true,
           },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = typeof error === 'object' && error !== null ? (error as { code?: string; message?: string }) : null;
         // Race-safe bootstrap: only catch expected Prisma unique constraint collision (P2002)
         const isUniqueCollision =
-          error?.code === 'P2002' ||
-          (typeof error?.message === 'string' &&
-            (error.message.includes('Unique constraint') || error.message.includes('P2002')));
+          err?.code === 'P2002' ||
+          (typeof err?.message === 'string' &&
+            (err.message.includes('Unique constraint') || err.message.includes('P2002')));
         if (!isUniqueCollision) {
           throw error;
         }
@@ -636,21 +638,22 @@ export class SettingsService {
         },
         { maxWait: 10000, timeout: 30000 }
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = typeof err === 'object' && err !== null ? (err as { code?: string; message?: string }) : null;
       if (
-        err?.code === '40001' ||
-        err?.message?.includes('could not serialize access')
+        error?.code === '40001' ||
+        error?.message?.includes('could not serialize access')
       ) {
         throw new ConflictException('Conflicto de concurrencia al actualizar las preferencias de marca.');
       }
       if (
-        err?.code === '40P01' ||
-        err?.code === 'P2034' ||
-        err?.code === 'P2024' ||
-        err?.code === 'P2028' ||
-        err?.message?.includes('deadlock detected') ||
-        err?.message?.includes('connection pool') ||
-        err?.message?.includes('Transaction already closed')
+        error?.code === '40P01' ||
+        error?.code === 'P2034' ||
+        error?.code === 'P2024' ||
+        error?.code === 'P2028' ||
+        error?.message?.includes('deadlock detected') ||
+        error?.message?.includes('connection pool') ||
+        error?.message?.includes('Transaction already closed')
       ) {
         throw new ServiceUnavailableException('Servicio temporalmente no disponible por contención de recursos. Intente nuevamente.');
       }
@@ -775,23 +778,24 @@ export class SettingsService {
           newBalance: updatedAccount.balance,
         };
       }, { maxWait: 10000, timeout: 30000 });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = typeof err === 'object' && err !== null ? (err as { code?: string; message?: string }) : null;
       if (
-        err?.code === 'P2002' ||
-        err?.message?.includes('BrandingRewardClaim_agencyId_period_key') ||
-        err?.code === '40001' ||
-        err?.message?.includes('could not serialize access')
+        error?.code === 'P2002' ||
+        error?.message?.includes('BrandingRewardClaim_agencyId_period_key') ||
+        error?.code === '40001' ||
+        error?.message?.includes('could not serialize access')
       ) {
         throw new ConflictException('Esta agencia ya recibió la recompensa de créditos IA correspondiente a este período.');
       }
       if (
-        err?.code === 'P2024' ||
-        err?.code === 'P2028' ||
-        err?.code === '40P01' ||
-        err?.code === 'P2034' ||
-        err?.message?.includes('Transaction already closed') ||
-        err?.message?.includes('connection pool') ||
-        err?.message?.includes('deadlock detected')
+        error?.code === 'P2024' ||
+        error?.code === 'P2028' ||
+        error?.code === '40P01' ||
+        error?.code === 'P2034' ||
+        error?.message?.includes('Transaction already closed') ||
+        error?.message?.includes('connection pool') ||
+        error?.message?.includes('deadlock detected')
       ) {
         throw new ServiceUnavailableException('Servicio temporalmente no disponible por contención o sobrecarga de base de datos. Intente nuevamente.');
       }

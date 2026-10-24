@@ -25,6 +25,7 @@ export interface AgencyBranding {
 
 export function renderNotificationTemplate(
   kind: NotificationKind,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic JSON notification payload envelope
   payload: Record<string, any>,
   agency: AgencyBranding,
 ): RenderedEmail {

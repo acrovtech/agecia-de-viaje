@@ -7,11 +7,12 @@ export class ApiErrorFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
+    const errObj = typeof exception === 'object' && exception !== null ? (exception as Record<string, unknown>) : null;
     let status = exception instanceof HttpException
       ? exception.getStatus()
-      : ((exception as any)?.status || (exception as any)?.statusCode);
-    if (!status && (exception as any)?.name === 'MulterError') {
-      status = (exception as any)?.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+      : (typeof errObj?.status === 'number' ? errObj.status : (typeof errObj?.statusCode === 'number' ? errObj.statusCode : undefined));
+    if (!status && errObj?.name === 'MulterError') {
+      status = errObj.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
     }
     status = status || 500;
     const requestId = response.getHeader('X-Request-Id');
@@ -28,10 +29,13 @@ export class ApiErrorFilter implements ExceptionFilter {
       const res = exception.getResponse();
       if (typeof res === 'string') {
         clientMessage = res;
-      } else if (typeof (res as any)?.message === 'string') {
-        clientMessage = (res as any).message;
-      } else if (Array.isArray((res as any)?.message)) {
-        clientMessage = (res as any).message.join(', ');
+      } else if (typeof res === 'object' && res !== null) {
+        const resObj = res as Record<string, unknown>;
+        if (typeof resObj.message === 'string') {
+          clientMessage = resObj.message;
+        } else if (Array.isArray(resObj.message)) {
+          clientMessage = resObj.message.join(', ');
+        }
       }
     }
     response.status(status).json({

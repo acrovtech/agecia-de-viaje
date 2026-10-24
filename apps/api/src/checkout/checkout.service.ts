@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, OperationalStatus, ReservationPaymentStatus, ReservationStatus } from '@repo/db/prisma';
+import { BookingStatus, OperationalStatus, ReservationPaymentStatus, ReservationStatus, type Reservation } from '@repo/db/prisma';
 import { API_CONFIG, ApiConfig } from '../config.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { TenantContext } from '../tenant/tenant.types.js';
@@ -550,7 +550,7 @@ export class CheckoutService {
     }
 
     // 4. Inserción atómica con protección ante carreras concurrentes (Tickets A11, P1, P1.2, P1.3, P1.4)
-    let reservation: any;
+    let reservation: Reservation;
     try {
       if (isZeroTotal) {
         // Flujo atómico transaccional para reservas bonificadas al 100% (P1.3, P1.4)
@@ -738,7 +738,7 @@ export class CheckoutService {
           },
         });
       }
-    } catch (createErr: any) {
+    } catch (createErr: unknown) {
       // Manejo de carrera concurrente con misma clave (P1.3, P1.4)
       if (idempotencyKey) {
         const winningRes = await this.prisma.reservation.findFirst({
